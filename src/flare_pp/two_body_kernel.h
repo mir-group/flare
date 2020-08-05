@@ -11,7 +11,8 @@ class StructureDescriptor;
 class TwoBodyKernel : public Kernel {
 public:
   double sigma, sig2, ls, ls1, ls2, ls3;
-  void (*cutoff_pointer)(double *, double, double, std::vector<double>);
+  std::function<void(std::vector<double> &, double, double,
+                     std::vector<double>)> cutoff_pointer;
   std::vector<double> cutoff_hyps;
 
   TwoBodyKernel();

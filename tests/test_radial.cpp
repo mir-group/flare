@@ -28,7 +28,7 @@ protected:
 TEST_F(RadialTest, LongR) {
   // Test that the cutoff value and its gradient are zero when r > rcut.
   double rcut = 0.001;
-  double cutoff_vals[2] = {};
+  std::vector<double> cutoff_vals (2, 0);
   std::vector<double> cutoff_hyps;
   cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
 
@@ -39,8 +39,7 @@ TEST_F(RadialTest, LongR) {
 TEST_F(RadialTest, CutoffGrad) {
   // Test that the derivative of the cosine cutoff function is correctly
   // computed when r < rcut.
-  double cutoff_vals[2] = {};
-  double cutoff_vals_rdelt[2] = {};
+  std::vector<double> cutoff_vals(2, 0), cutoff_vals_rdelt(2, 0);
   std::vector<double> cutoff_hyps;
 
   cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
@@ -54,8 +53,7 @@ TEST_F(RadialTest, CutoffGrad) {
 }
 
 TEST_F(RadialTest, QuadGrad) {
-  double cutoff_vals[2] = {};
-  double cutoff_vals_rdelt[2] = {};
+  std::vector<double> cutoff_vals(2, 0), cutoff_vals_rdelt(2, 0);
   std::vector<double> cutoff_hyps;
 
   quadratic_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
@@ -70,7 +68,7 @@ TEST_F(RadialTest, QuadGrad) {
 
 TEST_F(RadialTest, HardCutoff) {
   // Test that the hard cutoff returns 1 and 0 when rcut > r.
-  double cutoff_vals[2] = {};
+  std::vector<double> cutoff_vals(2, 0);
   std::vector<double> cutoff_hyps;
   hard_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
   EXPECT_EQ(cutoff_vals[0], 1);
@@ -248,8 +246,8 @@ TEST_F(RadialTest, CombDerv) {
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                        std::vector<double>)> basis_function =
       equispaced_gaussians;
-  void (*cutoff_function)(double *, double, double, std::vector<double>) =
-      cos_cutoff;
+  std::function<void(std::vector<double> &, double, double,
+                     std::vector<double>)> cutoff_function = cos_cutoff;
 
   calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, x, y, z, r,
                    rcut, N, radial_hyps, cutoff_hyps);

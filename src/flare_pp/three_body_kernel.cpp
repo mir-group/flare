@@ -43,8 +43,9 @@ double ThreeBodyKernel ::env_env(const LocalEnvironment &env1,
 
   double cut1 = env1.n_body_cutoffs[1];
   double cut2 = env2.n_body_cutoffs[1];
-  double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2], rcut_vals_j1[2],
-      rcut_vals_j2[2], rcut_vals_j3[2];
+  std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
+    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+    rcut_vals_j3(2, 0);
   int c1 = env1.central_species;
   int c2 = env2.central_species;
 
@@ -59,9 +60,9 @@ double ThreeBodyKernel ::env_env(const LocalEnvironment &env1,
     ei1 = env1.environment_species[i1];
     ei2 = env1.environment_species[i2];
 
-    (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
-    (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
-    (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i1, ri1, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i2, ri2, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i3, ri3, cut1, cutoff_hyps);
 
     fi1 = rcut_vals_i1[0];
     fi2 = rcut_vals_i2[0];
@@ -82,9 +83,9 @@ double ThreeBodyKernel ::env_env(const LocalEnvironment &env1,
       ej1 = env2.environment_species[j1];
       ej2 = env2.environment_species[j2];
 
-      (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
-      (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
-      (*cutoff_pointer)(rcut_vals_j3, rj3, cut1, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j1, rj1, cut2, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j2, rj2, cut2, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j3, rj3, cut1, cutoff_hyps);
 
       fj1 = rcut_vals_j1[0];
       fj2 = rcut_vals_j2[0];
@@ -172,8 +173,9 @@ ThreeBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
   double vol_inv_sq = vol_inv * vol_inv;
 
   double cut = env_curr.n_body_cutoffs[1];
-  double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2], rcut_vals_j1[2],
-      rcut_vals_j2[2], rcut_vals_j3[2];
+  std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
+    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+    rcut_vals_j3(2, 0);
   int c1 = env_curr.central_species;
   int c2 = c1;
 
@@ -202,9 +204,9 @@ ThreeBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
     yrel_i2 = env_curr.yrel[i2];
     zrel_i2 = env_curr.zrel[i2];
 
-    (*cutoff_pointer)(rcut_vals_i1, ri1, cut, cutoff_hyps);
-    (*cutoff_pointer)(rcut_vals_i2, ri2, cut, cutoff_hyps);
-    (*cutoff_pointer)(rcut_vals_i3, ri3, cut, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i1, ri1, cut, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i2, ri2, cut, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i3, ri3, cut, cutoff_hyps);
 
     fi1 = rcut_vals_i1[0];
     fdi1 = rcut_vals_i1[1];
@@ -245,9 +247,9 @@ ThreeBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
       yrel_j2 = env_curr.yrel[j2];
       zrel_j2 = env_curr.zrel[j2];
 
-      (*cutoff_pointer)(rcut_vals_j1, rj1, cut, cutoff_hyps);
-      (*cutoff_pointer)(rcut_vals_j2, rj2, cut, cutoff_hyps);
-      (*cutoff_pointer)(rcut_vals_j3, rj3, cut, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j1, rj1, cut, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j2, rj2, cut, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j3, rj3, cut, cutoff_hyps);
 
       fj1 = rcut_vals_j1[0];
       fdj1 = rcut_vals_j1[1];
@@ -362,8 +364,9 @@ ThreeBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
   double vol_inv = 1 / struc.volume;
   double vol_inv_sq = vol_inv * vol_inv;
 
-  double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2], rcut_vals_j1[2],
-      rcut_vals_j2[2], rcut_vals_j3[2];
+  std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
+    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+    rcut_vals_j3(2, 0);
 
   std::vector<int> inds1, inds2;
 
@@ -412,9 +415,9 @@ ThreeBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
         yrel_i2 = env1.yrel[i2];
         zrel_i2 = env1.zrel[i2];
 
-        (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
-        (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
-        (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
+        cutoff_pointer(rcut_vals_i1, ri1, cut1, cutoff_hyps);
+        cutoff_pointer(rcut_vals_i2, ri2, cut1, cutoff_hyps);
+        cutoff_pointer(rcut_vals_i3, ri3, cut1, cutoff_hyps);
 
         fi1 = rcut_vals_i1[0];
         fdi1 = rcut_vals_i1[1];
@@ -455,9 +458,9 @@ ThreeBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
           yrel_j2 = env2.yrel[j2];
           zrel_j2 = env2.zrel[j2];
 
-          (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
-          (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
-          (*cutoff_pointer)(rcut_vals_j3, rj3, cut2, cutoff_hyps);
+          cutoff_pointer(rcut_vals_j1, rj1, cut2, cutoff_hyps);
+          cutoff_pointer(rcut_vals_j2, rj2, cut2, cutoff_hyps);
+          cutoff_pointer(rcut_vals_j3, rj3, cut2, cutoff_hyps);
 
           fj1 = rcut_vals_j1[0];
           fdj1 = rcut_vals_j1[1];
@@ -578,8 +581,9 @@ Eigen::VectorXd ThreeBodyKernel ::env_struc_partial(
 
   double cut1 = env1.n_body_cutoffs[1];
   double cut2 = struc1.n_body_cutoffs[1];
-  double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2], rcut_vals_j1[2],
-      rcut_vals_j2[2], rcut_vals_j3[2];
+  std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
+    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+    rcut_vals_j3(2, 0);
   int c1 = env1.central_species;
   int c2 = env2.central_species;
 
@@ -594,9 +598,9 @@ Eigen::VectorXd ThreeBodyKernel ::env_struc_partial(
     ei1 = env1.environment_species[i1];
     ei2 = env1.environment_species[i2];
 
-    (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
-    (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
-    (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i1, ri1, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i2, ri2, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_i3, ri3, cut1, cutoff_hyps);
 
     fi1 = rcut_vals_i1[0];
     fi2 = rcut_vals_i2[0];
@@ -628,9 +632,9 @@ Eigen::VectorXd ThreeBodyKernel ::env_struc_partial(
       yrel2 = env2.yrel[j2];
       zrel2 = env2.zrel[j2];
 
-      (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
-      (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
-      (*cutoff_pointer)(rcut_vals_j3, rj3, cut2, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j1, rj1, cut2, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j2, rj2, cut2, cutoff_hyps);
+      cutoff_pointer(rcut_vals_j3, rj3, cut2, cutoff_hyps);
 
       fj1 = rcut_vals_j1[0];
       fdj1 = rcut_vals_j1[1];

@@ -34,7 +34,8 @@ void calculate_radial(
     std::vector<double> &comb_y, std::vector<double> &comb_z,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
                        int, std::vector<double>)> basis_function,
-    void (*cutoff_function)(double *, double, double, std::vector<double>),
+    std::function<void(std::vector<double> &, double, double,
+                       std::vector<double>)> cutoff_function,
     double x, double y, double z, double r, double rcut, int N,
     std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
 

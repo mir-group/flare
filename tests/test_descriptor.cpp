@@ -37,8 +37,8 @@ protected:
 
   // Prepare cutoff.
   std::vector<double> cutoff_hyps;
-  void (*cutoff_function)(double *, double, double,
-                          std::vector<double>) = cos_cutoff;
+  std::function<void(std::vector<double> &, double, double,
+                     std::vector<double>)> cos_cutoff;
 
   // Prepare spherical harmonics.
   int lmax = 10;

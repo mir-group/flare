@@ -41,8 +41,8 @@ double TwoBodyKernel ::env_env(const LocalEnvironment &env1,
 
   double cut1 = env1.n_body_cutoffs[0];
   double cut2 = env2.n_body_cutoffs[0];
-  double rcut_vals_1[2];
-  double rcut_vals_2[2];
+  std::vector<double> rcut_vals_1(2, 0);
+  std::vector<double> rcut_vals_2(2, 0);
   int c1 = env1.central_species;
   int c2 = env2.central_species;
   std::vector<int> inds1 = env1.n_body_indices[0];
@@ -52,7 +52,7 @@ double TwoBodyKernel ::env_env(const LocalEnvironment &env1,
     ind1 = inds1[m];
     ri = env1.rs[ind1];
     e1 = env1.environment_species[ind1];
-    (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_1, ri, cut1, cutoff_hyps);
     fi = rcut_vals_1[0];
     for (int n = 0; n < inds2.size(); n++) {
       ind2 = inds2[n];
@@ -61,7 +61,7 @@ double TwoBodyKernel ::env_env(const LocalEnvironment &env1,
       // Proceed only if the pairs match.
       if ((c1 == c2 && e1 == e2) || (c1 == e2 && c2 == e1)) {
         rj = env2.rs[ind2];
-        (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+        cutoff_pointer(rcut_vals_2, rj, cut2, cutoff_hyps);
         fj = rcut_vals_2[0];
         rdiff = ri - rj;
         kern += fi * fj * exp(-rdiff * rdiff * ls1);
@@ -93,8 +93,7 @@ TwoBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
   int cent = env_curr.central_species;
 
   double cut = env_curr.n_body_cutoffs[0];
-  double rcut_vals_1[2];
-  double rcut_vals_2[2];
+  std::vector<double> rcut_vals_1(2, 0), rcut_vals_2(2, 0);
 
   double vol_inv = 1 / struc1.volume;
   double vol_inv_sq = vol_inv * vol_inv;
@@ -104,7 +103,7 @@ TwoBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
   for (int m = 0; m < inds.size(); m++) {
     ind1 = inds[m];
     ri = env_curr.rs[ind1];
-    (*cutoff_pointer)(rcut_vals_1, ri, cut, cutoff_hyps);
+    cutoff_pointer(rcut_vals_1, ri, cut, cutoff_hyps);
     fi = rcut_vals_1[0];
     fdi = rcut_vals_1[1];
     e1 = env_curr.environment_species[ind1];
@@ -132,7 +131,7 @@ TwoBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
         yrel2 = env_curr.yrel[ind2];
         zrel2 = env_curr.zrel[ind2];
 
-        (*cutoff_pointer)(rcut_vals_2, rj, cut, cutoff_hyps);
+        cutoff_pointer(rcut_vals_2, rj, cut, cutoff_hyps);
         fj = rcut_vals_2[0];
         fdj = rcut_vals_2[1];
 
@@ -184,7 +183,7 @@ TwoBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
 
   std::vector<int> inds1, inds2;
 
-  double rcut_vals_1[2], rcut_vals_2[2];
+  std::vector<double> rcut_vals_1(2, 0), rcut_vals_2(2, 0);
 
   double vol_inv = 1 / struc.volume;
   double vol_inv_sq = vol_inv * vol_inv;
@@ -212,7 +211,7 @@ TwoBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
       for (int m = 0; m < inds1.size(); m++) {
         ind1 = inds1[m];
         ri = env1.rs[ind1];
-        (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+        cutoff_pointer(rcut_vals_1, ri, cut1, cutoff_hyps);
         fi = rcut_vals_1[0];
         fdi = rcut_vals_1[1];
         e1 = env1.environment_species[ind1];
@@ -241,7 +240,7 @@ TwoBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
             yrel2 = env2.yrel[ind2];
             zrel2 = env2.zrel[ind2];
 
-            (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+            cutoff_pointer(rcut_vals_2, rj, cut2, cutoff_hyps);
             fj = rcut_vals_2[0];
             fdj = rcut_vals_2[1];
 
@@ -308,8 +307,7 @@ TwoBodyKernel ::env_struc_partial(const LocalEnvironment &env1,
 
   double cut1 = env1.n_body_cutoffs[0];
   double cut2 = struc1.n_body_cutoffs[0];
-  double rcut_vals_1[2];
-  double rcut_vals_2[2];
+  std::vector<double> rcut_vals_1(2, 0), rcut_vals_2(2, 0);
 
   double vol_inv = 1 / struc1.volume;
 
@@ -321,7 +319,7 @@ TwoBodyKernel ::env_struc_partial(const LocalEnvironment &env1,
   for (int m = 0; m < inds1.size(); m++) {
     ind1 = inds1[m];
     ri = env1.rs[ind1];
-    (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+    cutoff_pointer(rcut_vals_1, ri, cut1, cutoff_hyps);
     fi = rcut_vals_1[0];
     e1 = env1.environment_species[ind1];
 
@@ -341,7 +339,7 @@ TwoBodyKernel ::env_struc_partial(const LocalEnvironment &env1,
         yrel = env_curr.yrel[ind2];
         zrel = env_curr.zrel[ind2];
 
-        (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+        cutoff_pointer(rcut_vals_2, rj, cut2, cutoff_hyps);
         fj = rcut_vals_2[0];
         fdj = rcut_vals_2[1];
 

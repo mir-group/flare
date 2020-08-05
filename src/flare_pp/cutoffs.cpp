@@ -2,7 +2,7 @@
 #include <cmath>
 #define Pi 3.14159265358979323846
 
-void quadratic_cutoff(double *rcut_vals, double r, double rcut,
+void quadratic_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                       std::vector<double> cutoff_hyps) {
 
   if (r > rcut) {
@@ -16,7 +16,7 @@ void quadratic_cutoff(double *rcut_vals, double r, double rcut,
   rcut_vals[1] = 2 * rdiff;
 }
 
-void cos_cutoff(double *rcut_vals, double r, double rcut,
+void cos_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                 std::vector<double> cutoff_hyps) {
 
   // Calculate the cosine cutoff function and its gradient. If r > rcut, the
@@ -34,7 +34,7 @@ void cos_cutoff(double *rcut_vals, double r, double rcut,
   rcut_vals[1] = cutoff_derv;
 }
 
-void hard_cutoff(double *rcut_vals, double r, double rcut,
+void hard_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                  std::vector<double> cutoff_hyps) {
   if (r > rcut) {
     rcut_vals[0] = 0;
