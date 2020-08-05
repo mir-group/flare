@@ -124,13 +124,6 @@ def test_otf(software, example):
 
     otf.run()
 
-    #if not os.path.isdir(outdir):
-    #    os.mkdir(outdir)
-    #for f in os.listdir("./"):
-    #    if f"{casename}_otf_{software}" in f:
-    #        shutil.move(f, outdir)
-    #cleanup(software, f"{casename}_otf_{software}")
-
 
 @pytest.mark.parametrize("software", software_list)
 @pytest.mark.parametrize("per_atom_par", [True, False])
