@@ -33,6 +33,7 @@ LocalEnvironment ::LocalEnvironment(const Structure &structure, int atom,
   this->xrel = xrel;
   this->yrel = yrel;
   this->zrel = zrel;
+  this->n_env_atoms = rs.size();
 }
 
 // n-body

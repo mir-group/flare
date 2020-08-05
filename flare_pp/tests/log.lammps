@@ -1,0 +1,4 @@
+LAMMPS (5 Jun 2019)
+:q!
+ERROR: Unknown command: :q! (../input.cpp:247)
+Last command: :q!

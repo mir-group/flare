@@ -8,7 +8,7 @@
 class LocalEnvironment {
 public:
   std::vector<int> environment_indices, environment_species, neighbor_list;
-  int central_index, central_species, noa, sweep;
+  int central_index, central_species, noa, sweep, n_env_atoms;
   std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
   double cutoff, structure_volume;
   Structure structure;

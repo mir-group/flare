@@ -1,26 +1,15 @@
 LAMMPS (5 Jun 2019)
-# generic lammps input file
-units metal
-atom_style atomic
-dimension  3
-boundary   p p p
-newton off
-read_data tmp.data
+Reading data file ...
   triclinic box = (0 0 0) to (100 100 100) with tilt (0 0 0)
   1 by 1 by 1 MPI processor grid
   reading atoms ...
   2 atoms
   read_data CPU = 0.003148 secs
-
-pair_style flare
-pair_coeff * * Ag_u3.eam
+hello world
+Computing spherical harmonic
+0.282095
+0.261169
 Reading potential file Ag_u3.eam with DATE: 2007-06-11
-
-thermo_style one
-
-dump 1 all custom 1 tmp.dump id type x y z fx fy fz
-dump_modify 1 sort id
-run 0
 WARNING: No fixes defined, atoms won't move (../verlet.cpp:55)
 Neighbor list info ...
   update every 1 steps, delay 10 steps, check yes
@@ -34,6 +23,10 @@ Neighbor list info ...
       pair build: half/bin/newtoff
       stencil: half/bin/3d/newtoff
       bin: standard
+Setting up Verlet run ...
+  Unit style    : metal
+  Current step  : 0
+  Time step     : 0.001
 Per MPI rank memory allocation (min/avg/max) = 4.056 | 4.056 | 4.056 Mbytes
 Step Temp E_pair E_mol TotEng Press 
        0            0  -0.25764029            0  -0.25764029   -1.6013817 

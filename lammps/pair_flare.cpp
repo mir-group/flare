@@ -10,6 +10,11 @@
 #include "neigh_list.h"
 #include "memory.h"
 #include "error.h"
+#include "y_grad.h"
+#include <string>
+#include <iostream>
+#include <vector>
+#include <Eigen/Dense>
 
 using namespace LAMMPS_NS;
 
@@ -479,9 +484,17 @@ void PairFLARE::read_file(char *filename)
   FILE *fptr;
   char line[MAXLINE];
 
-  // check if printing works
-//   if (me==0 && screen) fprintf(screen, "hello world\n");
+//   check if printing works
+  if (me==0 && screen) fprintf(screen, "hello world\n");
 //   fprintf(screen, "hello world\n");
+  if (me==0 && screen){
+      std::cout << "Computing spherical harmonic" << std::endl;
+      std::vector<double> Y(9, 0), Yx(9, 0), Yy(9, 0), Yz(9, 0);
+      double x = 1.0, y = 2.0, z = 3.0, l = 2;
+      get_Y(Y, Yx, Yy, Yz, x, y, z, l);
+      std::cout << Y[0] << std::endl;
+      std::cout << Y[1] << std::endl;
+  }
 
   if (me == 0) {
     fptr = force->open_potential(filename);
@@ -500,6 +513,10 @@ void PairFLARE::read_file(char *filename)
     fgets(line,MAXLINE,fptr);
     nwords = sscanf(line,"%d %lg %d %lg %lg",
            &file->nrho,&file->drho,&file->nr,&file->dr,&file->cut);
+    
+    // fprintf(screen, "hello world!\n");
+    // fprintf(screen, "%d", nwords);
+
   }
 
   MPI_Bcast(&nwords,1,MPI_INT,0,world);
