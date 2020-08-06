@@ -67,6 +67,64 @@ protected:
   }
 };
 
+TEST(LammpsCheck, LammpsCheck){
+  // Prints single bond values and derivatives for comparison with the
+  // LAMMPS implementation.
+
+  double rcut = 5;
+  int lmax = 3;
+  int N = 5;
+  int nos = 2;
+
+  Eigen::MatrixXd cell{3, 3};
+  std::vector<int> species{0, 0, 1, 0};
+  cell << 100, 0, 0, 0, 100, 0, 0, 0, 100;
+
+  int noa = 4;
+  Eigen::MatrixXd positions{noa, 3};
+  positions << 0, 0, 0, 0.13, 0.76, 0.31, -0.39, 0.32, 0.18, 0.76, -0.52, 0.22;
+
+  Structure struc = Structure(cell, species, positions);
+  LocalEnvironment env = LocalEnvironment(struc, 0, rcut);
+  std::vector<double> many_body_cutoffs{rcut};
+  env.many_body_cutoffs = many_body_cutoffs;
+  env.compute_indices();
+
+  Eigen::VectorXd single_bond_vals;
+  Eigen::MatrixXd force_dervs, stress_dervs;
+
+  int number_of_harmonics = (lmax + 1) * (lmax + 1);
+  int no_descriptors = nos * N * number_of_harmonics;
+
+  single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
+  force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
+  stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
+
+  std::vector<double> cutoff_hyps;
+  std::function<void(std::vector<double> &, double, double,
+                     std::vector<double>)> cutoff_function = quadratic_cutoff;
+
+  std::vector<double> radial_hyps = {0, rcut};
+  std::function<void(std::vector<double> &, std::vector<double> &, double, int,
+                     std::vector<double>)> basis_function = chebyshev;
+
+  single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
+                      basis_function, cutoff_function, env, 0, N, lmax,
+                      radial_hyps, cutoff_hyps);
+
+  std::cout << "Positions:" << std::endl;
+  std::cout << positions << std::endl;
+
+  std::cout << "Cell:" << std::endl;
+  std::cout << cell << std::endl;
+
+  std::cout << "Single bond vals:" << std::endl;
+  std::cout << single_bond_vals << std::endl;
+
+  std::cout << "Force derivatives:" << std::endl;
+  std::cout << force_dervs.row(0) << std::endl;
+}
+
 TEST_F(BondEnv, CentTest) {
   single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
                       basis_function, cutoff_function, env1, 0, N, lmax,

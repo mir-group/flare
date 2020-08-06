@@ -173,6 +173,11 @@ void PairFLARE::compute(int eflag, int vflag)
     jlist = firstneigh[i];
     jnum = numneigh[i];
 
+    std::cout << "Printing i" << std::endl;
+    std::cout << i << std::endl;
+    std::cout << "Printing itype" << std::endl;
+    std::cout << itype << std::endl;
+
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       j &= NEIGHMASK;
@@ -260,17 +265,6 @@ void PairFLARE::compute(int eflag, int vflag)
         m = MIN(m,nr-1);
         p -= m;
         p = MIN(p,1.0);
-
-        // rhoip = derivative of (density at atom j due to atom i)
-        // rhojp = derivative of (density at atom i due to atom j)
-        // phi = pair potential energy
-        // phip = phi'
-        // z2 = phi * r
-        // z2p = (phi * r)' = (phi' r) + phi
-        // psip needs both fp[i] and fp[j] terms since r_ij appears in two
-        //   terms of embed eng: Fi(sum rho_ij) and Fj(sum rho_ji)
-        //   hence embed' = Fi(sum rho_ij) rhojp + Fj(sum rho_ji) rhoip
-        // scale factor can be applied by thermodynamic integration
 
         coeff = rhor_spline[type2rhor[itype][jtype]][m];
         rhoip = (coeff[0]*p + coeff[1])*p + coeff[2];

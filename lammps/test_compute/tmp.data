@@ -1,7 +1,7 @@
 Header of the LAMMPS data file
 
-2 atoms
-1 atom types
+4 atoms
+4 atom types
 
 0.0 100.0  xlo xhi
 0.0 100.0  ylo yhi
@@ -11,8 +11,13 @@ Header of the LAMMPS data file
 Masses
 
 1 108
+1 108
+2 108
+1 108
 
 Atoms
 
 1 1 0.0 0.0 0.0
-2 1 4.0 0.0 0.0
+2 1 0.13 0.76 0.31
+3 2 -0.39 0.32 0.18
+4 1 0.76 -0.52 0.22
