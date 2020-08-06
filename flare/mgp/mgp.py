@@ -43,7 +43,7 @@ class MappedGaussianProcess:
         lmp_file_name (str): LAMMPS coefficient file name
         n_cpus (int): Default None. Set to the number of cores needed for
             parallelization. Used in the construction of the map.
-        n_sample (int): Default 100. The batch size for building map. Not used now.
+        n_sample (int): Default 10. The batch size for building map. Not used now.
 
     Examples:
 
@@ -99,7 +99,7 @@ class MappedGaussianProcess:
         container_only: bool = True,
         lmp_file_name: str = "lmp.mgp",
         n_cpus: int = None,
-        n_sample: int = 100,
+        n_sample: int = 10,
     ):
 
         # load all arguments as attributes
@@ -234,7 +234,7 @@ class MappedGaussianProcess:
         xbodies = ["twobody", "threebody"]
         for xb in xbodies:
             if xb in self.maps:
-                num = len(self.maps[xb].maps)
+                num = self.maps[xb].num_lmp_maps #len(self.maps[xb].maps)
             else:
                 num = 0
             header += f"{num} "
