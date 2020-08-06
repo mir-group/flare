@@ -217,6 +217,9 @@ def test_load_checkpoint(software):
             "variable to point to the executable."
         )
 
+    if software == "cp2k":
+        pytest.skip()
+
     example = 1
     casename = name_list[example]
     log_name = f"{casename}_otf_{software}"
@@ -237,6 +240,9 @@ def test_otf_parser_from_checkpt(software):
             f" and set the {cmd[software]} env. "
             "variable to point to the executable."
         )
+
+    if software == "cp2k":
+        pytest.skip()
 
     example = 1
     casename = name_list[example]
