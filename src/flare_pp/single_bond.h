@@ -33,9 +33,12 @@ void single_bond_sum_env(
 void from_lammps(double **x, int atom_index, int *type, int inum,
     int *ilist, int *numneigh, int **firstneigh,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
-                       int, std::vector<double>)> basis_function,
+        int, std::vector<double>)> basis_function,
     void (*cutoff_function)(double *, double, double, std::vector<double>),
-    double cutoff, int N, int lmax, Eigen::VectorXd &single_bond_vals,
+    double cutoff, int n_species, int N, int lmax,
+    const std::vector<double> &radial_hyps,
+    const std::vector<double> &cutoff_hyps,
+    Eigen::VectorXd &single_bond_vals,
     Eigen::MatrixXd &environment_force_dervs,
     Eigen::MatrixXd &central_force_dervs);
 
