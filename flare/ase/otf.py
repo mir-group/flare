@@ -1,5 +1,5 @@
 """
-:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
+:class:`ASE_OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
 It needs to be used adjointly with ASE MD engine. 
 """
 import os
@@ -59,7 +59,7 @@ class ASE_OTF(OTF):
             currently in experiment.
 
     The following arguments are for on-the-fly training, the user can also
-    refer to :class:`OTF`
+    refer to :class:`flare.otf.OTF`
 
     Args:
         prev_pos_init ([type], optional): Previous positions. Defaults
