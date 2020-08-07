@@ -107,3 +107,65 @@ void single_bond(double **x, int atom_index, int *type, int inum,
         }
     }
 }
+
+void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
+                   Eigen::MatrixXd &B2_cent_dervs,
+                   const Eigen::VectorXd &single_bond_vals,
+                   const Eigen::MatrixXd &single_bond_env_dervs,
+                   const Eigen::MatrixXd &single_bond_cent_dervs,
+                   int n_species, int N, int lmax){
+
+  int env_derv_size = single_bond_env_dervs.rows();
+  int neigh_size = env_derv_size / 3;
+  int n_radial = n_species * N;
+  int n_harmonics = (lmax + 1) * (lmax + 1);
+  int n_descriptors = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
+
+  int n1_l, n2_l;
+  int counter;
+  int n1_count;
+  int n2_count;
+
+  // Zero the B2 vectors and matrices.  
+  B2_vals = Eigen::VectorXd::Zero(n_descriptors);
+  B2_env_dervs = Eigen::MatrixXd::Zero(env_derv_size, n_descriptors);
+  B2_cent_dervs = Eigen::MatrixXd::Zero(3, n_descriptors);
+
+  for (int n1 = n_radial - 1; n1 >= 0; n1--) {
+    for (int n2 = n1; n2 < n_radial; n2++) {
+      for (int l = 0; l < (lmax + 1); l++) {
+        for (int m = 0; m < (2 * l + 1); m++) {
+          n1_l = n1 * n_harmonics + (l * l + m);
+          n2_l = n2 * n_harmonics + (l * l + m);
+
+          n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
+          n2_count = n2 - n1;
+          counter = l + (n1_count + n2_count) * (lmax + 1);
+
+          // Store B2 value.
+          B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
+
+          // Store environment force derivatives.
+          for (int atom_index = 0; atom_index < neigh_size; atom_index++) {
+            for (int comp = 0; comp < 3; comp++) {
+              B2_env_dervs(atom_index * 3 + comp, counter) +=
+                  single_bond_vals(n1_l) *
+                      single_bond_env_dervs(atom_index * 3 + comp, n2_l) +
+                  single_bond_env_dervs(atom_index * 3 + comp, n1_l) *
+                      single_bond_vals(n2_l);
+            }
+          }
+
+          // Store central force derivatives.
+          for (int comp = 0; comp < 3; comp++){
+              B2_cent_dervs(comp, counter) +=
+                single_bond_vals(n1_l) *
+                    single_bond_cent_dervs(comp, n2_l) +
+                single_bond_cent_dervs(comp, n1_l) *
+                    single_bond_vals(n2_l);
+          }
+        }
+      }
+    }
+  }
+}
