@@ -9,8 +9,8 @@ positions = np.array([[0, 0, 0],
                       [0.13, 0.76, 0.31],
                       [-0.39, 0.32, 0.18],
                       [0.76, -0.52, 0.22]])
-atom_types = [1, 1, 2, 1]
-atom_masses = [108, 108, 108, 108]
+atom_types = [1, 2]
+atom_masses = [108, 108]
 atom_species = [1, 1, 2, 1]
 structure = struc.Structure(cell, atom_species, positions)
 
