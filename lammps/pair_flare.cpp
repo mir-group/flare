@@ -11,6 +11,9 @@
 #include "memory.h"
 #include "error.h"
 #include "y_grad.h"
+#include "cutoffs.h"
+#include "radial.h"
+#include "lammps_descriptor.h"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -160,6 +163,40 @@ void PairFLARE::compute(int eflag, int vflag)
   if (newton_pair) {
     for (i = 0; i < nall; i++) rho[i] = 0.0;
   } else for (i = 0; i < nlocal; i++) rho[i] = 0.0;
+
+  // Test the single bond function.
+  std::cout << "Testing single bond function." << std::endl;
+  int atom_index = 0;
+  std::function<void(std::vector<double> &, std::vector<double> &, double,
+        int, std::vector<double>)> basis_function = chebyshev;
+  std::function<void(std::vector<double> &, double, double,
+        std::vector<double>)> cutoff_function = quadratic_cutoff;
+  double cutoff = 5.0;
+  int n_species = 2;
+  int N = 5;
+  int lmax = 3;
+  std::vector<double> radial_hyps = {0, cutoff};
+  std::vector<double> cutoff_hyps;
+  Eigen::VectorXd single_bond_vals;
+  Eigen::MatrixXd environment_force_dervs;
+  Eigen::MatrixXd central_force_dervs;
+
+  single_bond(x, atom_index, type, inum, ilist, numneigh, firstneigh,
+    basis_function, cutoff_function, cutoff, n_species, N, lmax,
+    radial_hyps, cutoff_hyps, single_bond_vals, environment_force_dervs,
+    central_force_dervs);
+
+  std::cout << "Single bond values:" << std::endl;
+  std::cout << single_bond_vals << std::endl;
+
+  std::cout << "Environment derivatives rows:" << std::endl;
+  std::cout << environment_force_dervs.rows() << std::endl;
+
+  std::cout << "Environment derivatives columns:" << std::endl;
+  std::cout << environment_force_dervs.cols() << std::endl;
+
+  std::cout << "Central derivatives:" << std::endl;
+  std::cout << central_force_dervs << std::endl;
 
   // rho = density at each atom
   // loop over neighbors of my atoms
