@@ -12,6 +12,7 @@ PairStyle(flare,PairFLARE)
 
 #include <cstdio>
 #include "pair.h"
+#include <vector>
 
 namespace LAMMPS_NS {
 
@@ -33,6 +34,8 @@ class PairFLARE : public Pair {
     int, std::vector<double>)> basis_function;
   std::function<void(std::vector<double> &, double, double,
     std::vector<double>)> cutoff_function;
+
+  std::vector<double> radial_hyps, cutoff_hyps;
 
   double cutoff;
   double *beta;

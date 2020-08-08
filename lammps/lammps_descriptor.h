@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-void single_bond(double **x, int atom_index, int *type, int inum,
+void single_bond(double **x, int atom_index, int *type,
     int *ilist, int *numneigh, int **firstneigh,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
         int, std::vector<double>)> basis_function,

@@ -4,7 +4,7 @@ Reading data file ...
   1 by 1 by 2 MPI processor grid
   reading atoms ...
   4 atoms
-  read_data CPU = 0.001221 secs
+  read_data CPU = 0.004895 secs
 Reading potential file beta.txt with DATE: Sun
 WARNING: No fixes defined, atoms won't move (../verlet.cpp:52)
 Neighbor list info ...
@@ -26,9 +26,9 @@ Setting up Verlet run ...
 Per MPI rank memory allocation (min/avg/max) = 4.286 | 4.348 | 4.411 Mbytes
 Step Temp E_pair E_mol TotEng Press 
        0            0            0            0            0            0 
-Loop time of 3.5e-06 on 2 procs for 0 steps with 4 atoms
+Loop time of 2e-06 on 2 procs for 0 steps with 4 atoms
 
-71.4% CPU use with 2 MPI tasks x no OpenMP threads
+100.0% CPU use with 2 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -38,7 +38,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 3.5e-06    |            |       |100.00
+Other   |            | 2e-06      |            |       |100.00
 
 Nlocal:    2 ave 4 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 1

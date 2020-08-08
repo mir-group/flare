@@ -76,64 +76,16 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-//   // Check that beta was parsed correctly.
-//   std::cout << "Processor:" << std::endl;
-//   std::cout << comm->me << std::endl;
-//   std::cout << beta[0] << std::endl;
-//   std::cout << beta[7139] << std::endl;
-
-//   // Test the single bond function.
-//   std::cout << "Testing single bond function." << std::endl;
-//   int atom_index = 0;
-//   std::function<void(std::vector<double> &, std::vector<double> &, double,
-//         int, std::vector<double>)> basis_function = chebyshev;
-//   std::function<void(std::vector<double> &, double, double,
-//         std::vector<double>)> cutoff_function = quadratic_cutoff;
-//   double cutoff = 5.0;
-//   int n_species = 2;
-//   int N = 5;
-//   int lmax = 3;
-//   std::vector<double> radial_hyps = {0, cutoff};
-//   std::vector<double> cutoff_hyps;
-//   Eigen::VectorXd single_bond_vals;
-//   Eigen::MatrixXd environment_force_dervs;
-//   Eigen::MatrixXd central_force_dervs;
-
-//   single_bond(x, atom_index, type, inum, ilist, numneigh, firstneigh,
-//     basis_function, cutoff_function, cutoff, n_species, N, lmax,
-//     radial_hyps, cutoff_hyps, single_bond_vals, environment_force_dervs,
-//     central_force_dervs);
-
-//   std::cout << "Single bond values:" << std::endl;
-//   std::cout << single_bond_vals << std::endl;
-
-//   std::cout << "Environment derivatives rows:" << std::endl;
-//   std::cout << environment_force_dervs.rows() << std::endl;
-
-//   std::cout << "Environment derivatives columns:" << std::endl;
-//   std::cout << environment_force_dervs.cols() << std::endl;
-
-//   std::cout << "Central derivatives:" << std::endl;
-//   std::cout << central_force_dervs << std::endl;
+  Eigen::VectorXd single_bond_vals;
+  Eigen::MatrixXd environment_force_dervs;
+  Eigen::MatrixXd central_force_dervs;
 
   for (ii = 0; ii < inum; ii++) {
-    i = ilist[ii];
-    xtmp = x[i][0];
-    ytmp = x[i][1];
-    ztmp = x[i][2];
-    itype = type[i];
-    jlist = firstneigh[i];
-    jnum = numneigh[i];
-
-    for (jj = 0; jj < jnum; jj++) {
-      j = jlist[jj];
-      j &= NEIGHMASK;
-
-      delx = xtmp - x[j][0];
-      dely = ytmp - x[j][1];
-      delz = ztmp - x[j][2];
-      rsq = delx*delx + dely*dely + delz*delz;
-    }
+    // Compute covariant descriptors.
+    single_bond(x, ii, type, ilist, numneigh, firstneigh,
+        basis_function, cutoff_function, cutoff, n_species, n_max, l_max,
+        radial_hyps, cutoff_hyps, single_bond_vals, environment_force_dervs,
+        central_force_dervs);
   }
 }
 
@@ -184,10 +136,7 @@ void PairFLARE::coeff(int narg, char **arg)
   if (strcmp(arg[0],"*") != 0 || strcmp(arg[1],"*") != 0)
     error->all(FLERR,"Incorrect args for pair coefficients");
 
-  // TODO: Parse the beta file. Set n_species, n_max, l_max, radial basis
-  //    set, cutoff function, and beta array.
   read_file(arg[2]);
-
 }
 
 /* ----------------------------------------------------------------------
@@ -264,12 +213,15 @@ void PairFLARE::read_file(char *filename)
     MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
 
     // Set the radial basis.
-    if (!strcmp(radial_string, "chebyshev")) basis_function = chebyshev;
+    if (!strcmp(radial_string, "chebyshev")){
+        basis_function = chebyshev;
+        radial_hyps = std::vector<double> {0, cutoff};
+    }
 
     // Set the cutoff function.
-    if (!strcmp(cutoff_string, "quadratic_cutoff")) cutoff_function =
+    if (!strcmp(cutoff_string, "quadratic")) cutoff_function =
         quadratic_cutoff;
-    else if (!strcmp(cutoff_string, "cos_cutoff")) cutoff_function =
+    else if (!strcmp(cutoff_string, "cosine")) cutoff_function =
         cos_cutoff;
 
     // Parse the beta vectors.
