@@ -3,7 +3,7 @@ units metal
 atom_style atomic
 dimension  3
 boundary   p p p
-newton off
+newton on
 read_data tmp.data
 
 pair_style flare

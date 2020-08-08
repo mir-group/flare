@@ -76,11 +76,11 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  // Check that beta was parsed correctly.
-  std::cout << "Processor:" << std::endl;
-  std::cout << comm->me << std::endl;
-  std::cout << beta[0] << std::endl;
-  std::cout << beta[7139] << std::endl;
+//   // Check that beta was parsed correctly.
+//   std::cout << "Processor:" << std::endl;
+//   std::cout << comm->me << std::endl;
+//   std::cout << beta[0] << std::endl;
+//   std::cout << beta[7139] << std::endl;
 
 //   // Test the single bond function.
 //   std::cout << "Testing single bond function." << std::endl;
@@ -196,8 +196,11 @@ void PairFLARE::coeff(int narg, char **arg)
 
 void PairFLARE::init_style()
 {
-  // Need a full neighbor list. Default is a half-neighbor list.
-  // See tersoff.cpp for a potential that requires a full neighbor list and newton on.
+  // Require newton on.
+  if (force->newton_pair == 0)
+    error->all(FLERR,"Pair style requires newton pair on");
+
+  // Request a full neighbor list.
   int irequest = neighbor->request(this,instance_me);
   neighbor->requests[irequest]->half = 0;
   neighbor->requests[irequest]->full = 1;
