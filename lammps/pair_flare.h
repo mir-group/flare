@@ -11,7 +11,6 @@ PairStyle(flare,PairFLARE)
 #define LMP_PAIR_FLARE_H
 
 #include <cstdio>
-#include <string>
 #include "pair.h"
 
 namespace LAMMPS_NS {
@@ -28,8 +27,13 @@ class PairFLARE : public Pair {
   double init_one(int, int);
 
  protected:
-  int n_species, n_max, l_max;
-  std::string radial_basis, cutoff_function;
+  int n_species, n_max, l_max, beta_size;
+
+  std::function<void(std::vector<double> &, std::vector<double> &, double,
+    int, std::vector<double>)> basis_function;
+  std::function<void(std::vector<double> &, double, double,
+    std::vector<double>)> cutoff_function;
+
   double cutoff;
   double *beta;
 

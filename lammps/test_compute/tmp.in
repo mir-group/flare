@@ -7,7 +7,7 @@ newton off
 read_data tmp.data
 
 pair_style flare
-pair_coeff * * Ag_u3.eam
+pair_coeff * * beta.txt
 
 thermo_style one
 

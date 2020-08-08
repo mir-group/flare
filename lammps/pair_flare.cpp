@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <string>
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
@@ -77,39 +76,45 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  // Test the single bond function.
-  std::cout << "Testing single bond function." << std::endl;
-  int atom_index = 0;
-  std::function<void(std::vector<double> &, std::vector<double> &, double,
-        int, std::vector<double>)> basis_function = chebyshev;
-  std::function<void(std::vector<double> &, double, double,
-        std::vector<double>)> cutoff_function = quadratic_cutoff;
-  double cutoff = 5.0;
-  int n_species = 2;
-  int N = 5;
-  int lmax = 3;
-  std::vector<double> radial_hyps = {0, cutoff};
-  std::vector<double> cutoff_hyps;
-  Eigen::VectorXd single_bond_vals;
-  Eigen::MatrixXd environment_force_dervs;
-  Eigen::MatrixXd central_force_dervs;
+  // Check that beta was parsed correctly.
+  std::cout << "Processor:" << std::endl;
+  std::cout << comm->me << std::endl;
+  std::cout << beta[0] << std::endl;
+  std::cout << beta[7139] << std::endl;
 
-  single_bond(x, atom_index, type, inum, ilist, numneigh, firstneigh,
-    basis_function, cutoff_function, cutoff, n_species, N, lmax,
-    radial_hyps, cutoff_hyps, single_bond_vals, environment_force_dervs,
-    central_force_dervs);
+//   // Test the single bond function.
+//   std::cout << "Testing single bond function." << std::endl;
+//   int atom_index = 0;
+//   std::function<void(std::vector<double> &, std::vector<double> &, double,
+//         int, std::vector<double>)> basis_function = chebyshev;
+//   std::function<void(std::vector<double> &, double, double,
+//         std::vector<double>)> cutoff_function = quadratic_cutoff;
+//   double cutoff = 5.0;
+//   int n_species = 2;
+//   int N = 5;
+//   int lmax = 3;
+//   std::vector<double> radial_hyps = {0, cutoff};
+//   std::vector<double> cutoff_hyps;
+//   Eigen::VectorXd single_bond_vals;
+//   Eigen::MatrixXd environment_force_dervs;
+//   Eigen::MatrixXd central_force_dervs;
 
-  std::cout << "Single bond values:" << std::endl;
-  std::cout << single_bond_vals << std::endl;
+//   single_bond(x, atom_index, type, inum, ilist, numneigh, firstneigh,
+//     basis_function, cutoff_function, cutoff, n_species, N, lmax,
+//     radial_hyps, cutoff_hyps, single_bond_vals, environment_force_dervs,
+//     central_force_dervs);
 
-  std::cout << "Environment derivatives rows:" << std::endl;
-  std::cout << environment_force_dervs.rows() << std::endl;
+//   std::cout << "Single bond values:" << std::endl;
+//   std::cout << single_bond_vals << std::endl;
 
-  std::cout << "Environment derivatives columns:" << std::endl;
-  std::cout << environment_force_dervs.cols() << std::endl;
+//   std::cout << "Environment derivatives rows:" << std::endl;
+//   std::cout << environment_force_dervs.rows() << std::endl;
 
-  std::cout << "Central derivatives:" << std::endl;
-  std::cout << central_force_dervs << std::endl;
+//   std::cout << "Environment derivatives columns:" << std::endl;
+//   std::cout << environment_force_dervs.cols() << std::endl;
+
+//   std::cout << "Central derivatives:" << std::endl;
+//   std::cout << central_force_dervs << std::endl;
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
@@ -119,11 +124,6 @@ void PairFLARE::compute(int eflag, int vflag)
     itype = type[i];
     jlist = firstneigh[i];
     jnum = numneigh[i];
-
-    std::cout << "Printing i" << std::endl;
-    std::cout << i << std::endl;
-    std::cout << "Printing itype" << std::endl;
-    std::cout << itype << std::endl;
 
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
@@ -186,6 +186,7 @@ void PairFLARE::coeff(int narg, char **arg)
 
   // TODO: Parse the beta file. Set n_species, n_max, l_max, radial basis
   //    set, cutoff function, and beta array.
+  read_file(arg[2]);
 
 }
 
@@ -210,9 +211,7 @@ double PairFLARE::init_one(int i, int j)
 {
   // init_one is called for each i, j pair in pair.cpp after calling init_style.
 
-    // TODO: Set cutoff based on beta file.
-    return 5.0;
-//   return cutoff;
+  return cutoff;
 }
 
 /* ----------------------------------------------------------------------
@@ -221,7 +220,60 @@ double PairFLARE::init_one(int i, int j)
 
 void PairFLARE::read_file(char *filename)
 {
-  // TODO: Implement based on pair_eam.cpp.
+    int me = comm->me;
+    char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+    int radial_string_length, cutoff_string_length;
+    FILE *fptr;
+
+    // Check that the potential file can be opened.
+    if (me == 0) {
+        fptr = force->open_potential(filename);
+        if (fptr == NULL) {
+        char str[128];
+        snprintf(str,128,"Cannot open EAM potential file %s",filename);
+        error->one(FLERR,str);
+        }
+    }
+
+    int tmp,nwords;
+    if (me == 0) {
+        fgets(line, MAXLINE, fptr);
+        fgets(line, MAXLINE, fptr);
+        sscanf(line, "%s", radial_string);  // Radial basis set
+        radial_string_length = strlen(radial_string);
+        fgets(line, MAXLINE, fptr);
+        sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
+        fgets(line, MAXLINE, fptr);
+        sscanf(line, "%s", cutoff_string);  // Cutoff function
+        cutoff_string_length = strlen(cutoff_string);
+        fgets(line, MAXLINE, fptr);
+        sscanf(line, "%lg", &cutoff);  // Cutoff
+    }
+
+    MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
+    MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
+    MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
+    MPI_Bcast(&beta_size, 1, MPI_INT, 0, world);
+    MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
+    MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
+    MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
+    MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
+    MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+    // Set the radial basis.
+    if (!strcmp(radial_string, "chebyshev")) basis_function = chebyshev;
+
+    // Set the cutoff function.
+    if (!strcmp(cutoff_string, "quadratic_cutoff")) cutoff_function =
+        quadratic_cutoff;
+    else if (!strcmp(cutoff_string, "cos_cutoff")) cutoff_function =
+        cos_cutoff;
+
+    // Parse the beta vectors.
+    memory->create(beta, beta_size * n_species, "pair:beta");
+    if (me == 0) grab(fptr, beta_size * n_species, beta);
+    MPI_Bcast(beta, beta_size * n_species, MPI_DOUBLE, 0, world);
+
 }
 
 
