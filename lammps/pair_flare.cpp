@@ -94,7 +94,7 @@ void PairFLARE::compute(int eflag, int vflag)
         single_bond_cent_dervs, n_species, n_max, l_max);
 
     // Compute local energy and partial forces.
-    
+
   }
 }
 
@@ -218,6 +218,15 @@ void PairFLARE::read_file(char *filename)
     MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
     MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
     MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+    // Set number of descriptors.
+    int n_radial = n_max * n_species;
+    n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+
+    // Check the relationship between the power spectrum and beta.
+    int beta_check = n_descriptors * (n_descriptors + 1) / 2;
+    if (beta_check != beta_size)
+        error->all(FLERR,"Beta size doesn't match the number of descriptors.");
 
     // Set the radial basis.
     if (!strcmp(radial_string, "chebyshev")){

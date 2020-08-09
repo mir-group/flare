@@ -10,7 +10,7 @@ read_data tmp.data
   1 by 1 by 2 MPI processor grid
   reading atoms ...
   4 atoms
-  read_data CPU = 0.005968 secs
+  read_data CPU = 0.002537 secs
 
 pair_style flare
 pair_coeff * * beta.txt
@@ -37,9 +37,9 @@ Neighbor list info ...
 Per MPI rank memory allocation (min/avg/max) = 4.286 | 4.348 | 4.411 Mbytes
 Step Temp E_pair E_mol TotEng Press 
        0            0            0            0            0            0 
-Loop time of 4e-06 on 2 procs for 0 steps with 4 atoms
+Loop time of 2e-06 on 2 procs for 0 steps with 4 atoms
 
-87.5% CPU use with 2 MPI tasks x no OpenMP threads
+125.0% CPU use with 2 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -49,7 +49,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 4e-06      |            |       |100.00
+Other   |            | 2e-06      |            |       |100.00
 
 Nlocal:    2 ave 4 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 1
