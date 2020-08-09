@@ -76,7 +76,8 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  Eigen::VectorXd single_bond_vals, B2_vals;
+  double B2_norm_squared;
+  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, B2_cent_dot;
   Eigen::MatrixXd single_bond_env_dervs, single_bond_cent_dervs,
     B2_env_dervs, B2_cent_dervs;
 
@@ -88,16 +89,12 @@ void PairFLARE::compute(int eflag, int vflag)
         single_bond_cent_dervs);
 
     // Compute invariant descriptors.
-    B2_descriptor(B2_vals, B2_env_dervs, B2_cent_dervs, single_bond_vals,
-        single_bond_env_dervs, single_bond_cent_dervs, n_species, n_max,
-        l_max);
+    B2_descriptor(B2_vals, B2_env_dervs, B2_cent_dervs, B2_norm_squared,
+        B2_env_dot, B2_cent_dot, single_bond_vals, single_bond_env_dervs,
+        single_bond_cent_dervs, n_species, n_max, l_max);
+
+    // Compute local energy and partial forces.
     
-    if ((comm->me == 0) && (ii == 0)){
-        std::cout << "B2 vals size:" << std::endl;
-        std::cout << B2_vals.size() << std::endl;
-        std::cout << "B2 vals:" << std::endl;
-        std::cout << B2_vals << std::endl;
-    }
   }
 }
 

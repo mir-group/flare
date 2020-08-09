@@ -4,7 +4,7 @@ Reading data file ...
   1 by 1 by 2 MPI processor grid
   reading atoms ...
   4 atoms
-  read_data CPU = 0.001289 secs
+  read_data CPU = 0.005968 secs
 Reading potential file beta.txt with DATE: Sun
 WARNING: No fixes defined, atoms won't move (../verlet.cpp:52)
 Neighbor list info ...
@@ -23,98 +23,12 @@ Setting up Verlet run ...
   Unit style    : metal
   Current step  : 0
   Time step     : 0.001
-B2 vals size:
-84B2 vals:
-   0.271613
-   0.289311
-   0.425299
-    1.30631
-  0.0482548
-  0.0513355
-   0.075446
-   0.232007
-  -0.254394
-  -0.271015
-  -0.398418
-   -1.22355
-   0.142894
- -0.0561917
-   0.180521
-  -0.303085
-  0.0153077
- -0.0060196
-  0.0193385
- -0.0324683
-  -0.139614
-   0.054902
-  -0.176378
-   0.296129
- 0.00857295
- 0.00917941
-  0.0135087
-  0.0412853
- -0.0451957
- -0.0480391
- -0.0705885
-  -0.217251
-  0.0253866
- -0.0134373
-  0.0344607
- -0.0526786
- 0.00271957
--0.00143949
- 0.00369164
--0.00564325
- -0.0248039
-  0.0131289
- -0.0336698
-  0.0514695
-   0.238267
-   0.253912
-   0.373298
-    1.14607
-  -0.133836
-   0.050173
-  -0.167378
-   0.284701
- -0.0143373
- 0.00537484
- -0.0179305
-  0.0304989
-   0.130764
- -0.0490214
-   0.163536
-  -0.278167
-  0.0751758
-   0.225528
-   0.375879
-   0.526231
- 0.00805329
-  0.0241599
-  0.0402665
-  0.0563731
- -0.0734504
-  -0.220351
-  -0.367252
-  -0.514153
-0.000862718
- 0.00258815
- 0.00431359
- 0.00603903
--0.00786846
- -0.0236054
- -0.0393423
- -0.0550792
-  0.0717646
-   0.215294
-   0.358823
-   0.502352
 Per MPI rank memory allocation (min/avg/max) = 4.286 | 4.348 | 4.411 Mbytes
 Step Temp E_pair E_mol TotEng Press 
        0            0            0            0            0            0 
-Loop time of 2e-06 on 2 procs for 0 steps with 4 atoms
+Loop time of 4e-06 on 2 procs for 0 steps with 4 atoms
 
-75.0% CPU use with 2 MPI tasks x no OpenMP threads
+87.5% CPU use with 2 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -124,7 +38,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 2e-06      |            |       |100.00
+Other   |            | 4e-06      |            |       |100.00
 
 Nlocal:    2 ave 4 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 1

@@ -47,8 +47,8 @@ void single_bond(double **x, int atom_index, int *type,
     int n_radial = n_species * N;
     int n_bond = n_radial * n_harmonics;
     single_bond_vals = Eigen::VectorXd::Zero(n_bond);
-    environment_force_dervs = Eigen::MatrixXd::Zero(jnum * 3, n_bond);
-    central_force_dervs = Eigen::MatrixXd::Zero(3, n_bond);
+    single_bond_env_dervs = Eigen::MatrixXd::Zero(jnum * 3, n_bond);
+    single_bond_cent_dervs = Eigen::MatrixXd::Zero(3, n_bond);
 
     // Loop over neighbors.
     for (int jj = 0; jj < jnum; jj++) {
@@ -91,15 +91,15 @@ void single_bond(double **x, int atom_index, int *type,
                 // Update single bond basis arrays.
                 single_bond_vals(descriptor_counter) += bond;
 
-                environment_force_dervs(jj * 3, descriptor_counter) += bond_x;
-                environment_force_dervs(jj * 3 + 1, descriptor_counter) +=
+                single_bond_env_dervs(jj * 3, descriptor_counter) += bond_x;
+                single_bond_env_dervs(jj * 3 + 1, descriptor_counter) +=
                     bond_y;
-                environment_force_dervs(jj * 3 + 2, descriptor_counter) +=
+                single_bond_env_dervs(jj * 3 + 2, descriptor_counter) +=
                     bond_z;
 
-                central_force_dervs(0, descriptor_counter) -= bond_x;
-                central_force_dervs(1, descriptor_counter) -= bond_y;
-                central_force_dervs(2, descriptor_counter) -= bond_z;
+                single_bond_cent_dervs(0, descriptor_counter) -= bond_x;
+                single_bond_cent_dervs(1, descriptor_counter) -= bond_y;
+                single_bond_cent_dervs(2, descriptor_counter) -= bond_z;
 
                 descriptor_counter++;
                 }  
@@ -109,7 +109,8 @@ void single_bond(double **x, int atom_index, int *type,
 }
 
 void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
-                   Eigen::MatrixXd &B2_cent_dervs,
+                   Eigen::MatrixXd &B2_cent_dervs, double &norm_squared,
+                   Eigen::VectorXd &B2_env_dot,  Eigen::VectorXd &B2_cent_dot,
                    const Eigen::VectorXd &single_bond_vals,
                    const Eigen::MatrixXd &single_bond_env_dervs,
                    const Eigen::MatrixXd &single_bond_cent_dervs,
@@ -121,26 +122,28 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   int n_harmonics = (lmax + 1) * (lmax + 1);
   int n_descriptors = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
 
-  int n1_l, n2_l;
-  int counter;
-  int n1_count;
-  int n2_count;
+  int n1_l, n2_l, counter, n1_count, n2_count;
 
   // Zero the B2 vectors and matrices.  
   B2_vals = Eigen::VectorXd::Zero(n_descriptors);
   B2_env_dervs = Eigen::MatrixXd::Zero(env_derv_size, n_descriptors);
   B2_cent_dervs = Eigen::MatrixXd::Zero(3, n_descriptors);
+  B2_env_dot = Eigen::VectorXd::Zero(env_derv_size);
+  B2_cent_dot = Eigen::VectorXd::Zero(3);
 
+  // Compute the descriptor.
   for (int n1 = n_radial - 1; n1 >= 0; n1--) {
+    n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
+
     for (int n2 = n1; n2 < n_radial; n2++) {
+      n2_count = n2 - n1;
+
       for (int l = 0; l < (lmax + 1); l++) {
+        counter = l + (n1_count + n2_count) * (lmax + 1);
+
         for (int m = 0; m < (2 * l + 1); m++) {
           n1_l = n1 * n_harmonics + (l * l + m);
           n2_l = n2 * n_harmonics + (l * l + m);
-
-          n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
-          n2_count = n2 - n1;
-          counter = l + (n1_count + n2_count) * (lmax + 1);
 
           // Store B2 value.
           B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
@@ -168,4 +171,9 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
       }
     }
   }
+
+  // Compute descriptor norm and dot products.
+  norm_squared = B2_vals.dot(B2_vals);
+  B2_env_dot = B2_env_dervs * B2_vals;
+  B2_cent_dot = B2_cent_dervs * B2_vals;
 }
