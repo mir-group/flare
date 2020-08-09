@@ -10,7 +10,7 @@ read_data tmp.data
   1 by 1 by 2 MPI processor grid
   reading atoms ...
   4 atoms
-  read_data CPU = 0.004895 secs
+  read_data CPU = 0.001289 secs
 
 pair_style flare
 pair_coeff * * beta.txt
@@ -39,7 +39,7 @@ Step Temp E_pair E_mol TotEng Press
        0            0            0            0            0            0 
 Loop time of 2e-06 on 2 procs for 0 steps with 4 atoms
 
-100.0% CPU use with 2 MPI tasks x no OpenMP threads
+75.0% CPU use with 2 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total

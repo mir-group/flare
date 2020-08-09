@@ -76,16 +76,28 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  Eigen::VectorXd single_bond_vals;
-  Eigen::MatrixXd environment_force_dervs;
-  Eigen::MatrixXd central_force_dervs;
+  Eigen::VectorXd single_bond_vals, B2_vals;
+  Eigen::MatrixXd single_bond_env_dervs, single_bond_cent_dervs,
+    B2_env_dervs, B2_cent_dervs;
 
   for (ii = 0; ii < inum; ii++) {
     // Compute covariant descriptors.
     single_bond(x, ii, type, ilist, numneigh, firstneigh,
         basis_function, cutoff_function, cutoff, n_species, n_max, l_max,
-        radial_hyps, cutoff_hyps, single_bond_vals, environment_force_dervs,
-        central_force_dervs);
+        radial_hyps, cutoff_hyps, single_bond_vals, single_bond_env_dervs,
+        single_bond_cent_dervs);
+
+    // Compute invariant descriptors.
+    B2_descriptor(B2_vals, B2_env_dervs, B2_cent_dervs, single_bond_vals,
+        single_bond_env_dervs, single_bond_cent_dervs, n_species, n_max,
+        l_max);
+    
+    if ((comm->me == 0) && (ii == 0)){
+        std::cout << "B2 vals size:" << std::endl;
+        std::cout << B2_vals.size() << std::endl;
+        std::cout << "B2 vals:" << std::endl;
+        std::cout << B2_vals << std::endl;
+    }
   }
 }
 
@@ -95,8 +107,6 @@ void PairFLARE::compute(int eflag, int vflag)
 
 void PairFLARE::allocate()
 {
-  // Based on tersoff.cpp.
-
   allocated = 1;
   int n = atom->ntypes;
 

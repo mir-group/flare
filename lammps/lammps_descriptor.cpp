@@ -15,8 +15,8 @@ void single_bond(double **x, int atom_index, int *type,
     const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps,
     Eigen::VectorXd &single_bond_vals,
-    Eigen::MatrixXd &environment_force_dervs,
-    Eigen::MatrixXd &central_force_dervs){
+    Eigen::MatrixXd &single_bond_env_dervs,
+    Eigen::MatrixXd &single_bond_cent_dervs){
 
     // Initialize basis vectors and spherical harmonics.
     std::vector<double> g = std::vector<double> (N, 0);
