@@ -55,11 +55,10 @@ PairFLARE::~PairFLARE()
 
 void PairFLARE::compute(int eflag, int vflag)
 {
-  int i,j,ii,jj,m,inum,jnum,itype,jtype;
-  double xtmp,ytmp,ztmp,delx,dely,delz,evdwl,fpair;
-  double rsq,r,p,rhoip,rhojp,z2,z2p,recip,phip,psip,phi;
+  int i, j, ii, jj, inum, jnum, itype, jtype;
+  double evdwl, delx, dely, delz, xtmp, ytmp, ztmp;
   double *coeff;
-  int *ilist,*jlist,*numneigh,**firstneigh;
+  int *ilist, *jlist, *numneigh, **firstneigh;
 
   evdwl = 0.0;
   ev_init(eflag,vflag);
@@ -76,7 +75,9 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  double B2_norm_squared;
+  int beta_init, beta_counter;
+  double B2_norm_squared, B2_val_1, B2_val_2;
+  double fij[3];
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, B2_cent_dot;
   Eigen::MatrixXd single_bond_env_dervs, single_bond_cent_dervs,
     B2_env_dervs, B2_cent_dervs;
@@ -92,10 +93,78 @@ void PairFLARE::compute(int eflag, int vflag)
     B2_descriptor(B2_vals, B2_env_dervs, B2_cent_dervs, B2_norm_squared,
         B2_env_dot, B2_cent_dot, single_bond_vals, single_bond_env_dervs,
         single_bond_cent_dervs, n_species, n_max, l_max);
+    
+    // Compute local energy.
+    // TODO: Consider storing the square of B2 as Eigen vectors/matrices to
+    //  make the code less verbose.
+    beta_init = (type[ilist[ii]] - 1) * beta_size;
+    beta_counter = beta_init;
+    evdwl = 0.0;
+    for (int j = 0; j < n_descriptors; j++) {
+        B2_val_1 = B2_vals(j);
+        for (int k = j; k < n_descriptors; k++) {
+            B2_val_2 = B2_vals(k);
+            evdwl += B2_val_1 * B2_val_2 * beta[beta_counter];
+            beta_counter ++;
+        }
+    }
+    evdwl /= B2_norm_squared;
+    
+    // Compute partial forces and stresses.
+    jnum = numneigh[i];
+    i = list->ilist[ii];
+    xtmp = x[i][0];
+    ytmp = x[i][1];
+    ztmp = x[i][2];
+    jlist = firstneigh[i];
 
-    // Compute local energy and partial forces.
+    for (int jj = 0; jj < jnum; jj++){
 
+        // Zero the partial force vector.
+        for (int l = 0; l < 3; l++) fij[l] = 0.0;
+
+        beta_counter = beta_init;
+        for (int m = 0; m < n_descriptors; m++){
+            for (int n = m; n < n_descriptors; n++){
+                for (int l = 0; l < 3; l++){
+                    fij[l] +=
+                        (-B2_env_dervs(3 * jj + l, m) * B2_vals(n)
+                         -B2_vals(m) * B2_env_dervs(3 * jj + l, n)) *
+                         beta[beta_counter];
+                }
+                beta_counter ++;
+            }
+        }
+
+        // Add normalization contribution.
+        for (int l = 0; l < 3; l++){
+            fij[l] += 2 * evdwl * B2_env_dot(jj * 3 + l);
+            fij[l] /= B2_norm_squared;
+        }
+
+        // Store partial forces.
+        j = jlist[jj];
+        f[i][0] += fij[0];
+        f[i][1] += fij[1];
+        f[i][2] += fij[2];
+        f[j][0] -= fij[0];
+        f[j][1] -= fij[1];
+        f[j][2] -= fij[2];
+
+        if (vflag)
+            delx = xtmp - x[j][0];
+            dely = ytmp - x[j][1];
+            delz = ztmp - x[j][2];
+
+            ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0,
+                fij[0],fij[1],fij[2], delx, dely, delz);
+    }
+
+    // Compute local energy.
+    if (eflag) ev_tally_full(i, 2.0 * evdwl, 0.0, 0.0, 0.0, 0.0, 0.0);
   }
+
+  if (vflag_fdotr) virial_fdotr_compute();
 }
 
 /* ----------------------------------------------------------------------

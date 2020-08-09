@@ -7,10 +7,10 @@ boundary   p p p
 newton on
 read_data tmp.data
   triclinic box = (0 0 0) to (100 100 100) with tilt (0 0 0)
-  1 by 1 by 2 MPI processor grid
+  1 by 1 by 1 MPI processor grid
   reading atoms ...
   4 atoms
-  read_data CPU = 0.002537 secs
+  read_data CPU = 0.00103 secs
 
 pair_style flare
 pair_coeff * * beta.txt
@@ -34,12 +34,12 @@ Neighbor list info ...
       pair build: full/bin/atomonly
       stencil: full/bin/3d
       bin: standard
-Per MPI rank memory allocation (min/avg/max) = 4.286 | 4.348 | 4.411 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 4.457 | 4.457 | 4.457 Mbytes
 Step Temp E_pair E_mol TotEng Press 
-       0            0            0            0            0            0 
-Loop time of 2e-06 on 2 procs for 0 steps with 4 atoms
+       0            0  0.055768914            0  0.055768914 0.0064853539 
+Loop time of 1e-06 on 1 procs for 0 steps with 4 atoms
 
-125.0% CPU use with 2 MPI tasks x no OpenMP threads
+0.0% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -49,16 +49,16 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 2e-06      |            |       |100.00
+Other   |            | 1e-06      |            |       |100.00
 
-Nlocal:    2 ave 4 max 0 min
-Histogram: 1 0 0 0 0 0 0 0 0 1
-Nghost:    14 ave 16 max 12 min
-Histogram: 1 0 0 0 0 0 0 0 0 1
+Nlocal:    4 ave 4 max 4 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    28 ave 28 max 28 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
 Neighs:    0 ave 0 max 0 min
-Histogram: 2 0 0 0 0 0 0 0 0 0
-FullNghs:  6 ave 12 max 0 min
-Histogram: 1 0 0 0 0 0 0 0 0 1
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:  12 ave 12 max 12 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
 
 Total # of neighbors = 12
 Ave neighs/atom = 3
