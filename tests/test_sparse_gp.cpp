@@ -155,6 +155,15 @@ TEST_F(SparseTest, TestBeta) {
   int descriptor_index = 0;
   sparse_gp.write_beta(beta_file, contributor, descriptor_index);
 
+  // Predict on structure.
+  Eigen::VectorXd pred_vals = sparse_gp.predict(test_struc);
+  std::cout << "Structure positions:" << std::endl;
+  std::cout << test_struc.positions << std::endl;
+  std::cout << "Structure cell:" << std::endl;
+  std::cout << test_struc.cell << std::endl;
+  std::cout << "Sparse GP prediction:" << std::endl;
+  std::cout << pred_vals << std::endl;
+
   // // Check that memory profile works
   // sparse_gp.memory_profile();
   // std::cout << sparse_gp.model_size << std::endl;

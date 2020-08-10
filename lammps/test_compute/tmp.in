@@ -9,7 +9,7 @@ read_data tmp.data
 pair_style flare
 pair_coeff * * beta.txt
 
-thermo_style one
+thermo_style custom pe etotal press pxx pyy pzz pxy pxz pyz
 
 dump 1 all custom 1 tmp.dump id type x y z fx fy fz 
 dump_modify 1 sort id

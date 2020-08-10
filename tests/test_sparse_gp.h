@@ -72,7 +72,8 @@ public:
     many_body_kernel_2 =
         DotProductKernel(signal_variance, power, 1);
 
-    kernels = std::vector<Kernel *>{&many_body_kernel, &many_body_kernel_2};
+    // kernels = std::vector<Kernel *>{&many_body_kernel, &many_body_kernel_2};
+    kernels = std::vector<Kernel *>{&many_body_kernel};
 
     // kernels =
     //     std::vector<Kernel *> {&two_body_kernel, &three_body_kernel};

@@ -144,20 +144,21 @@ void PairFLARE::compute(int eflag, int vflag)
 
         // Store partial forces.
         j = jlist[jj];
-        f[i][0] += fij[0];
-        f[i][1] += fij[1];
-        f[i][2] += fij[2];
-        f[j][0] -= fij[0];
-        f[j][1] -= fij[1];
-        f[j][2] -= fij[2];
+        f[i][0] -= fij[0];
+        f[i][1] -= fij[1];
+        f[i][2] -= fij[2];
+        f[j][0] += fij[0];
+        f[j][1] += fij[1];
+        f[j][2] += fij[2];
 
-        if (vflag)
+        if (vflag){
             delx = xtmp - x[j][0];
             dely = ytmp - x[j][1];
             delz = ztmp - x[j][2];
 
             ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0,
                 fij[0],fij[1],fij[2], delx, dely, delz);
+        }
     }
 
     // Compute local energy.

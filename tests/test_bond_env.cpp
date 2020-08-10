@@ -112,17 +112,17 @@ TEST(LammpsCheck, LammpsCheck){
                       basis_function, cutoff_function, env, 0, N, lmax,
                       radial_hyps, cutoff_hyps);
 
-  std::cout << "Positions:" << std::endl;
-  std::cout << positions << std::endl;
+//   std::cout << "Positions:" << std::endl;
+//   std::cout << positions << std::endl;
 
-  std::cout << "Cell:" << std::endl;
-  std::cout << cell << std::endl;
+//   std::cout << "Cell:" << std::endl;
+//   std::cout << cell << std::endl;
 
-  std::cout << "Single bond vals:" << std::endl;
-  std::cout << single_bond_vals << std::endl;
+//   std::cout << "Single bond vals:" << std::endl;
+//   std::cout << single_bond_vals << std::endl;
 
-  std::cout << "Force derivatives:" << std::endl;
-  std::cout << force_dervs.row(0) << std::endl;
+//   std::cout << "Force derivatives:" << std::endl;
+//   std::cout << force_dervs.row(0) << std::endl;
 }
 
 TEST_F(BondEnv, CentTest) {

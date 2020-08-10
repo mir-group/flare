@@ -5,13 +5,13 @@ import numpy as np
 
 # define cell, positions, and species
 cell = 100 * np.eye(3)
-positions = np.array([[0, 0, 0],
-                      [0.13, 0.76, 0.31],
-                      [-0.39, 0.32, 0.18],
-                      [0.76, -0.52, 0.22]])
+positions = np.array([[0.0265474, 0.683021, -0.0641653],
+                      [0.182227,  -0.461365,  -0.425575],
+                      [0.691963,  -0.169211,  -0.643345],
+                      [-0.175838,   0.074608,   -0.69256]])
 atom_types = [1, 2]
 atom_masses = [108, 108]
-atom_species = [1, 1, 2, 1]
+atom_species = [1, 2, 1, 2]
 structure = struc.Structure(cell, atom_species, positions)
 
 # set up input and data files
