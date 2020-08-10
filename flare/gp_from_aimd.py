@@ -448,7 +448,12 @@ class TrajectoryTrainer:
                     train_atoms = list(set(std_train_atoms).union(
                         force_train_atoms) - {-1})
 
-                    training_plan[int(i)] = [int(a) for a in train_atoms]
+                    # Record frame and training atoms, uncertainty, error
+                    force_errors = list(np.abs(pred_forces-dft_forces))
+                    uncertainties = list(dummy_frame.stds)
+                    training_plan[int(i)] = [(int(a), uncertainties[a],
+                                              force_errors[a]) for a
+                                              in train_atoms]
 
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set

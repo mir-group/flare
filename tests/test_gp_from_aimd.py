@@ -248,7 +248,9 @@ def test_mgp_gpfa(all_mgp, all_gp):
     # Test that training plan is properly written
     with open('gp_from_aimd_training_plan.json', 'r') as f:
         plan = json.loads(f.readline())
-    assert plan == {'0': list(range(len(struc)))}
+    assert isinstance(plan['0'], list)
+    assert len(plan['0']) == len(struc)
+    assert [p[0] for p in plan['0']] == list(range(len(struc)))
 
     for f in glob(f"gp_from_aimd*"):
         remove(f)
