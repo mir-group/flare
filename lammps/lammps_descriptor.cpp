@@ -15,8 +15,7 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
     const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps,
     Eigen::VectorXd &single_bond_vals,
-    Eigen::MatrixXd &single_bond_env_dervs,
-    Eigen::MatrixXd &single_bond_cent_dervs){
+    Eigen::MatrixXd &single_bond_env_dervs){
 
     // Initialize basis vectors and spherical harmonics.
     std::vector<double> g = std::vector<double> (N, 0);
@@ -42,7 +41,6 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
     int n_bond = n_radial * n_harmonics;
     single_bond_vals = Eigen::VectorXd::Zero(n_bond);
     single_bond_env_dervs = Eigen::MatrixXd::Zero(jnum * 3, n_bond);
-    single_bond_cent_dervs = Eigen::MatrixXd::Zero(3, n_bond);
 
     // Loop over neighbors.
     for (int jj = 0; jj < jnum; jj++) {
@@ -91,10 +89,6 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
                 single_bond_env_dervs(jj * 3 + 2, descriptor_counter) +=
                     bond_z;
 
-                single_bond_cent_dervs(0, descriptor_counter) -= bond_x;
-                single_bond_cent_dervs(1, descriptor_counter) -= bond_y;
-                single_bond_cent_dervs(2, descriptor_counter) -= bond_z;
-
                 descriptor_counter++;
                 }  
             }
@@ -103,11 +97,9 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
 }
 
 void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
-                   Eigen::MatrixXd &B2_cent_dervs, double &norm_squared,
-                   Eigen::VectorXd &B2_env_dot,  Eigen::VectorXd &B2_cent_dot,
+                   double &norm_squared, Eigen::VectorXd &B2_env_dot,
                    const Eigen::VectorXd &single_bond_vals,
                    const Eigen::MatrixXd &single_bond_env_dervs,
-                   const Eigen::MatrixXd &single_bond_cent_dervs,
                    int n_species, int N, int lmax){
 
   int env_derv_size = single_bond_env_dervs.rows();
@@ -121,7 +113,6 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   // Zero the B2 vectors and matrices.  
   B2_vals = Eigen::VectorXd::Zero(n_descriptors);
   B2_env_dervs = Eigen::MatrixXd::Zero(env_derv_size, n_descriptors);
-  B2_cent_dervs = Eigen::MatrixXd::Zero(3, n_descriptors);
   B2_env_dot = Eigen::VectorXd::Zero(env_derv_size);
 
   // Compute the descriptor.
@@ -150,15 +141,6 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
                   single_bond_env_dervs(atom_index * 3 + comp, n1_l) *
                       single_bond_vals(n2_l);
             }
-          }
-
-          // Store central force derivatives.
-          for (int comp = 0; comp < 3; comp++){
-              B2_cent_dervs(comp, counter) +=
-                single_bond_vals(n1_l) *
-                    single_bond_cent_dervs(comp, n2_l) +
-                single_bond_cent_dervs(comp, n1_l) *
-                    single_bond_vals(n2_l);
           }
         }
       }

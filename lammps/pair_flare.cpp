@@ -55,7 +55,7 @@ PairFLARE::~PairFLARE()
 
 void PairFLARE::compute(int eflag, int vflag)
 {
-  int i, j, ii, jj, inum, jnum, itype, jtype;
+  int i, j, ii, jj, inum, jnum, itype, jtype, n_inner;
   double evdwl, delx, dely, delz, xtmp, ytmp, ztmp;
   double *coeff;
   int *ilist, *jlist, *numneigh, **firstneigh;
@@ -78,9 +78,8 @@ void PairFLARE::compute(int eflag, int vflag)
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
   double fij[3];
-  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, B2_cent_dot;
-  Eigen::MatrixXd single_bond_env_dervs, single_bond_cent_dervs,
-    B2_env_dervs, B2_cent_dervs;
+  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot;
+  Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
   for (ii = 0; ii < inum; ii++) {
     i = list->ilist[ii];
@@ -90,18 +89,18 @@ void PairFLARE::compute(int eflag, int vflag)
     ztmp = x[i][2];
     jlist = firstneigh[i];
 
-    //   TODO: Eliminate central derivatives; they're not needed.
+    // Count the atoms inside the cutoff.
+
+    // TODO: Shorten loops by only considering neighbors within the cutoff.
     // Compute covariant descriptors.
     single_bond(x, type, jnum, i, xtmp, ytmp, ztmp, jlist,
         basis_function, cutoff_function, cutoff, n_species, n_max, l_max,
-        radial_hyps, cutoff_hyps, single_bond_vals, single_bond_env_dervs,
-        single_bond_cent_dervs);
+        radial_hyps, cutoff_hyps, single_bond_vals, single_bond_env_dervs);
 
     // Compute invariant descriptors.
-    B2_descriptor(B2_vals, B2_env_dervs, B2_cent_dervs, B2_norm_squared,
-        B2_env_dot, B2_cent_dot, single_bond_vals, single_bond_env_dervs,
-        single_bond_cent_dervs, n_species, n_max, l_max);
-    
+    B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
+        single_bond_vals, single_bond_env_dervs, n_species, n_max, l_max);
+
     // Compute local energy.
     beta_init = (type[ilist[ii]] - 1) * beta_size;
     beta_counter = beta_init;
@@ -117,7 +116,6 @@ void PairFLARE::compute(int eflag, int vflag)
     evdwl /= B2_norm_squared;
 
     // Compute partial forces and stresses.
-    // TODO: Shorten this loop by only considering neighbors within the cutoff.
     for (int jj = 0; jj < jnum; jj++){
 
         // Zero the partial force vector.
@@ -126,7 +124,6 @@ void PairFLARE::compute(int eflag, int vflag)
         beta_counter = beta_init;
         for (int m = 0; m < n_descriptors; m++){
             for (int n = m; n < n_descriptors; n++){
-                // TODO: Eliminate this loop by computing dE/dx from dE/dr.
                 for (int l = 0; l < 3; l++){
                     fij[l] +=
                         (-B2_env_dervs(3 * jj + l, m) * B2_vals(n)
@@ -157,8 +154,8 @@ void PairFLARE::compute(int eflag, int vflag)
             dely = ytmp - x[j][1];
             delz = ztmp - x[j][2];
 
-            ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0,
-                fij[0],fij[1],fij[2], delx, dely, delz);
+            ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fij[0],fij[1],
+                fij[2], delx, dely, delz);
         }
     }
 

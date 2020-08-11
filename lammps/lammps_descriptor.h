@@ -15,15 +15,12 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
     const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps,
     Eigen::VectorXd &single_bond_vals,
-    Eigen::MatrixXd &single_bond_env_dervs,
-    Eigen::MatrixXd &single_bond_cent_dervs);
+    Eigen::MatrixXd &single_bond_env_dervs);
 
 void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
-    Eigen::MatrixXd &B2_cent_dervs, double &norm_squared,
-    Eigen::VectorXd &B2_env_dot, Eigen::VectorXd &B2_cent_dot,
+    double &norm_squared, Eigen::VectorXd &B2_env_dot,
     const Eigen::VectorXd &single_bond_vals,
-    const Eigen::MatrixXd &single_bond_env_dervs,
-    const Eigen::MatrixXd &single_bond_cent_dervs, int n_species, int N,
+    const Eigen::MatrixXd &single_bond_env_dervs, int n_species, int N,
     int lmax);
 
 #endif
