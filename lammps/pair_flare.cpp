@@ -78,7 +78,7 @@ void PairFLARE::compute(int eflag, int vflag)
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
   double fij[3];
-  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p;
+  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
   for (ii = 0; ii < inum; ii++) {
@@ -94,7 +94,6 @@ void PairFLARE::compute(int eflag, int vflag)
     n_inner = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
-
       delx = x[j][0] - xtmp;
       dely = x[j][1] - ytmp;
       delz = x[j][2] - ztmp;
@@ -111,12 +110,13 @@ void PairFLARE::compute(int eflag, int vflag)
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
         single_bond_vals, single_bond_env_dervs, n_species, n_max, l_max);
 
-    // Compute local energy.
+    // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
-    evdwl = B2_vals.dot(beta_p);
-    evdwl /= B2_norm_squared;
+    evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
+    partial_forces =
+        2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
 
-    // Compute partial forces and stresses.
+    // Update energy, force and stress arrays.
     n_count = 0;
     for (int jj = 0; jj < jnum; jj++){
         j = jlist[jj];
@@ -126,28 +126,12 @@ void PairFLARE::compute(int eflag, int vflag)
         rsq = delx * delx + dely * dely + delz * delz;
 
         if (rsq < (cutoff * cutoff)){
-            // Zero the partial force vector.
-            for (int l = 0; l < 3; l++) fij[l] = 0.0;
-
-            for (int m = 0; m < n_descriptors; m++){
-                for (int l = 0; l < 3; l++){
-                    fij[l] += -2 * B2_env_dervs(3 * n_count + l, m) * beta_p(m);
-                }
-            }
-
-            // Add normalization contribution.
-            for (int l = 0; l < 3; l++){
-                fij[l] += 2 * evdwl * B2_env_dot(n_count * 3 + l);
-                fij[l] /= B2_norm_squared;
-            }
-
-            // Store partial forces.
-            f[i][0] -= fij[0];
-            f[i][1] -= fij[1];
-            f[i][2] -= fij[2];
-            f[j][0] += fij[0];
-            f[j][1] += fij[1];
-            f[j][2] += fij[2];
+            f[i][0] -= partial_forces(n_count * 3);
+            f[i][1] -= partial_forces(n_count * 3 + 1);
+            f[i][2] -= partial_forces(n_count * 3 + 2);
+            f[j][0] += partial_forces(n_count * 3);
+            f[j][1] += partial_forces(n_count * 3 + 1);
+            f[j][2] += partial_forces(n_count * 3 + 2);
 
             if (vflag){
                 ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fij[0],fij[1],
