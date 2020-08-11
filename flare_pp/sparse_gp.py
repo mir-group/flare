@@ -1,5 +1,5 @@
 import numpy as np
-from build._C_flare import SparseGP_DTC, StructureDescriptor
+from _C_flare import SparseGP_DTC, StructureDescriptor
 from scipy.optimize import minimize
 from typing import List
 

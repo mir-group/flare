@@ -45,6 +45,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                     const Eigen::MatrixXd &, double, std::vector<double>,
                     std::vector<double>, std::vector<DescriptorCalculator *>>())
+      .def_readwrite("mean_efs", &StructureDescriptor::mean_efs)
+      .def_readwrite("variance_efs", &StructureDescriptor::variance_efs)
       .def_readwrite("local_environments",
                      &StructureDescriptor::local_environments)
       .def_readwrite("energy", &StructureDescriptor::energy)
@@ -173,6 +175,8 @@ PYBIND11_MODULE(_C_flare, m) {
     .def("compute_likelihood", &SparseGP_DTC::compute_likelihood)
     .def("compute_likelihood_gradient",
         &SparseGP_DTC::compute_likelihood_gradient)
+    .def("compute_beta", &SparseGP_DTC::compute_beta)
+    .def("write_beta", &SparseGP_DTC::write_beta)
     .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
     .def_readonly("complexity_penalty", &SparseGP_DTC::complexity_penalty)
     .def_readonly("data_fit", &SparseGP_DTC::data_fit)
