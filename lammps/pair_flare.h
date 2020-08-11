@@ -13,6 +13,7 @@ PairStyle(flare,PairFLARE)
 #include <cstdio>
 #include "pair.h"
 #include <vector>
+#include <Eigen/Dense>
 
 namespace LAMMPS_NS {
 
@@ -39,6 +40,8 @@ class PairFLARE : public Pair {
 
   double cutoff;
   double *beta;
+  Eigen::MatrixXd beta_matrix;
+  std::vector<Eigen::MatrixXd> beta_matrices;
 
   virtual void allocate();
   virtual void read_file(char *);

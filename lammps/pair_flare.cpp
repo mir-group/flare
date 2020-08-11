@@ -78,11 +78,12 @@ void PairFLARE::compute(int eflag, int vflag)
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
   double fij[3];
-  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot;
+  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
   for (ii = 0; ii < inum; ii++) {
     i = list->ilist[ii];
+    itype = type[i];
     jnum = numneigh[i];
     xtmp = x[i][0];
     ytmp = x[i][1];
@@ -111,17 +112,8 @@ void PairFLARE::compute(int eflag, int vflag)
         single_bond_vals, single_bond_env_dervs, n_species, n_max, l_max);
 
     // Compute local energy.
-    beta_init = (type[ilist[ii]] - 1) * beta_size;
-    beta_counter = beta_init;
-    evdwl = 0.0;
-    for (int j = 0; j < n_descriptors; j++) {
-        B2_val_1 = B2_vals(j);
-        for (int k = j; k < n_descriptors; k++) {
-            B2_val_2 = B2_vals(k);
-            evdwl += B2_val_1 * B2_val_2 * beta[beta_counter];
-            beta_counter ++;
-        }
-    }
+    beta_p = beta_matrices[itype - 1] * B2_vals;
+    evdwl = B2_vals.dot(beta_p);
     evdwl /= B2_norm_squared;
 
     // Compute partial forces and stresses.
@@ -137,18 +129,9 @@ void PairFLARE::compute(int eflag, int vflag)
             // Zero the partial force vector.
             for (int l = 0; l < 3; l++) fij[l] = 0.0;
 
-            // TODO: Eliminate one of these loops by pre-computing bij * pj
-            // in the local energy loop.
-            beta_counter = beta_init;
             for (int m = 0; m < n_descriptors; m++){
-                for (int n = m; n < n_descriptors; n++){
-                    for (int l = 0; l < 3; l++){
-                        fij[l] +=
-                            (-B2_env_dervs(3 * n_count + l, m) * B2_vals(n)
-                            -B2_vals(m) * B2_env_dervs(3 * n_count + l, n)) *
-                            beta[beta_counter];
-                    }
-                    beta_counter ++;
+                for (int l = 0; l < 3; l++){
+                    fij[l] += -2 * B2_env_dervs(3 * n_count + l, m) * beta_p(m);
                 }
             }
 
@@ -328,6 +311,26 @@ void PairFLARE::read_file(char *filename)
     if (me == 0) grab(fptr, beta_size * n_species, beta);
     MPI_Bcast(beta, beta_size * n_species, MPI_DOUBLE, 0, world);
 
+    // Fill in the beta matrix.
+    // TODO: Remove factor of 2 from beta.
+    Eigen::MatrixXd beta_matrix;
+    int beta_count = 0;
+    double beta_val;
+    for (int k = 0; k < n_species; k++){
+        beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
+        for (int i = 0; i < n_descriptors; i++){
+            for (int j = i; j < n_descriptors; j++){
+                if (i == j) beta_matrix(i, j) = beta[beta_count];
+                else if (i != j){
+                    beta_val = beta[beta_count] / 2;
+                    beta_matrix(i, j) = beta_val;
+                    beta_matrix(j, i) = beta_val;
+                }
+                beta_count ++;
+            }
+        }
+        beta_matrices.push_back(beta_matrix);
+    }
 }
 
 
