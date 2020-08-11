@@ -225,7 +225,7 @@ class FLARE_Calculator(Calculator):
 
         for xb in calc.mgp_model.maps:
             xb_map = calc.mgp_model.maps[xb]
-            xb_map.hyps_mask = calc.gp_model.hyps_mask 
+            xb_map.hyps_mask = calc.gp_model.hyps_mask
 
         return calc
 
@@ -237,7 +237,7 @@ class FLARE_Calculator(Calculator):
 
     @staticmethod
     def from_file(name):
-        with open(name, 'r') as f:
+        with open(name, "r") as f:
             calc = FLARE_Calculator.from_dict(json.loads(f.readline()))
 
         return calc

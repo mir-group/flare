@@ -245,12 +245,33 @@ class ASE_OTF(OTF):
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
     def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
-        super().update_gp(
-            train_atoms, dft_frcs, dft_energy=dft_energy, dft_stress=dft_stress
+        self.output.add_atom_info(train_atoms, self.structure.stds)
+
+        # update gp model
+        self.gp.update_db(
+            self.structure,
+            dft_frcs,
+            custom_range=train_atoms,
+            energy=dft_energy,
+            stress=dft_stress,
         )
 
+        self.gp.set_L_alpha()
+
+        # train model
+        if (self.dft_count - 1) < self.freeze_hyps:
+            self.train_gp()
+
+        # update mgp model
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
+
+        # write model
+        if (self.dft_count - 1) < self.freeze_hyps:
+            if self.write_model == 2:
+                self.write_gp()
+        if self.write_model == 3:
+            self.write_gp()
 
     def as_dict(self):
 
@@ -268,17 +289,17 @@ class ASE_OTF(OTF):
         dct["atoms"] = self.atoms_name
 
         self.flare_calc.write_model(self.flare_name)
-        dct["flare_calc"] = self.flare_name 
+        dct["flare_calc"] = self.flare_name
 
         # dump dft calculator as pickle
         with open(self.dft_name, "wb") as f:
-            pickle.dump(self.dft_loc, f) # dft_loc is the dft calculator 
+            pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
         dct["dft_loc"] = self.dft_name
 
         for key in ["gp", "output", "pred_func", "structure", "dft_input", "md"]:
             if dct.get(key) is not None:
                 del dct[key]
-        
+
         return dct
 
     @staticmethod
@@ -293,10 +314,10 @@ class ASE_OTF(OTF):
         for key in ["dt", "dft_loc"]:
             if dct.get(key) is not None:
                 del dct[key]
-        
+
         new_otf = ASE_OTF(**dct)
-        new_otf.dft_count = dct['dft_count']
-        new_otf.curr_step = dct['curr_step']
+        new_otf.dft_count = dct["dft_count"]
+        new_otf.curr_step = dct["curr_step"]
 
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:
