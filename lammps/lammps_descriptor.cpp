@@ -5,8 +5,8 @@
 #include <iostream>
 
 
-void single_bond(double **x, int atom_index, int *type,
-    int *ilist, int *numneigh, int **firstneigh,
+void single_bond(double **x, int *type, int jnum, int i, double xtmp,
+    double ytmp, double ztmp, int *jlist,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
         int, std::vector<double>)> basis_function,
     std::function<void(std::vector<double> &, double, double,
@@ -31,13 +31,7 @@ void single_bond(double **x, int atom_index, int *type,
     std::vector<double> hz = std::vector<double>(n_harmonics, 0);
 
     // Prepare LAMMPS variables.
-    int i = ilist[atom_index];
-    double xtmp = x[i][0];
-    double ytmp = x[i][1];
-    double ztmp = x[i][2];
     int itype = type[i];
-    int *jlist = firstneigh[i];
-    int jnum = numneigh[i];
     double delx, dely, delz, rsq, r, bond, bond_x, bond_y, bond_z, g_val,
         gx_val, gy_val, gz_val, h_val;
     int j, s, descriptor_counter;
@@ -129,7 +123,6 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   B2_env_dervs = Eigen::MatrixXd::Zero(env_derv_size, n_descriptors);
   B2_cent_dervs = Eigen::MatrixXd::Zero(3, n_descriptors);
   B2_env_dot = Eigen::VectorXd::Zero(env_derv_size);
-  B2_cent_dot = Eigen::VectorXd::Zero(3);
 
   // Compute the descriptor.
   for (int n1 = n_radial - 1; n1 >= 0; n1--) {
@@ -175,5 +168,4 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   // Compute descriptor norm and dot products.
   norm_squared = B2_vals.dot(B2_vals);
   B2_env_dot = B2_env_dervs * B2_vals;
-  B2_cent_dot = B2_cent_dervs * B2_vals;
 }

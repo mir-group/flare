@@ -83,8 +83,16 @@ void PairFLARE::compute(int eflag, int vflag)
     B2_env_dervs, B2_cent_dervs;
 
   for (ii = 0; ii < inum; ii++) {
+    i = list->ilist[ii];
+    jnum = numneigh[i];
+    xtmp = x[i][0];
+    ytmp = x[i][1];
+    ztmp = x[i][2];
+    jlist = firstneigh[i];
+
+    //   TODO: Eliminate central derivatives; they're not needed.
     // Compute covariant descriptors.
-    single_bond(x, ii, type, ilist, numneigh, firstneigh,
+    single_bond(x, type, jnum, i, xtmp, ytmp, ztmp, jlist,
         basis_function, cutoff_function, cutoff, n_species, n_max, l_max,
         radial_hyps, cutoff_hyps, single_bond_vals, single_bond_env_dervs,
         single_bond_cent_dervs);
@@ -95,8 +103,6 @@ void PairFLARE::compute(int eflag, int vflag)
         single_bond_cent_dervs, n_species, n_max, l_max);
     
     // Compute local energy.
-    // TODO: Consider storing the square of B2 as Eigen vectors/matrices to
-    //  make the code less verbose.
     beta_init = (type[ilist[ii]] - 1) * beta_size;
     beta_counter = beta_init;
     evdwl = 0.0;
@@ -109,15 +115,9 @@ void PairFLARE::compute(int eflag, int vflag)
         }
     }
     evdwl /= B2_norm_squared;
-    
-    // Compute partial forces and stresses.
-    jnum = numneigh[i];
-    i = list->ilist[ii];
-    xtmp = x[i][0];
-    ytmp = x[i][1];
-    ztmp = x[i][2];
-    jlist = firstneigh[i];
 
+    // Compute partial forces and stresses.
+    // TODO: Shorten this loop by only considering neighbors within the cutoff.
     for (int jj = 0; jj < jnum; jj++){
 
         // Zero the partial force vector.
@@ -126,6 +126,7 @@ void PairFLARE::compute(int eflag, int vflag)
         beta_counter = beta_init;
         for (int m = 0; m < n_descriptors; m++){
             for (int n = m; n < n_descriptors; n++){
+                // TODO: Eliminate this loop by computing dE/dx from dE/dr.
                 for (int l = 0; l < 3; l++){
                     fij[l] +=
                         (-B2_env_dervs(3 * jj + l, m) * B2_vals(n)
