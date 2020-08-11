@@ -55,8 +55,8 @@ PairFLARE::~PairFLARE()
 
 void PairFLARE::compute(int eflag, int vflag)
 {
-  int i, j, ii, jj, inum, jnum, itype, jtype, n_inner;
-  double evdwl, delx, dely, delz, xtmp, ytmp, ztmp;
+  int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
+  double evdwl, delx, dely, delz, xtmp, ytmp, ztmp, rsq;
   double *coeff;
   int *ilist, *jlist, *numneigh, **firstneigh;
 
@@ -90,10 +90,19 @@ void PairFLARE::compute(int eflag, int vflag)
     jlist = firstneigh[i];
 
     // Count the atoms inside the cutoff.
+    n_inner = 0;
+    for (int jj = 0; jj < jnum; jj++) {
+      j = jlist[jj];
 
-    // TODO: Shorten loops by only considering neighbors within the cutoff.
+      delx = x[j][0] - xtmp;
+      dely = x[j][1] - ytmp;
+      delz = x[j][2] - ztmp;
+      rsq = delx * delx + dely * dely + delz * delz;
+      if (rsq < (cutoff * cutoff)) n_inner ++;
+    }
+
     // Compute covariant descriptors.
-    single_bond(x, type, jnum, i, xtmp, ytmp, ztmp, jlist,
+    single_bond(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
         basis_function, cutoff_function, cutoff, n_species, n_max, l_max,
         radial_hyps, cutoff_hyps, single_bond_vals, single_bond_env_dervs);
 
@@ -116,46 +125,52 @@ void PairFLARE::compute(int eflag, int vflag)
     evdwl /= B2_norm_squared;
 
     // Compute partial forces and stresses.
+    n_count = 0;
     for (int jj = 0; jj < jnum; jj++){
-
-        // Zero the partial force vector.
-        for (int l = 0; l < 3; l++) fij[l] = 0.0;
-
-        beta_counter = beta_init;
-        for (int m = 0; m < n_descriptors; m++){
-            for (int n = m; n < n_descriptors; n++){
-                for (int l = 0; l < 3; l++){
-                    fij[l] +=
-                        (-B2_env_dervs(3 * jj + l, m) * B2_vals(n)
-                         -B2_vals(m) * B2_env_dervs(3 * jj + l, n)) *
-                         beta[beta_counter];
-                }
-                beta_counter ++;
-            }
-        }
-
-        // Add normalization contribution.
-        for (int l = 0; l < 3; l++){
-            fij[l] += 2 * evdwl * B2_env_dot(jj * 3 + l);
-            fij[l] /= B2_norm_squared;
-        }
-
-        // Store partial forces.
         j = jlist[jj];
-        f[i][0] -= fij[0];
-        f[i][1] -= fij[1];
-        f[i][2] -= fij[2];
-        f[j][0] += fij[0];
-        f[j][1] += fij[1];
-        f[j][2] += fij[2];
+        delx = xtmp - x[j][0];
+        dely = ytmp - x[j][1];
+        delz = ztmp - x[j][2];
+        rsq = delx * delx + dely * dely + delz * delz;
 
-        if (vflag){
-            delx = xtmp - x[j][0];
-            dely = ytmp - x[j][1];
-            delz = ztmp - x[j][2];
+        if (rsq < (cutoff * cutoff)){
+            // Zero the partial force vector.
+            for (int l = 0; l < 3; l++) fij[l] = 0.0;
 
-            ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fij[0],fij[1],
-                fij[2], delx, dely, delz);
+            // TODO: Eliminate one of these loops by pre-computing bij * pj
+            // in the local energy loop.
+            beta_counter = beta_init;
+            for (int m = 0; m < n_descriptors; m++){
+                for (int n = m; n < n_descriptors; n++){
+                    for (int l = 0; l < 3; l++){
+                        fij[l] +=
+                            (-B2_env_dervs(3 * n_count + l, m) * B2_vals(n)
+                            -B2_vals(m) * B2_env_dervs(3 * n_count + l, n)) *
+                            beta[beta_counter];
+                    }
+                    beta_counter ++;
+                }
+            }
+
+            // Add normalization contribution.
+            for (int l = 0; l < 3; l++){
+                fij[l] += 2 * evdwl * B2_env_dot(n_count * 3 + l);
+                fij[l] /= B2_norm_squared;
+            }
+
+            // Store partial forces.
+            f[i][0] -= fij[0];
+            f[i][1] -= fij[1];
+            f[i][2] -= fij[2];
+            f[j][0] += fij[0];
+            f[j][1] += fij[1];
+            f[j][2] += fij[2];
+
+            if (vflag){
+                ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fij[0],fij[1],
+                    fij[2], delx, dely, delz);
+            }
+            n_count ++;
         }
     }
 

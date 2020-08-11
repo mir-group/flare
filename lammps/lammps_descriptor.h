@@ -5,8 +5,8 @@
 #include <Eigen/Dense>
 #include <vector>
 
-void single_bond(double **x, int *type, int jnum, int i, double xtmp,
-    double ytmp, double ztmp, int *jlist,
+void single_bond(double **x, int *type, int jnum, int n_inner, int i,
+    double xtmp, double ytmp, double ztmp, int *jlist,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
         int, std::vector<double>)> basis_function,
     std::function<void(std::vector<double> &, double, double,

@@ -5,8 +5,8 @@
 #include <iostream>
 
 
-void single_bond(double **x, int *type, int jnum, int i, double xtmp,
-    double ytmp, double ztmp, int *jlist,
+void single_bond(double **x, int *type, int jnum, int n_inner, int i,
+    double xtmp, double ytmp, double ztmp, int *jlist,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
         int, std::vector<double>)> basis_function,
     std::function<void(std::vector<double> &, double, double,
@@ -40,9 +40,10 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
     int n_radial = n_species * N;
     int n_bond = n_radial * n_harmonics;
     single_bond_vals = Eigen::VectorXd::Zero(n_bond);
-    single_bond_env_dervs = Eigen::MatrixXd::Zero(jnum * 3, n_bond);
+    single_bond_env_dervs = Eigen::MatrixXd::Zero(n_inner * 3, n_bond);
 
     // Loop over neighbors.
+    int n_count = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
 
@@ -83,15 +84,17 @@ void single_bond(double **x, int *type, int jnum, int i, double xtmp,
                 // Update single bond basis arrays.
                 single_bond_vals(descriptor_counter) += bond;
 
-                single_bond_env_dervs(jj * 3, descriptor_counter) += bond_x;
-                single_bond_env_dervs(jj * 3 + 1, descriptor_counter) +=
+                single_bond_env_dervs(n_count * 3, descriptor_counter) +=
+                    bond_x;
+                single_bond_env_dervs(n_count * 3 + 1, descriptor_counter) +=
                     bond_y;
-                single_bond_env_dervs(jj * 3 + 2, descriptor_counter) +=
+                single_bond_env_dervs(n_count * 3 + 2, descriptor_counter) +=
                     bond_z;
 
                 descriptor_counter++;
                 }  
             }
+            n_count ++;
         }
     }
 }
