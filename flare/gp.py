@@ -734,9 +734,8 @@ class GaussianProcess:
         # Remove the callables
         for key in ['kernel', 'kernel_grad', 'energy_kernel',
                     'energy_force_kernel', 'efs_energy_kernel',
-                    'efs_force_kernel', 'efs_self_kernel']:
-            if out_dict.get(key) is not None:
-                del out_dict[key]
+                    'efs_force_kernel', 'efs_self_kernel', 'output']:
+            out_dict.pop(key)
 
         return out_dict
 
