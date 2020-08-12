@@ -8,6 +8,7 @@ import inspect
 import pickle
 from time import time
 from copy import deepcopy
+import logging
 
 import numpy as np
 from ase.md.npt import NPT
@@ -133,7 +134,7 @@ class ASE_OTF(OTF):
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
         self.md = MD(
-            atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
+            atoms=self.atoms, timestep=timestep, trajectory=trajectory, communicator=None,  **md_kwargs
         )
 
         force_source = dft_source
@@ -187,7 +188,7 @@ class ASE_OTF(OTF):
 
         # Reset FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.atoms.set_calculator(self.flare_calc)
+            self.atoms.calc = self.flare_calc
 
         if not self.flare_calc.results:
             self.atoms.calc.calculate(self.atoms)
@@ -208,13 +209,13 @@ class ASE_OTF(OTF):
 
             if self.dft_step:
                 reset_npt_momenta(self.md, f)
-                self.atoms.set_calculator(self.flare_calc)
+                self.atoms.calc = self.flare_calc
 
             self.md.step()  # use flare to get force for next step
         else:
             self.flare_calc.results = {}  # init flare calculator
             if self.dft_step:
-                self.atoms.set_calculator(self.flare_calc)
+                self.atoms.calc = self.flare_calc
 
             self.md.step(f)
 
@@ -307,7 +308,7 @@ class ASE_OTF(OTF):
     def from_dict(dct):
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
         dct["atoms"] = read(dct["atoms"])
-        dct["atoms"].set_calculator(flare_calc)
+        dct["atoms"].calc = flare_calc
         dct.pop("gp")
 
         with open(dct["dft_loc"], "rb") as f:
