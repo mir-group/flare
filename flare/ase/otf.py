@@ -296,7 +296,9 @@ class ASE_OTF(OTF):
             pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
         dct["dft_loc"] = self.dft_name
 
-        for key in ["gp", "output", "pred_func", "structure", "dft_input", "md"]:
+        dct["gp"] = self.gp_name
+
+        for key in ["output", "pred_func", "structure", "dft_input", "md"]:
             if dct.get(key) is not None:
                 del dct[key]
 
@@ -307,6 +309,7 @@ class ASE_OTF(OTF):
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
         dct["atoms"] = read(dct["atoms"])
         dct["atoms"].set_calculator(flare_calc)
+        del dct["gp"]
 
         with open(dct["dft_loc"], "rb") as f:
             dct["dft_calc"] = pickle.load(f)
