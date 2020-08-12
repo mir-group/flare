@@ -299,8 +299,7 @@ class ASE_OTF(OTF):
         dct["gp"] = self.gp_name
 
         for key in ["output", "pred_func", "structure", "dft_input", "md"]:
-            if dct.get(key) is not None:
-                del dct[key]
+            dct.pop(key)
 
         return dct
 
@@ -309,14 +308,13 @@ class ASE_OTF(OTF):
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
         dct["atoms"] = read(dct["atoms"])
         dct["atoms"].set_calculator(flare_calc)
-        del dct["gp"]
+        dct.pop("gp")
 
         with open(dct["dft_loc"], "rb") as f:
             dct["dft_calc"] = pickle.load(f)
 
         for key in ["dt", "dft_loc"]:
-            if dct.get(key) is not None:
-                del dct[key]
+            dct.pop(key)
 
         new_otf = ASE_OTF(**dct)
         new_otf.dft_count = dct["dft_count"]

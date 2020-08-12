@@ -432,8 +432,7 @@ class OTF:
         out_dict['structure'] = self.structure.as_dict()
 
         for key in ['output', 'pred_func']:
-            if out_dict.get(key) is not None:
-                del out_dict[key]
+            out_dict.pop(key)
 
         return out_dict
 
