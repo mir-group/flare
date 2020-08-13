@@ -223,9 +223,10 @@ class FLARE_Calculator(Calculator):
             if isinstance(res[key], list):
                 calc.results[key] = np.array(res[key])
 
-        for xb in calc.mgp_model.maps:
-            xb_map = calc.mgp_model.maps[xb]
-            xb_map.hyps_mask = calc.gp_model.hyps_mask
+        if dct["use_mapping"]:
+            for xb in calc.mgp_model.maps:
+                xb_map = calc.mgp_model.maps[xb]
+                xb_map.hyps_mask = calc.gp_model.hyps_mask
 
         return calc
 
