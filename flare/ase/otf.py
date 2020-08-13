@@ -134,7 +134,7 @@ class ASE_OTF(OTF):
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
         self.md = MD(
-            atoms=self.atoms, timestep=timestep, trajectory=trajectory, communicator=None,  **md_kwargs
+            atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )
 
         force_source = dft_source
