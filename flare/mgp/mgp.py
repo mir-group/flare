@@ -54,9 +54,9 @@ class MappedGaussianProcess:
     For `grid_params`, the following keys and values are allowed
 
     Args:
-        'two_body' (dict, optional): if 2-body is present, set as a dictionary
+        'twobody' (dict, optional): if 2-body is present, set as a dictionary
             of parameters for 2-body mapping. Parameters see below.
-        'three_body' (dict, optional): if 3-body is present, set as a dictionary
+        'threebody' (dict, optional): if 3-body is present, set as a dictionary
             of parameters for 3-body mapping. Parameters see below.
         'load_grid' (str, optional): Default None. the path to the directory
             where the previously generated grids (``grid_*.npy``) are stored.
@@ -97,7 +97,7 @@ class MappedGaussianProcess:
         GP: GaussianProcess = None,
         var_map: str = None,
         container_only: bool = True,
-        lmp_file_name: str = "lmp.mgp",
+        lmp_file_name: str = "lmp",
         n_cpus: int = None,
         n_sample: int = 10,
     ):

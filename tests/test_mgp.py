@@ -104,7 +104,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.02]}
+        grid_params['twobody'] = {'grid_num': [160], 'lower_bound': [0.02]}
     if ('3' in bodies):
         grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.02]*3}
 

@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import numpy as np
 from ase import Atoms
+from ase.io import read, write
 from flare.utils.learner import get_max_cutoff
 
 
@@ -112,3 +113,11 @@ class FLARE_Atoms(Atoms):
     @property
     def max_cutoff(self):
         return get_max_cutoff(self.cell)
+
+    def as_dict(self):
+        return self.todict()
+
+    @staticmethod
+    def from_dict(dct):
+        atoms = Atoms.fromdict(dct)
+        return FLARE_Atoms.from_ase_atoms(atoms)
