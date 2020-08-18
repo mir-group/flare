@@ -77,7 +77,6 @@ void PairFLARE::compute(int eflag, int vflag)
 
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
-  double fij[3];
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
@@ -126,16 +125,19 @@ void PairFLARE::compute(int eflag, int vflag)
         rsq = delx * delx + dely * dely + delz * delz;
 
         if (rsq < (cutoff * cutoff)){
-            f[i][0] -= partial_forces(n_count * 3);
-            f[i][1] -= partial_forces(n_count * 3 + 1);
-            f[i][2] -= partial_forces(n_count * 3 + 2);
-            f[j][0] += partial_forces(n_count * 3);
-            f[j][1] += partial_forces(n_count * 3 + 1);
-            f[j][2] += partial_forces(n_count * 3 + 2);
+            double fx = -partial_forces(n_count * 3);
+            double fy = -partial_forces(n_count * 3 + 1);
+            double fz = -partial_forces(n_count * 3 + 2);
+            f[i][0] += fx;
+            f[i][1] += fy;
+            f[i][2] += fz;
+            f[j][0] -= fx;
+            f[j][1] -= fy;
+            f[j][2] -= fz;
 
             if (vflag){
-                ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fij[0],fij[1],
-                    fij[2], delx, dely, delz);
+                ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fx, fy,
+                    fz, delx, dely, delz);
             }
             n_count ++;
         }
