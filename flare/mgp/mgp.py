@@ -97,7 +97,7 @@ class MappedGaussianProcess:
         GP: GaussianProcess = None,
         var_map: str = None,
         container_only: bool = True,
-        lmp_file_name: str = "lmp.mgp",
+        lmp_file_name: str = "lmp",
         n_cpus: int = None,
         n_sample: int = 100,
     ):
