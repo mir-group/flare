@@ -13,15 +13,18 @@ from flare import struc, env, gp
 from flare.parameters import Parameters
 from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
-from flare.utils.element_coder import _Z_to_mass, _Z_to_element
+from flare.utils.element_coder import _Z_to_mass, _Z_to_element, _element_to_Z
+from flare.ase.calculator import FLARE_Calculator
+from flare.ase.atoms import FLARE_Atoms
+from ase.calculators.lammpsrun import LAMMPS
 
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
 body_list = ['2', '3']
-multi_list = [False, True]
+multi_list = [True, False]
 force_block_only = False
-
+curr_path = os.getcwd()
 
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
@@ -56,6 +59,37 @@ def all_mgp():
     yield allmgp_dict
     del allmgp_dict
 
+
+@pytest.fixture(scope='module')
+def all_lmp():
+
+    all_lmp_dict = {}
+    species = ['H', 'He'] 
+    specie_symbol_list = " ".join(species)
+    masses = [f"{i} {_Z_to_mass[_element_to_Z[species[i]]]}" for i in range(len(species))]
+    parameters = {'command': os.environ.get('lmp'), # set up executable for ASE
+                  'newton': 'off',
+                  'pair_style': 'mgp',
+                  'mass': masses}
+
+    # set up input params
+    for bodies in body_list:
+        for multihyps in multi_list:
+            # create ASE calc
+            label = f'{bodies}{multihyps}'
+            files = [f'{label}.mgp']
+            by = 'yes' if bodies == '2' else 'no'
+            ty = 'yes' if bodies == '3' else 'no'
+            parameters['pair_coeff'] = [f'* * {label}.mgp {specie_symbol_list} {by} {ty}']
+
+            lmp_calc = LAMMPS(label=label, keep_tmp_files=True, tmp_dir='./tmp/',
+                    parameters=parameters, files=files, specorder=species)
+            all_lmp_dict[f'{bodies}{multihyps}'] = lmp_calc
+
+    yield all_lmp_dict
+    del all_lmp_dict
+
+
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_init(bodies, multihyps, all_mgp, all_gp):
@@ -70,7 +104,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.02]}
+        grid_params['twobody'] = {'grid_num': [160], 'lower_bound': [0.02]}
     if ('3' in bodies):
         grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.02]*3}
 
@@ -265,77 +299,63 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
                                   'variable to point to the executatble.')
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
+def test_lmp_predict(all_lmp, all_gp, all_mgp, bodies, multihyps):
     """
     test the lammps implementation
     """
 
-    pytest.skip()
+    #pytest.skip()
 
     prefix = f'{bodies}{multihyps}'
 
-    mgp_model = all_mgp[f'{bodies}{multihyps}']
-    gp_model = all_gp[f'{bodies}{multihyps}']
-    lammps_location = mgp_model.lmp_file_name
-
+    mgp_model = all_mgp[prefix]
+    gp_model = all_gp[prefix]
+    lmp_calculator = all_lmp[prefix]
+    ase_calculator = FLARE_Calculator(gp_model, mgp_model, par=False, use_mapping=True)
+    
     # create test structure
-    cell = 5*np.eye(3)
+    np.random.seed(1)
+    cell = np.diag(np.array([1, 1, 1])) * 4
     nenv = 10
-    unique_species = gp_model.training_data[0].species
+    unique_species = gp_model.training_statistics['species']
     cutoffs = gp_model.cutoffs
     struc_test, f = get_random_structure(cell, unique_species, nenv)
-    atom_num = 1
-    test_envi = env.AtomicEnvironment(struc_test, atom_num, cutoffs, cutoffs_mask=gp_model.hyps_mask)
 
-    all_species=list(set(struc_test.coded_species))
-    atom_types = list(np.arange(len(all_species))+1)
-    atom_masses=[_Z_to_mass[spec] for spec in all_species]
-    atom_species = [ all_species.index(spec)+1 for spec in struc_test.coded_species]
-    specie_symbol_list = " ".join([_Z_to_element[spec] for spec in all_species])
+    # build ase atom from struc
+    ase_atoms_flare = struc_test.to_ase_atoms()
+    ase_atoms_flare = FLARE_Atoms.from_ase_atoms(ase_atoms_flare)
+    ase_atoms_flare.set_calculator(ase_calculator)
 
-    # create data file
-    data_file_name = f'{prefix}.data'
-    data_text = lammps_calculator.lammps_dat(struc_test, atom_types,
-                                             atom_masses, atom_species)
-    lammps_calculator.write_text(data_file_name, data_text)
+    ase_atoms_lmp = deepcopy(struc_test).to_ase_atoms()
+    ase_atoms_lmp.set_calculator(lmp_calculator)
 
-    # create lammps input
-    by = 'no'
-    ty = 'no'
-    if '2' in bodies:
-        by = 'yes'
-    if '3' in bodies:
-        ty = 'yes'
+    try:
+        lmp_en = ase_atoms_lmp.get_potential_energy()
+        flare_en = ase_atoms_flare.get_potential_energy()
 
-    style_string = 'mgp'
+        lmp_stress = ase_atoms_lmp.get_stress()
+        flare_stress = ase_atoms_flare.get_stress()
 
-    coeff_string = f'* * {lammps_location}.mgp {specie_symbol_list} {by} {ty}'
-    std_string = f'{lammps_location}.var {specie_symbol_list} {by} {ty}'
-    lammps_executable = os.environ.get('lmp')
-    dump_file_name = f'{prefix}.dump'
-    input_file_name = f'{prefix}.in'
-    output_file_name = f'{prefix}.out'
-    input_text = \
-        lammps_calculator.generic_lammps_input(data_file_name, style_string,
-                                               coeff_string, dump_file_name,
-                                               newton=False, std_string=std_string)
-    lammps_calculator.write_text(input_file_name, input_text)
+        lmp_forces = ase_atoms_lmp.get_forces()
+        flare_forces = ase_atoms_flare.get_forces()
+    except Exception as e:
+        os.chdir(curr_path)
+        print(e)
+        raise e
 
-    lammps_calculator.run_lammps(lammps_executable, input_file_name,
-                                 output_file_name)
+    os.chdir(curr_path)
 
-    pred_std = True
-    lammps_forces, lammps_stds = lammps_calculator.lammps_parser(dump_file_name, std=pred_std)
-    mgp_pred = mgp_model.predict(test_envi)
-
-    # check that lammps agrees with gp to within 1 meV/A
-    for i in range(3):
-        print("isclose? diff:", lammps_forces[atom_num, i]-mgp_pred[0][i], "mgp value", mgp_pred[0][i])
-        assert np.isclose(lammps_forces[atom_num, i], mgp_pred[0][i], rtol=1e-2)
+    # check that lammps agrees with mgp to within 1 meV/A
+    print("energy", lmp_en-flare_en, flare_en)
+    assert np.isclose(lmp_en, flare_en, atol=1e-3)
+    print("force", lmp_forces-flare_forces, flare_forces)
+    assert np.isclose(lmp_forces, flare_forces, atol=1e-3).all()
+    print("stress", lmp_stress-flare_stress, flare_stress)
+    assert np.isclose(lmp_stress, flare_stress, atol=1e-3).all()
 
     # check the lmp var
-    mgp_std = np.sqrt(mgp_pred[1])
-    print("isclose? diff:", lammps_stds[atom_num]-mgp_std, "mgp value", mgp_std)
-    assert np.isclose(lammps_stds[atom_num], mgp_std, rtol=1e-2)
+    # mgp_std = np.sqrt(mgp_pred[1])
+    # print("isclose? diff:", lammps_stds[atom_num]-mgp_std, "mgp value", mgp_std)
+    # assert np.isclose(lammps_stds[atom_num], mgp_std, rtol=1e-2)
 
     clean(prefix=prefix)

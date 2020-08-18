@@ -43,7 +43,7 @@ class MappedGaussianProcess:
         lmp_file_name (str): LAMMPS coefficient file name
         n_cpus (int): Default None. Set to the number of cores needed for
             parallelization. Used in the construction of the map.
-        n_sample (int): Default 100. The batch size for building map. Not used now.
+        n_sample (int): Default 10. The batch size for building map. Not used now.
 
     Examples:
 
@@ -54,9 +54,9 @@ class MappedGaussianProcess:
     For `grid_params`, the following keys and values are allowed
 
     Args:
-        'two_body' (dict, optional): if 2-body is present, set as a dictionary
+        'twobody' (dict, optional): if 2-body is present, set as a dictionary
             of parameters for 2-body mapping. Parameters see below.
-        'three_body' (dict, optional): if 3-body is present, set as a dictionary
+        'threebody' (dict, optional): if 3-body is present, set as a dictionary
             of parameters for 3-body mapping. Parameters see below.
         'load_grid' (str, optional): Default None. the path to the directory
             where the previously generated grids (``grid_*.npy``) are stored.
@@ -99,7 +99,7 @@ class MappedGaussianProcess:
         container_only: bool = True,
         lmp_file_name: str = "lmp",
         n_cpus: int = None,
-        n_sample: int = 100,
+        n_sample: int = 10,
     ):
 
         # load all arguments as attributes
@@ -236,7 +236,7 @@ class MappedGaussianProcess:
         xbodies = ["twobody", "threebody"]
         for xb in xbodies:
             if xb in self.maps:
-                num = len(self.maps[xb].maps)
+                num = self.maps[xb].num_lmp_maps #len(self.maps[xb].maps)
             else:
                 num = 0
             header += f"{num} "

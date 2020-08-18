@@ -152,7 +152,7 @@ class Output:
             headerstring += \
                 f'System species: {set(structure.species_labels)}\n'
             headerstring += 'Periodic cell (A): \n'
-            headerstring += str(structure.cell)+'\n'
+            headerstring += str(np.array(structure.cell))+'\n'
 
         if optional:
             for key, value in optional.items():
@@ -173,6 +173,20 @@ class Output:
         if self.always_flush:
             f.handlers[0].flush()
 
+
+    def write_md_header(self, dt, curr_step, dft_step):
+        string = ''
+        # Mark if a frame had DFT forces with an asterisk
+        if not dft_step:
+            string += '-' * 80 + '\n'
+            string += f"-Frame: {curr_step} "
+        else:
+            string += f"\n*-Frame: {curr_step} "
+
+        string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
+        return string
+
+
     def write_md_config(
             self, dt, curr_step, structure, temperature, KE, start_time, dft_step,
             velocities):
@@ -191,16 +205,7 @@ class Output:
         :return:
         """
 
-        string = ''
-
-        # Mark if a frame had DFT forces with an asterisk
-        if not dft_step:
-            string += '-' * 80 + '\n'
-            string += f"-Frame: {curr_step} "
-        else:
-            string += f"\n*-Frame: {curr_step} "
-
-        string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
+        string = self.write_md_header(dt, curr_step, dft_step)
 
         # Construct Header line
         n_space = 30
@@ -238,7 +243,7 @@ class Output:
         # Report cell if stress attribute is present.
         if structure.stress is not None:
             string += 'Periodic cell (A): \n'
-            string += str(structure.cell)+'\n\n'
+            string += str(np.array(structure.cell))+'\n\n'
 
         # Report stress tensor.
         pressure = None
@@ -266,23 +271,23 @@ class Output:
         if pressure is not None:
             string += f'Pressure (GPa): {pressure:.6f} \n'
 
-        string += f'Temperature: {temperature:.2f} K \n'
-        string += f'Kinetic energy: {KE:.6f} eV \n'
+        string += f'Temperature (K): {temperature:.2f} \n'
+        string += f'Kinetic energy (eV): {KE:.6f} \n'
 
         # Report potential energy.
         if structure.potential_energy is not None:
             string += \
-                f'Potential energy: {structure.potential_energy:.6f} eV \n'
+                f'Potential energy (eV): {structure.potential_energy:.6f} \n'
 
         # Report potential energy uncertainty.
         if structure.local_energy_stds is not None:
             pot_en_std = np.sqrt(np.sum(structure.local_energy_stds**2))
-            string += f'Uncertainty: {pot_en_std:.6f} eV \n'
+            string += f'Uncertainty (eV): {pot_en_std:.6f} \n'
 
         # Report total energy.
         if structure.potential_energy is not None:
             tot_en = KE + structure.potential_energy
-            string += f'Total energy: {tot_en:.6f} eV \n'
+            string += f'Total energy (eV): {tot_en:.6f} \n'
 
         logger = logging.getLogger(self.basename+'log')
         logger.info(string)

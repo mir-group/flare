@@ -44,7 +44,7 @@ class MapXbody:
         lower_bound_relax: float = 0.1,
         GP: GaussianProcess = None,
         n_cpus: int = None,
-        n_sample: int = 100,
+        n_sample: int = 10,
         hyps_mask: dict = None,
         hyps: list = None,
         **kwargs,
@@ -106,11 +106,6 @@ class MapXbody:
             m.build_map(GP)
 
     def predict(self, atom_env):
-
-        assert Parameters.compare_dict(
-            self.hyps_mask, atom_env.cutoffs_mask
-        ), "GP.hyps_mask is not the same as atom_env.cutoffs_mask"
-
         f_spcs = np.zeros(3)
         vir_spcs = np.zeros(6)
         v_spcs = 0
@@ -138,21 +133,20 @@ class MapXbody:
             map_ind = self.find_map_index(spc)
             try:
                 f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs)
+                f_spcs += f
+                vir_spcs += vir
+                v_spcs += v
+                e_spcs += e
             except ValueError as err_msg:
                 rebuild_spc.append(err_msg.args[0])
                 new_bounds.append(err_msg.args[1])
 
-            if len(rebuild_spc) > 0:
-                raise ValueError(
-                    rebuild_spc,
-                    new_bounds,
-                    f"The {self.kernel_name} map needs re-constructing.",
-                )
-
-            f_spcs += f
-            vir_spcs += vir
-            v_spcs += v
-            e_spcs += e
+        if len(rebuild_spc) > 0:
+            raise ValueError(
+                rebuild_spc,
+                new_bounds,
+                f"The {self.kernel_name} map needs re-constructing.",
+            )
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
@@ -268,6 +262,17 @@ class SingleMapXbody:
     def construct_grids(self):
         raise NotImplementedError("need to be implemented in child class")
 
+    def LoadGrid(self):
+        if "mgp_grids" not in os.listdir(self.load_grid):
+            raise FileNotFoundError(
+                "Please set 'load_grid' as the location of mgp_grids folder"
+            )
+
+        grid_path = f"{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}"
+        grid_mean = np.load(f"{grid_path}_mean.npy")
+        grid_vars = np.load(f"{grid_path}_var.npy", allow_pickle=True)
+        return grid_mean, grid_vars
+
     def GenGrid(self, GP):
         """
         To use GP to predict value on each grid point, we need to generate the
@@ -281,6 +286,9 @@ class SingleMapXbody:
            and calculate the grid value by multiplying the complete kv vector
            with GP.alpha
         """
+
+        if self.load_grid is not None:
+            return self.LoadGrid()
 
         if self.n_cpus is None:
             processes = mp.cpu_count()
@@ -386,6 +394,14 @@ class SingleMapXbody:
 
         r_cut = cutoffs[self.kernel_name]
 
+        n_grids = np.prod(self.grid_num)
+
+        if np.any(np.array(self.bounds[1]) <= 0.0):
+            if force_block:
+                return np.zeros((n_grids, (e-s)*3))
+            else:
+                return np.zeros((n_grids, e-s))
+ 
         grids = self.construct_grids()
         coords = np.zeros(
             (grids.shape[0], self.grid_dim * 3), dtype=np.float64
@@ -406,7 +422,6 @@ class SingleMapXbody:
 
         k_v = []
         chunk_size = 32 ** 3
-        n_grids = grids.shape[0]
         if n_grids > chunk_size:
             n_chunk = ceil(n_grids / chunk_size)
         else:
@@ -431,7 +446,7 @@ class SingleMapXbody:
         if len(k_v) > 0:
             k_v = np.vstack(k_v).T
         else:
-            k_v = np.zeros((grids.shape[0], 0))
+            k_v = np.zeros((n_grids, 0))
 
         return k_v
 
@@ -463,7 +478,12 @@ class SingleMapXbody:
         """
         build 1-d spline function for mean, 2-d for var
         """
-        self.mean = CubicSpline(self.bounds[0], self.bounds[1], orders=self.grid_num)
+        if np.any(np.array(self.bounds[1]) <= 0.0):
+            bounds = [np.zeros_like(self.bounds[0]), np.ones_like(self.bounds[1])]
+        else:
+            bounds = self.bounds
+
+        self.mean = CubicSpline(bounds[0], bounds[1], orders=self.grid_num)
 
         if self.var_map == "pca":
             if self.svd_rank == "auto":
@@ -473,14 +493,14 @@ class SingleMapXbody:
 
             elif isinstance(self.svd_rank, int):
                 self.var = PCASplines(
-                    self.bounds[0],
-                    self.bounds[1],
+                    bounds[0],
+                    bounds[1],
                     orders=self.grid_num,
                     svd_rank=self.svd_rank,
                 )
 
         if self.var_map == "simple":
-            self.var = CubicSpline(self.bounds[0], self.bounds[1], orders=self.grid_num)
+            self.var = CubicSpline(bounds[0], bounds[1], orders=self.grid_num)
 
     def update_bounds(self, GP):
         rebuild_container = False
@@ -518,18 +538,7 @@ class SingleMapXbody:
 
         self.update_bounds(GP)
 
-        if not self.load_grid:
-            y_mean, y_var = self.GenGrid(GP)
-        else:
-            if "mgp_grids" not in os.listdir(self.load_grid):
-                raise FileNotFoundError(
-                    "Please set 'load_grid' as the location of mgp_grids folder"
-                )
-
-            grid_path = f"{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}"
-            y_mean = np.load(f"{grid_path}_mean.npy")
-            y_var = np.load(f"{grid_path}_var.npy", allow_pickle=True)
-
+        y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
 
         if self.var_map == "pca" and self.svd_rank == "auto":
@@ -574,12 +583,18 @@ class SingleMapXbody:
 
         lower_bound = np.min(upper_bound)
         for env in _global_training_data[GP.name]:
+            if len(env.bond_array_2) == 0:
+                continue
+
             min_dist = env.bond_array_2[0][0]
             if min_dist < lower_bound:
                 lower_bound = min_dist
 
         for struc in _global_training_structures[GP.name]:
             for env in struc:
+                if len(env.bond_array_2) == 0:
+                    continue
+
                 min_dist = env.bond_array_2[0][0]
                 if min_dist < lower_bound:
                     lower_bound = min_dist
@@ -592,12 +607,21 @@ class SingleMapXbody:
         """
 
         min_dist = np.min(lengths)
-        if min_dist < np.max(self.bounds[0][0]):
+        if min_dist < np.max(self.bounds[0]):
             raise ValueError(
                 self.species,
                 min_dist,
                 f"The minimal distance {min_dist:.3f}"
                 f" is below the mgp lower bound {self.bounds[0]}",
+            )
+        
+        max_dist = np.max(lengths)
+        if max_dist > np.min(self.bounds[1]):
+            raise Exception(
+                self.species,
+                max_dist,
+                f"The atomic environment should have cutoff smaller"
+                f" than the GP cutoff"
             )
 
         lengths = np.array(lengths)
@@ -638,7 +662,7 @@ class SingleMapXbody:
                 vir_i = (
                     f_d[:, b, vir_order[i][0]]
                     * xyzs[:, b, vir_order[i][1]]
-                    * lengths[:, 0]
+                    * lengths[:, b]
                 )
                 vir[i] += np.sum(vir_i)
 
@@ -646,7 +670,7 @@ class SingleMapXbody:
         return f, vir, v, e
 
 
-    def write(self, f, write_var):
+    def write(self, f, write_var, permute=False):
         """ 
         Write LAMMPS coefficient file
 
@@ -660,6 +684,7 @@ class SingleMapXbody:
 
         # write header
         elems = self.species_code.split("_")
+
         a = self.bounds[0]
         b = self.bounds[1]
         order = self.grid_num
@@ -670,12 +695,14 @@ class SingleMapXbody:
         header += " " + " ".join(map(str, order))
         f.write(header + "\n")
 
-        # write coefficients
+        # write coeffs
         if write_var:
             coefs = self.var.__coeffs__
         else:
             coefs = self.mean.__coeffs__
+
         self.write_flatten_coeff(f, coefs)
+
 
     def write_flatten_coeff(self, f, coefs):
         """

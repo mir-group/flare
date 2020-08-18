@@ -1,5 +1,4 @@
 import json
-import json
 import logging
 import multiprocessing as mp
 import pickle
@@ -195,6 +194,16 @@ class GaussianProcess:
 
         self.check_instantiation()
 
+    @property
+    def force_noise(self):
+        return Parameters.get_noise(self.hyps_mask, self.hyps,
+                                    constraint=False)
+
+    @property
+    def hyps_and_labels(self):
+        return Parameters.get_hyps(
+            self.hyps_mask, self.hyps, constraint=False, label=True)
+
     def check_instantiation(self):
         """
         Runs a series of checks to ensure that the user has not supplied
@@ -271,8 +280,9 @@ class GaussianProcess:
         if hyps is not None:
             self.hyps = hyps
 
-    def update_db(self, struc: Structure, forces: List,
-                  custom_range: List[int] = (), energy: float = None):
+    def update_db(self, struc: Structure, forces: 'ndarray',
+                  custom_range: List[int] = (), energy: float = None,
+                  stress: 'ndarray' = None):
         """Given a structure and forces, add local environments from the
         structure to the training set of the GP. If energy is given, add the
         entire structure to the training set.
@@ -287,6 +297,10 @@ class GaussianProcess:
                 environments will be added to the training set of the GP.
 
             energy (float): Energy of the structure.
+
+            stress (np.ndarray): Stress tensor of the structure. The stress
+                tensor components should be given in the following order:
+                xx, xy, xz, yy, yz, zz.
         """
 
         # By default, use all atoms in the structure
@@ -720,9 +734,8 @@ class GaussianProcess:
         # Remove the callables
         for key in ['kernel', 'kernel_grad', 'energy_kernel',
                     'energy_force_kernel', 'efs_energy_kernel',
-                    'efs_force_kernel', 'efs_self_kernel']:
-            if out_dict.get(key) is not None:
-                del out_dict[key]
+                    'efs_force_kernel', 'efs_self_kernel', 'output']:
+            out_dict.pop(key)
 
         return out_dict
 

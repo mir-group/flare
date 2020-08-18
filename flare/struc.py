@@ -99,7 +99,7 @@ class Structure:
         self.partial_stress_stds = None
         self.stress = None
         self.stress_stds = None
-        self.potential_energy = None
+        self.potential_energy = None # duplicated with self.energy?
 
         self.mass_dict = mass_dict
 
@@ -335,14 +335,53 @@ class Structure:
 
         if cell is None:
             cell = np.array(atoms.cell)
-        struc = Structure(cell=cell, positions=atoms.positions,
-                          species=atoms.get_chemical_symbols())
+
+        try:
+            forces = atoms.get_forces()
+        except:
+            forces = None 
+
+        try:
+            stds = atoms.get_uncertainties()
+        except:
+            stds = None
+
+        try:
+            energy = atoms.get_potential_energy()
+        except:
+            energy = None
+
+        try:
+            stress = atoms.get_stress()
+        except:
+            stress = None 
+
+        struc = Structure(
+            cell = cell, 
+            positions = atoms.positions,
+            species = atoms.get_chemical_symbols(),
+            forces = forces,
+            stds = stds,
+            energy = energy,
+        )
+        struc.stress = stress
         return struc
 
     def to_ase_atoms(self) -> 'ase.Atoms':
         from ase import Atoms
-        return Atoms(self.species_labels, positions=self.positions,
-                     cell=self.cell, pbc=True)
+        from ase.calculators.singlepoint import SinglePointCalculator
+
+        atoms =  Atoms(self.species_labels, positions=self.positions,
+                       cell=self.cell, pbc=True)
+
+        results = {}
+        properties = ["forces", "energy", "stress"]
+        for p in properties:
+            results[p] = getattr(self, p)
+        calculator = SinglePointCalculator(atoms, **results)
+        atoms.set_calculator(calculator)
+
+        return atoms
 
     def to_pmg_structure(self):
         """

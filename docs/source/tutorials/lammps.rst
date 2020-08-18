@@ -1,9 +1,17 @@
 Compile LAMMPS with MGP Pair Style
 ==================================
-Anders Johansson
+Anders Johansson, Yu Xie
 
 
-After downloading MGP pair style files (`pair_mgp.*`, `pair_mgpf.*`), please follow the instruction below to compile the LAMMPS executable.
+Download
+--------
+
+If you want to use MGP force field in LAMMPS, the first step is to download our MGP pair_style source code from:
+https://github.com/mir-group/flare/tree/master/flare/mgp/pair_styles
+
+If you want to install without Kokkos acceleration, please download `pair_mgp.*`, otherwise, download `pair_mgp_kokkos.*`.
+
+Then, follow the instruction below to compile the LAMMPS executable.
 
 MPI
 ---
