@@ -236,6 +236,8 @@ class OTF:
                     self.dft_step = True
                     self.run_dft()
                     dft_frcs = deepcopy(self.structure.forces)
+                    dft_stress = deepcopy(self.structure.stress)
+                    dft_energy = self.structure.potential_energy
 
                     # run MD step & record the state
                     self.record_state()
@@ -244,7 +246,9 @@ class OTF:
                     self.compute_mae(gp_frcs, dft_frcs)
 
                     # add max uncertainty atoms to training set
-                    self.update_gp(target_atoms, dft_frcs)
+                    self.update_gp(target_atoms, dft_frcs,
+                                   dft_stress=dft_stress,
+                                   dft_energy=dft_energy)
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -256,7 +260,6 @@ class OTF:
             # TODO: Reinstate velocity rescaling.
             self.md_step()
             self.curr_step += 1
-            self.checkpoint()
 
         self.output.conclude_run()
 
@@ -276,12 +279,15 @@ class OTF:
         # call dft and update positions
         self.run_dft()
         dft_frcs = deepcopy(self.structure.forces)
+        dft_stress = deepcopy(self.structure.stress)
+        dft_energy = self.structure.potential_energy
 
         self.update_temperature()
         self.record_state()
 
         # make initial gp model and predict forces
-        self.update_gp(self.init_atoms, dft_frcs)
+        self.update_gp(self.init_atoms, dft_frcs, dft_stress=dft_stress,
+                       dft_energy=dft_energy)
 
     def compute_properties(self):
         '''
@@ -318,8 +324,6 @@ class OTF:
             dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
             dft_kwargs=self.dft_kwargs)
 
-        # Note: also need to update stresses when performing a simulation
-        # in the NPT ensemble.
         self.structure.forces = forces
 
         # write wall time of DFT calculation

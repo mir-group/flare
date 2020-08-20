@@ -99,7 +99,9 @@ class Structure:
         self.partial_stress_stds = None
         self.stress = None
         self.stress_stds = None
-        self.potential_energy = None # duplicated with self.energy?
+
+        # Potential energy attribute needed to mirror ASE atoms object.
+        self.potential_energy = None
 
         self.mass_dict = mass_dict
 

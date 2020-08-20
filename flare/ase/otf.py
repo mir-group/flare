@@ -124,10 +124,6 @@ class ASE_OTF(OTF):
             MD = NPTBerendsen
         elif md_engine == "NPT":
             MD = NPT
-            # TODO: solve the md step
-            assert (
-                md_kwargs["pfactor"] is None
-            ), "Current MD OTF only supports pfactor=None"
         elif md_engine == "Langevin":
             MD = Langevin
         else:
@@ -185,13 +181,16 @@ class ASE_OTF(OTF):
             the FLARE ASE calcuator, and write the results to the
             OTF structure object.
         """
+        # TODO: Manage calculator resets with NPT.
+        # # Reset FLARE calculator if necessary.
+        # if not isinstance(self.atoms.calc, FLARE_Calculator):
+        #     self.flare_calc.results = {}
+        #     self.atoms.calc = self.flare_calc
 
-        # Reset FLARE calculator if necessary.
-        if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.atoms.calc = self.flare_calc
+        # if not self.flare_calc.results:
+        #     self.atoms.calc.calculate(self.atoms)
 
-        if not self.flare_calc.results:
-            self.atoms.calc.calculate(self.atoms)
+        self.atoms.calc.calculate(self.atoms)
 
     def md_step(self):
         """
@@ -201,14 +200,16 @@ class ASE_OTF(OTF):
         # Update previous positions.
         self.structure.prev_positions = np.copy(self.structure.positions)
 
+        # TODO: Update positions with GP forces only.
         # Take MD step.
         f = self.atoms.get_forces()
 
+        # TODO: Modify ASE's NPT implementation to reset calculator results.
         if self.md_engine == "NPT":
             self.flare_calc.results = {}  # init flare calculator
 
             if self.dft_step:
-                reset_npt_momenta(self.md, f)
+                # reset_npt_momenta(self.md, f)
                 self.atoms.calc = self.flare_calc
 
             self.md.step()  # use flare to get force for next step
@@ -218,10 +219,6 @@ class ASE_OTF(OTF):
                 self.atoms.calc = self.flare_calc
 
             self.md.step(f)
-
-        # Update the positions and cell of the structure object.
-        self.structure.cell = np.copy(self.atoms.cell)
-        self.structure.positions = np.copy(self.atoms.positions)
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -248,13 +245,21 @@ class ASE_OTF(OTF):
     def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
         self.output.add_atom_info(train_atoms, self.structure.stds)
 
+        # Convert ASE stress (xx, yy, zz, yz, xz, xy) to FLARE stress
+        # (xx, xy, xz, yy, yz, zz).
+        flare_stress = None
+        if dft_stress is not None:
+            flare_stress = \
+                -np.array([dft_stress[0], dft_stress[5], dft_stress[4],
+                           dft_stress[1], dft_stress[3], dft_stress[2]])
+
         # update gp model
         self.gp.update_db(
             self.structure,
             dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
-            stress=dft_stress,
+            stress=flare_stress,
         )
 
         self.gp.set_L_alpha()
