@@ -10,13 +10,14 @@ class SparseGP:
 
     def __init__(self, kernels: List, descriptor_calculators: List,
                  cutoff: float, many_body_cutoffs, sigma_e: float,
-                 sigma_f: float, sigma_s: float):
+                 sigma_f: float, sigma_s: float, species_map: dict):
 
         self.sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s)
         self.descriptor_calculators = descriptor_calculators
         self.cutoff = cutoff
         self.many_body_cutoffs = many_body_cutoffs
         self.hyps_mask = None
+        self.species_map = species_map
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -59,9 +60,14 @@ class SparseGP:
     def update_db(self, structure, forces, custom_range=(),
                   energy: float = None, stress: 'ndarray' = None):
 
+        # Convert coded species to 0, 1, 2, etc.
+        coded_species = []
+        for spec in structure.coded_species:
+            coded_species.append(self.species_map[spec])
+
         # Convert flare structure to structure descriptor.
         structure_descriptor = StructureDescriptor(
-            structure.cell, structure.coded_species, structure.positions,
+            structure.cell, coded_species, structure.positions,
             self.cutoff, self.many_body_cutoffs, self.descriptor_calculators)
 
         # Add labels to structure descriptor.
@@ -92,6 +98,7 @@ class SparseGP:
 
     def train(self, logger_name=None, max_iterations=10):
         optimize_hyperparameters(self.sparse_gp, max_iterations=max_iterations)
+        # pass
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):

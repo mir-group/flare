@@ -1,5 +1,5 @@
 from ase.calculators.calculator import Calculator
-from build._C_flare import SparseGP_DTC, StructureDescriptor
+from _C_flare import SparseGP_DTC, StructureDescriptor
 import numpy as np
 
 
@@ -12,14 +12,19 @@ class SGP_Calculator(Calculator):
         self.mgp_model = None
 
     def calculate(self, atoms):
+        # Convert coded species to 0, 1, 2, etc.
+        coded_species = []
+        for spec in atoms.coded_species:
+            coded_species.append(self.gp_model.species_map[spec])
+
         # Create structure descriptor.
         structure_descriptor = StructureDescriptor(
-            atoms.cell, atoms.coded_species, atoms.positions,
+            atoms.cell, coded_species, atoms.positions,
             self.gp_model.cutoff, self.gp_model.many_body_cutoffs,
             self.gp_model.descriptor_calculators)
 
         # Predict on structure.
-        self.gp_model.predict_on_structure(structure_descriptor)
+        self.gp_model.sparse_gp.predict_on_structure(structure_descriptor)
 
         # Set results.
         self.results["energy"] = structure_descriptor.mean_efs[0]
