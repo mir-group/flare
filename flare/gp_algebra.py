@@ -806,12 +806,14 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     Gets part of the force/energy vector.
     """
 
+    training_structures = _global_training_structures[name]
+
     size = e - s
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
     force_energy_unit = np.zeros(size,)
 
     for m_index in range(size):
-        training_structure = _global_training_structures[name][m_index+s]
+        training_structure = training_structures[m_index+s]
         kern_curr = 0
         for environment in training_structure:
             kern_curr += kernel(x, environment, d_1, *args)
@@ -827,6 +829,8 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     Gets part of the force/force vector.
     """
 
+    training_data = _global_training_data[name]
+
     size = e - s
     ds = [1, 2, 3]
 
@@ -835,7 +839,7 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     k_v = np.zeros(size * 3)
 
     for m_index in range(size):
-        x_2 = _global_training_data[name][m_index + s]
+        x_2 = training_data[m_index + s]
         for d_2 in ds:
             k_v[m_index * 3 + d_2 - 1] = kernel(x, x_2, d_1, d_2, *args)
 
@@ -871,6 +875,8 @@ def efs_force_vector_unit(name, s, e, x, efs_force_kernel, hyps, cutoffs,
 def efs_energy_vector_unit(name, s, e, x, efs_energy_kernel, hyps, cutoffs,
                            hyps_mask):
 
+    training_structures = _global_training_structures[name]
+
     size = e - s
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -879,7 +885,7 @@ def efs_energy_vector_unit(name, s, e, x, efs_energy_kernel, hyps, cutoffs,
     k_se = np.zeros((6, size))
 
     for m_index in range(size):
-        training_structure = _global_training_structures[name][m_index + s]
+        training_structure = training_structures[m_index + s]
 
         ee_curr = 0
         fe_curr = np.zeros(3)
