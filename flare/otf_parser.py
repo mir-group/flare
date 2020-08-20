@@ -212,9 +212,9 @@ def split_blocks(filename):
         head = 0
         blocks = []
         for index, line in enumerate(lines):
-            if "Frame" in line: #line.startswith("---"):
+            if "*-Frame" in line or line.startswith("---"):
                 blocks.append(lines[head:index])
-                head = index + 1
+                head = index
     return blocks
 
 

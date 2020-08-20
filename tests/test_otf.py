@@ -97,7 +97,7 @@ def test_otf(software, example):
     shutil.copy(f"./test_files/{software}_input_{example}.in", dft_input)
 
     dft_loc = os.environ.get(cmd[software])
-    std_tolerance_factor = -0.1
+    std_tolerance_factor = 0.5
 
     casename = name_list[example]
 
@@ -187,6 +187,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
     )
 
     otf.run()
+    pytest.my_otf = otf 
 
 @pytest.mark.parametrize("software", software_list)
 def test_otf_parser(software):
@@ -204,6 +205,15 @@ def test_otf_parser(software):
     output_name = f"{casename}_otf_{software}.out"
     otf_traj = OtfAnalysis(output_name)
     replicated_gp = otf_traj.make_gp()
+    
+    otf = pytest.my_otf
+    assert otf.dft_count == len(otf_traj.gp_position_list)
+    assert otf.curr_step == len(otf_traj.position_list) + 1 
+    assert otf.dft_count == len(otf_traj.gp_thermostat["temperature"])
+    assert otf.curr_step == len(otf_traj.thermostat["temperature"]) + 1
+
+    if otf_traj.gp_cell_list:
+        assert otf.dft_count == len(otf_traj.gp_cell_list)
 
 
 @pytest.mark.parametrize("software", software_list)
