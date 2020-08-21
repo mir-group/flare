@@ -11,7 +11,6 @@ from copy import deepcopy
 import logging
 
 import numpy as np
-# from ase.md.npt import NPT
 from flare.ase.npt import NPT_mod
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
