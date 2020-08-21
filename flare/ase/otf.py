@@ -11,7 +11,8 @@ from copy import deepcopy
 import logging
 
 import numpy as np
-from ase.md.npt import NPT
+# from ase.md.npt import NPT
+from flare.ase.npt import NPT_mod
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
@@ -123,7 +124,7 @@ class ASE_OTF(OTF):
         elif md_engine == "NPTBerendsen":
             MD = NPTBerendsen
         elif md_engine == "NPT":
-            MD = NPT
+            MD = NPT_mod
         elif md_engine == "Langevin":
             MD = Langevin
         else:
@@ -181,16 +182,14 @@ class ASE_OTF(OTF):
             the FLARE ASE calcuator, and write the results to the
             OTF structure object.
         """
-        # TODO: Manage calculator resets with NPT.
-        # # Reset FLARE calculator if necessary.
-        # if not isinstance(self.atoms.calc, FLARE_Calculator):
-        #     self.flare_calc.results = {}
-        #     self.atoms.calc = self.flare_calc
 
-        # if not self.flare_calc.results:
-        #     self.atoms.calc.calculate(self.atoms)
+        # Change to FLARE calculator if necessary.
+        if not isinstance(self.atoms.calc, FLARE_Calculator):
+            self.flare_calc.results = {}
+            self.atoms.calc = self.flare_calc
 
-        self.atoms.calc.calculate(self.atoms)
+        if not self.flare_calc.results:
+            self.atoms.calc.calculate(self.atoms)
 
     def md_step(self):
         """
@@ -200,25 +199,13 @@ class ASE_OTF(OTF):
         # Update previous positions.
         self.structure.prev_positions = np.copy(self.structure.positions)
 
-        # TODO: Update positions with GP forces only.
+        # Reset FLARE calculator.
+        self.flare_calc.results = {}
+        if self.dft_step:
+            self.atoms.calc = self.flare_calc
+
         # Take MD step.
-        f = self.atoms.get_forces()
-
-        # TODO: Modify ASE's NPT implementation to reset calculator results.
-        if self.md_engine == "NPT":
-            self.flare_calc.results = {}  # init flare calculator
-
-            if self.dft_step:
-                # reset_npt_momenta(self.md, f)
-                self.atoms.calc = self.flare_calc
-
-            self.md.step()  # use flare to get force for next step
-        else:
-            self.flare_calc.results = {}  # init flare calculator
-            if self.dft_step:
-                self.atoms.calc = self.flare_calc
-
-            self.md.step(f)
+        self.md.step()
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
