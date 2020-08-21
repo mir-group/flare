@@ -113,6 +113,7 @@ class MappedGaussianProcess:
 
         self.hyps_mask = None
         self.cutoffs = None
+        self.training_statistics = None
 
         species_labels = []
         coded_species = []
@@ -160,9 +161,10 @@ class MappedGaussianProcess:
                 xb_maps = mapxbody(**args, **self.__dict__)
                 self.maps[key] = xb_maps
 
-    def build_map(self, GP):
+    def build_map(self, GP: GaussianProcess):
         self.hyps_mask = GP.hyps_mask
         self.cutoffs = GP.cutoffs
+        self.training_statistics = GP.training_statistics
 
         for xb in self.maps:
             self.maps[xb].build_map(GP)
@@ -220,7 +222,7 @@ class MappedGaussianProcess:
         return force, variance, virial, energy
 
 
-    def write_lmp_file(self, lammps_name, write_var=False):
+    def write_lmp_file(self, lammps_name: str, write_var: bool=False):
         """
         write the coefficients to a file that can be used by lammps pair style
         """
@@ -273,7 +275,7 @@ class MappedGaussianProcess:
         return out_dict
 
     @staticmethod
-    def from_dict(dictionary: dict):
+    def from_dict(dictionary: dict) -> 'MappedGaussianProcess':
         """
         Create MGP object from dictionary representation.
         """

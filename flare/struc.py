@@ -309,8 +309,12 @@ class Structure:
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
-        struc = Structure(cell=np.array(dictionary['_cell']),
-                          positions=np.array(dictionary['_positions']),
+        struc = Structure(cell=np.array(dictionary.get('_cell',
+                                                       dictionary.get(
+                                                           'cell'))),
+                          positions=np.array(dictionary.get('_positions',
+                                                       dictionary.get(
+                                                           'positions'))),
                           species=dictionary['coded_species'],
                           forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
