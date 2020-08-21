@@ -10,7 +10,9 @@ class SparseGP:
 
     def __init__(self, kernels: List, descriptor_calculators: List,
                  cutoff: float, many_body_cutoffs, sigma_e: float,
-                 sigma_f: float, sigma_s: float, species_map: dict):
+                 sigma_f: float, sigma_s: float, species_map: dict,
+                 energy_training=True, force_training=True,
+                 stress_training=True):
 
         self.sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s)
         self.descriptor_calculators = descriptor_calculators
@@ -18,6 +20,10 @@ class SparseGP:
         self.many_body_cutoffs = many_body_cutoffs
         self.hyps_mask = None
         self.species_map = species_map
+
+        self.energy_training = energy_training
+        self.force_training = force_training
+        self.stress_training = stress_training
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -71,14 +77,14 @@ class SparseGP:
             self.cutoff, self.many_body_cutoffs, self.descriptor_calculators)
 
         # Add labels to structure descriptor.
-        if forces is not None:
-            structure_descriptor.forces = forces.reshape(-1)
-
-        if energy is not None:
+        if (energy is not None) and (self.energy_training):
             energy_array = np.array([[energy]])
             structure_descriptor.energy = energy_array
 
-        if stress is not None:
+        if (forces is not None) and (self.force_training):
+            structure_descriptor.forces = forces.reshape(-1)
+
+        if (stress is not None) and (self.stress_training):
             structure_descriptor.stresses = stress
 
         # Assemble sparse environments.
