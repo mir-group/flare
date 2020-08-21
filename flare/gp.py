@@ -137,7 +137,7 @@ class GaussianProcess:
         else:
             self.n_cpus = 1
 
-        self.training_data = []  # Atomic environments
+        self.training_data = [] # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
         self.training_labels_np = np.empty(0, )
         self.n_envs_prev = len(self.training_data)
@@ -164,6 +164,8 @@ class GaussianProcess:
 
         # File used for reading / writing model if model is large
         self.ky_mat_file = None
+        # Flag if too-big warning has been printed for this model
+        self.large_warning = False
 
         if self.logger_name is None:
             if self.output is None:
@@ -397,6 +399,23 @@ class GaussianProcess:
             logger_name = "gp_algebra"
 
         disp = print_progress
+
+        if max(len(self.training_data), len(self.training_labels)) > 5000\
+                and not self.large_warning:
+
+            self.large_warning = True
+            warning_message = "WARNING! Your GP is very large (>5000 atomic "\
+                  "environments). The hyperparameter optimization process "\
+                  "does not scale favorably with increasing atomic " \
+                              "environments"\
+                  " (roughly N^2)"\
+                  "and so your GP may take a very long time to train."\
+                  "Consider finding a way to reduce the number of atomic "\
+                  "environments in your model if you want to optimize the "\
+                  "hyperparameters or optimize them by a different route."
+
+            logger = logging.getLogger(self.logger_name)
+            logger.warning(warning_message)
 
         if len(self.training_data) == 0 or len(self.training_labels) == 0:
             raise Warning("You are attempting to train a GP with no "
