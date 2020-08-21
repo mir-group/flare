@@ -11,6 +11,7 @@ class SparseGP:
     def __init__(self, kernels: List, descriptor_calculators: List,
                  cutoff: float, many_body_cutoffs, sigma_e: float,
                  sigma_f: float, sigma_s: float, species_map: dict,
+                 single_atom_energies: dict = None,
                  energy_training=True, force_training=True,
                  stress_training=True):
 
@@ -20,7 +21,7 @@ class SparseGP:
         self.many_body_cutoffs = many_body_cutoffs
         self.hyps_mask = None
         self.species_map = species_map
-
+        self.single_atom_energies = single_atom_energies
         self.energy_training = energy_training
         self.force_training = force_training
         self.stress_training = stress_training
@@ -78,8 +79,15 @@ class SparseGP:
 
         # Add labels to structure descriptor.
         if (energy is not None) and (self.energy_training):
-            energy_array = np.array([[energy]])
-            structure_descriptor.energy = energy_array
+            # Sum up single atom energies.
+            single_atom_sum = 0
+            if self.single_atom_energies is not None:
+                for spec in coded_species:
+                    single_atom_sum += self.single_atom_energies[spec]
+
+            # Correct the energy label and assign to structure.
+            corrected_energy = energy - single_atom_sum
+            structure_descriptor.energy = np.array([[corrected_energy]])
 
         if (forces is not None) and (self.force_training):
             structure_descriptor.forces = forces.reshape(-1)
