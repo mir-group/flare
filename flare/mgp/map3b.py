@@ -318,7 +318,7 @@ def get_triplets_for_kern_jit(
     etypes2,
 ):
 
-    # triplet_list = np.empty((0, 6), dtype=np.float64)
+    #triplet_list = np.empty((0, 6), dtype=np.float64)
     triplet_list = []
 
     ej1 = etypes2[0]
@@ -332,7 +332,7 @@ def get_triplets_for_kern_jit(
         all_spec.remove(c1)
 
         for m in range(bond_array_1.shape[0]):
-            two_inds = ind_list.copy()
+            two_inds = [ind_list[0], ind_list[1]]
 
             ri1 = bond_array_1[m, 0]
             ci1 = bond_array_1[m, 1:]
@@ -358,7 +358,7 @@ def get_triplets_for_kern_jit(
                         ri3 = cross_bond_dists_1[m, m + n + 1]
                         ci3 = np.zeros(3)
 
-                        perms = get_permutations(c1, np.array([ei1, ei2]), c2, etypes2,)
+                        perms = get_permutations(c1, np.array([ei1, ei2]), c2, etypes2)
 
                         tri = np.array([ri1, ri2, ri3])
                         crd1 = np.array([ci1[0], ci2[0], ci3[0]])
@@ -378,5 +378,7 @@ def get_triplets_for_kern_jit(
                                 (tricrd, crd_p[:, 0], crd_p[:, 1], crd_p[:, 2])
                             )
                             triplet_list.append(tricrd)
+                            #tricrd = np.expand_dims(tricrd, axis=0)
+                            #triplet_list = np.vstack((triplet_list, tricrd))
 
     return triplet_list
