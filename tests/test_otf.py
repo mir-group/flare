@@ -187,7 +187,8 @@ def test_otf_par(software, per_atom_par, n_cpus):
     )
 
     otf.run()
-    pytest.my_otf = otf 
+    pytest.my_otf = otf
+
 
 @pytest.mark.parametrize("software", software_list)
 def test_otf_parser(software):
@@ -205,14 +206,14 @@ def test_otf_parser(software):
     output_name = f"{casename}_otf_{software}.out"
     otf_traj = OtfAnalysis(output_name)
     replicated_gp = otf_traj.make_gp()
-    
+
     # TODO: debug cp2k
     if software == "cp2k":
         pytest.skip()
-        
+
     otf = pytest.my_otf
     assert otf.dft_count == len(otf_traj.gp_position_list)
-    assert otf.curr_step == len(otf_traj.position_list) + 1 
+    assert otf.curr_step == len(otf_traj.position_list) + 1
     assert otf.dft_count == len(otf_traj.gp_thermostat["temperature"])
     assert otf.curr_step == len(otf_traj.thermostat["temperature"]) + 1
 

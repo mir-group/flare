@@ -1,6 +1,5 @@
 import numpy as np
-from flare.kernels.kernels import force_helper, force_energy_helper, \
-    grad_helper
+from flare.kernels.kernels import force_helper, force_energy_helper, grad_helper
 from numba import njit
 from flare.env import AtomicEnvironment
 from typing import Callable
@@ -9,8 +8,12 @@ from math import exp
 
 
 class TwoBodyKernel:
-    def __init__(self, hyperparameters: 'ndarray', cutoff: float,
-                 cutoff_func: Callable = cf.quadratic_cutoff):
+    def __init__(
+        self,
+        hyperparameters: "ndarray",
+        cutoff: float,
+        cutoff_func: Callable = cf.quadratic_cutoff,
+    ):
         self.hyperparameters = hyperparameters
         self.signal_variance = hyperparameters[0]
         self.length_scale = hyperparameters[1]
@@ -41,8 +44,7 @@ class TwoBodyKernel:
         args = self.get_args(env1, env2)
         return stress_stress(*args)
 
-    def force_force_gradient(self, env1: AtomicEnvironment,
-                             env2: AtomicEnvironment):
+    def force_force_gradient(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         args = self.get_args(env1, env2)
         return force_force_gradient(*args)
 
@@ -55,19 +57,35 @@ class TwoBodyKernel:
         return efs_force(*args)
 
     def efs_self(self, env1: AtomicEnvironment):
-        return efs_self(env1.bond_array_2, env1.ctype, env1.etypes,
-                        self.signal_variance, self.length_scale,
-                        self.cutoff, self.cutoff_func)
+        return efs_self(
+            env1.bond_array_2,
+            env1.ctype,
+            env1.etypes,
+            self.signal_variance,
+            self.length_scale,
+            self.cutoff,
+            self.cutoff_func,
+        )
 
     def get_args(self, env1, env2):
-        return (env1.bond_array_2, env1.ctype, env1.etypes,
-                env2.bond_array_2, env2.ctype, env2.etypes,
-                self.signal_variance, self.length_scale,
-                self.cutoff, self.cutoff_func)
+        return (
+            env1.bond_array_2,
+            env1.ctype,
+            env1.etypes,
+            env2.bond_array_2,
+            env2.ctype,
+            env2.etypes,
+            self.signal_variance,
+            self.length_scale,
+            self.cutoff,
+            self.cutoff_func,
+        )
+
 
 @njit
-def energy_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                  sig, ls, r_cut, cutoff_func):
+def energy_energy(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between two local energies accelerated
     with Numba.
 
@@ -117,8 +135,9 @@ def energy_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
 
 @njit
-def force_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                sig, ls, r_cut, cutoff_func):
+def force_force(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between two force components accelerated
     with Numba.
 
@@ -176,16 +195,17 @@ def force_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                         B = r11 * ci
                         C = r11 * cj
 
-                        kernel_matrix[d1, d2] += \
-                            force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                         ls1, ls2, ls3, sig2)
+                        kernel_matrix[d1, d2] += force_helper(
+                            A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2
+                        )
 
     return kernel_matrix
 
 
 @njit
-def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                 sig, ls, r_cut, cutoff_func):
+def force_energy(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between a force component and a local
     energy accelerated with Numba.
 
@@ -235,16 +255,15 @@ def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     ci = bond_array_1[m, d1 + 1]
                     fi, fdi = cutoff_func(r_cut, ri, ci)
                     B = r11 * ci
-                    kern[d1] += \
-                        force_energy_helper(B, D, fi, fj, fdi, ls1, ls2,
-                                            sig2)
+                    kern[d1] += force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
 
     return kern / 2
 
 
 @njit
-def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                  sig, ls, r_cut, cutoff_func):
+def stress_energy(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between a partial stress component and a
     local energy accelerated with Numba.
 
@@ -295,9 +314,7 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     ci = bond_array_1[m, d1 + 1]
                     B = r11 * ci
                     fi, fdi = cutoff_func(r_cut, ri, ci)
-                    force_kern = \
-                        force_energy_helper(B, D, fi, fj, fdi, ls1, ls2,
-                                            sig2)
+                    force_kern = force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
 
                     # Compute the stress kernel from the force kernel.
                     for d2 in range(d1, 3):
@@ -309,8 +326,9 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
 
 @njit
-def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                 sig, ls, r_cut, cutoff_func):
+def stress_force(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between two force components accelerated
     with Numba.
 
@@ -367,11 +385,10 @@ def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                             C = r11 * cj
                             D = r11 * r11
 
-                            force_kern = \
-                                force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                             ls1, ls2, ls3, sig2)
-                            kernel_matrix[stress_count, d3] -= \
-                                force_kern * coordinate
+                            force_kern = force_helper(
+                                A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2
+                            )
+                            kernel_matrix[stress_count, d3] -= force_kern * coordinate
 
                         stress_count += 1
 
@@ -379,8 +396,9 @@ def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
 
 @njit
-def stress_stress(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                  sig, ls, r_cut, cutoff_func):
+def stress_stress(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between two partial stress components
         accelerated with Numba.
 
@@ -438,12 +456,12 @@ def stress_stress(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                             fj, fdj = cutoff_func(r_cut, rj, cj)
                             for d4 in range(d3, 3):
                                 coordinate_2 = bond_array_2[n, d4 + 1] * rj
-                                force_kern = \
-                                    force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                                 ls1, ls2, ls3, sig2)
-                                kernel_matrix[s1, s2] += \
-                                    force_kern * coordinate_1 * \
-                                    coordinate_2
+                                force_kern = force_helper(
+                                    A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2
+                                )
+                                kernel_matrix[s1, s2] += (
+                                    force_kern * coordinate_1 * coordinate_2
+                                )
 
                                 s2 += 1
                         s1 += 1
@@ -452,8 +470,9 @@ def stress_stress(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
 
 @njit
-def force_force_gradient(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                         sig, ls, r_cut, cutoff_func):
+def force_force_gradient(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
     """2-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
 
@@ -517,9 +536,24 @@ def force_force_gradient(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                         A = ci * cj
                         C = r11 * cj
 
-                        kern_term, sig_term, ls_term = \
-                            grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1,
-                                        ls2, ls3, ls4, ls5, ls6, sig2, sig3)
+                        kern_term, sig_term, ls_term = grad_helper(
+                            A,
+                            B,
+                            C,
+                            D,
+                            fi,
+                            fj,
+                            fdi,
+                            fdj,
+                            ls1,
+                            ls2,
+                            ls3,
+                            ls4,
+                            ls5,
+                            ls6,
+                            sig2,
+                            sig3,
+                        )
 
                         kernel_matrix[d1, d2] += kern_term
                         kernel_grad[0, d1, d2] += sig_term
@@ -529,8 +563,9 @@ def force_force_gradient(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
 
 @njit
-def efs_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-               sig, ls, r_cut, cutoff_func):
+def efs_energy(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
 
     energy_kernel = 0
     # TODO: add dtype to other zeros
@@ -564,24 +599,22 @@ def efs_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     ci = bond_array_1[m, d1 + 1]
                     B = r11 * ci
                     _, fdi = cutoff_func(r_cut, ri, ci)
-                    force_kern = \
-                        force_energy_helper(B, D, fi, fj, fdi, ls1, ls2,
-                                            sig2)
+                    force_kern = force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
                     force_kernels[d1] += force_kern / 2
 
                     # Compute the stress kernel from the force kernel.
                     for d2 in range(d1, 3):
                         coordinate = bond_array_1[m, d2 + 1] * ri
-                        stress_kernels[stress_count] -= \
-                            force_kern * coordinate / 4
+                        stress_kernels[stress_count] -= force_kern * coordinate / 4
                         stress_count += 1
 
     return energy_kernel, force_kernels, stress_kernels
 
 
 @njit
-def efs_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-              sig, ls, r_cut, cutoff_func):
+def efs_force(
+    bond_array_1, c1, etypes1, bond_array_2, c2, etypes2, sig, ls, r_cut, cutoff_func
+):
 
     energy_kernels = np.zeros(3)
     force_kernels = np.zeros((3, 3))
@@ -613,9 +646,9 @@ def efs_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
                     C = r11 * cj
 
-                    energy_kernels[d1] += \
-                        force_energy_helper(-C, D, fj, fi, fdj, ls1, ls2,
-                                            sig2) / 2
+                    energy_kernels[d1] += (
+                        force_energy_helper(-C, D, fj, fi, fdj, ls1, ls2, sig2) / 2
+                    )
 
                     stress_count = 0
                     for d3 in range(3):
@@ -624,15 +657,16 @@ def efs_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                         A = ci * cj
                         B = r11 * ci
 
-                        force_kern = \
-                            force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                         ls1, ls2, ls3, sig2)
+                        force_kern = force_helper(
+                            A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2
+                        )
                         force_kernels[d3, d1] += force_kern
 
                         for d2 in range(d3, 3):
                             coordinate = bond_array_1[m, d2 + 1] * ri
-                            stress_kernels[stress_count, d1] -= \
+                            stress_kernels[stress_count, d1] -= (
                                 force_kern * coordinate / 2
+                            )
 
                             stress_count += 1
 
@@ -679,16 +713,15 @@ def efs_self(bond_array_1, c1, etypes1, sig, ls, r_cut, cutoff_func):
                     A = ci * cj
                     B = r11 * ci
 
-                    force_kern = \
-                        force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                     ls1, ls2, ls3, sig2)
+                    force_kern = force_helper(
+                        A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2
+                    )
                     force_kernels[d1] += force_kern
 
                     for d2 in range(d1, 3):
                         coord1 = bond_array_1[m, d2 + 1] * ri
                         coord2 = bond_array_1[n, d2 + 1] * rj
-                        stress_kernels[stress_count] += \
-                            force_kern * coord1 * coord2 / 4
+                        stress_kernels[stress_count] += force_kern * coord1 * coord2 / 4
 
                         stress_count += 1
 
