@@ -20,6 +20,7 @@ def hard_cutoff(r_cut: float, ri: float, ci: float):
     """
     return 1, 0
 
+
 @njit
 def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
@@ -33,7 +34,7 @@ def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
         (float, float): Cutoff value and its derivative.
     """
 
-    if (r_cut > ri):
+    if r_cut > ri:
         rdiff = r_cut - ri
         fi = rdiff * rdiff
         fdi = 2 * rdiff * ci
@@ -102,8 +103,8 @@ def cosine_cutoff(r_cut: float, ri: float, ci: float, d: float = 1):
     """
 
     if ri > r_cut - d:
-        fi = (1/2) * (cos(pi * (ri - r_cut + d) / d) + 1)
-        fdi = (pi/(2 * d)) * sin(pi * (r_cut - ri) / d) * ci
+        fi = (1 / 2) * (cos(pi * (ri - r_cut + d) / d) + 1)
+        fdi = (pi / (2 * d)) * sin(pi * (r_cut - ri) / d) * ci
     else:
         fi = 1
         fdi = 0
