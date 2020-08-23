@@ -159,13 +159,17 @@ class MapXbody:
         out_dict.pop("kernel_info")
 
         # only save the mean coefficients and var if var_map == 'simple'
-        if self.var_map == 'simple':
-            out_dict["maps"] = [[m.mean.__coeffs__ for m in self.maps],
-                                [m.var.__coeffs__ for m in self.maps]]
+        if self.var_map == "simple":
+            out_dict["maps"] = [
+                [m.mean.__coeffs__ for m in self.maps],
+                [m.var.__coeffs__ for m in self.maps],
+            ]
         else:
             out_dict["maps"] = [[m.mean.__coeffs__ for m in self.maps]]
-            if self.var_map == 'pca':
-                warnings.warn("var_map='pca' is too heavy to dump, change to var_map=None")
+            if self.var_map == "pca":
+                warnings.warn(
+                    "var_map='pca' is too heavy to dump, change to var_map=None"
+                )
                 out_dict["var_map"] = None
 
         out_dict["bounds"] = [m.bounds for m in self.maps]
@@ -201,11 +205,10 @@ class MapXbody:
             singlexb.set_bounds(bounds[0], bounds[1])
             singlexb.build_map_container()
             singlexb.mean.__coeffs__ = np.array(dictionary["maps"][0][m])
-            if new_mgp.var_map == 'simple':
+            if new_mgp.var_map == "simple":
                 singlexb.var.__coeffs__ = np.array(dictionary["maps"][1][m])
 
         return new_mgp
-
 
     def write(self, f, write_var):
         for m in self.maps:
@@ -398,10 +401,10 @@ class SingleMapXbody:
 
         if np.any(np.array(self.bounds[1]) <= 0.0):
             if force_block:
-                return np.zeros((n_grids, (e-s)*3))
+                return np.zeros((n_grids, (e - s) * 3))
             else:
-                return np.zeros((n_grids, e-s))
- 
+                return np.zeros((n_grids, e - s))
+
         grids = self.construct_grids()
         coords = np.zeros(
             (grids.shape[0], self.grid_dim * 3), dtype=np.float64
@@ -493,10 +496,7 @@ class SingleMapXbody:
 
             elif isinstance(self.svd_rank, int):
                 self.var = PCASplines(
-                    bounds[0],
-                    bounds[1],
-                    orders=self.grid_num,
-                    svd_rank=self.svd_rank,
+                    bounds[0], bounds[1], orders=self.grid_num, svd_rank=self.svd_rank,
                 )
 
         if self.var_map == "simple":
@@ -614,14 +614,14 @@ class SingleMapXbody:
                 f"The minimal distance {min_dist:.3f}"
                 f" is below the mgp lower bound {self.bounds[0]}",
             )
-        
+
         max_dist = np.max(lengths)
         if max_dist > np.min(self.bounds[1]):
             raise Exception(
                 self.species,
                 max_dist,
                 f"The atomic environment should have cutoff smaller"
-                f" than the GP cutoff"
+                f" than the GP cutoff",
             )
 
         lengths = np.array(lengths)
@@ -669,7 +669,6 @@ class SingleMapXbody:
         vir *= self.bodies / 2
         return f, vir, v, e
 
-
     def write(self, f, write_var, permute=False):
         """ 
         Write LAMMPS coefficient file
@@ -702,7 +701,6 @@ class SingleMapXbody:
             coefs = self.mean.__coeffs__
 
         self.write_flatten_coeff(f, coefs)
-
 
     def write_flatten_coeff(self, f, coefs):
         """

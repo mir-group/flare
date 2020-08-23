@@ -49,6 +49,7 @@ def read_qe_results(self):
 md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]
 number_of_steps = 3
 
+
 @pytest.fixture(scope="module")
 def md_params():
 
@@ -186,7 +187,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         dft_calc=qe_calc,
         md_engine=md_engine,
         md_kwargs=md_kwargs,
-        trajectory=md_engine+"_otf.traj",
+        trajectory=md_engine + "_otf.traj",
         **otf_params,
     )
 
@@ -211,12 +212,14 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         if "slurm" in f:
             os.remove(f)
 
+
 @pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):
     new_otf = ASE_OTF.from_checkpoint(md_engine + "_checkpt.json")
     assert new_otf.curr_step == number_of_steps
     new_otf.number_of_steps = new_otf.number_of_steps + 2
     new_otf.run()
+
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_parser(md_engine):

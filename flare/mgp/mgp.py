@@ -170,9 +170,9 @@ class MappedGaussianProcess:
             self.maps[xb].build_map(GP)
 
         # write to lammps pair style coefficient file
-        self.write_lmp_file(self.lmp_file_name + '.mgp', write_var=False)
-        if self.var_map == 'simple':
-            self.write_lmp_file(self.lmp_file_name + '.var', write_var=True)
+        self.write_lmp_file(self.lmp_file_name + ".mgp", write_var=False)
+        if self.var_map == "simple":
+            self.write_lmp_file(self.lmp_file_name + ".var", write_var=True)
 
     def predict(
         self, atom_env: AtomicEnvironment
@@ -221,8 +221,7 @@ class MappedGaussianProcess:
 
         return force, variance, virial, energy
 
-
-    def write_lmp_file(self, lammps_name: str, write_var: bool=False):
+    def write_lmp_file(self, lammps_name: str, write_var: bool = False):
         """
         write the coefficients to a file that can be used by lammps pair style
         """
@@ -236,7 +235,7 @@ class MappedGaussianProcess:
         xbodies = ["twobody", "threebody"]
         for xb in xbodies:
             if xb in self.maps:
-                num = self.maps[xb].num_lmp_maps #len(self.maps[xb].maps)
+                num = self.maps[xb].num_lmp_maps  # len(self.maps[xb].maps)
             else:
                 num = 0
             header += f"{num} "
@@ -257,7 +256,7 @@ class MappedGaussianProcess:
         out_dict.pop("maps")
 
         # Uncertainty mappings currently not serializable;
-        if self.var_map == 'pca':
+        if self.var_map == "pca":
             warnings.warn(
                 "Uncertainty mappings cannot be serialized, "
                 "and so the MGP dict outputted will not have "
@@ -275,7 +274,7 @@ class MappedGaussianProcess:
         return out_dict
 
     @staticmethod
-    def from_dict(dictionary: dict) -> 'MappedGaussianProcess':
+    def from_dict(dictionary: dict) -> "MappedGaussianProcess":
         """
         Create MGP object from dictionary representation.
         """
@@ -315,18 +314,22 @@ class MappedGaussianProcess:
 
         return new_mgp
 
-    def write_model(self, name: str, format: str="json"):
+    def write_model(self, name: str, format: str = "json"):
         """
         Write everything necessary to re-load and re-use the model
         :param model_name:
         :return:
         """
-        if "json" in format.lower() or 'json' in name:
+        if "json" in format.lower() or "json" in name:
             with open(f"{name}.json", "w") as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
-        elif "pickle" in format.lower() or "binary" in format.lower()\
-                or 'pickle' in name or 'binary' in name:
+        elif (
+            "pickle" in format.lower()
+            or "binary" in format.lower()
+            or "pickle" in name
+            or "binary" in name
+        ):
             with open(f"{name}.pickle", "wb") as f:
                 pickle.dump(self, f)
 
@@ -334,13 +337,13 @@ class MappedGaussianProcess:
             raise ValueError("Requested format not found.")
 
     @staticmethod
-    def from_file(filename: str, format: str = ''):
-        if ".json" in filename or format.lower() == 'json':
+    def from_file(filename: str, format: str = ""):
+        if ".json" in filename or format.lower() == "json":
             with open(filename, "r") as f:
                 model = MappedGaussianProcess.from_dict(json.loads(f.readline()))
             return model
 
-        elif "pickle" in filename or format.lower() in ['binary', 'pickle']:
+        elif "pickle" in filename or format.lower() in ["binary", "pickle"]:
             with open(filename, "rb") as f:
                 return pickle.load(f)
         else:
