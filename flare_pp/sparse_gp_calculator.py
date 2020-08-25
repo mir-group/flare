@@ -19,27 +19,38 @@ class SGP_Calculator(Calculator):
 
         # Create structure descriptor.
         structure_descriptor = StructureDescriptor(
-            atoms.cell, coded_species, atoms.positions,
-            self.gp_model.cutoff, self.gp_model.many_body_cutoffs,
-            self.gp_model.descriptor_calculators)
+            atoms.cell,
+            coded_species,
+            atoms.positions,
+            self.gp_model.cutoff,
+            self.gp_model.many_body_cutoffs,
+            self.gp_model.descriptor_calculators,
+        )
 
         # Predict on structure.
         self.gp_model.sparse_gp.predict_on_structure(structure_descriptor)
 
         # Set results.
         self.results["energy"] = structure_descriptor.mean_efs[0]
-        self.results["forces"] = \
-            structure_descriptor.mean_efs[1:-6].reshape(-1, 3)
+        self.results["forces"] = structure_descriptor.mean_efs[1:-6].reshape(-1, 3)
 
         # Convert stress to ASE format.
         flare_stress = structure_descriptor.mean_efs[-6:]
-        ase_stress = \
-            -np.array([flare_stress[0], flare_stress[3], flare_stress[5],
-                       flare_stress[4], flare_stress[2], flare_stress[1]])
+        ase_stress = -np.array(
+            [
+                flare_stress[0],
+                flare_stress[3],
+                flare_stress[5],
+                flare_stress[4],
+                flare_stress[2],
+                flare_stress[1],
+            ]
+        )
         self.results["stress"] = ase_stress
 
-        self.results["stds"] = \
-            np.sqrt(structure_descriptor.variance_efs[1:-6].reshape(-1, 3))
+        self.results["stds"] = np.sqrt(
+            structure_descriptor.variance_efs[1:-6].reshape(-1, 3)
+        )
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():

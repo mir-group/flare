@@ -25,18 +25,20 @@ cutoff_function = "quadratic"
 cutoff = 1.0
 many_body_cutoffs = [cutoff]
 radial_basis = "chebyshev"
-radial_hyps = [0., cutoff]
+radial_hyps = [0.0, cutoff]
 cutoff_hyps = []
 settings = [2, 4, 3]
-calc = B2_Calculator(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
-                     settings, 0)
+calc = B2_Calculator(
+    radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings, 0
+)
 sigma_e = 1.0
 sigma_f = 1.0
 sigma_s = 1.0
 
 sgp_cpp = SparseGP_DTC([kernel], sigma_e, sigma_f, sigma_s)
-sgp_py = SparseGP([kernel], [calc], cutoff, many_body_cutoffs, sigma_e,
-                  sigma_f, sigma_s)
+sgp_py = SparseGP(
+    [kernel], [calc], cutoff, many_body_cutoffs, sigma_e, sigma_f, sigma_s
+)
 
 
 def test_update_db():
@@ -45,8 +47,8 @@ def test_update_db():
 
     sgp_py.update_db(test_structure, forces, custom_range, energy, stress)
 
-    assert(sgp_py.sparse_gp.Kuu.shape[0] == len(custom_range))
-    assert(sgp_py.sparse_gp.Kuf_struc.shape[1] == 1 + n_atoms * 3 + 6)
+    assert sgp_py.sparse_gp.Kuu.shape[0] == len(custom_range)
+    assert sgp_py.sparse_gp.Kuf_struc.shape[1] == 1 + n_atoms * 3 + 6
 
 
 def test_train():
@@ -57,5 +59,5 @@ def test_train():
     sgp_py.train(max_iterations=20)
     hyps_post = tuple(sgp_py.hyps)
 
-    assert(hyps_init != hyps_post)
-    assert(sgp_py.likelihood != 0.)
+    assert hyps_init != hyps_post
+    assert sgp_py.likelihood != 0.0
