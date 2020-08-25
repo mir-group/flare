@@ -293,7 +293,8 @@ void SparseGP_DTC ::update_matrices() {
   Sigma = sigma_inv.inverse();
 
   // Calculate Kuu inverse.
-  Kuu_inverse = Kuu.inverse();
+  Kuu_inverse = (Kuu +
+    Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols())).inverse();
 
   // Calculate alpha.
   alpha = Sigma * Kuf * noise_vector.asDiagonal() * y;
@@ -420,13 +421,20 @@ void SparseGP_DTC ::compute_likelihood() {
       Kuf.transpose() * Kuu_inverse * Kuf +
       noise.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
 
-  // Perform in place Cholesky decomposition.
-  Eigen::LLT<Eigen::Ref<Eigen::MatrixXd>> llt(Qff_plus_lambda);
-  Eigen::VectorXd Q_inv_y = llt.solve(y);
-  Eigen::ArrayXd Q_chol_diag = Qff_plus_lambda.diagonal();
+  // Decompose the matrix. Use QR decomposition instead of LLT/LDLT becaues Qff
+  // becomes nonpositive when the training set is large.
+  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Qff_plus_lambda);
+  Eigen::VectorXd Q_inv_y = qr.solve(y);
+  Eigen::MatrixXd qr_mat = qr.matrixQR();
+
+  // Compute the complexity penalty.
+  complexity_penalty = 0;
+  for (int i = 0; i < qr_mat.rows(); i++){
+      complexity_penalty += -log(abs(qr_mat(i, i)));
+  }
+  complexity_penalty /= 2;
 
   double half = 1.0 / 2.0;
-  complexity_penalty = -Q_chol_diag.log().sum();
   data_fit = -half * y.transpose() * Q_inv_y;
   constant_term = -half * n_train * log(2 * M_PI);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
@@ -496,7 +504,8 @@ double SparseGP_DTC ::compute_likelihood_gradient(
     hyp_index += n_hyps;
   }
 
-  Eigen::MatrixXd Kuu_inverse = Kuu_mat.inverse();
+  Eigen::MatrixXd Kuu_inverse = (Kuu_mat +
+    Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols())).inverse();
 
   // Construct updated noise vector.
   Eigen::VectorXd noise_vec = Eigen::VectorXd::Zero(
@@ -555,17 +564,19 @@ double SparseGP_DTC ::compute_likelihood_gradient(
       Kuf_mat.transpose() * Kuu_inverse * Kuf_mat +
       noise_vec.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
 
-  // Perform Cholesky decomposition (needed to avoid infinities in the complexity term).
-  Eigen::LLT<Eigen::MatrixXd> llt(Qff_plus_lambda);
-  Eigen::MatrixXd Q_chol = llt.matrixL();
-  Eigen::ArrayXd Q_chol_diag = Q_chol.diagonal();
+  // Compute complexity penalty from QR decomposition.
+  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Qff_plus_lambda);
+  Eigen::VectorXd Q_inv_y = qr.solve(y);
+  Eigen::MatrixXd qr_mat = qr.matrixQR();
 
-  // Compute inverse (needed for likelihood gradient).
-  Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
+  double complexity_penalty = 0;
+  for (int i = 0; i < qr_mat.rows(); i++){
+      complexity_penalty += -log(abs(qr_mat(i, i)));
+  }
+  complexity_penalty /= 2;
 
   double half = 1.0 / 2.0;
-  double complexity_penalty = -Q_chol_diag.log().sum();
-  double data_fit = -half * y.transpose() * Q_inv * y;
+  double data_fit = -half * y.transpose() * Q_inv_y;
   double constant_term = -half * n_labels * log(2 * M_PI);
   double log_marginal_likelihood =
     complexity_penalty + data_fit + constant_term;
@@ -573,9 +584,10 @@ double SparseGP_DTC ::compute_likelihood_gradient(
   // Compute likelihood gradient.
   likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
   for (int i = 0; i < n_hyps_total; i ++){
+      Eigen::MatrixXd Qff_inv_grad = qr.solve(Qff_grads[i]);
       likelihood_gradient(i) =
-        -half * (Q_inv * Qff_grads[i]).trace() +
-        half * y.transpose() * Q_inv * Qff_grads[i] * Q_inv * y;
+        -half * (Qff_inv_grad).trace() +
+        half * y.transpose() * Qff_inv_grad * Q_inv_y;
   }
 
   return log_marginal_likelihood;

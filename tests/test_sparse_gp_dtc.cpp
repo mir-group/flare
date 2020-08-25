@@ -220,3 +220,40 @@ TEST_F(SparseTest, AddOrder){
       }
   }
 }
+
+// TEST(QRTest, QRTest){
+//     Eigen::MatrixXd A(3, 3);
+//     A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+//     Eigen::MatrixXd thinQ(Eigen::MatrixXd::Identity(5,3)), Q, QR;
+//     Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
+//     Q = qr.householderQ();
+//     QR = qr.matrixQR();
+//     thinQ = qr.householderQ() * thinQ;
+//     std::cout << "The complete unitary matrix Q is:\n" << Q << "\n\n";
+//     std::cout << "The thin matrix Q is:\n" << thinQ << "\n\n";
+//     std::cout << "The full QR matrix is\n" << QR << "\n\n";
+// }
+
+// TEST(QR_Col_Test, QR_Col_Test){
+//     Eigen::MatrixXd A(3, 3);
+//     A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+//     Eigen::MatrixXd P, Q, QR;
+//     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(A);
+//     P = qr.colsPermutation();
+//     Q = qr.householderQ();
+//     QR = qr.matrixQR();
+//     std::cout << "The permutation matrix P is:\n" << P << "\n\n";
+//     std::cout << "The complete unitary matrix Q is:\n" << Q << "\n\n";
+//     std::cout << "The full QR matrix is\n" << QR << "\n\n";
+//     std::cout << "The rank of A is\n" << qr.rank() << "\n\n";
+// }
+
+// TEST(Assignment_Test, Assignment_Test){
+//     Eigen::MatrixXd A(3, 3);
+//     A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+//     Eigen::MatrixXd B = A;
+//     B /= 2;
+//     std::cout << A << std::endl;
+//     std::cout << B << std::endl;
+
+// }

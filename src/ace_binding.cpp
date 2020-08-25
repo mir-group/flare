@@ -183,6 +183,7 @@ PYBIND11_MODULE(_C_flare, m) {
     .def_readonly("constant_term", &SparseGP_DTC::constant_term)
     .def_readwrite("log_marginal_likelihood",
         &SparseGP_DTC::log_marginal_likelihood)
+    .def_readonly("is_positive", &SparseGP_DTC::is_positive)
     .def_readwrite("likelihood_gradient",
         &SparseGP_DTC::likelihood_gradient)
     .def_readonly("hyperparameters", &SparseGP_DTC::hyperparameters)

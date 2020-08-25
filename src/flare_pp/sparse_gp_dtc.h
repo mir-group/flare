@@ -14,6 +14,7 @@ public:
 
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
     n_labels;
+  int is_positive = 0;
 
   // Likelihood attributes.
   double log_marginal_likelihood, data_fit, complexity_penalty, trace_term,
