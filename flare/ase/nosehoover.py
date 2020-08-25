@@ -41,25 +41,26 @@ class NoseHoover(MolecularDynamics):
         )
 
     """
+
     def __init__(
-            self,
-            atoms,
-            timestep,
-            temperature,
-            nvt_q,
-            trajectory=None,
-            logfile=None,
-            loginterval=1,
-            append_trajectory=False
+        self,
+        atoms,
+        timestep,
+        temperature,
+        nvt_q,
+        trajectory=None,
+        logfile=None,
+        loginterval=1,
+        append_trajectory=False,
     ):
         # set com momentum to zero
         Stationary(atoms)
 
-        self.temp = temperature                 # units: K
+        self.temp = temperature  # units: K
         self.nvt_q = nvt_q
-        self.dt = timestep                      # units: A/sqrt(u/eV)
+        self.dt = timestep  # units: A/sqrt(u/eV)
         self.dtdt = np.power(self.dt, 2)
-        self.nvt_bath = 0.
+        self.nvt_bath = 0.0
 
         MolecularDynamics.__init__(
             self,
@@ -68,7 +69,7 @@ class NoseHoover(MolecularDynamics):
             trajectory,
             logfile,
             loginterval,
-            append_trajectory=append_trajectory
+            append_trajectory=append_trajectory,
         )
 
     def step(self, f=None):
@@ -76,18 +77,39 @@ class NoseHoover(MolecularDynamics):
         # TODO: we do need the f=None argument?
         atoms = self.atoms
         natoms = len(atoms)
-        masses = atoms.get_masses()     # units: u
+        masses = atoms.get_masses()  # units: u
 
-        modified_acc = atoms.get_forces() / masses[:, np.newaxis] - self.nvt_bath * atoms.get_velocities()
-        pos_fullstep = atoms.get_positions() + self.dt * atoms.get_velocities() + 0.5 * self.dtdt * modified_acc
+        modified_acc = (
+            atoms.get_forces() / masses[:, np.newaxis]
+            - self.nvt_bath * atoms.get_velocities()
+        )
+        pos_fullstep = (
+            atoms.get_positions()
+            + self.dt * atoms.get_velocities()
+            + 0.5 * self.dtdt * modified_acc
+        )
         vel_halfstep = atoms.get_velocities() + 0.5 * self.dt * modified_acc
 
         atoms.set_positions(pos_fullstep)
         atoms.get_forces()
 
-        e_kin_diff = 0.5 * (np.sum(masses * np.sum(atoms.get_velocities()**2, axis=1)) - (3 * natoms + 1) * units.kB * self.temp)
+        e_kin_diff = 0.5 * (
+            np.sum(masses * np.sum(atoms.get_velocities() ** 2, axis=1))
+            - (3 * natoms + 1) * units.kB * self.temp
+        )
 
         nvt_bath_halfstep = self.nvt_bath + 0.5 * self.dt * e_kin_diff / self.nvt_q
-        e_kin_diff_halfstep = 0.5 * (np.sum(masses * np.sum(vel_halfstep ** 2, axis=1)) - (3 * natoms + 1) * units.kB * self.temp)
-        self.nvt_bath = nvt_bath_halfstep + 0.5 * self.dt * e_kin_diff_halfstep / self.nvt_q
-        atoms.set_velocities((vel_halfstep + 0.5 * self.dt * (atoms.get_forces() / masses[:, np.newaxis])) / (1 + 0.5 * self.dt * self.nvt_bath))
+        e_kin_diff_halfstep = 0.5 * (
+            np.sum(masses * np.sum(vel_halfstep ** 2, axis=1))
+            - (3 * natoms + 1) * units.kB * self.temp
+        )
+        self.nvt_bath = (
+            nvt_bath_halfstep + 0.5 * self.dt * e_kin_diff_halfstep / self.nvt_q
+        )
+        atoms.set_velocities(
+            (
+                vel_halfstep
+                + 0.5 * self.dt * (atoms.get_forces() / masses[:, np.newaxis])
+            )
+            / (1 + 0.5 * self.dt * self.nvt_bath)
+        )
