@@ -13,7 +13,7 @@ class SparseGP:
                  sigma_f: float, sigma_s: float, species_map: dict,
                  single_atom_energies: dict = None,
                  energy_training=True, force_training=True,
-                 stress_training=True):
+                 stress_training=True, max_iterations=10):
 
         self.sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s)
         self.descriptor_calculators = descriptor_calculators
@@ -25,6 +25,7 @@ class SparseGP:
         self.energy_training = energy_training
         self.force_training = force_training
         self.stress_training = stress_training
+        self.max_iterations = max_iterations
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -110,9 +111,9 @@ class SparseGP:
         # Taken care of in the update_db method.
         pass
 
-    def train(self, logger_name=None, max_iterations=10):
-        optimize_hyperparameters(self.sparse_gp, max_iterations=max_iterations)
-        # pass
+    def train(self, logger_name=None):
+        optimize_hyperparameters(
+            self.sparse_gp, max_iterations=self.max_iterations)
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):
