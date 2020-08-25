@@ -1,13 +1,8 @@
-## ACE
+## flare++
 
 # Usage
 
-- Clone with recursive
-- Set ACE environment variable
-
-If compiling on Odyssey, run the following commands:
+If compiling on Odyssey, run the following:
+module load cmake/3.17.3-fasrc01
 module load python/3.6.3-fasrc01
-module load cmake/3.12.1-fasrc01
-module load eigen/3.3.7-fasrc01
-export Eigen3_DIR=/n/helmod/apps/centos7/Core/eigen/3.3.7-fasrc01/
-export ACE=$HOME/flare_pp
+module load gcc/9.3.0-fasrc01
