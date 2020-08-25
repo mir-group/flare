@@ -559,35 +559,37 @@ double SparseGP_DTC ::compute_likelihood_gradient(
   Qff_grads.push_back(s_noise_grad.asDiagonal() *
                       Eigen::MatrixXd::Identity(n_labels, n_labels));
 
-  // Compute likelihood.
+  // Define Qff matrix.
   Eigen::MatrixXd Qff_plus_lambda =
       Kuf_mat.transpose() * Kuu_inverse * Kuf_mat +
       noise_vec.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
 
-  // Compute complexity penalty from QR decomposition.
-  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Qff_plus_lambda);
-  Eigen::VectorXd Q_inv_y = qr.solve(y);
-  Eigen::MatrixXd qr_mat = qr.matrixQR();
+  // Perform LU decomposition inplace and compute the inverse.
+  Eigen::PartialPivLU<Eigen::Ref<Eigen::MatrixXd>> lu(Qff_plus_lambda);
+  Eigen::MatrixXd Qff_inverse = lu.inverse();
 
+  // Compute log determinant from the diagonal of U.
   double complexity_penalty = 0;
-  for (int i = 0; i < qr_mat.rows(); i++){
-      complexity_penalty += -log(abs(qr_mat(i, i)));
+  for (int i = 0; i < Qff_plus_lambda.rows(); i++){
+      complexity_penalty += -log(abs(Qff_plus_lambda(i, i)));
   }
   complexity_penalty /= 2;
 
-  double half = 1.0 / 2.0;
-  double data_fit = -half * y.transpose() * Q_inv_y;
-  double constant_term = -half * n_labels * log(2 * M_PI);
+  // Compute log marginal likelihood.
+  Eigen::VectorXd Q_inv_y = Qff_inverse * y;
+  double data_fit = -(1./2.) * y.transpose() * Q_inv_y;
+  double constant_term = -n_labels * log(2 * M_PI) / 2;
   double log_marginal_likelihood =
     complexity_penalty + data_fit + constant_term;
 
   // Compute likelihood gradient.
   likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
+  Eigen::MatrixXd Qff_inv_grad;
   for (int i = 0; i < n_hyps_total; i ++){
-      Eigen::MatrixXd Qff_inv_grad = qr.solve(Qff_grads[i]);
+      Qff_inv_grad = Qff_inverse * Qff_grads[i];
       likelihood_gradient(i) =
-        -half * (Qff_inv_grad).trace() +
-        half * y.transpose() * Qff_inv_grad * Q_inv_y;
+        -Qff_inv_grad.trace() + y.transpose() * Qff_inv_grad * Q_inv_y;
+      likelihood_gradient(i) /= 2;
   }
 
   return log_marginal_likelihood;
