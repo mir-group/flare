@@ -16,6 +16,7 @@ from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
+from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
@@ -130,6 +131,8 @@ class ASE_OTF(OTF):
             ), "Current MD OTF only supports pfactor=None"
         elif md_engine == "Langevin":
             MD = Langevin
+        elif md_engine == "NoseHoover":
+            MD = NoseHoover
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
