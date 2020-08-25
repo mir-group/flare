@@ -1,5 +1,6 @@
 #include "sparse_gp_dtc.h"
 #include "test_sparse_gp.h"
+#include <chrono>
 
 TEST_F(SparseTest, DTC_Prediction){
   double sigma_e = 1;
@@ -257,3 +258,88 @@ TEST_F(SparseTest, AddOrder){
 //     std::cout << B << std::endl;
 
 // }
+
+TEST(QR_Col_Test, QR_Col_Test){
+    Eigen::MatrixXd matrix1 = Eigen::MatrixXd::Random(1000, 1000);
+    Eigen::MatrixXd matrix2 = Eigen::MatrixXd::Random(1000, 1000);
+    Eigen::VectorXd vector = Eigen::VectorXd::Random(1000);
+    Eigen::MatrixXd matrix1_inv, matmul, c_solve, h_solve, piv_inv;
+    Eigen::VectorXd vec1, vec2, vec3;
+
+    auto start = std::chrono::steady_clock::now();
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(matrix1);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::cout << "QR decomposition (ColPiv): " <<
+        elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    Eigen::HouseholderQR<Eigen::MatrixXd> qr2(matrix1);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "QR decomposition (Householder): " <<
+        elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    Eigen::PartialPivLU<Eigen::MatrixXd> piv(matrix1);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "PartialPivLU decomposition: " <<
+        elapsed_seconds.count() << "s\n";
+    std::cout << "Determinant:" << piv.determinant() << std::endl;
+
+    start = std::chrono::steady_clock::now();
+    piv_inv = piv.inverse();
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "PartialPivLU inverse: " <<
+        elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    matrix1_inv = matrix1.inverse();
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "Matrix inverse: " << elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    matmul = matrix1_inv * matrix2;
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "Multiplication: " << elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    c_solve = qr.solve(matrix2);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "QR solve (ColPiv): " << elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    h_solve = qr2.solve(matrix2);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "QR solve (Householder): " <<
+        elapsed_seconds.count() << "s\n";
+    
+    std::cout << matmul(0, 0) << std::endl;
+    std::cout << c_solve(0, 0) << std::endl;
+    std::cout << h_solve(0, 0) << std::endl;
+
+    start = std::chrono::steady_clock::now();
+    vec1 = matrix1_inv * vector;
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "Matrix/vector multiplication: " << elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    vec2 = qr.solve(vector);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "QR vector solve (ColPiv): " << elapsed_seconds.count() << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    vec3 = qr2.solve(vector);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end-start;
+    std::cout << "QR vector solve (Householder): " <<
+        elapsed_seconds.count() << "s\n";
+}
