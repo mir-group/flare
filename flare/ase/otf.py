@@ -54,7 +54,8 @@ class ASE_OTF(OTF):
         dft_calc (ASE Calculator): any ASE calculator is supported, 
             e.g. Espresso, VASP etc.
         md_engine (str): the name of MD thermostat, only `VelocityVerlet`,
-            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin` are supported.
+            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin`, `NoseHoover`
+            are supported.
         md_kwargs (dict): Specify the args for MD as a dictionary, the args are
             as required by the ASE MD modules consistent with the `md_engine`.
         trajectory (ASE Trajectory): default `None`, not recommended,

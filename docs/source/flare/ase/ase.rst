@@ -9,3 +9,4 @@ Including wrapping the FLARE's GaussianProcess and MappedGaussianProcess into an
     
    calculator
    otf
+   nosehoover
