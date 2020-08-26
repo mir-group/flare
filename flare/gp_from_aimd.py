@@ -327,7 +327,7 @@ class TrajectoryTrainer:
                     atom_count += 1
 
             self.update_gp_and_print(
-                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False
+                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False,
             )
 
         logger = logging.getLogger(self.logger_name)
@@ -607,6 +607,8 @@ class TrajectoryTrainer:
         if uncertainties is not None and len(uncertainties) != 0:
             logger.info(f"Uncertainties: {uncertainties}.")
 
+        logger.info(f"New GP Statistics: {json.dumps(self.gp.training_statistics)}\n")
+
         # update gp model; handling differently if it's an MGP
         if not self.mgp:
             self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
@@ -697,7 +699,7 @@ def parse_frame_block(chunk: str, compute_errors: bool = True):
     # Loop through information in frame after Data
     cell = None
     for i in range(len(frame_positions) + 2, len(chunk)):
-        if "Cell" in chunk[i]:
+        if "cell" in chunk[i]:
             split_line = chunk[i].strip().split(":")
             cell = np.array(split_line)
 

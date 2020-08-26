@@ -476,7 +476,7 @@ class Output:
         # Print stress & cell related parameters
         if cell is not None:
             rounded_cell = np.round(cell, 4)
-            string += f"Cell: {[list(vec) for vec in rounded_cell]} \n"
+            string += f"cell: {[list(vec) for vec in rounded_cell]} \n"
         if stress:
             raise NotImplementedError
 
