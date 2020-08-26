@@ -6,7 +6,7 @@ import json as json
 from copy import deepcopy
 from json import loads
 from glob import glob
-from os import remove
+from os import remove, path
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -18,6 +18,9 @@ from flare.utils.learner import subset_of_frame_by_element
 from tests.test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
+
+TEST_DIR = path.dirname(__file__)
+TEST_FILE_DIR = path.join(TEST_DIR, "test_files")
 
 @pytest.fixture
 def methanol_gp():
@@ -315,9 +318,9 @@ def test_parse_gpfa_output():
     Compare parsing against known answers.
     :return:
     """
-    frames, gp_data = parse_trajectory_trainer_output(
-        "./test_files/gpfa_parse_test.out", True
-    )
+    frames, gp_data = parse_trajectory_trainer_output(path.join(TEST_FILE_DIR,
+                                                                'gpfa_parse_test.out'),
+                                                      True)
 
     assert len(frames) == 5
     assert isinstance(frames[0], dict)

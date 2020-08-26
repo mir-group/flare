@@ -424,6 +424,8 @@ class Output:
         local_energies=None,
         KE=None,
         mgp=False,
+        cell=None,
+        stress=None,
     ):
         """Write the comparison to logfile.
 
@@ -436,6 +438,8 @@ class Output:
         :param error: list of force differences between DFT and GP prediction
         :param local_energies: local atomic energy
         :param KE: total kinetic energy
+        :param cell: print the unit cell of the structure
+        :param stress: print the stress acting on the cell
 
         :return:
         """
@@ -471,6 +475,15 @@ class Output:
 
         string += "\n"
 
+
+        # Print stress & cell related parameters
+        if cell is not None:
+            rounded_cell = np.round(cell,           4)
+            string += f"Cell: {[list(vec) for vec in rounded_cell]} \n"
+        if stress:
+            raise NotImplementedError
+
+        # Compute errors and errors by species
         mae = np.nanmean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
         string += f"mean absolute error: {mae:.2f} meV/A\n"
