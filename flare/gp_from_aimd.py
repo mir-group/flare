@@ -701,7 +701,7 @@ def parse_frame_block(chunk: str, compute_errors: bool = True):
     for i in range(len(frame_positions) + 2, len(chunk)):
         if "cell" in chunk[i]:
             split_line = chunk[i].strip().split(":")
-            cell = np.array(split_line)
+            cell = np.array(json.loads(split_line[1]))
 
         if "Adding atom(s)" in chunk[i]:
             # Splitting to target the 'added atoms' substring
@@ -723,7 +723,7 @@ def parse_frame_block(chunk: str, compute_errors: bool = True):
     }
     if compute_errors:
         cur_frame_stats["force_errors"] = np.array(gp_forces) - np.array(dft_forces)
-    if cell:
+    if cell is not None:
         cur_frame_stats["cell"] = cell
 
     return cur_frame_stats
@@ -820,3 +820,26 @@ def parse_trajectory_trainer_output(
     }
 
     return frames, gp_data
+
+
+def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[Structure]:
+    """
+    Takes as input the first output from the `parse_trajectory_trainer_output`
+    function and turns it into a series of FLARE structures, with DFT forces mapped
+    onto the structures.
+
+    :param frame_dictionaries: The list of dictionaries which describe each GPFA frame.
+    :return:
+    """
+
+    structures = []
+    for frame in frame_dictionaries:
+        structures.append(
+            Structure(
+                cell=frame["cell"],
+                species=frame["species"],
+                positions=frame["positions"],
+                forces=frame["dft_forces"],
+            )
+        )
+    return structures
