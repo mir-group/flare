@@ -139,9 +139,7 @@ class Output:
                 "Relative uncertainty tolerance: "
                 f"{std_tolerance[0]} times noise hyperparameter \n"
             )
-            std_string += (
-                "Absolute uncertainty tolerance: " f"{std_tolerance[1]} eV/A\n"
-            )
+            std_string += f"Absolute uncertainty tolerance: {std_tolerance[1]} eV/A\n"
         elif std_tolerance < 0:
             std_string = f"Uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n"
         elif std_tolerance > 0:
@@ -207,7 +205,7 @@ class Output:
         dft_step,
         velocities,
     ):
-        """ write md configuration in log file
+        """write md configuration in log file
 
         :param dt: timestemp of OTF MD
         :param curr_step: current timestep of OTF MD
@@ -333,7 +331,7 @@ class Output:
         dft_energy=0,
         predict_energy=float("nan"),
     ):
-        """ write atomic configuration in xyz file
+        """write atomic configuration in xyz file
 
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
@@ -366,7 +364,7 @@ class Output:
     def write_hyps(
         self, hyp_labels, hyps, start_time, like, like_grad, name="log", hyps_mask=None
     ):
-        """ write hyperparameters to logfile
+        """write hyperparameters to logfile
 
         :param name:
         :param hyp_labels: labels for hyper-parameters. can be None
@@ -475,10 +473,9 @@ class Output:
 
         string += "\n"
 
-
         # Print stress & cell related parameters
         if cell is not None:
-            rounded_cell = np.round(cell,           4)
+            rounded_cell = np.round(cell, 4)
             string += f"Cell: {[list(vec) for vec in rounded_cell]} \n"
         if stress:
             raise NotImplementedError

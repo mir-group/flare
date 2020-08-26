@@ -183,7 +183,7 @@ class TrajectoryTrainer:
 
         if parallel is True:
             warnings.warn(
-                "Parallel flag will be deprecated;" "we will instead use n_cpu alone.",
+                "Parallel flag will be deprecated;we will instead use n_cpu alone.",
                 DeprecationWarning,
             )
 
@@ -204,9 +204,9 @@ class TrajectoryTrainer:
         self.start_time = None
 
         self.skip = skip
-        assert isinstance(skip, int) and skip >= 1, (
-            "Skip needs to be a " "positive integer."
-        )
+        assert (
+            isinstance(skip, int) and skip >= 1
+        ), "Skip needs to be a positive integer."
         self.validate_ratio = validate_ratio
         assert 0 <= validate_ratio <= 1, "validate_ratio needs to be [0,1]"
 
@@ -263,7 +263,7 @@ class TrajectoryTrainer:
         """
 
         if self.mgp:
-            raise NotImplementedError("Pre-running not" "yet configured for MGP")
+            raise NotImplementedError("Pre-running notyet configured for MGP")
         self.output.write_header(
             str(self.gp),
             dt=0,
@@ -334,8 +334,8 @@ class TrajectoryTrainer:
         if atom_count > 0:
             logger.info(
                 f"Added {atom_count} atoms to "
-                f"pretrain.\n"
-                f"Pre-run GP Statistics: "
+                "pretrain.\n"
+                "Pre-run GP Statistics: "
                 f"{json.dumps(self.gp.training_statistics)} "
             )
 
@@ -351,8 +351,7 @@ class TrajectoryTrainer:
             logger.debug(f"Done train_gp {time.time()-time0}")
         else:
             logger.debug(
-                "Now commencing pre-run set up of GP (which has "
-                "non-empty training set)"
+                "Now commencing pre-run set up of GP (which has non-empty training set)"
             )
             time0 = time.time()
             self.gp.check_L_alpha()
@@ -453,7 +452,7 @@ class TrajectoryTrainer:
                 error=error,
                 local_energies=local_energies,
                 KE=0,
-                cell= cur_frame.cell
+                cell=cur_frame.cell,
             )
 
             logger.debug(
@@ -606,7 +605,7 @@ class TrajectoryTrainer:
             uncertainties = frame.stds[train_atoms]
 
         if uncertainties is not None and len(uncertainties) != 0:
-            logger.info(f"Uncertainties: " f"{uncertainties}.")
+            logger.info(f"Uncertainties: {uncertainties}.")
 
         # update gp model; handling differently if it's an MGP
         if not self.mgp:
@@ -616,7 +615,7 @@ class TrajectoryTrainer:
                 self.train_gp()
 
         else:
-            logger.warning("Warning: Adding data to an MGP is not yet " "supported.")
+            logger.warning("Warning: Adding data to an MGP is not yet supported.")
 
     def train_gp(self, max_iter: int = None):
         """
@@ -666,7 +665,7 @@ class TrajectoryTrainer:
         self.train_count += 1
 
 
-def parse_frame_block(chunk:str, compute_errors: bool = True):
+def parse_frame_block(chunk: str, compute_errors: bool = True):
     # i loops through individual atom's info
 
     frame_atoms = []
@@ -682,29 +681,24 @@ def parse_frame_block(chunk:str, compute_errors: bool = True):
 
         # Lines with data will be long; stop when at end of atom data
         # Terminate at blank line between results
-        if chunk[i] != '\n':
+        if chunk[i] != "\n":
             split = chunk[i].split()
 
             frame_atoms.append(split[0])
 
-            frame_positions.append(
-                [float(split[1]), float(split[2]), float(split[3])]
-            )
-            gp_forces.append(
-                [float(split[4]), float(split[5]), float(split[6])])
+            frame_positions.append([float(split[1]), float(split[2]), float(split[3])])
+            gp_forces.append([float(split[4]), float(split[5]), float(split[6])])
             stds.append([float(split[7]), float(split[8]), float(split[9])])
 
-            dft_forces.append(
-                [float(split[10]), float(split[11]), float(split[12])]
-            )
+            dft_forces.append([float(split[10]), float(split[11]), float(split[12])])
         else:
             break
 
     # Loop through information in frame after Data
     cell = None
-    for i in range(len(frame_positions) + 2,len(chunk)):
-        if 'Cell' in chunk[i]:
-            split_line = chunk[i].strip().split(':')
+    for i in range(len(frame_positions) + 2, len(chunk)):
+        if "Cell" in chunk[i]:
+            split_line = chunk[i].strip().split(":")
             cell = np.array(split_line)
 
         if "Adding atom(s)" in chunk[i]:
@@ -723,19 +717,14 @@ def parse_frame_block(chunk:str, compute_errors: bool = True):
         "dft_forces": np.array(dft_forces),
         "gp_stds": np.array(stds),
         "added_atoms": added_atoms,
-        "maes_by_species": frame_species_maes
-     }
+        "maes_by_species": frame_species_maes,
+    }
     if compute_errors:
-        cur_frame_stats["force_errors"] = np.array(gp_forces) - np.array(
-            dft_forces)
+        cur_frame_stats["force_errors"] = np.array(gp_forces) - np.array(dft_forces)
     if cell:
-        cur_frame_stats['cell'] = cell
+        cur_frame_stats["cell"] = cell
 
     return cur_frame_stats
-
-
-
-
 
 
 def parse_trajectory_trainer_output(
@@ -771,7 +760,7 @@ def parse_trajectory_trainer_output(
         range(frame_indexes[n] + 2, frame_indexes[n + 1])
 
         near_index = frame_indexes[n]
-        far_index = frame_indexes[n+1]
+        far_index = frame_indexes[n + 1]
 
         frames.append(parse_frame_block(lines[near_index:far_index]))
 

@@ -22,6 +22,7 @@ from .fake_gp import get_gp
 TEST_DIR = path.dirname(__file__)
 TEST_FILE_DIR = path.join(TEST_DIR, "test_files")
 
+
 @pytest.fixture
 def methanol_gp():
     the_gp = GaussianProcess(
@@ -318,9 +319,9 @@ def test_parse_gpfa_output():
     Compare parsing against known answers.
     :return:
     """
-    frames, gp_data = parse_trajectory_trainer_output(path.join(TEST_FILE_DIR,
-                                                                'gpfa_parse_test.out'),
-                                                      True)
+    frames, gp_data = parse_trajectory_trainer_output(
+        path.join(TEST_FILE_DIR, "gpfa_parse_test.out"), True
+    )
 
     assert len(frames) == 5
     assert isinstance(frames[0], dict)
