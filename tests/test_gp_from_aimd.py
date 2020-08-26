@@ -189,8 +189,8 @@ def test_seed_and_run():
             the_gp.predict(x_t=test_env, d=d) == new_gp.predict(x_t=test_env, d=d)
         )
 
-    # for f in glob(f"meth_test*"):
-    #    remove(f)
+    for f in glob(f"meth_test*"):
+        remove(f)
 
 
 def test_pred_on_elements():
