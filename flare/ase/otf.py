@@ -166,6 +166,11 @@ class ASE_OTF(OTF):
     def initialize_train(self):
         super().initialize_train()
 
+        # TODO: Turn this into a "reset" method.
+        if not isinstance(self.atoms.calc, FLARE_Calculator):
+            self.flare_calc.results = {}
+            self.atoms.calc = self.flare_calc
+
         if self.md_engine == "NPT":
             if not self.md.initialized:
                 self.md.initialize()
