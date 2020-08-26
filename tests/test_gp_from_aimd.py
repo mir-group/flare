@@ -247,11 +247,11 @@ def test_pred_on_elements():
     # Assert that Carbon atoms were correctly added
     assert the_gp.training_statistics["envs_by_species"]["C"] > 2
 
-    # for f in glob(f"meth_test*"):
-    #    remove(f)
+    for f in glob(f"meth_test*"):
+        remove(f)
 
-    # for f in glob(f"gp_from_aimd*"):
-    #    remove(f)
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)
 
 
 def test_mgp_gpfa(all_mgp, all_gp):
