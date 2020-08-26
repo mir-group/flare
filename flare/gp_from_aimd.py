@@ -446,7 +446,7 @@ class TrajectoryTrainer:
             self.output.write_gp_dft_comparison(
                 curr_step=i,
                 frame=dummy_frame,
-                start_time=time.time(),
+                start_time=frame_start_time,
                 dft_forces=dft_forces,
                 dft_energy=dft_energy,
                 error=error,
