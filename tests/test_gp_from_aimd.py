@@ -389,7 +389,7 @@ def test_passive_learning():
 
     # TEST ENVIRONMENT ADDITION
     envs_species = set(Z_to_element(env.ctype) for env in envs)
-    tt.run_passive_learning(environments=envs)
+    tt.run_passive_learning(environments=envs, post_build_matrices=False)
 
     assert cur_gp.training_statistics["N"] == len(envs)
     assert set(cur_gp.training_statistics["species"]) == envs_species
@@ -397,13 +397,13 @@ def test_passive_learning():
     # TEST FRAME ADDITION: ALL ARE ADDED
     cur_gp = deepcopy(the_gp)
     tt.gp = cur_gp
-    tt.run_passive_learning(frames=frames)
+    tt.run_passive_learning(frames=frames, post_build_matrices=False)
     assert len(cur_gp.training_data) == sum([len(fr) for fr in frames])
 
     # TEST FRAME ADDITION: MAX OUT MODEL SIZE AT 1
     cur_gp = deepcopy(the_gp)
     tt.gp = cur_gp
-    tt.run_passive_learning(frames=frames, max_model_size=1)
+    tt.run_passive_learning(frames=frames, max_model_size=1, post_training_iterations=1)
     assert len(cur_gp.training_data) == 1
 
     # TEST FRAME ADDITION: EXCLUDE OXYGEN, LIMIT CARBON TO 1, 1 H PER FRAME
@@ -413,6 +413,7 @@ def test_passive_learning():
         frames=frames,
         max_atoms_per_element={"O": 0, "C": 1, "H": 5},
         atoms_per_element={"H": 1},
+        post_build_matrices=False,
     )
 
     assert "O" not in cur_gp.training_statistics["species"]

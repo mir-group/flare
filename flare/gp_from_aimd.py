@@ -291,9 +291,7 @@ class TrajectoryTrainer:
             self.gp.add_one_env(env, env.force, train=False)
 
         # Ensure compatibility with number / symbol elemental notation
-        for cur_dict in atoms_per_element, max_atoms_per_element:
-            if cur_dict is None:
-                continue
+        for cur_dict in [atoms_per_element, max_atoms_per_element]:
             for key in list(cur_dict.keys()):
                 if isinstance(key, int):
                     cur_dict[Z_to_element(key)] = cur_dict[key]
