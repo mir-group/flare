@@ -46,7 +46,7 @@ def read_qe_results(self):
     self.results = output.calc.results
 
 
-md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]
+md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin", "NoseHoover"]
 number_of_steps = 3
 
 
@@ -68,6 +68,7 @@ def md_params():
     md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
     md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
     md_dict["Langevin"].update({"friction": 0.02})
+    md_dict["NoseHoover"].update({"nvt_q": 334.})
 
     yield md_dict
     del md_dict

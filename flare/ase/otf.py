@@ -16,6 +16,7 @@ from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
+from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
@@ -42,7 +43,8 @@ class ASE_OTF(OTF):
         dft_calc (ASE Calculator): any ASE calculator is supported, 
             e.g. Espresso, VASP etc.
         md_engine (str): the name of MD thermostat, only `VelocityVerlet`,
-            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin` are supported.
+            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin`, `NoseHoover`
+            are supported.
         md_kwargs (dict): Specify the args for MD as a dictionary, the args are
             as required by the ASE MD modules consistent with the `md_engine`.
         trajectory (ASE Trajectory): default `None`, not recommended,
@@ -115,6 +117,8 @@ class ASE_OTF(OTF):
             MD = NPT_mod
         elif md_engine == "Langevin":
             MD = Langevin
+        elif md_engine == "NoseHoover":
+            MD = NoseHoover
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
