@@ -50,7 +50,7 @@ def multicomponent_velocities(temperature: float, masses: List[float]):
     noa = len(masses)
     velocities = np.zeros((noa, 3))
     kb = 0.0000861733034
-    mom_tot = np.array([0., 0., 0.])
+    mom_tot = np.array([0.0, 0.0, 0.0])
 
     for n, mass in enumerate(masses):
         # Convert to FLARE mass units (time = ps, length = A, energy = eV)
@@ -70,8 +70,7 @@ def multicomponent_velocities(temperature: float, masses: List[float]):
     return velocities
 
 
-def get_supercell_positions(sc_size: int, cell: np.ndarray,
-                            positions: np.ndarray):
+def get_supercell_positions(sc_size: int, cell: np.ndarray, positions: np.ndarray):
     """Returns the positions of a supercell of atoms, with the number of cells
     in each direction fixed.
 
@@ -94,13 +93,14 @@ def get_supercell_positions(sc_size: int, cell: np.ndarray,
 
                 # append translated positions
                 for pos in positions:
-                    sc_positions.append(pos+vec1+vec2+vec3)
+                    sc_positions.append(pos + vec1 + vec2 + vec3)
 
     return np.array(sc_positions)
 
 
-def supercell_custom(cell: np.ndarray, positions: np.ndarray,
-                     size1: int, size2: int, size3: int):
+def supercell_custom(
+    cell: np.ndarray, positions: np.ndarray, size1: int, size2: int, size3: int
+):
     """Returns the positions of a supercell of atoms with a chosen number of
     cells in each direction.
 
@@ -125,6 +125,6 @@ def supercell_custom(cell: np.ndarray, positions: np.ndarray,
 
                 # append translated positions
                 for pos in positions:
-                    sc_positions.append(pos+vec1+vec2+vec3)
+                    sc_positions.append(pos + vec1 + vec2 + vec3)
 
     return np.array(sc_positions)

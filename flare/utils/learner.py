@@ -8,9 +8,13 @@ from math import inf
 
 import numpy as np
 
-def is_std_in_bound(std_tolerance: float, noise: float,
-                    structure: 'flare.struc.Structure',
-                    max_atoms_added: int = inf) -> (bool, List[int]):
+
+def is_std_in_bound(
+    std_tolerance: float,
+    noise: float,
+    structure: "flare.struc.Structure",
+    max_atoms_added: int = inf,
+) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -56,12 +60,14 @@ def is_std_in_bound(std_tolerance: float, noise: float,
         return True, [-1]
 
 
-def is_std_in_bound_per_species(rel_std_tolerance: float,
-                                abs_std_tolerance: float, noise: float,
-                                structure: 'flare.struc.Structure',
-                                max_atoms_added: int = inf,
-                                max_by_species: dict = {}) -> (bool,
-                                                               List[int]):
+def is_std_in_bound_per_species(
+    rel_std_tolerance: float,
+    abs_std_tolerance: float,
+    noise: float,
+    structure: "flare.struc.Structure",
+    max_atoms_added: int = inf,
+    max_by_species: dict = {},
+) -> (bool, List[int]):
     """
     Checks the stds of GP prediction assigned to the structure, returns a
     list of atoms which either meet an absolute threshold or a relative
@@ -103,8 +109,7 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
     elif abs_std_tolerance is None or abs_std_tolerance == 0:
         threshold = rel_std_tolerance * np.abs(noise)
     else:
-        threshold = min(rel_std_tolerance * np.abs(noise),
-                        abs_std_tolerance)
+        threshold = min(rel_std_tolerance * np.abs(noise), abs_std_tolerance)
 
     # Determine if any std component will trigger the threshold
     # before looking through individual species.
@@ -124,9 +129,9 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
         # If max atoms added reached or stds of atoms considered are now below
         # threshold, conclude
-        if len(target_atoms) == max_atoms_added or \
-                (max_std_components[i] < threshold and max_std_components[i]
-                 != np.nan):
+        if len(target_atoms) == max_atoms_added or (
+            max_std_components[i] < threshold and max_std_components[i] != np.nan
+        ):
             break
 
         if np.isnan(max_std_components[i]):
@@ -134,8 +139,7 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
         # Only add up to species allowance, if it exists
         cur_spec = structure.species_labels[i]
-        if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, inf):
+        if present_species[cur_spec] < max_by_species.get(cur_spec, inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
@@ -146,14 +150,15 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
     return True, [-1]
 
 
-def is_force_in_bound_per_species(abs_force_tolerance: float,
-                                  predicted_forces: 'ndarray',
-                                  label_forces: 'ndarray',
-                                  structure,
-                                  max_atoms_added: int = inf,
-                                  max_by_species: dict = {},
-                                  max_force_error: float
-                                  = inf) -> (bool, List[int]):
+def is_force_in_bound_per_species(
+    abs_force_tolerance: float,
+    predicted_forces: "ndarray",
+    label_forces: "ndarray",
+    structure,
+    max_atoms_added: int = inf,
+    max_by_species: dict = {},
+    max_force_error: float = inf,
+) -> (bool, List[int]):
     """
     Checks the forces of GP prediction assigned to the structure against a
     DFT calculation, and return a list of atoms which meet an absolute
@@ -208,17 +213,19 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
         # If max atoms added reached or force errors are now below threshold,
         # conclude
-        if len(target_atoms) == max_atoms_added or \
-                (max_error_components[i] < abs_force_tolerance and
-                 max_error_components[i] != np.nan):
+        if len(target_atoms) == max_atoms_added or (
+            max_error_components[i] < abs_force_tolerance
+            and max_error_components[i] != np.nan
+        ):
             break
 
         cur_spec = structure.species_labels[i]
 
         # Only add up to species allowance, if it exists
-        if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, inf) \
-                and max_error_components[i] < max_force_error:
+        if (
+            present_species[cur_spec] < max_by_species.get(cur_spec, inf)
+            and max_error_components[i] < max_force_error
+        ):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
@@ -230,8 +237,9 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         return True, [-1]
 
 
-def subset_of_frame_by_element(frame: 'flare.Structure',
-                               predict_atoms_per_element: dict) -> List[int]:
+def subset_of_frame_by_element(
+    frame: "flare.Structure", predict_atoms_per_element: dict
+) -> List[int]:
     """
     Given a structure and a dictionary formatted as {"Symbol":int,
     ..} describing a number of atoms per element, return a sorted list of
@@ -262,8 +270,9 @@ def subset_of_frame_by_element(frame: 'flare.Structure',
         if len(matching_atoms) == 0:
             continue
         # Choose the atoms to add
-        to_add_atoms = np.random.choice(matching_atoms, replace=False,
-                                        size=min(n, len(matching_atoms)))
+        to_add_atoms = np.random.choice(
+            matching_atoms, replace=False, size=min(n, len(matching_atoms))
+        )
         return_atoms += list(to_add_atoms)
 
     return_atoms += list(all_atoms - considered_atoms)
@@ -306,17 +315,11 @@ def get_max_cutoff(cell: np.ndarray) -> float:
     # The smallest is the maximum atomic environment cutoff that can be
     # used with sweep=1.
     max_candidates = np.zeros(6)
-    max_candidates[0] = \
-        a_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
-    max_candidates[1] = \
-        b_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
-    max_candidates[2] = \
-        a_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
-    max_candidates[3] = \
-        c_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
-    max_candidates[4] = \
-        b_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
-    max_candidates[5] = \
-        c_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+    max_candidates[0] = a_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm)) ** 2)
+    max_candidates[1] = b_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm)) ** 2)
+    max_candidates[2] = a_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm)) ** 2)
+    max_candidates[3] = c_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm)) ** 2)
+    max_candidates[4] = b_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm)) ** 2)
+    max_candidates[5] = c_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm)) ** 2)
 
     return np.min(max_candidates)

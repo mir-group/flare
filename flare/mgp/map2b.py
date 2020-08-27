@@ -26,7 +26,7 @@ class Map2body(MapXbody):
         self.bodies = 2
         self.pred_perm = [[0]]
         self.spc_perm = [[0, 1]]
-        self.num_lmp_maps = 0 
+        self.num_lmp_maps = 0
         super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):

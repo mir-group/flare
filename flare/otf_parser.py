@@ -59,8 +59,10 @@ class OtfAnalysis:
     ):
 
         if "restart" in self.header and self.header["restart"] > 0:
-            assert init_gp is not None, "Please input the init_gp as the gp model dumpped"\
-                    "before restarting otf."
+            assert init_gp is not None, (
+                "Please input the init_gp as the gp model dumpped"
+                "before restarting otf."
+            )
 
         if call_no is None:
             call_no = len(self.gp_position_list)
@@ -212,9 +214,9 @@ def split_blocks(filename):
         head = 0
         blocks = []
         for index, line in enumerate(lines):
-            if line.startswith("---"):
+            if "*-Frame" in line or line.startswith("---"):
                 blocks.append(lines[head:index])
-                head = index + 1
+                head = index
     return blocks
 
 
@@ -249,16 +251,16 @@ def parse_header_information(lines) -> dict:
 
         if "number of hyperparameters" in line_lower:
             n_hyps = int(line.split(":")[1].strip())
-            header_info["n_hyps"] = n_hyps 
-            
+            header_info["n_hyps"] = n_hyps
+
             # parse hyps
-            new_line = lines[i+1].replace("[", "")
+            new_line = lines[i + 1].replace("[", "")
             new_line = new_line.replace("]", "")
             assert "hyperparameter" in new_line.lower()
 
-            hyps_array = new_line[new_line.find(":")+1:].split()
+            hyps_array = new_line[new_line.find(":") + 1 :].split()
             if len(hyps_array) < n_hyps:
-                next_new_line = lines[i+2].replace("[", "")
+                next_new_line = lines[i + 2].replace("[", "")
                 next_new_line = next_new_line.replace("]", "")
                 hyps_array += next_new_line.split()
             assert len(hyps_array) == n_hyps

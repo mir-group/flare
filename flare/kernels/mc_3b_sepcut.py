@@ -8,18 +8,44 @@ import numpy as np
 from numba import njit
 from math import exp
 import flare.kernels.cutoffs as cf
-from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
-    force_energy_helper, three_body_en_helper, three_body_helper_1, \
-    three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
+from flare.kernels.kernels import (
+    force_helper,
+    grad_constants,
+    grad_helper,
+    force_energy_helper,
+    three_body_en_helper,
+    three_body_helper_1,
+    three_body_helper_2,
+    three_body_grad_helper_1,
+    three_body_grad_helper_2,
+)
+
 
 @njit
-def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
-                             bond_array_2, c2, etypes2,
-                             cross_bond_inds_1, cross_bond_inds_2,
-                             cross_bond_dists_1, cross_bond_dists_2,
-                             triplets_1, triplets_2,
-                             d1, d2, sig, ls, r_cut, cutoff_func,
-                             nspec, spec_mask, triplet_mask, cut3b_mask):
+def three_body_mc_sepcut_jit(
+    bond_array_1,
+    c1,
+    etypes1,
+    bond_array_2,
+    c2,
+    etypes2,
+    cross_bond_inds_1,
+    cross_bond_inds_2,
+    cross_bond_dists_1,
+    cross_bond_dists_2,
+    triplets_1,
+    triplets_2,
+    d1,
+    d2,
+    sig,
+    ls,
+    r_cut,
+    cutoff_func,
+    nspec,
+    spec_mask,
+    triplet_mask,
+    cut3b_mask,
+):
 
     kern = 0
 
@@ -125,61 +151,147 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if c1 == c2:
                                     if (ei1 == ej1) and (ei2 == ej2):
-                                        kern += \
-                                            three_body_helper_1(ci1, ci2, cj1, cj2, r11,
-                                                                r22, r33, fi, fj, fdi, fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
+                                        kern += three_body_helper_1(
+                                            ci1,
+                                            ci2,
+                                            cj1,
+                                            cj2,
+                                            r11,
+                                            r22,
+                                            r33,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tsig2,
+                                        )
                                     if (ei1 == ej2) and (ei2 == ej1):
-                                        kern += \
-                                            three_body_helper_1(ci1, ci2, cj2, cj1, r12,
-                                                                r21, r33, fi, fj, fdi, fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                if (c1 == ej1):
+                                        kern += three_body_helper_1(
+                                            ci1,
+                                            ci2,
+                                            cj2,
+                                            cj1,
+                                            r12,
+                                            r21,
+                                            r33,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tsig2,
+                                        )
+                                if c1 == ej1:
                                     if (ei1 == ej2) and (ei2 == c2):
-                                        kern += \
-                                            three_body_helper_2(ci2, ci1, cj2, cj1, r21,
-                                                                r13, r32, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
+                                        kern += three_body_helper_2(
+                                            ci2,
+                                            ci1,
+                                            cj2,
+                                            cj1,
+                                            r21,
+                                            r13,
+                                            r32,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tsig2,
+                                        )
                                     if (ei1 == c2) and (ei2 == ej2):
-                                        kern += \
-                                            three_body_helper_2(ci1, ci2, cj2, cj1, r11,
-                                                                r23, r32, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                if (c1 == ej2):
+                                        kern += three_body_helper_2(
+                                            ci1,
+                                            ci2,
+                                            cj2,
+                                            cj1,
+                                            r11,
+                                            r23,
+                                            r32,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tsig2,
+                                        )
+                                if c1 == ej2:
                                     if (ei1 == ej1) and (ei2 == c2):
-                                        kern += \
-                                            three_body_helper_2(ci2, ci1, cj1, cj2, r22,
-                                                                r13, r31, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
+                                        kern += three_body_helper_2(
+                                            ci2,
+                                            ci1,
+                                            cj1,
+                                            cj2,
+                                            r22,
+                                            r13,
+                                            r31,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tsig2,
+                                        )
                                     if (ei1 == c2) and (ei2 == ej1):
-                                        kern += \
-                                            three_body_helper_2(ci1, ci2, cj1, cj2, r12,
-                                                                r23, r31, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
+                                        kern += three_body_helper_2(
+                                            ci1,
+                                            ci2,
+                                            cj1,
+                                            cj2,
+                                            r12,
+                                            r23,
+                                            r31,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tsig2,
+                                        )
 
     return kern
 
 
 @njit
-def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
-                                  bond_array_2, c2, etypes2,
-                                  cross_bond_inds_1, cross_bond_inds_2,
-                                  cross_bond_dists_1, cross_bond_dists_2,
-                                  triplets_1, triplets_2,
-                                  d1, d2, sig, ls, r_cut, cutoff_func,
-                                  nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask):
+def three_body_mc_grad_sepcut_jit(
+    bond_array_1,
+    c1,
+    etypes1,
+    bond_array_2,
+    c2,
+    etypes2,
+    cross_bond_inds_1,
+    cross_bond_inds_2,
+    cross_bond_dists_1,
+    cross_bond_dists_2,
+    triplets_1,
+    triplets_2,
+    d1,
+    d2,
+    sig,
+    ls,
+    r_cut,
+    cutoff_func,
+    nspec,
+    spec_mask,
+    ntriplet,
+    triplet_mask,
+    cut3b_mask,
+):
     """Kernel gradient for 3-body force comparisons."""
 
     kern = 0.0
@@ -200,7 +312,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
         bei1 = spec_mask[ei1]
         bei1n = bei1 * nspec
-        bond_m = cut3b_mask[bei1n+bc1]
+        bond_m = cut3b_mask[bei1n + bc1]
         fi1, fdi1 = cutoff_func(r_cut[bond_m], ri1, ci1)
 
         for n in range(triplets_1[m]):
@@ -229,10 +341,10 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                 tsig2 = sig2[ttypei]
                 tsig3 = sig3[ttypei]
 
-                bond_n = cut3b_mask[bei2*nspec+bc1]
+                bond_n = cut3b_mask[bei2 * nspec + bc1]
                 fi2, fdi2 = cutoff_func(r_cut[bond_n], ri2, ci2)
 
-                bond_mn = cut3b_mask[bei2+bei1n]
+                bond_mn = cut3b_mask[bei2 + bei1n]
                 fi3, _ = cutoff_func(r_cut[bond_mn], ri3, 0)
 
                 fi = fi1 * fi2 * fi3
@@ -248,9 +360,9 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                         rj1 = bond_array_2[p, 0]
                         cj1 = bond_array_2[p, d2]
                         bej1 = spec_mask[ej1]
-                        bej1n = spec_mask[ej1]*nspec
+                        bej1n = spec_mask[ej1] * nspec
 
-                        bond_p = cut3b_mask[bc2+bej1n]
+                        bond_p = cut3b_mask[bc2 + bej1n]
 
                         fj1, fdj1 = cutoff_func(r_cut[bond_p], rj1, cj1)
 
@@ -263,7 +375,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                 cj2 = bond_array_2[ind2, d2]
 
                                 bej2 = spec_mask[ej2]
-                                bond_q = cut3b_mask[bc2+bej2*nspec]
+                                bond_q = cut3b_mask[bc2 + bej2 * nspec]
                                 fj2, fdj2 = cutoff_func(r_cut[bond_q], rj2, cj2)
 
                                 bond_pq = cut3b_mask[bej1n + bej2]
@@ -282,77 +394,185 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if c1 == c2:
                                     if (ei1 == ej1) and (ei2 == ej2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_1(ci1, ci2, cj1, cj2,
-                                                                     r11, r22, r33, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                        (
+                                            kern_term,
+                                            sig_term,
+                                            ls_term,
+                                        ) = three_body_grad_helper_1(
+                                            ci1,
+                                            ci2,
+                                            cj1,
+                                            cj2,
+                                            r11,
+                                            r22,
+                                            r33,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tls4,
+                                            tls5,
+                                            tls6,
+                                            tsig2,
+                                            tsig3,
+                                        )
                                         kern += kern_term
                                         sig_derv[ttypei] += sig_term
                                         ls_derv[ttypei] += ls_term
 
                                     if (ei1 == ej2) and (ei2 == ej1):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_1(ci1, ci2, cj2, cj1,
-                                                                     r12, r21, r33, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                        (
+                                            kern_term,
+                                            sig_term,
+                                            ls_term,
+                                        ) = three_body_grad_helper_1(
+                                            ci1,
+                                            ci2,
+                                            cj2,
+                                            cj1,
+                                            r12,
+                                            r21,
+                                            r33,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tls4,
+                                            tls5,
+                                            tls6,
+                                            tsig2,
+                                            tsig3,
+                                        )
                                         kern += kern_term
                                         sig_derv[ttypei] += sig_term
                                         ls_derv[ttypei] += ls_term
 
-                                if (c1 == ej1):
+                                if c1 == ej1:
                                     if (ei1 == ej2) and (ei2 == c2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci2, ci1, cj2, cj1,
-                                                                     r21, r13, r32, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                        (
+                                            kern_term,
+                                            sig_term,
+                                            ls_term,
+                                        ) = three_body_grad_helper_2(
+                                            ci2,
+                                            ci1,
+                                            cj2,
+                                            cj1,
+                                            r21,
+                                            r13,
+                                            r32,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tls4,
+                                            tls5,
+                                            tls6,
+                                            tsig2,
+                                            tsig3,
+                                        )
                                         kern += kern_term
                                         sig_derv[ttypei] += sig_term
                                         ls_derv[ttypei] += ls_term
 
                                     if (ei1 == c2) and (ei2 == ej2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci1, ci2, cj2, cj1,
-                                                                     r11, r23, r32, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                        (
+                                            kern_term,
+                                            sig_term,
+                                            ls_term,
+                                        ) = three_body_grad_helper_2(
+                                            ci1,
+                                            ci2,
+                                            cj2,
+                                            cj1,
+                                            r11,
+                                            r23,
+                                            r32,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tls4,
+                                            tls5,
+                                            tls6,
+                                            tsig2,
+                                            tsig3,
+                                        )
                                         kern += kern_term
                                         sig_derv[ttypei] += sig_term
                                         ls_derv[ttypei] += ls_term
 
-                                if (c1 == ej2):
+                                if c1 == ej2:
                                     if (ei1 == ej1) and (ei2 == c2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci2, ci1, cj1, cj2,
-                                                                     r22, r13, r31, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                        (
+                                            kern_term,
+                                            sig_term,
+                                            ls_term,
+                                        ) = three_body_grad_helper_2(
+                                            ci2,
+                                            ci1,
+                                            cj1,
+                                            cj2,
+                                            r22,
+                                            r13,
+                                            r31,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tls4,
+                                            tls5,
+                                            tls6,
+                                            tsig2,
+                                            tsig3,
+                                        )
                                         kern += kern_term
                                         sig_derv[ttypei] += sig_term
                                         ls_derv[ttypei] += ls_term
 
                                     if (ei1 == c2) and (ei2 == ej1):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci1, ci2, cj1, cj2,
-                                                                     r12, r23, r31, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                        (
+                                            kern_term,
+                                            sig_term,
+                                            ls_term,
+                                        ) = three_body_grad_helper_2(
+                                            ci1,
+                                            ci2,
+                                            cj1,
+                                            cj2,
+                                            r12,
+                                            r23,
+                                            r31,
+                                            fi,
+                                            fj,
+                                            fdi,
+                                            fdj,
+                                            tls1,
+                                            tls2,
+                                            tls3,
+                                            tls4,
+                                            tls5,
+                                            tls6,
+                                            tsig2,
+                                            tsig3,
+                                        )
 
                                         kern += kern_term
                                         sig_derv[ttypei] += sig_term
@@ -367,13 +587,29 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
-                                      bond_array_2, c2, etypes2,
-                                      cross_bond_inds_1, cross_bond_inds_2,
-                                      cross_bond_dists_1, cross_bond_dists_2,
-                                      triplets_1, triplets_2,
-                                      d1, sig, ls, r_cut, cutoff_func,
-                                      nspec, spec_mask, triplet_mask, cut3b_mask):
+def three_body_mc_force_en_sepcut_jit(
+    bond_array_1,
+    c1,
+    etypes1,
+    bond_array_2,
+    c2,
+    etypes2,
+    cross_bond_inds_1,
+    cross_bond_inds_2,
+    cross_bond_dists_1,
+    cross_bond_dists_2,
+    triplets_1,
+    triplets_2,
+    d1,
+    sig,
+    ls,
+    r_cut,
+    cutoff_func,
+    nspec,
+    spec_mask,
+    triplet_mask,
+    cut3b_mask,
+):
     """Kernel for 3-body force/energy comparisons."""
 
     kern = 0
@@ -395,7 +631,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
         bei1 = spec_mask[ei1]
         bei1n = nspec * bei1
 
-        bond_m = cut3b_mask[bc1+bei1n]
+        bond_m = cut3b_mask[bc1 + bei1n]
 
         fi1, fdi1 = cutoff_func(r_cut[bond_m], ri1, ci1)
 
@@ -419,11 +655,11 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                 tls2 = ls2[ttypei]
                 tsig2 = sig2[ttypei]
 
-                bond_n = cut3b_mask[bc1*nspec+bei2]
+                bond_n = cut3b_mask[bc1 * nspec + bei2]
                 fi2, fdi2 = cutoff_func(r_cut[bond_n], ri2, ci2)
 
                 ri3 = cross_bond_dists_1[m, m + n + 1]
-                bond_mn = cut3b_mask[bei1n+bei2]
+                bond_mn = cut3b_mask[bei1n + bei2]
                 fi3, _ = cutoff_func(r_cut[bond_mn], ri3, 0)
 
                 fi = fi1 * fi2 * fi3
@@ -438,9 +674,9 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
                         rj1 = bond_array_2[p, 0]
                         bej1 = spec_mask[ej1]
-                        bej1n = nspec*bej1
+                        bej1n = nspec * bej1
 
-                        bond_p = cut3b_mask[bej1n+bc2]
+                        bond_p = cut3b_mask[bej1n + bc2]
 
                         fj1, _ = cutoff_func(r_cut[bond_p], rj1, 0)
 
@@ -456,10 +692,10 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                                     rj3 = cross_bond_dists_2[p, p + q + 1]
 
                                     bej2 = spec_mask[ej2]
-                                    bond_q = cut3b_mask[bej2+bc2*nspec]
+                                    bond_q = cut3b_mask[bej2 + bc2 * nspec]
                                     fj2, _ = cutoff_func(r_cut[bond_q], rj2, 0)
 
-                                    bond_pq = cut3b_mask[bej2+bej1n]
+                                    bond_pq = cut3b_mask[bej2 + bej1n]
                                     fj3, _ = cutoff_func(r_cut[bond_pq], rj3, 0)
 
                                     fj = fj1 * fj2 * fj3
@@ -474,51 +710,120 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                                     r32 = ri3 - rj2
                                     r33 = ri3 - rj3
 
-                                    if (c1 == c2):
+                                    if c1 == c2:
                                         if (ei1 == ej1) and (ei2 == ej2):
-                                            kern += three_body_en_helper(ci1, ci2, r11, r22,
-                                                                         r33, fi, fj, fdi,
-                                                                         tls1,
-                                                                         tls2, tsig2)
+                                            kern += three_body_en_helper(
+                                                ci1,
+                                                ci2,
+                                                r11,
+                                                r22,
+                                                r33,
+                                                fi,
+                                                fj,
+                                                fdi,
+                                                tls1,
+                                                tls2,
+                                                tsig2,
+                                            )
                                         if (ei1 == ej2) and (ei2 == ej1):
-                                            kern += three_body_en_helper(ci1, ci2, r12, r21,
-                                                                         r33, fi, fj, fdi,
-                                                                         tls1,
-                                                                         tls2, tsig2)
-                                    if (c1 == ej1):
+                                            kern += three_body_en_helper(
+                                                ci1,
+                                                ci2,
+                                                r12,
+                                                r21,
+                                                r33,
+                                                fi,
+                                                fj,
+                                                fdi,
+                                                tls1,
+                                                tls2,
+                                                tsig2,
+                                            )
+                                    if c1 == ej1:
                                         if (ei1 == ej2) and (ei2 == c2):
-                                            kern += three_body_en_helper(ci1, ci2, r13, r21,
-                                                                         r32, fi, fj, fdi,
-                                                                         tls1,
-                                                                         tls2, tsig2)
+                                            kern += three_body_en_helper(
+                                                ci1,
+                                                ci2,
+                                                r13,
+                                                r21,
+                                                r32,
+                                                fi,
+                                                fj,
+                                                fdi,
+                                                tls1,
+                                                tls2,
+                                                tsig2,
+                                            )
                                         if (ei1 == c2) and (ei2 == ej2):
-                                            kern += three_body_en_helper(ci1, ci2, r11, r23,
-                                                                         r32, fi, fj, fdi,
-                                                                         tls1,
-                                                                         tls2, tsig2)
-                                    if (c1 == ej2):
+                                            kern += three_body_en_helper(
+                                                ci1,
+                                                ci2,
+                                                r11,
+                                                r23,
+                                                r32,
+                                                fi,
+                                                fj,
+                                                fdi,
+                                                tls1,
+                                                tls2,
+                                                tsig2,
+                                            )
+                                    if c1 == ej2:
                                         if (ei1 == ej1) and (ei2 == c2):
-                                            kern += three_body_en_helper(ci1, ci2, r13, r22,
-                                                                         r31, fi, fj, fdi,
-                                                                         tls1,
-                                                                         tls2, tsig2)
+                                            kern += three_body_en_helper(
+                                                ci1,
+                                                ci2,
+                                                r13,
+                                                r22,
+                                                r31,
+                                                fi,
+                                                fj,
+                                                fdi,
+                                                tls1,
+                                                tls2,
+                                                tsig2,
+                                            )
                                         if (ei1 == c2) and (ei2 == ej1):
-                                            kern += three_body_en_helper(ci1, ci2, r12, r23,
-                                                                         r31, fi, fj, fdi,
-                                                                         tls1,
-                                                                         tls2, tsig2)
+                                            kern += three_body_en_helper(
+                                                ci1,
+                                                ci2,
+                                                r12,
+                                                r23,
+                                                r31,
+                                                fi,
+                                                fj,
+                                                fdi,
+                                                tls1,
+                                                tls2,
+                                                tsig2,
+                                            )
 
     return kern
 
 
 @njit
-def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
-                                bond_array_2, c2, etypes2,
-                                cross_bond_inds_1, cross_bond_inds_2,
-                                cross_bond_dists_1, cross_bond_dists_2,
-                                triplets_1, triplets_2,
-                                sig, ls, r_cut, cutoff_func,
-                                nspec, spec_mask, triplet_mask, cut3b_mask):
+def three_body_mc_en_sepcut_jit(
+    bond_array_1,
+    c1,
+    etypes1,
+    bond_array_2,
+    c2,
+    etypes2,
+    cross_bond_inds_1,
+    cross_bond_inds_2,
+    cross_bond_dists_1,
+    cross_bond_dists_2,
+    triplets_1,
+    triplets_2,
+    sig,
+    ls,
+    r_cut,
+    cutoff_func,
+    nspec,
+    spec_mask,
+    triplet_mask,
+    cut3b_mask,
+):
     kern = 0
 
     sig2 = sig * sig
@@ -559,7 +864,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
 
                 ri3 = cross_bond_dists_1[m, m + n + 1]
 
-                bond_n = cut3b_mask[bei2 + bc1*nspec]
+                bond_n = cut3b_mask[bei2 + bc1 * nspec]
                 fi2, _ = cutoff_func(r_cut[bond_n], ri2, 0)
 
                 bond_mn = cut3b_mask[bei1n + bei2]
@@ -575,7 +880,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
                         tr_spec1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
-                        bej1n = spec_mask[ej1]*nspec
+                        bej1n = spec_mask[ej1] * nspec
                         bond_p = cut3b_mask[bc2 + bej1n]
                         fj1, _ = cutoff_func(r_cut[bond_p], rj1, 0)
 
@@ -586,11 +891,11 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
                                 rj2 = bond_array_2[ind2, 0]
 
                                 bej2 = spec_mask[ej2]
-                                bond_q = cut3b_mask[bc2+bej2*nspec]
+                                bond_q = cut3b_mask[bc2 + bej2 * nspec]
                                 fj2, _ = cutoff_func(r_cut[bond_q], rj2, 0)
 
                                 rj3 = cross_bond_dists_2[p, p + q + 1]
-                                bond_pq = cut3b_mask[bej1n+bej2]
+                                bond_pq = cut3b_mask[bej1n + bej2]
                                 fj3, _ = cutoff_func(r_cut[bond_pq], rj3, 0)
                                 fj = fj1 * fj2 * fj3
 
@@ -604,21 +909,21 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if c1 == c2:
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         C1 = r11 * r11 + r22 * r22 + r33 * r33
                                         kern += tsig2 * exp(-C1 * tls2) * fi * fj
                                     if (ei1 == ej2) and (ei2 == ej1):
                                         C3 = r12 * r12 + r21 * r21 + r33 * r33
                                         kern += tsig2 * exp(-C3 * tls2) * fi * fj
-                                if (c1 == ej1):
+                                if c1 == ej1:
                                     if (ei1 == ej2) and (ei2 == c2):
                                         C5 = r13 * r13 + r21 * r21 + r32 * r32
                                         kern += tsig2 * exp(-C5 * tls2) * fi * fj
                                     if (ei1 == c2) and (ei2 == ej2):
                                         C2 = r11 * r11 + r23 * r23 + r32 * r32
                                         kern += tsig2 * exp(-C2 * tls2) * fi * fj
-                                if (c1 == ej2):
+                                if c1 == ej2:
                                     if (ei1 == ej1) and (ei2 == c2):
                                         C6 = r13 * r13 + r22 * r22 + r31 * r31
                                         kern += tsig2 * exp(-C6 * tls2) * fi * fj

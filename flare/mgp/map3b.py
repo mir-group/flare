@@ -56,7 +56,6 @@ class Map3body(MapXbody):
         return self.spc.index(spc)
 
 
-
 class SingleMap3body(SingleMapXbody):
     def __init__(self, **kwargs):
         """
@@ -318,7 +317,7 @@ def get_triplets_for_kern_jit(
     etypes2,
 ):
 
-    #triplet_list = np.empty((0, 6), dtype=np.float64)
+    # triplet_list = np.empty((0, 6), dtype=np.float64)
     triplet_list = []
 
     ej1 = etypes2[0]
@@ -378,7 +377,7 @@ def get_triplets_for_kern_jit(
                                 (tricrd, crd_p[:, 0], crd_p[:, 1], crd_p[:, 2])
                             )
                             triplet_list.append(tricrd)
-                            #tricrd = np.expand_dims(tricrd, axis=0)
-                            #triplet_list = np.vstack((triplet_list, tricrd))
+                            # tricrd = np.expand_dims(tricrd, axis=0)
+                            # triplet_list = np.vstack((triplet_list, tricrd))
 
     return triplet_list
