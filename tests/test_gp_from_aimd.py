@@ -384,14 +384,8 @@ def test_passive_learning():
         opt_algorithm="L-BFGS-B",
     )
 
-    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
-        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
-
-    with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
-        data_dicts = [loads(s) for s in f.readlines()[:6]]
-        envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
-        forces = [np.array(d["forces"]) for d in data_dicts]
-        seeds = list(zip(envs, forces))
+    frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
+    envs = AtomicEnvironment.from_file(path.join(TEST_FILE_DIR, "methanol_envs.json"))
 
     all_frames = deepcopy(frames)
     tt = TrajectoryTrainer(

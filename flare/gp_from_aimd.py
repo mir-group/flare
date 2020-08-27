@@ -257,9 +257,9 @@ class TrajectoryTrainer:
                          frames: List[Structure] = None,
                          environments: List[AtomicEnvironment] = None,
                          max_atoms_per_frame: int = np.inf,
-                         max_model_size: int = np.inf,
                          post_training_iterations: int = 0,
                          atoms_per_element: Dict[str:int] = None,
+                         max_model_size: int = np.inf,
                          max_atoms_per_element:Dict[str:int] = None,
                          ):
         """
