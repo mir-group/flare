@@ -45,11 +45,8 @@ from random import sample
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
 from flare.output import Output
 from flare.predict import (
-    predict_on_atom,
-    predict_on_atom_en,
     predict_on_structure_par,
     predict_on_structure_par_en,
     predict_on_structure_mgp,
@@ -254,14 +251,15 @@ class TrajectoryTrainer:
         self.start_time = time.time()
 
     def run_passive_learning(self,
-                         frames: List[Structure] = None,
-                         environments: List[AtomicEnvironment] = None,
-                         max_atoms_per_frame: int = np.inf,
-                         post_training_iterations: int = 0,
-                         atoms_per_element: Dict[str:int] = None,
-                         max_model_size: int = np.inf,
-                         max_atoms_per_element:Dict[str:int] = None,
-                         ):
+                             frames: List[Structure] = (),
+                             environments: List[AtomicEnvironment] = (),
+                             max_atoms_per_frame: int = np.inf,
+                             post_training_iterations: int = 0,
+                             post_build_matrices: bool = True,
+                             atoms_per_element: Dict[str, int] = None,
+                             max_model_size: int = np.inf,
+                             max_atoms_per_element:Dict[str,int] = None,
+                             ):
         """
             Various tasks to set up the AIMD training before commencing
             the run through the AIMD trajectory.
@@ -280,20 +278,29 @@ class TrajectoryTrainer:
         if self.mgp:
             raise NotImplementedError("Passive learning not yet configured for "
                                       "MGP")
+        if atoms_per_element is None:
+            atoms_per_element = dict()
+        if max_atoms_per_element is None:
+            max_atoms_per_element = dict()
 
-        self.start_time = time.time()
         logger = logging.getLogger(self.logger_name)
-        logger.debug("Now beginning pre-run activity.")
+        logger.debug("Beginning passive learning.")
         # If seed environments were passed in, add them to the GP.
 
-        for point in environments:
-            self.gp.add_one_env(point[0], point[1], train=False)
+        for env in environments:
+            self.gp.add_one_env(env, env.force, train=False)
 
         # Ensure compatibility with number / symbol elemental notation
-        for cur_dict in atoms_per_element,max_atoms_per_element,max_atoms_per_frame:
-            for key in cur_dict:
-                cur_dict[element_to_Z(key)] = cur_dict[key]
-                cur_dict[Z_to_element(key)] = cur_dict[key]
+        for cur_dict in atoms_per_element, max_atoms_per_element:
+            if cur_dict is None:
+                continue
+            for key in list(cur_dict.keys()):
+                if isinstance(key, int):
+                    cur_dict[Z_to_element(key)] = cur_dict[key]
+                elif isinstance(key, str):
+                    cur_dict[element_to_Z(key)] = cur_dict[key]
+
+        # Main frame loop
         total_added = 0
         for frame in frames:
             current_stats = self.gp.training_statistics
@@ -310,10 +317,10 @@ class TrajectoryTrainer:
                 n_add = min(
                     n_at,
                     atoms_per_element.get(species_i, inf),
-                    max_atoms_per_frame,
-                    available_to_add,
+                    max_atoms_per_frame - len(train_atoms),
+                    available_to_add - len(train_atoms),
                     max_atoms_per_element.get(elt, np.inf)
-                    - current_stats['envs_by_species'].get(elt,np.inf)
+                    - current_stats['envs_by_species'].get(elt,0)
                 )
                 n_add = max(0, n_add)
 
@@ -328,8 +335,8 @@ class TrajectoryTrainer:
         logger = logging.getLogger(self.logger_name)
         logger.info(
             f"Added {total_added} atoms to "
-            "pretrain.\n"
-            "Pre-run GP Statistics: "
+            "GP.\n"
+            "Current GP Statistics: "
             f"{json.dumps(self.gp.training_statistics)} "
         )
 
@@ -341,7 +348,7 @@ class TrajectoryTrainer:
             time0 = time.time()
             self.train_gp(max_iter=post_training_iterations)
             logger.debug(f"Done train_gp {time.time() - time0}")
-        else:
+        elif post_build_matrices:
             logger.debug(
                 "Now commencing pre-run set up of GP (which has non-empty training set)"
             )
@@ -349,8 +356,6 @@ class TrajectoryTrainer:
             self.gp.check_L_alpha()
             logger.debug(f"Done check_L_alpha {time.time() - time0}")
 
-        if self.model_format:
-            self.gp.write_model(f"{self.output_name}_passive", self.model_format)
 
 
 
@@ -686,6 +691,9 @@ class TrajectoryTrainer:
         :return: None
         """
 
+        if train_atoms == []:
+            return
+
         # Group added atoms by species for easier output
         added_species = [Z_to_element(frame.coded_species[at]) for at in train_atoms]
         added_atoms = {spec: [] for spec in set(added_species)}
@@ -944,4 +952,3 @@ def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[Structur
     return structures
 
 
-load_frame_into_gp()

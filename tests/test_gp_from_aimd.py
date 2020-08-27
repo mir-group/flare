@@ -12,6 +12,7 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
+from flare.utils.element_coder import Z_to_element
 from flare.gp_from_aimd import (
     TrajectoryTrainer,
     parse_trajectory_trainer_output,
@@ -258,7 +259,6 @@ def test_pred_on_elements():
         remove(f)
 
 
-
 def test_mgp_gpfa(all_mgp, all_gp):
     """
     Ensure that passing in an MGP also works for the trajectory trainer
@@ -364,8 +364,6 @@ def test_parse_gpfa_output():
         assert np.array_equal(struc.forces, frame["dft_forces"])
 
 
-
-
 def test_passive_learning():
     the_gp = GaussianProcess(
         kernel_name="2+3_mc",
@@ -386,40 +384,37 @@ def test_passive_learning():
 
     frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
     envs = AtomicEnvironment.from_file(path.join(TEST_FILE_DIR, "methanol_envs.json"))
+    cur_gp = deepcopy(the_gp)
+    tt = TrajectoryTrainer(frames=None, gp=cur_gp)
 
-    all_frames = deepcopy(frames)
-    tt = TrajectoryTrainer(
-        frames,
-        gp=the_gp,
-        shuffle_frames=False,
-        rel_std_tolerance=0,
-        abs_std_tolerance=0,
-        abs_force_tolerance=0.001,
-        skip=5,
-        min_atoms_per_train=100,
-        pre_train_seed_envs=seeds,
-        pre_train_seed_frames=[frames[-1]],
-        max_atoms_from_frame=4,
-        output_name="meth_test",
-        print_as_xyz=True,
-        model_format="json",
-        atom_checkpoint_interval=50,
-        pre_train_atoms_per_element={"H": 1},
-        predict_atoms_per_element={"H": 0, "C": 1, "O": 0},
+    # TEST ENVIRONMENT ADDITION
+    envs_species = set(Z_to_element(env.ctype) for env in envs)
+    tt.run_passive_learning(environments=envs)
+
+    assert cur_gp.training_statistics["N"] == len(envs)
+    assert set(cur_gp.training_statistics["species"]) == envs_species
+
+    # TEST FRAME ADDITION: ALL ARE ADDED
+    cur_gp = deepcopy(the_gp)
+    tt.gp = cur_gp
+    tt.run_passive_learning(frames=frames)
+    assert len(cur_gp.training_data) == sum([len(fr) for fr in frames])
+
+    # TEST FRAME ADDITION: MAX OUT MODEL SIZE AT 1
+    cur_gp = deepcopy(the_gp)
+    tt.gp = cur_gp
+    tt.run_passive_learning(frames=frames, max_model_size=1)
+    assert len(cur_gp.training_data) == 1
+
+    # TEST FRAME ADDITION: EXCLUDE OXYGEN, LIMIT CARBON TO 1, 1 H PER FRAME
+    cur_gp = deepcopy(the_gp)
+    tt.gp = cur_gp
+    tt.run_passive_learning(
+        frames=frames,
+        max_atoms_per_element={"O": 0, "C": 1, "H": 5},
+        atoms_per_element={"H": 1},
     )
-    # Set to predict only on Carbon after training on H to ensure errors are
-    #  high and that they get added to the gp
-    tt.run()
 
-    # Ensure forces weren't written directly to structure
-    for i in range(len(all_frames)):
-        assert np.array_equal(all_frames[i].forces, frames[i].forces)
-
-    # Assert that Carbon atoms were correctly added
-    assert the_gp.training_statistics["envs_by_species"]["C"] > 2
-
-    for f in glob(f"meth_test*"):
-        remove(f)
-
-    for f in glob(f"gp_from_aimd*"):
-        remove(f)
+    assert "O" not in cur_gp.training_statistics["species"]
+    assert cur_gp.training_statistics["envs_by_species"]["C"] == 1
+    assert cur_gp.training_statistics["envs_by_species"]["H"] == 5
