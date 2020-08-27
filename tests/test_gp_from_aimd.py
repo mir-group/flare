@@ -258,6 +258,7 @@ def test_pred_on_elements():
         remove(f)
 
 
+
 def test_mgp_gpfa(all_mgp, all_gp):
     """
     Ensure that passing in an MGP also works for the trajectory trainer
@@ -361,3 +362,70 @@ def test_parse_gpfa_output():
         assert np.array_equal(struc.species_labels, frame["species"])
         assert np.array_equal(struc.positions, frame["positions"])
         assert np.array_equal(struc.forces, frame["dft_forces"])
+
+
+
+
+def test_passive_learning():
+    the_gp = GaussianProcess(
+        kernel_name="2+3_mc",
+        hyps=np.array(
+            [
+                3.75996759e-06,
+                1.53990678e-02,
+                2.50624782e-05,
+                5.07884426e-01,
+                1.70172923e-03,
+            ]
+        ),
+        cutoffs=np.array([5, 3]),
+        hyp_labels=["l2", "s2", "l3", "s3", "n0"],
+        maxiter=1,
+        opt_algorithm="L-BFGS-B",
+    )
+
+    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
+        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+
+    with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
+        data_dicts = [loads(s) for s in f.readlines()[:6]]
+        envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
+        forces = [np.array(d["forces"]) for d in data_dicts]
+        seeds = list(zip(envs, forces))
+
+    all_frames = deepcopy(frames)
+    tt = TrajectoryTrainer(
+        frames,
+        gp=the_gp,
+        shuffle_frames=False,
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.001,
+        skip=5,
+        min_atoms_per_train=100,
+        pre_train_seed_envs=seeds,
+        pre_train_seed_frames=[frames[-1]],
+        max_atoms_from_frame=4,
+        output_name="meth_test",
+        print_as_xyz=True,
+        model_format="json",
+        atom_checkpoint_interval=50,
+        pre_train_atoms_per_element={"H": 1},
+        predict_atoms_per_element={"H": 0, "C": 1, "O": 0},
+    )
+    # Set to predict only on Carbon after training on H to ensure errors are
+    #  high and that they get added to the gp
+    tt.run()
+
+    # Ensure forces weren't written directly to structure
+    for i in range(len(all_frames)):
+        assert np.array_equal(all_frames[i].forces, frames[i].forces)
+
+    # Assert that Carbon atoms were correctly added
+    assert the_gp.training_statistics["envs_by_species"]["C"] > 2
+
+    for f in glob(f"meth_test*"):
+        remove(f)
+
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)

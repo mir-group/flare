@@ -40,7 +40,8 @@ import warnings
 
 from copy import deepcopy
 from math import inf
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict
+from random import sample
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
@@ -67,8 +68,8 @@ from flare.parameters import Parameters
 class TrajectoryTrainer:
     def __init__(
         self,
-        frames: List[Structure],
-        gp: Union[GaussianProcess, MappedGaussianProcess],
+        frames: List[Structure]= None,
+        gp: Union[GaussianProcess, MappedGaussianProcess] = None,
         rel_std_tolerance: float = 4,
         abs_std_tolerance: float = 1,
         abs_force_tolerance: float = 0,
@@ -252,30 +253,128 @@ class TrajectoryTrainer:
         self.train_count = 0
         self.start_time = time.time()
 
-    def pre_run(self):
+    def run_passive_learning(self,
+                         frames: List[Structure] = None,
+                         environments: List[AtomicEnvironment] = None,
+                         max_atoms_per_frame: int = np.inf,
+                         max_model_size: int = np.inf,
+                         post_training_iterations: int = 0,
+                         atoms_per_element: Dict[str:int] = None,
+                         max_atoms_per_element:Dict[str:int] = None,
+                         ):
         """
-        Various tasks to set up the AIMD training before commencing
-        the run through the AIMD trajectory.
-        1. Print the output.
-        2. Pre-train the GP with the seed frames and
-        environments. If no seed frames or environments and the GP has no
-        training set, then seed with at least one atom from each
+            Various tasks to set up the AIMD training before commencing
+            the run through the AIMD trajectory.
+            
+            If you want to skip frames, splice the input as
+            frames[::skip_n].
+            
+            If you want to randomize the frame order, try the random module's shuffle function.
+
+            Loads the GP with the seed frames and
+            environments. ALL environments passed in will be added. Randomly chosen
+            atoms from each frame will be added. If no seed frames or environments and
+            the GP has no training set, then seed with at least one atom from each
         """
 
         if self.mgp:
-            raise NotImplementedError("Pre-running notyet configured for MGP")
-        self.output.write_header(
-            str(self.gp),
-            dt=0,
-            Nsteps=len(self.frames),
-            structure=None,
-            std_tolerance=(self.rel_std_tolerance, self.abs_std_tolerance),
-            optional={
-                "GP Statistics": json.dumps(self.gp.training_statistics),
-                "GP Name": self.gp.name,
-                "GP Write Name": self.output_name + "_model." + self.model_format,
-            },
+            raise NotImplementedError("Passive learning not yet configured for "
+                                      "MGP")
+
+        self.start_time = time.time()
+        logger = logging.getLogger(self.logger_name)
+        logger.debug("Now beginning pre-run activity.")
+        # If seed environments were passed in, add them to the GP.
+
+        for point in environments:
+            self.gp.add_one_env(point[0], point[1], train=False)
+
+        # Ensure compatibility with number / symbol elemental notation
+        for cur_dict in atoms_per_element,max_atoms_per_element,max_atoms_per_frame:
+            for key in cur_dict:
+                cur_dict[element_to_Z(key)] = cur_dict[key]
+                cur_dict[Z_to_element(key)] = cur_dict[key]
+        total_added = 0
+        for frame in frames:
+            current_stats = self.gp.training_statistics
+            available_to_add = max_model_size - current_stats['N']
+
+            train_atoms = []
+            for species_i in set(frame.coded_species):
+                # Get a randomized set of atoms of species i from the frame
+                # So that it is not always the lowest-indexed atoms chosen
+                elt = Z_to_element(species_i)
+                atoms_of_specie = frame.indices_of_specie(species_i)
+                n_at = len(atoms_of_specie)
+                # Determine how many to add based on user defined cutoffs
+                n_add = min(
+                    n_at,
+                    atoms_per_element.get(species_i, inf),
+                    max_atoms_per_frame,
+                    available_to_add,
+                    max_atoms_per_element.get(elt, np.inf)
+                    - current_stats['envs_by_species'].get(elt,np.inf)
+                )
+                n_add = max(0, n_add)
+
+                train_atoms += sample(atoms_of_specie, n_add)
+                available_to_add -= n_add
+                total_added += n_add
+
+            self.update_gp_and_print(
+                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False,
+            )
+
+        logger = logging.getLogger(self.logger_name)
+        logger.info(
+            f"Added {total_added} atoms to "
+            "pretrain.\n"
+            "Pre-run GP Statistics: "
+            f"{json.dumps(self.gp.training_statistics)} "
         )
+
+        if post_training_iterations:
+            logger.debug(
+                "Now commencing pre-run training of GP (which has "
+                "non-empty training set)"
+            )
+            time0 = time.time()
+            self.train_gp(max_iter=post_training_iterations)
+            logger.debug(f"Done train_gp {time.time() - time0}")
+        else:
+            logger.debug(
+                "Now commencing pre-run set up of GP (which has non-empty training set)"
+            )
+            time0 = time.time()
+            self.gp.check_L_alpha()
+            logger.debug(f"Done check_L_alpha {time.time() - time0}")
+
+        if self.model_format:
+            self.gp.write_model(f"{self.output_name}_passive", self.model_format)
+
+
+
+
+    def pre_run(self):
+
+        self.output.write_header(
+                str(self.gp),
+                dt=0,
+                Nsteps=len(self.frames),
+                structure=None,
+                std_tolerance=(self.rel_std_tolerance, self.abs_std_tolerance),
+                optional={
+                    "GP Statistics": json.dumps(self.gp.training_statistics),
+                    "GP Name": self.gp.name,
+                    "GP Write Name": self.output_name + "_model." + self.model_format,
+                },
+            )
+
+        if self.mgp:
+            raise NotImplementedError("Passive learning not yet configured for "
+                                      "MGP")
+
+
 
         self.start_time = time.time()
         logger = logging.getLogger(self.logger_name)
@@ -843,3 +942,6 @@ def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[Structur
             )
         )
     return structures
+
+
+load_frame_into_gp()
