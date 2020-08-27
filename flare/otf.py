@@ -289,6 +289,9 @@ class OTF:
             self.md_step()
             self.curr_step += 1
 
+            if write_model == 3:
+                self.checkpoint()
+
         self.output.conclude_run()
 
         if self.write_model >= 1:
