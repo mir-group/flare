@@ -168,7 +168,7 @@ class ASE_OTF(OTF):
 
         # TODO: Turn this into a "reset" method.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.flare_calc.results = {}
+            self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
         if self.md_engine == "NPT":
@@ -189,7 +189,7 @@ class ASE_OTF(OTF):
 
         # Change to FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.flare_calc.results = {}
+            self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
         if not self.flare_calc.results:
@@ -204,7 +204,7 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Reset FLARE calculator.
-        self.flare_calc.results = {}
+        self.flare_calc.reset()
         if self.dft_step:
             self.atoms.calc = self.flare_calc
 
