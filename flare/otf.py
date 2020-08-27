@@ -271,9 +271,12 @@ class OTF:
                     self.compute_mae(gp_frcs, dft_frcs)
 
                     # add max uncertainty atoms to training set
-                    self.update_gp(target_atoms, dft_frcs,
-                                   dft_stress=dft_stress,
-                                   dft_energy=dft_energy)
+                    self.update_gp(
+                        target_atoms,
+                        dft_frcs,
+                        dft_stress=dft_stress,
+                        dft_energy=dft_energy,
+                    )
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -317,8 +320,9 @@ class OTF:
         self.record_state()
 
         # make initial gp model and predict forces
-        self.update_gp(self.init_atoms, dft_frcs, dft_stress=dft_stress,
-                       dft_energy=dft_energy)
+        self.update_gp(
+            self.init_atoms, dft_frcs, dft_stress=dft_stress, dft_energy=dft_energy
+        )
 
     def compute_properties(self):
         """

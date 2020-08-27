@@ -240,9 +240,16 @@ class ASE_OTF(OTF):
         # (xx, xy, xz, yy, yz, zz).
         flare_stress = None
         if dft_stress is not None:
-            flare_stress = \
-                -np.array([dft_stress[0], dft_stress[5], dft_stress[4],
-                           dft_stress[1], dft_stress[3], dft_stress[2]])
+            flare_stress = -np.array(
+                [
+                    dft_stress[0],
+                    dft_stress[5],
+                    dft_stress[4],
+                    dft_stress[1],
+                    dft_stress[3],
+                    dft_stress[2],
+                ]
+            )
 
         # update gp model
         self.gp.update_db(
