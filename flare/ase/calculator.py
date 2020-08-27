@@ -192,6 +192,11 @@ class FLARE_Calculator(Calculator):
     def calculation_required(self, atoms, quantities):
         return True
 
+    def reset(self):
+        """Clear the results attribute of the calculator."""
+
+        self.results = {}
+
     def as_dict(self):
         outdict = {}
 

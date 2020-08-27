@@ -11,7 +11,7 @@ from copy import deepcopy
 import logging
 
 import numpy as np
-from ase.md.npt import NPT
+from flare.ase.npt import NPT_mod
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
@@ -26,17 +26,6 @@ from flare.utils.learner import is_std_in_bound
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
-
-
-def reset_npt_momenta(npt_engine, force):
-    # in the last step, the momenta was set by flare forces, change to dft forces
-    npt_engine._calculate_q_future(force)
-    npt_engine.atoms.set_momenta(
-        np.dot(
-            npt_engine.q_future - npt_engine.q_past, npt_engine.h / (2 * npt_engine.dt)
-        )
-        * npt_engine._getmasses()
-    )
 
 
 class ASE_OTF(OTF):
@@ -123,11 +112,7 @@ class ASE_OTF(OTF):
         elif md_engine == "NPTBerendsen":
             MD = NPTBerendsen
         elif md_engine == "NPT":
-            MD = NPT
-            # TODO: solve the md step
-            assert (
-                md_kwargs["pfactor"] is None
-            ), "Current MD OTF only supports pfactor=None"
+            MD = NPT_mod
         elif md_engine == "Langevin":
             MD = Langevin
         else:
@@ -170,6 +155,11 @@ class ASE_OTF(OTF):
     def initialize_train(self):
         super().initialize_train()
 
+        # TODO: Turn this into a "reset" method.
+        if not isinstance(self.atoms.calc, FLARE_Calculator):
+            self.flare_calc.reset()
+            self.atoms.calc = self.flare_calc
+
         if self.md_engine == "NPT":
             if not self.md.initialized:
                 self.md.initialize()
@@ -186,8 +176,9 @@ class ASE_OTF(OTF):
             OTF structure object.
         """
 
-        # Reset FLARE calculator if necessary.
+        # Change to FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
+            self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
         if not self.flare_calc.results:
@@ -201,27 +192,13 @@ class ASE_OTF(OTF):
         # Update previous positions.
         self.structure.prev_positions = np.copy(self.structure.positions)
 
+        # Reset FLARE calculator.
+        self.flare_calc.reset()
+        if self.dft_step:
+            self.atoms.calc = self.flare_calc
+
         # Take MD step.
-        f = self.atoms.get_forces()
-
-        if self.md_engine == "NPT":
-            self.flare_calc.results = {}  # init flare calculator
-
-            if self.dft_step:
-                reset_npt_momenta(self.md, f)
-                self.atoms.calc = self.flare_calc
-
-            self.md.step()  # use flare to get force for next step
-        else:
-            self.flare_calc.results = {}  # init flare calculator
-            if self.dft_step:
-                self.atoms.calc = self.flare_calc
-
-            self.md.step(f)
-
-        # Update the positions and cell of the structure object.
-        self.structure.cell = np.copy(self.atoms.cell)
-        self.structure.positions = np.copy(self.atoms.positions)
+        self.md.step()
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -248,13 +225,28 @@ class ASE_OTF(OTF):
     def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
         self.output.add_atom_info(train_atoms, self.structure.stds)
 
+        # Convert ASE stress (xx, yy, zz, yz, xz, xy) to FLARE stress
+        # (xx, xy, xz, yy, yz, zz).
+        flare_stress = None
+        if dft_stress is not None:
+            flare_stress = -np.array(
+                [
+                    dft_stress[0],
+                    dft_stress[5],
+                    dft_stress[4],
+                    dft_stress[1],
+                    dft_stress[3],
+                    dft_stress[2],
+                ]
+            )
+
         # update gp model
         self.gp.update_db(
             self.structure,
             dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
-            stress=dft_stress,
+            stress=flare_stress,
         )
 
         self.gp.set_L_alpha()
