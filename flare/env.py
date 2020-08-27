@@ -1,11 +1,18 @@
 """The :class:`AtomicEnvironment` object stores information about the local
 environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
-import numpy as np
+
+from typing import List, Union
 from copy import deepcopy
 from math import ceil
-from flare.struc import Structure
+from json import dumps, loads
+
+import pickle as pickle
+import numpy as np
+
 import flare.kernels.cutoffs as cf
+from flare.utils import NumpyEncoder
+from flare.struc import Structure
 from flare.utils.env_getarray import (
     get_2_body_arrays,
     get_3_body_arrays,
@@ -259,6 +266,15 @@ class AtomicEnvironment:
                 cf.quadratic_cutoff,
             )
 
+    def as_str(self) -> str:
+        """
+        Returns string dictionary serialization cast as string.
+
+        :return: output of as_dict method cast as string
+        :rtype: str
+        """
+        return dumps(self.as_dict(), cls=NumpyEncoder)
+
     def as_dict(self, include_structure: bool = False):
         """
         Returns Atomic Environment object as a dictionary for serialization
@@ -313,11 +329,49 @@ class AtomicEnvironment:
 
         return AtomicEnvironment(struc, index, cutoffs, cutoffs_mask=cutoffs_mask)
 
+    @staticmethod
+    def from_file(
+        file_name: str, format: str = ""
+    ) -> Union["flare.env.AtomicEnvironment", List["flare.env.AtomicEnvironment"]]:
+        """
+        Load an atomic environment from a file or a series of atomic environments
+        :param file_name:
+        :param format:
+        :return:
+        """
+
+        # Ensure the file specified exists.
+        with open(file_name, "r") as _:
+            pass
+
+        if "pickle" in file_name or (
+            "pickle" in format.lower() or "binary" in format.lower()
+        ):
+            with open(file_name, "rb") as f:
+                return pickle.load(f)
+
+        if "json" in format.lower() or ".json" in file_name:
+            # Assumed format is one atomic environment per line,
+            # or one line with many atomic environments
+            with open(file_name, "r") as f:
+                thelines = f.readlines()
+
+                non_empty_lines = [loads(line) for line in thelines if len(line) > 2]
+
+            envs = [
+                AtomicEnvironment.from_dict(env_dict) for env_dict in non_empty_lines
+            ]
+
+            if len(envs) == 1:
+                return envs[0]
+            else:
+                return envs
+
     def __str__(self):
         atom_type = self.ctype
         neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
-        string = "Atomic Env. of Type {} surrounded by {} atoms " "of Types {}".format(
+        string = "Atomic Env. of Type {} surrounded by {} atoms of Types {}".format(
             atom_type, n_neighbors, sorted(list(set(neighbor_types)))
         )
 

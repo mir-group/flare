@@ -1,9 +1,12 @@
 import pytest
 import numpy as np
 
+from json import dumps
 from copy import deepcopy
+from os import remove
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
+from flare.utils import NumpyEncoder
 
 np.random.seed(0)
 
@@ -67,16 +70,25 @@ def test_env_methods(structure, mask, cutoff, result):
     env_test = AtomicEnvironment(structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask)
 
     assert (
-        str(env_test) == f"Atomic Env. of Type 1 surrounded by {result[0]} atoms"
-        " of Types [1, 2, 3]"
+        str(env_test)
+        == f"Atomic Env. of Type 1 surrounded by {result[0]} atoms of Types [1, 2, 3]"
     )
 
     the_dict = env_test.as_dict()
     assert isinstance(the_dict, dict)
+    the_str = env_test.as_str()
+    assert dumps(the_dict, cls=NumpyEncoder) == the_str
     for key in ["positions", "cell", "atom", "cutoffs", "species"]:
         assert key in the_dict.keys()
 
-    remade_env = AtomicEnvironment.from_dict(the_dict)
+    # This saves a few seconds, the masked envs take longer to read/write
+    if not mask:
+        with open("test_environment.json", "w") as f:
+            f.write(env_test.as_str())
+        remade_env = AtomicEnvironment.from_file("test_environment.json")
+    else:
+        remade_env = AtomicEnvironment.from_dict(the_dict)
+
     assert isinstance(remade_env, AtomicEnvironment)
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
@@ -84,6 +96,9 @@ def test_env_methods(structure, mask, cutoff, result):
         assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
     if len(cutoff) > 2:
         assert np.array_equal(remade_env.q_array, env_test.q_array)
+
+    if not mask:
+        remove("test_environment.json")
 
 
 # Only run on the first four tests, namely, the ones which have
@@ -173,7 +188,7 @@ def generate_mask(cutoff):
 
 def test_auto_sweep():
     """Test that the number of neighbors inside the local environment is
-        correctly computed."""
+    correctly computed."""
 
     # Make an arbitrary non-cubic structure.
     cell = np.array([[1.3, 0.5, 0.8], [-1.2, 1, 0.73], [-0.8, 0.1, 0.9]])

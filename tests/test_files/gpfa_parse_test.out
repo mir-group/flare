@@ -1,133 +1,159 @@
-2020-05-18 18:05:17.836559
-number of cpu cores: 4
-cutoffs: [7. 3.]
-kernel_name: two_plus_three_body_mc
-number of hyperparameters: 5
-hyperparameters: [3.75996759e-06 1.53990678e-02 2.50624782e-05 5.07884426e-01
+2020-08-26 06:53:08.138341
+
+Number of cpu cores: 1
+Kernel: ['twobody', 'threebody']
+Training points: 0
+Cutoffs: {'twobody': 5, 'threebody': 3}
+Number of hyperparameters: 5
+Hyperparameter array: [3.75996759e-06 1.53990678e-02 2.50624782e-05 5.07884426e-01
  1.70172923e-03]
-hyperparameter optimization algorithm: L-BFGS-B
-relative uncertainty tolerance: 0 times noise hyperparameter
-absolute uncertainty tolerance: 0 eV/A
-timestep (ps): 0
-number of frames: 24
+l2: 3.75996759e-06
+s2: 0.0153990678
+l3: 2.50624782e-05
+s3: 0.507884426
+n0: 0.00170172923
+
+Relative uncertainty tolerance: 0 times noise hyperparameter
+Absolute uncertainty tolerance: 0 eV/A
+Timestep (ps): 0
+Number of frames: 24
 GP Statistics: {"N": 0, "species": [], "envs_by_species": {}}
 GP Name: default_gp
 GP Write Name: meth_test_model.json
 --------------------------------------------------------------------------------
+Adding atom(s) {"C": [0], "O": [1], "H": [4]} to the training set.
+New GP Statistics: {"N": 6, "species": ["O", "C", "H"], "envs_by_species": {"C": 1, "O": 1, "H": 4}}
 
-Adding atom(s) {"H": [3], "O": [1], "C": [0]} to the training set.
 Added 3 atoms to pretrain.
-Pre-run GP Statistics: {"N": 9, "species": ["H", "C", "O"], "envs_by_species": {"C": 2, "O": 2, "H": 5}}
-Train GP
+Pre-run GP Statistics: {"N": 9, "species": ["O", "C", "H"], "envs_by_species": {"C": 2, "O": 2, "H": 5}}
 
 GP hyperparameters:
-Hyp0 : l2 = 0.0001
-Hyp1 : s2 = 0.0099
-Hyp2 : l3 = 0.0000
-Hyp3 : s3 = 0.5079
-Hyp4 : n0 = 0.0010
-likelihood: 52.3972
-likelihood gradient: [ 1.03585519e+01 -1.17983951e-01  1.95960377e+00 -1.40589820e-06
- -1.33249347e+03]
-wall time from start: 7.60 s
+Hyp0 : l2                             = 0.0001
+Hyp1 : s2                             = 0.0084
+Hyp2 : l3                             = 0.0006
+Hyp3 : s3                             = 0.5079
+Hyp4 : n0                             = 0.0010
+Likelihood: 52.9498
+Likelihood gradient: [ 7.59997042e-02  1.61207118e-02 -9.88536323e-03  1.34334788e-01
+ -1.24794931e+03]
+Wall time from start: 4.57 s
+=====NOW ON FRAME 0=====
 
 *-Frame: 0
 El  Position (A) 				 GP Force (ev/A)  				Std. Dev (ev/A) 				DFT Force (ev/A)
-C     5.0356     5.3627     11.293 	 0.0013479 -0.0086617 -0.00014977 	0.00083762 0.00090705 0.00083418 	 0.0010674 -0.0086516 -0.00036775
+C     5.0356     5.3627     11.293 	  0.001315 -0.0086655 -0.00017682 	0.00086083 0.00090718  0.0008586 	 0.0010674 -0.0086516 -0.00036775
 O     5.3892      4.055     10.834 	       nan        nan        nan 	       nan        nan        nan 	-0.0030383   0.011562  0.0011384
 H     6.1001     4.1431     10.176 	       nan        nan        nan 	       nan        nan        nan 	-0.00041708 0.00012457 0.00026436
 H      4.646     6.0016     10.481 	       nan        nan        nan 	       nan        nan        nan 	0.00043879 -0.00056664 -0.0015216
 H     5.8825     5.8788      11.78 	       nan        nan        nan 	       nan        nan        nan 	 0.0026189 -0.00042729  0.0014758
 H     4.2402     5.2274     12.038 	       nan        nan        nan 	       nan        nan        nan 	-0.00022832 -0.0015721 -0.00089144
 
-mean absolute error: 0.17 meV/A
+cell: [[10.638, 0.0, 0.0], [0.0, 10.0296, 0.0], [0.0, 0.0, 20.0]]
+mean absolute error: 0.15 meV/A
 mean absolute dft component: 2.02 meV/A
 mae per species
-type C mae: 0.17 meV/A
-wall time from start:    0.00048
+type C mae: 0.15 meV/A
+
+Wall time from start: 0.00 s
+=====NOW ON FRAME 1=====
 
 *-Frame: 1
 El  Position (A) 				 GP Force (ev/A)  				Std. Dev (ev/A) 				DFT Force (ev/A)
-C     5.0122     5.3557     11.306 	 -0.010021   0.037157   0.096695 	   0.09305    0.17919   0.093806 	  -0.95492    0.28934    0.48548
+C     5.0122     5.3557     11.306 	  0.012763   0.020991   0.090411 	  0.089324    0.18923   0.092007 	  -0.95492    0.28934    0.48548
 O     5.3379     4.0498     10.847 	       nan        nan        nan 	       nan        nan        nan 	   0.62334    0.37294   -0.53905
 H     6.1254     4.1741     10.282 	       nan        nan        nan 	       nan        nan        nan 	  -0.11904   -0.39129  -0.035069
 H     4.5732       6.05     10.558 	       nan        nan        nan 	       nan        nan        nan 	  0.024085   -0.39282   -0.29839
 H     5.8515     5.9125     11.745 	       nan        nan        nan 	       nan        nan        nan 	   0.21593   -0.20974    0.28283
 H     4.2239     5.1764     12.058 	       nan        nan        nan 	       nan        nan        nan 	   0.21686    0.32463   0.098931
 
-mean absolute error: 528.62 meV/A
+cell: [[10.638, 0.0, 0.0], [0.0, 10.0296, 0.0], [0.0, 0.0, 20.0]]
+mean absolute error: 543.70 meV/A
 mean absolute dft component: 326.37 meV/A
 mae per species
-type C mae: 528.62 meV/A
-wall time from start:    0.00029
+type C mae: 543.70 meV/A
 
+Wall time from start: 0.00 s
 Adding atom(s) {"C": [0]} to the training set.
-Uncertainties: [[0. 0. 0.]].
+Uncertainties: [[0.08932427 0.18922895 0.09200745]].
+New GP Statistics: {"N": 9, "species": ["O", "C", "H"], "envs_by_species": {"C": 2, "O": 2, "H": 5}}
+
+=====NOW ON FRAME 2=====
 
 *-Frame: 2
 El  Position (A) 				 GP Force (ev/A)  				Std. Dev (ev/A) 				DFT Force (ev/A)
-C     4.9738     5.3542     11.326 	   0.44344    -1.1703    -1.2127 	   0.15577    0.12357   0.094121 	   0.24856    0.44472    0.43621
+C     4.9738     5.3542     11.326 	   0.26034    -1.0078   -0.97842 	   0.17605    0.13714    0.10592 	   0.24856    0.44472    0.43621
 O     5.2943     4.0494     10.854 	       nan        nan        nan 	       nan        nan        nan 	    0.2585     0.1257   -0.21401
 H     6.1343     4.1254     10.373 	       nan        nan        nan 	       nan        nan        nan 	  0.037147   -0.17532   -0.15446
 H     4.5078      6.018     10.572 	       nan        nan        nan 	       nan        nan        nan 	   0.10073   -0.17138   -0.17238
 H     5.8558     5.8985     11.765 	       nan        nan        nan 	       nan        nan        nan 	   -0.4542   -0.38165    -0.2078
 H     4.2382     5.1904     12.113 	       nan        nan        nan 	       nan        nan        nan 	  -0.18326    0.15205    0.30734
 
-mean absolute error: 1152.93 meV/A
+cell: [[10.638, 0.0, 0.0], [0.0, 10.0296, 0.0], [0.0, 0.0, 20.0]]
+mean absolute error: 959.63 meV/A
 mean absolute dft component: 234.75 meV/A
 mae per species
-type C mae: 1152.93 meV/A
-wall time from start:    0.00033
+type C mae: 959.63 meV/A
 
+Wall time from start: 0.00 s
 Adding atom(s) {"C": [0]} to the training set.
-Uncertainties: [[0. 0. 0.]].
+Uncertainties: [[0.17605288 0.13714275 0.1059237 ]].
+New GP Statistics: {"N": 10, "species": ["O", "C", "H"], "envs_by_species": {"C": 3, "O": 2, "H": 5}}
+
+=====NOW ON FRAME 3=====
 
 *-Frame: 3
 El  Position (A) 				 GP Force (ev/A)  				Std. Dev (ev/A) 				DFT Force (ev/A)
-C     4.9345     5.3582     11.354 	    1.2039   -0.63736   -0.49531 	   0.18101    0.13748    0.10133 	  -0.56205   -0.73341   0.025774
+C     4.9345     5.3582     11.354 	   0.64763   -0.24783   -0.36101 	   0.19184    0.14823    0.11222 	  -0.56205   -0.73341   0.025774
 O     5.2551     4.0507     10.857 	       nan        nan        nan 	       nan        nan        nan 	  -0.10864   -0.35736    0.11981
 H     6.1354     4.0382     10.439 	       nan        nan        nan 	       nan        nan        nan 	  -0.16378    0.25194   0.092475
 H     4.4634     5.9486      10.55 	       nan        nan        nan 	       nan        nan        nan 	  0.045248    0.25636    0.18297
 H     5.8113     5.8304     11.763 	       nan        nan        nan 	       nan        nan        nan 	   0.64355    0.64017     0.1229
 H     4.2287     5.2411     12.211 	       nan        nan        nan 	       nan        nan        nan 	   0.15043  -0.062927   -0.55067
 
-mean absolute error: 794.36 meV/A
+cell: [[10.638, 0.0, 0.0], [0.0, 10.0296, 0.0], [0.0, 0.0, 20.0]]
+mean absolute error: 694.01 meV/A
 mean absolute dft component: 281.69 meV/A
 mae per species
-type C mae: 794.36 meV/A
-wall time from start:    0.00053
+type C mae: 694.01 meV/A
 
+Wall time from start: 0.00 s
 Adding atom(s) {"C": [0]} to the training set.
-Uncertainties: [[0. 0. 0.]].
+Uncertainties: [[0.19184283 0.14823279 0.1122213 ]].
+New GP Statistics: {"N": 11, "species": ["O", "C", "H"], "envs_by_species": {"C": 4, "O": 2, "H": 5}}
+
+=====NOW ON FRAME 4=====
 
 *-Frame: 4
 El  Position (A) 				 GP Force (ev/A)  				Std. Dev (ev/A) 				DFT Force (ev/A)
-C      4.893     5.3526     11.381 	   -1.7909   -0.79015    0.72632 	   0.16615    0.12703    0.10462 	    1.7604    0.18774    -0.6134
+C      4.893     5.3526     11.381 	   -1.2703  -0.032226    0.81134 	   0.19343    0.12941    0.13163 	    1.7604    0.18774    -0.6134
 O     5.2135     4.0474     10.862 	       nan        nan        nan 	       nan        nan        nan 	  -0.54736   -0.31382    0.43887
 H     6.1167     4.0035     10.517 	       nan        nan        nan 	       nan        nan        nan 	   0.10004    0.32068   0.026511
 H     4.4303      5.933     10.566 	       nan        nan        nan 	       nan        nan        nan 	-0.0076784    0.29726    0.24329
 H     5.8353     5.8618      11.76 	       nan        nan        nan 	       nan        nan        nan 	  -0.84744   -0.19008    -0.3897
 H     4.2246     5.2747     12.229 	       nan        nan        nan 	       nan        nan        nan 	  -0.45225    -0.3082    0.28713
 
-mean absolute error: 1956.30 meV/A
+cell: [[10.638, 0.0, 0.0], [0.0, 10.0296, 0.0], [0.0, 0.0, 20.0]]
+mean absolute error: 1558.45 meV/A
 mean absolute dft component: 407.32 meV/A
 mae per species
-type C mae: 1956.30 meV/A
-wall time from start:     0.0005
+type C mae: 1558.45 meV/A
 
+Wall time from start: 0.00 s
 Adding atom(s) {"C": [0]} to the training set.
-Uncertainties: [[0. 0. 0.]].
-Train GP
+Uncertainties: [[0.19343472 0.12940647 0.13162689]].
+New GP Statistics: {"N": 12, "species": ["O", "C", "H"], "envs_by_species": {"C": 5, "O": 2, "H": 5}}
+
 
 GP hyperparameters:
-Hyp0 : l2 = 0.0123
-Hyp1 : s2 = 0.0099
-Hyp2 : l3 = 0.0000
-Hyp3 : s3 = 0.5079
-Hyp4 : n0 = 0.0010
-likelihood: -96.5194
-likelihood gradient: [-2.66642712e+03  5.64685351e+03 -5.10617254e-04  1.87489025e-09
- -1.81160621e+03]
-wall time from start: 8.20 s
+Hyp0 : l2                             = 0.0370
+Hyp1 : s2                             = 0.0084
+Hyp2 : l3                             = 0.0015
+Hyp3 : s3                             = 0.5079
+Hyp4 : n0                             = 0.0010
+Likelihood: -109.5848
+Likelihood gradient: [-8.91249243e+02  6.52762028e+03 -1.06561685e-01  1.85225147e-04
+ -1.89388867e+03]
+Wall time from start: 4.92 s
 --------------------
 Run complete.
+Final GP statistics:{"N": 13, "species": ["O", "C", "H"], "envs_by_species": {"C": 6, "O": 2, "H": 5}}

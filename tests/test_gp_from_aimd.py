@@ -6,17 +6,25 @@ import json as json
 from copy import deepcopy
 from json import loads
 from glob import glob
-from os import remove
+from os import remove, path
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
-from flare.gp_from_aimd import TrajectoryTrainer, parse_trajectory_trainer_output
+from flare.gp_from_aimd import (
+    TrajectoryTrainer,
+    parse_trajectory_trainer_output,
+    structures_from_gpfa_output,
+)
 from flare.utils.learner import subset_of_frame_by_element
 
 from tests.test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
+
+
+TEST_DIR = path.dirname(__file__)
+TEST_FILE_DIR = path.join(TEST_DIR, "test_files")
 
 
 @pytest.fixture
@@ -32,13 +40,13 @@ def methanol_gp():
                 1.70172923e-03,
             ]
         ),
-        cutoffs=np.array([7, 7]),
+        cutoffs=np.array([5, 3]),
         hyp_labels=["l2", "s2", "l3", "s3", "n0"],
         maxiter=1,
         opt_algorithm="L-BFGS-B",
     )
 
-    with open("./test_files/methanol_envs.json") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
         dicts = [loads(s) for s in f.readlines()]
 
     for cur_dict in dicts:
@@ -73,7 +81,7 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
 
 
 def test_load_trained_gp_and_run(methanol_gp):
-    with open("./test_files/methanol_frames.json", "r") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(
@@ -102,13 +110,13 @@ def test_load_one_frame_and_run():
                 1.70172923e-03,
             ]
         ),
-        cutoffs=np.array([7, 7]),
+        cutoffs=np.array([5, 3]),
         hyp_labels=["l2", "s2", "l3", "s3", "n0"],
         maxiter=1,
         opt_algorithm="L-BFGS-B",
     )
 
-    with open("./test_files/methanol_frames.json", "r") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(
@@ -138,16 +146,16 @@ def test_seed_and_run():
                 1.70172923e-03,
             ]
         ),
-        cutoffs=np.array([7, 7]),
+        cutoffs=np.array([5, 3]),
         hyp_labels=["l2", "s2", "l3", "s3", "n0"],
         maxiter=1,
         opt_algorithm="L-BFGS-B",
     )
 
-    with open("./test_files/methanol_frames.json", "r") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
-    with open("./test_files/methanol_envs.json", "r") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
         data_dicts = [loads(s) for s in f.readlines()[:6]]
         envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
         forces = [np.array(d["forces"]) for d in data_dicts]
@@ -197,16 +205,16 @@ def test_pred_on_elements():
                 1.70172923e-03,
             ]
         ),
-        cutoffs=np.array([7, 3]),
+        cutoffs=np.array([5, 3]),
         hyp_labels=["l2", "s2", "l3", "s3", "n0"],
         maxiter=1,
         opt_algorithm="L-BFGS-B",
     )
 
-    with open("./test_files/methanol_frames.json", "r") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
-    with open("./test_files/methanol_envs.json", "r") as f:
+    with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
         data_dicts = [loads(s) for s in f.readlines()[:6]]
         envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
         forces = [np.array(d["forces"]) for d in data_dicts]
@@ -313,10 +321,11 @@ def test_mgp_gpfa(all_mgp, all_gp):
 def test_parse_gpfa_output():
     """
     Compare parsing against known answers.
+    Answer is based off of the result of the unit test `test_pred_on_elements`.
     :return:
     """
     frames, gp_data = parse_trajectory_trainer_output(
-        "./test_files/gpfa_parse_test.out", True
+        path.join(TEST_FILE_DIR, "gpfa_parse_test.out"), True
     )
 
     assert len(frames) == 5
@@ -342,6 +351,13 @@ def test_parse_gpfa_output():
     assert gp_data["pre_train_stats"]["envs_by_species"]["C"] == 2
     assert gp_data["pre_train_stats"]["envs_by_species"]["H"] == 5
     assert gp_data["pre_train_stats"]["envs_by_species"]["O"] == 2
-    assert gp_data["pre_train_stats"]["species"] == ["H", "C", "O"]
+    assert set(gp_data["pre_train_stats"]["species"]) == set(["H", "C", "O"])
 
     assert gp_data["cumulative_gp_size"] == [0, 9, 9, 10, 11, 12, 13]
+
+    # Ensure that structures can correctly be read from the GPFA output
+    structures = structures_from_gpfa_output(frames)
+    for struc, frame in zip(structures, frames):
+        assert np.array_equal(struc.species_labels, frame["species"])
+        assert np.array_equal(struc.positions, frame["positions"])
+        assert np.array_equal(struc.forces, frame["dft_forces"])

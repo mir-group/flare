@@ -183,7 +183,7 @@ class TrajectoryTrainer:
 
         if parallel is True:
             warnings.warn(
-                "Parallel flag will be deprecated;" "we will instead use n_cpu alone.",
+                "Parallel flag will be deprecated;we will instead use n_cpu alone.",
                 DeprecationWarning,
             )
 
@@ -204,9 +204,9 @@ class TrajectoryTrainer:
         self.start_time = None
 
         self.skip = skip
-        assert isinstance(skip, int) and skip >= 1, (
-            "Skip needs to be a " "positive integer."
-        )
+        assert (
+            isinstance(skip, int) and skip >= 1
+        ), "Skip needs to be a positive integer."
         self.validate_ratio = validate_ratio
         assert 0 <= validate_ratio <= 1, "validate_ratio needs to be [0,1]"
 
@@ -263,7 +263,7 @@ class TrajectoryTrainer:
         """
 
         if self.mgp:
-            raise NotImplementedError("Pre-running not" "yet configured for MGP")
+            raise NotImplementedError("Pre-running notyet configured for MGP")
         self.output.write_header(
             str(self.gp),
             dt=0,
@@ -327,15 +327,15 @@ class TrajectoryTrainer:
                     atom_count += 1
 
             self.update_gp_and_print(
-                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False
+                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False,
             )
 
         logger = logging.getLogger(self.logger_name)
         if atom_count > 0:
             logger.info(
                 f"Added {atom_count} atoms to "
-                f"pretrain.\n"
-                f"Pre-run GP Statistics: "
+                "pretrain.\n"
+                "Pre-run GP Statistics: "
                 f"{json.dumps(self.gp.training_statistics)} "
             )
 
@@ -351,8 +351,7 @@ class TrajectoryTrainer:
             logger.debug(f"Done train_gp {time.time()-time0}")
         else:
             logger.debug(
-                "Now commencing pre-run set up of GP (which has "
-                "non-empty training set)"
+                "Now commencing pre-run set up of GP (which has non-empty training set)"
             )
             time0 = time.time()
             self.gp.check_L_alpha()
@@ -442,16 +441,18 @@ class TrajectoryTrainer:
             dummy_frame = deepcopy(cur_frame)
             dummy_frame.forces = pred_forces
             dummy_frame.stds = pred_stds
+            cur_frame.stds = pred_stds
 
             self.output.write_gp_dft_comparison(
                 curr_step=i,
                 frame=dummy_frame,
-                start_time=time.time(),
+                start_time=frame_start_time,
                 dft_forces=dft_forces,
                 dft_energy=dft_energy,
                 error=error,
                 local_energies=local_energies,
                 KE=0,
+                cell=cur_frame.cell,
             )
 
             logger.debug(
@@ -600,11 +601,13 @@ class TrajectoryTrainer:
             " to the training set."
         )
 
-        if uncertainties is None or len(uncertainties) != 0:
+        if uncertainties is None:
             uncertainties = frame.stds[train_atoms]
 
-        if len(uncertainties) != 0:
-            logger.info(f"Uncertainties: " f"{uncertainties}.")
+        if uncertainties is not None and len(uncertainties) != 0:
+            logger.info(f"Uncertainties: {uncertainties}.")
+
+        logger.info(f"New GP Statistics: {json.dumps(self.gp.training_statistics)}\n")
 
         # update gp model; handling differently if it's an MGP
         if not self.mgp:
@@ -614,7 +617,7 @@ class TrajectoryTrainer:
                 self.train_gp()
 
         else:
-            logger.warning("Warning: Adding data to an MGP is not yet " "supported.")
+            logger.warning("Warning: Adding data to an MGP is not yet supported.")
 
     def train_gp(self, max_iter: int = None):
         """
@@ -664,6 +667,68 @@ class TrajectoryTrainer:
         self.train_count += 1
 
 
+def parse_frame_block(chunk: str, compute_errors: bool = True):
+    # i loops through individual atom's info
+
+    frame_atoms = []
+    frame_positions = []
+    gp_forces = []
+    dft_forces = []
+    stds = []
+    added_atoms = {}
+    frame_species_maes = {}
+
+    # First two lines contain frame # and header
+    for i in range(2, len(chunk)):
+
+        # Lines with data will be long; stop when at end of atom data
+        # Terminate at blank line between results
+        if chunk[i] != "\n":
+            split = chunk[i].split()
+
+            frame_atoms.append(split[0])
+
+            frame_positions.append([float(split[1]), float(split[2]), float(split[3])])
+            gp_forces.append([float(split[4]), float(split[5]), float(split[6])])
+            stds.append([float(split[7]), float(split[8]), float(split[9])])
+
+            dft_forces.append([float(split[10]), float(split[11]), float(split[12])])
+        else:
+            break
+
+    # Loop through information in frame after Data
+    cell = None
+    for i in range(len(frame_positions) + 2, len(chunk)):
+        if "cell" in chunk[i]:
+            split_line = chunk[i].strip().split(":")
+            cell = np.array(json.loads(split_line[1]))
+
+        if "Adding atom(s)" in chunk[i]:
+            # Splitting to target the 'added atoms' substring
+            split_line = chunk[i][15:-21]
+            added_atoms = json.loads(split_line.strip())
+
+        if "type " in chunk[i]:
+            cur_line = chunk[i].split()
+            frame_species_maes[cur_line[1]] = float(cur_line[3])
+
+    cur_frame_stats = {
+        "species": frame_atoms,
+        "positions": np.array(frame_positions),
+        "gp_forces": np.array(gp_forces),
+        "dft_forces": np.array(dft_forces),
+        "gp_stds": np.array(stds),
+        "added_atoms": added_atoms,
+        "maes_by_species": frame_species_maes,
+    }
+    if compute_errors:
+        cur_frame_stats["force_errors"] = np.array(gp_forces) - np.array(dft_forces)
+    if cell is not None:
+        cur_frame_stats["cell"] = cell
+
+    return cur_frame_stats
+
+
 def parse_trajectory_trainer_output(
     file: str, return_gp_data: bool = False, compute_errors: bool = True
 ) -> Union[List[dict], Tuple[List[dict], dict]]:
@@ -694,63 +759,12 @@ def parse_trajectory_trainer_output(
         # Start at +2 to skip frame marker and header of table of data
         # Set up values for current frame which will be populated
 
-        frame_atoms = []
-        frame_positions = []
-        gp_forces = []
-        dft_forces = []
-        stds = []
-        added_atoms = {}
-        frame_species_maes = {}
+        range(frame_indexes[n] + 2, frame_indexes[n + 1])
 
-        # i loops through individual atom's info
-        for i in range(frame_indexes[n] + 2, frame_indexes[n + 1]):
+        near_index = frame_indexes[n]
+        far_index = frame_indexes[n + 1]
 
-            # Lines with data will be long; stop when at end of atom data
-            if len(lines[i]) > 10:
-                split = lines[i].split()
-
-                frame_atoms.append(split[0])
-
-                frame_positions.append(
-                    [float(split[1]), float(split[2]), float(split[3])]
-                )
-                gp_forces.append([float(split[4]), float(split[5]), float(split[6])])
-                stds.append([float(split[7]), float(split[8]), float(split[9])])
-
-                dft_forces.append(
-                    [float(split[10]), float(split[11]), float(split[12])]
-                )
-
-            # Terminate at blank line between results
-            else:
-                break
-        # Loop through information in frame after Data
-        for i in range(
-            frame_indexes[n] + len(frame_positions) + 2, frame_indexes[n + 1]
-        ):
-
-            if "Adding atom(s)" in lines[i]:
-                # Splitting to target the 'added atoms' substring
-                split_line = lines[i][15:-21]
-                added_atoms = json.loads(split_line.strip())
-
-            if "type " in lines[i]:
-                cur_line = lines[i].split()
-                frame_species_maes[cur_line[1]] = float(cur_line[3])
-
-        cur_frame_stats = {
-            "species": frame_atoms,
-            "positions": np.array(frame_positions),
-            "gp_forces": np.array(gp_forces),
-            "dft_forces": np.array(dft_forces),
-            "gp_stds": np.array(stds),
-            "added_atoms": added_atoms,
-            "maes_by_species": frame_species_maes,
-        }
-
-        if compute_errors:
-            cur_frame_stats["force_errors"] = np.array(gp_forces) - np.array(dft_forces)
-        frames.append(cur_frame_stats)
+        frames.append(parse_frame_block(lines[near_index:far_index]))
 
     if not return_gp_data:
         return frames
@@ -806,3 +820,26 @@ def parse_trajectory_trainer_output(
     }
 
     return frames, gp_data
+
+
+def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[Structure]:
+    """
+    Takes as input the first output from the `parse_trajectory_trainer_output`
+    function and turns it into a series of FLARE structures, with DFT forces mapped
+    onto the structures.
+
+    :param frame_dictionaries: The list of dictionaries which describe each GPFA frame.
+    :return:
+    """
+
+    structures = []
+    for frame in frame_dictionaries:
+        structures.append(
+            Structure(
+                cell=frame["cell"],
+                species=frame["species"],
+                positions=frame["positions"],
+                forces=frame["dft_forces"],
+            )
+        )
+    return structures
