@@ -376,3 +376,7 @@ class AtomicEnvironment:
         )
 
         return string
+
+    @property
+    def force(self) -> "np.ndarray":
+        return self.structure.forces[self.atom]

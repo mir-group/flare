@@ -54,7 +54,7 @@ class GaussianProcess:
             component ("mc") kernel to use. Defaults to "mc"
         hyps (np.ndarray, optional): Hyperparameters of the GP.
         cutoffs (Dict, optional): Cutoffs of the GP kernel. For simple hyper-
-            parameter setups, formatted like {"twobody":7, "threebody":4.5}, 
+            parameter setups, formatted like {"twobody":7, "threebody":4.5},
             etc.
         hyp_labels (List, optional): List of hyperparameter labels. Defaults
             to None.
@@ -326,7 +326,7 @@ class GaussianProcess:
     def update_db(
         self,
         struc: Structure,
-        forces: "ndarray",
+        forces: "ndarray" = None,
         custom_range: List[int] = (),
         energy: float = None,
         stress: "ndarray" = None,
@@ -388,7 +388,13 @@ class GaussianProcess:
         )
         self.sync_data()
 
-    def add_one_env(self, env: AtomicEnvironment, force, train: bool = False, **kwargs):
+    def add_one_env(
+        self,
+        env: AtomicEnvironment,
+        force: "np.ndarray" = None,
+        train: bool = False,
+        **kwargs,
+    ):
         """Add a single local environment to the training set of the GP.
 
         Args:
@@ -401,7 +407,10 @@ class GaussianProcess:
                 environment is added.
         """
         self.training_data.append(env)
-        self.training_labels.append(force)
+        if force is None:
+            self.training_labels.append(env.force)
+        else:
+            self.training_labels.append(force)
         self.training_labels_np = np.hstack(self.training_labels)
         self.sync_data()
 
@@ -714,7 +723,7 @@ class GaussianProcess:
 
     def predict_efs(self, x_t: AtomicEnvironment):
         """Predict the local energy, forces, and partial stresses of an
-            atomic environment and their predictive variances."""
+        atomic environment and their predictive variances."""
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
@@ -1187,7 +1196,7 @@ class GaussianProcess:
 
         else:
             raise ValueError(
-                "Output format not supported: try from " "{}".format(supported_formats)
+                "Output format not supported: try from {}".format(supported_formats)
             )
 
         if len(self.training_data) > split_matrix_size_cutoff:
@@ -1233,14 +1242,13 @@ class GaussianProcess:
                         gp_model.alpha = None
                         gp_model.ky_mat_inv = None
                         Warning(
-                            "the covariance matrices are not loaded"
-                            f"it can take extra long time to recompute"
+                            f"the covariance matrices are not loade"
+                            f"dit can take extra long time to recompute"
                         )
 
         else:
             raise ValueError(
-                "Warning: Format unspecieified or file is not "
-                ".json or .pickle format."
+                "Warning: Format unspecieified or file is not .json or .pickle format."
             )
 
         gp_model.check_instantiation()

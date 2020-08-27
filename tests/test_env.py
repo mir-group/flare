@@ -67,7 +67,12 @@ def test_env_methods(structure, mask, cutoff, result):
     else:
         mask = None
 
+    structure = deepcopy(structure)
+    structure.forces = np.random.random(size=(len(structure), 3))
+
     env_test = AtomicEnvironment(structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask)
+
+    assert np.array_equal(structure.forces[0], env_test.force)
 
     assert (
         str(env_test)
