@@ -5,12 +5,15 @@ and *Cartesian coordinates* of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
 """
-import numpy as np
-from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
-from flare.utils.learner import get_max_cutoff
-from json import dumps, loads
 
 from typing import List, Union, Any
+from json import dumps, loads
+
+import pickle as pickle
+import numpy as np
+
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import get_max_cutoff
 
 try:
     # Used for to_pmg_structure method
@@ -407,7 +410,7 @@ class Structure:
 
         if not _pmg_present:
             raise ModuleNotFoundError(
-                "Pymatgen is not present. Please " "install Pymatgen and try again"
+                "Pymatgen is not present. Please install Pymatgen and try again"
             )
 
         if self.forces is None:
@@ -544,9 +547,7 @@ class Structure:
             if print_max_stds and extended_xyz:
                 xyz_str += f" {np.max(stds[i,:])} "
             if dft_forces is not None:
-                xyz_str += (
-                    f" {dft_forces[i, 0]} {dft_forces[i,1]} " f"{dft_forces[i, 2]}"
-                )
+                xyz_str += f" {dft_forces[i, 0]} {dft_forces[i,1]} {dft_forces[i, 2]}"
             if i < (len(self.positions) - 1):
                 xyz_str += "\n"
 
@@ -564,7 +565,7 @@ class Structure:
 
     @staticmethod
     def from_file(
-        file_name, format=""
+        file_name: str, format: str = ""
     ) -> Union["flare.struc.Structure", List["flare.struc.Structure"]]:
         """
         Load a FLARE structure from a file or a series of FLARE structures
@@ -576,6 +577,12 @@ class Structure:
         # Ensure the file specified exists.
         with open(file_name, "r") as _:
             pass
+
+        if "pickle" in file_name or (
+            "pickle" in format.lower() or "binary" in format.lower()
+        ):
+            with open(file_name, "rb") as f:
+                return pickle.load(f)
 
         if "xyz" in file_name or "xyz" in format.lower():
             raise NotImplementedError
@@ -604,9 +611,7 @@ class Structure:
             pmg_structure = pmgvaspio.Poscar.from_file(file_name).structure
             return Structure.from_pmg_structure(pmg_structure)
         elif is_poscar and not _pmg_present:
-            raise ImportError(
-                "Pymatgen not imported; " "functionality requires pymatgen."
-            )
+            raise ImportError("Pymatgen not imported; functionality requires pymatgen.")
 
 
 def get_unique_species(species: List[Any]) -> (List, List[int]):
