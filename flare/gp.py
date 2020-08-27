@@ -1242,8 +1242,8 @@ class GaussianProcess:
                         gp_model.alpha = None
                         gp_model.ky_mat_inv = None
                         Warning(
-                            f"the covariance matrices are not loade"
-                            f"dit can take extra long time to recompute"
+                            f"the covariance matrices are not loaded, "
+                            f"this can take a long time to recompute"
                         )
 
         else:
