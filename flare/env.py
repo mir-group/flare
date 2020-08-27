@@ -4,6 +4,8 @@ environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 import numpy as np
 from copy import deepcopy
 from math import ceil
+from json import dumps
+from flare.utils import NumpyEncoder
 from flare.struc import Structure
 import flare.kernels.cutoffs as cf
 from flare.utils.env_getarray import (
@@ -259,6 +261,15 @@ class AtomicEnvironment:
                 cf.quadratic_cutoff,
             )
 
+    def as_str(self) -> str:
+        """
+        Returns string dictionary serialization cast as string.
+
+        :return: output of as_dict method cast as string
+        :rtype: str
+        """
+        return dumps(self.as_dict(), cls=NumpyEncoder)
+
     def as_dict(self, include_structure: bool = False):
         """
         Returns Atomic Environment object as a dictionary for serialization
@@ -317,7 +328,7 @@ class AtomicEnvironment:
         atom_type = self.ctype
         neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
-        string = "Atomic Env. of Type {} surrounded by {} atoms " "of Types {}".format(
+        string = "Atomic Env. of Type {} surrounded by {} atoms of Types {}".format(
             atom_type, n_neighbors, sorted(list(set(neighbor_types)))
         )
 
