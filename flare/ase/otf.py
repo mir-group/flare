@@ -28,17 +28,6 @@ from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
 
 
-def reset_npt_momenta(npt_engine, force):
-    # in the last step, the momenta was set by flare forces, change to dft forces
-    npt_engine._calculate_q_future(force)
-    npt_engine.atoms.set_momenta(
-        np.dot(
-            npt_engine.q_future - npt_engine.q_past, npt_engine.h / (2 * npt_engine.dt)
-        )
-        * npt_engine._getmasses()
-    )
-
-
 class ASE_OTF(OTF):
 
     """
