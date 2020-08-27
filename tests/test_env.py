@@ -3,6 +3,7 @@ import numpy as np
 
 from json import dumps
 from copy import deepcopy
+from os import remove
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.utils import NumpyEncoder
@@ -80,7 +81,14 @@ def test_env_methods(structure, mask, cutoff, result):
     for key in ["positions", "cell", "atom", "cutoffs", "species"]:
         assert key in the_dict.keys()
 
-    remade_env = AtomicEnvironment.from_dict(the_dict)
+    # This saves a few seconds, the masked envs take longer to read/write
+    if not mask:
+        with open("test_environment.json", "w") as f:
+            f.write(env_test.as_str())
+        remade_env = AtomicEnvironment.from_file("test_environment.json")
+    else:
+        remade_env = AtomicEnvironment.from_dict(the_dict)
+
     assert isinstance(remade_env, AtomicEnvironment)
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
@@ -88,6 +96,9 @@ def test_env_methods(structure, mask, cutoff, result):
         assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
     if len(cutoff) > 2:
         assert np.array_equal(remade_env.q_array, env_test.q_array)
+
+    if not mask:
+        remove("test_environment.json")
 
 
 # Only run on the first four tests, namely, the ones which have
