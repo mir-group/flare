@@ -26,7 +26,7 @@ class NoseHoover(MolecularDynamics):
         The time step.
 
     temperature
-        Target temperature of the MD run in [K]
+        Target temperature of the MD run in [K * units.kB]
 
     nvt_q
         Q in the Nose-Hoover equations
@@ -36,7 +36,7 @@ class NoseHoover(MolecularDynamics):
         nvt_dyn = NoseHoover(
             atoms=atoms,
             timestep=0.5 * units.fs,
-            temperature=300.,
+            temperature=300. * units.kB,
             nvt_q=334.
         )
 
@@ -56,7 +56,7 @@ class NoseHoover(MolecularDynamics):
         # set com momentum to zero
         Stationary(atoms)
 
-        self.temp = temperature  # units: K
+        self.temp = temperature / units.kB
         self.nvt_q = nvt_q
         self.dt = timestep  # units: A/sqrt(u/eV)
         self.dtdt = np.power(self.dt, 2)
