@@ -127,7 +127,7 @@ class SparseGP:
         # Update the sparse GP.
         self.sparse_gp.add_training_structure(structure_descriptor)
         self.sparse_gp.add_sparse_environments(sparse_environments)
-        self.sparse_gp.update_matrices()
+        self.sparse_gp.update_matrices_QR()
 
     def set_L_alpha(self):
         # Taken care of in the update_db method.
@@ -146,13 +146,13 @@ def compute_negative_likelihood(hyperparameters, sparse_gp):
     negative_likelihood = -sparse_gp.compute_likelihood_gradient(hyperparameters)
     negative_likelihood_gradient = -sparse_gp.likelihood_gradient
 
-    print("hyperparameters:")
-    print(hyperparameters)
-    print("likelihood gradient:")
-    print(-negative_likelihood_gradient)
-    print("likelihood:")
-    print(-negative_likelihood)
-    print("\n")
+    # print("hyperparameters:")
+    # print(hyperparameters)
+    # print("likelihood gradient:")
+    # print(-negative_likelihood_gradient)
+    # print("likelihood:")
+    # print(-negative_likelihood)
+    # print("\n")
 
     return negative_likelihood, negative_likelihood_gradient
 
