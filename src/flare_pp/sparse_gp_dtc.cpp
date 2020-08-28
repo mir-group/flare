@@ -455,7 +455,7 @@ void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps) {
       Eigen::VectorXd::Constant(n_stress_labels, 1 / (sigma_s * sigma_s));
 
   // Update remaining matrices.
-  update_matrices();
+  update_matrices_QR();
 }
 
 void SparseGP_DTC ::compute_likelihood() {
