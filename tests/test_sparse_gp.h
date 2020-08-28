@@ -67,10 +67,8 @@ public:
                                     cutoff_string, cutoff_hyps);
     three_body_kernel = ThreeBodyKernel(signal_variance, length_scale,
                                         cutoff_string, cutoff_hyps);
-    many_body_kernel =
-        DotProductKernel(signal_variance, power, 0);
-    many_body_kernel_2 =
-        DotProductKernel(signal_variance, power, 1);
+    many_body_kernel = DotProductKernel(signal_variance, power, 0);
+    many_body_kernel_2 = DotProductKernel(signal_variance, power, 1);
 
     // kernels = std::vector<Kernel *>{&many_body_kernel, &many_body_kernel_2};
     kernels = std::vector<Kernel *>{&many_body_kernel};

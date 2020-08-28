@@ -4,8 +4,8 @@
 #define Pi 3.14159265358979323846
 
 void chebyshev(std::vector<double> &basis_vals,
-    std::vector<double> &basis_derivs, double r, int N,
-    std::vector<double> radial_hyps) {
+               std::vector<double> &basis_derivs, double r, int N,
+               std::vector<double> radial_hyps) {
 
   double r1 = radial_hyps[0];
   double r2 = radial_hyps[1];
@@ -37,8 +37,8 @@ void chebyshev(std::vector<double> &basis_vals,
 }
 
 void positive_chebyshev(std::vector<double> &basis_vals,
-    std::vector<double> &basis_derivs, double r,
-    int N, std::vector<double> radial_hyps) {
+                        std::vector<double> &basis_derivs, double r, int N,
+                        std::vector<double> radial_hyps) {
 
   double r1 = radial_hyps[0];
   double r2 = radial_hyps[1];
@@ -80,8 +80,8 @@ void positive_chebyshev(std::vector<double> &basis_vals,
 }
 
 void weighted_chebyshev(std::vector<double> &basis_vals,
-    std::vector<double> &basis_derivs, double r,
-    int N, std::vector<double> radial_hyps) {
+                        std::vector<double> &basis_derivs, double r, int N,
+                        std::vector<double> radial_hyps) {
 
   double r1 = radial_hyps[0];
   double r2 = radial_hyps[1];
@@ -129,8 +129,8 @@ void weighted_chebyshev(std::vector<double> &basis_vals,
 }
 
 void weighted_positive_chebyshev(std::vector<double> &basis_vals,
-    std::vector<double> &basis_derivs, double r, int N,
-    std::vector<double> radial_hyps) {
+                                 std::vector<double> &basis_derivs, double r,
+                                 int N, std::vector<double> radial_hyps) {
 
   double r1 = radial_hyps[0];
   double r2 = radial_hyps[1];
@@ -178,8 +178,8 @@ void weighted_positive_chebyshev(std::vector<double> &basis_vals,
 }
 
 void equispaced_gaussians(std::vector<double> &basis_vals,
-    std::vector<double> &basis_derivs, double r, int N,
-    std::vector<double> radial_hyps) {
+                          std::vector<double> &basis_derivs, double r, int N,
+                          std::vector<double> radial_hyps) {
 
   // Define Gaussian hyperparameters (width and locations of first and final
   // gaussians)
@@ -213,9 +213,11 @@ void calculate_radial(
     std::vector<double> &comb_vals, std::vector<double> &comb_x,
     std::vector<double> &comb_y, std::vector<double> &comb_z,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
-                       int, std::vector<double>)> basis_function,
+                       int, std::vector<double>)>
+        basis_function,
     std::function<void(std::vector<double> &, double, double,
-                       std::vector<double>)> cutoff_function,
+                       std::vector<double>)>
+        cutoff_function,
     double x, double y, double z, double r, double rcut, int N,
     std::vector<double> radial_hyps, std::vector<double> cutoff_hyps) {
 

@@ -38,7 +38,8 @@ protected:
   // Prepare cutoff.
   std::vector<double> cutoff_hyps;
   std::function<void(std::vector<double> &, double, double,
-                     std::vector<double>)> cos_cutoff;
+                     std::vector<double>)>
+      cos_cutoff;
 
   // Prepare spherical harmonics.
   int lmax = 10;
@@ -52,7 +53,8 @@ protected:
   int no_desc = N * nos;
   std::vector<double> radial_hyps = {first_gauss, final_gauss};
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
-    std::vector<double>)> basis_function = equispaced_gaussians;
+                     std::vector<double>)>
+      basis_function = equispaced_gaussians;
 
   // Initialize matrices.
   int no_descriptors = nos * N * number_of_harmonics;

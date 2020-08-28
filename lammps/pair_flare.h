@@ -3,23 +3,22 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(flare,PairFLARE)
+PairStyle(flare, PairFLARE)
 
 #else
 
 #ifndef LMP_PAIR_FLARE_H
 #define LMP_PAIR_FLARE_H
 
-#include <cstdio>
 #include "pair.h"
-#include <vector>
 #include <Eigen/Dense>
+#include <cstdio>
+#include <vector>
 
 namespace LAMMPS_NS {
 
-
 class PairFLARE : public Pair {
- public:
+public:
   PairFLARE(class LAMMPS *);
   virtual ~PairFLARE();
   virtual void compute(int, int);
@@ -28,13 +27,15 @@ class PairFLARE : public Pair {
   void init_style();
   double init_one(int, int);
 
- protected:
+protected:
   int n_species, n_max, l_max, n_descriptors, beta_size;
 
-  std::function<void(std::vector<double> &, std::vector<double> &, double,
-    int, std::vector<double>)> basis_function;
+  std::function<void(std::vector<double> &, std::vector<double> &, double, int,
+                     std::vector<double>)>
+      basis_function;
   std::function<void(std::vector<double> &, double, double,
-    std::vector<double>)> cutoff_function;
+                     std::vector<double>)>
+      cutoff_function;
 
   std::vector<double> radial_hyps, cutoff_hyps;
 
@@ -46,10 +47,9 @@ class PairFLARE : public Pair {
   virtual void allocate();
   virtual void read_file(char *);
   void grab(FILE *, int, double *);
-
 };
 
-}
+} // namespace LAMMPS_NS
 
 #endif
 #endif

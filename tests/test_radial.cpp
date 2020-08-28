@@ -28,7 +28,7 @@ protected:
 TEST_F(RadialTest, LongR) {
   // Test that the cutoff value and its gradient are zero when r > rcut.
   double rcut = 0.001;
-  std::vector<double> cutoff_vals (2, 0);
+  std::vector<double> cutoff_vals(2, 0);
   std::vector<double> cutoff_hyps;
   cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
 
@@ -88,8 +88,8 @@ TEST(ChebyTest, ChebySupport) {
   int N = 10;
   std::vector<double> hyps = {r1, r2};
 
-  std::vector<double> g = std::vector<double> (N, 0);
-  std::vector<double> gderv = std::vector<double> (N, 0);
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gderv = std::vector<double>(N, 0);
 
   chebyshev(g, gderv, r, N, hyps);
   for (int n = 0; n < N; n++) {
@@ -115,12 +115,12 @@ TEST(ChebyTest, ChebyDerv) {
   double tolerance = 1e-4;
   std::vector<double> hyps = {r1, r2};
 
-  std::vector<double> g = std::vector<double> (N, 0);
-  std::vector<double> gderv = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt_2 = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt_2 = std::vector<double> (N, 0);
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gderv = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double>(N, 0);
 
   chebyshev(g, gderv, r, N, hyps);
   chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
@@ -146,12 +146,12 @@ TEST(ChebyTest, PositiveChebyDerv) {
   double tolerance = 1e-4;
   std::vector<double> hyps = {r1, r2};
 
-  std::vector<double> g = std::vector<double> (N, 0);
-  std::vector<double> gderv = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt_2 = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt_2 = std::vector<double> (N, 0);
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gderv = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double>(N, 0);
 
   positive_chebyshev(g, gderv, r, N, hyps);
   positive_chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
@@ -177,12 +177,12 @@ TEST(ChebyTest, WeightedChebyDerv) {
   double tolerance = 1e-4;
   std::vector<double> hyps = {r1, r2, lambda};
 
-  std::vector<double> g = std::vector<double> (N, 0);
-  std::vector<double> gderv = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt_2 = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt_2 = std::vector<double> (N, 0);
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gderv = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double>(N, 0);
 
   weighted_chebyshev(g, gderv, r, N, hyps);
   weighted_chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
@@ -203,10 +203,10 @@ TEST_F(RadialTest, GnDerv) {
   int N = 10;
   std::vector<double> hyps = {sigma, first_gauss, final_gauss};
 
-  std::vector<double> g = std::vector<double> (N, 0);
-  std::vector<double> gderv = std::vector<double> (N, 0);
-  std::vector<double> g_rdelt = std::vector<double> (N, 0);
-  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gderv = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double>(N, 0);
 
   equispaced_gaussians(g, gderv, r, N, hyps);
   equispaced_gaussians(g_rdelt, gderv_rdelt, r_delt, N, hyps);
@@ -231,23 +231,24 @@ TEST_F(RadialTest, CombDerv) {
   std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
   std::vector<double> cutoff_hyps;
 
-  std::vector<double> g = std::vector<double> (N, 0);
-  std::vector<double> gx = std::vector<double> (N, 0);
-  std::vector<double> gy = std::vector<double> (N, 0);
-  std::vector<double> gz = std::vector<double> (N, 0);
-  std::vector<double> g_xdelt = std::vector<double> (N, 0);
-  std::vector<double> g_ydelt = std::vector<double> (N, 0);
-  std::vector<double> g_zdelt = std::vector<double> (N, 0);
-  std::vector<double> gx_delt = std::vector<double> (N, 0);
-  std::vector<double> gy_delt = std::vector<double> (N, 0);
-  std::vector<double> gz_delt = std::vector<double> (N, 0);
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gx = std::vector<double>(N, 0);
+  std::vector<double> gy = std::vector<double>(N, 0);
+  std::vector<double> gz = std::vector<double>(N, 0);
+  std::vector<double> g_xdelt = std::vector<double>(N, 0);
+  std::vector<double> g_ydelt = std::vector<double>(N, 0);
+  std::vector<double> g_zdelt = std::vector<double>(N, 0);
+  std::vector<double> gx_delt = std::vector<double>(N, 0);
+  std::vector<double> gy_delt = std::vector<double>(N, 0);
+  std::vector<double> gz_delt = std::vector<double>(N, 0);
 
   // Set the basis and cutoff function.
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
-                       std::vector<double>)> basis_function =
-      equispaced_gaussians;
+                     std::vector<double>)>
+      basis_function = equispaced_gaussians;
   std::function<void(std::vector<double> &, double, double,
-                     std::vector<double>)> cutoff_function = cos_cutoff;
+                     std::vector<double>)>
+      cutoff_function = cos_cutoff;
 
   calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, x, y, z, r,
                    rcut, N, radial_hyps, cutoff_hyps);

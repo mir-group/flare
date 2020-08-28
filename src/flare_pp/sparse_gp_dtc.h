@@ -7,18 +7,17 @@
 class SparseGP_DTC : public SparseGP {
 public:
   // TODO: Modify "add" methods to keep track of each kernel contribution.
-  std::vector<Eigen::MatrixXd> Kuf_env_kernels, Kuu_kernels,
-    Kuf_struc_energy, Kuf_struc_force, Kuf_struc_stress;
+  std::vector<Eigen::MatrixXd> Kuf_env_kernels, Kuu_kernels, Kuf_struc_energy,
+      Kuf_struc_force, Kuf_struc_stress;
   Eigen::VectorXd noise_vector, y, energy_labels, force_labels, stress_labels;
   Eigen::MatrixXd Sigma, Kuu_inverse, Kuf;
 
-  int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
-    n_labels;
+  int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0, n_labels;
   int is_positive = 0;
 
   // Likelihood attributes.
   double log_marginal_likelihood, data_fit, complexity_penalty, trace_term,
-    constant_term;
+      constant_term;
   Eigen::VectorXd likelihood_gradient;
 
   SparseGP_DTC();

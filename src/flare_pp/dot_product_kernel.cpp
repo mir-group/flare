@@ -287,31 +287,31 @@ DotProductKernel ::env_struc(const LocalEnvironment &env1,
 }
 
 Eigen::MatrixXd DotProductKernel ::kernel_transform(Eigen::MatrixXd kernels,
-    Eigen::VectorXd new_hyps){
-    
-    Eigen::MatrixXd new_kernels = kernels;
-    new_kernels /= sig2;
-    new_kernels *= new_hyps(0) * new_hyps(0);
+                                                    Eigen::VectorXd new_hyps) {
 
-    return new_kernels;
-    }
+  Eigen::MatrixXd new_kernels = kernels;
+  new_kernels /= sig2;
+  new_kernels *= new_hyps(0) * new_hyps(0);
 
-std::vector<Eigen::MatrixXd> DotProductKernel ::kernel_gradient(
-    Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps){
+  return new_kernels;
+}
 
-    std::vector<Eigen::MatrixXd> kernel_gradients;
-    Eigen::MatrixXd sigma_gradient = kernels;
-    sigma_gradient /= sig2;
-    sigma_gradient *= 2 * new_hyps(0);
-    kernel_gradients.push_back(sigma_gradient);
+std::vector<Eigen::MatrixXd>
+DotProductKernel ::kernel_gradient(Eigen::MatrixXd kernels,
+                                   Eigen::VectorXd new_hyps) {
 
-    return kernel_gradients;
+  std::vector<Eigen::MatrixXd> kernel_gradients;
+  Eigen::MatrixXd sigma_gradient = kernels;
+  sigma_gradient /= sig2;
+  sigma_gradient *= 2 * new_hyps(0);
+  kernel_gradients.push_back(sigma_gradient);
 
-    }
+  return kernel_gradients;
+}
 
-void DotProductKernel ::set_hyperparameters(Eigen::VectorXd new_hyps){
+void DotProductKernel ::set_hyperparameters(Eigen::VectorXd new_hyps) {
 
-    sigma = new_hyps(0);
-    sig2 = sigma * sigma;
-    kernel_hyperparameters = new_hyps;
+  sigma = new_hyps(0);
+  sig2 = sigma * sigma;
+  kernel_hyperparameters = new_hyps;
 }

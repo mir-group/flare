@@ -35,15 +35,13 @@ public:
                                     const StructureDescriptor &struc1) = 0;
 
   virtual Eigen::VectorXd
-    self_kernel_struc(const StructureDescriptor &struc) = 0;
+  self_kernel_struc(const StructureDescriptor &struc) = 0;
 
-  virtual Eigen::MatrixXd
-    kernel_transform(Eigen::MatrixXd kernels,
-                     Eigen::VectorXd new_hyps) = 0;
+  virtual Eigen::MatrixXd kernel_transform(Eigen::MatrixXd kernels,
+                                           Eigen::VectorXd new_hyps) = 0;
 
   virtual std::vector<Eigen::MatrixXd>
-    kernel_gradient(Eigen::MatrixXd kernels,
-                    Eigen::VectorXd new_hyps) = 0;
+  kernel_gradient(Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps) = 0;
 
   virtual void set_hyperparameters(Eigen::VectorXd new_hyps) = 0;
 

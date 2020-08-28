@@ -10,9 +10,11 @@ class LocalEnvironment;
 class DescriptorCalculator {
 protected:
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
-                     std::vector<double>)> radial_pointer;
+                     std::vector<double>)>
+      radial_pointer;
   std::function<void(std::vector<double> &, double, double,
-                     std::vector<double>)> cutoff_pointer;
+                     std::vector<double>)>
+      cutoff_pointer;
 
 public:
   Eigen::VectorXd single_bond_vals, descriptor_vals;

@@ -28,7 +28,8 @@ protected:
   // Prepare cutoff.
   std::vector<double> cutoff_hyps;
   std::function<void(std::vector<double> &, double, double,
-                     std::vector<double>)> cutoff_function = cos_cutoff;
+                     std::vector<double>)>
+      cutoff_function = cos_cutoff;
 
   // Prepare spherical harmonics.
   int lmax = 10;
@@ -41,7 +42,8 @@ protected:
   int N = 10;
   std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
-    std::vector<double>)> basis_function = equispaced_gaussians;
+                     std::vector<double>)>
+      basis_function = equispaced_gaussians;
 
   // Initialize matrices.
   int no_descriptors = nos * N * number_of_harmonics;
@@ -67,7 +69,7 @@ protected:
   }
 };
 
-TEST(LammpsCheck, LammpsCheck){
+TEST(LammpsCheck, LammpsCheck) {
   // Prints single bond values and derivatives for comparison with the
   // LAMMPS implementation.
 
@@ -102,27 +104,29 @@ TEST(LammpsCheck, LammpsCheck){
 
   std::vector<double> cutoff_hyps;
   std::function<void(std::vector<double> &, double, double,
-                     std::vector<double>)> cutoff_function = quadratic_cutoff;
+                     std::vector<double>)>
+      cutoff_function = quadratic_cutoff;
 
   std::vector<double> radial_hyps = {0, rcut};
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
-                     std::vector<double>)> basis_function = chebyshev;
+                     std::vector<double>)>
+      basis_function = chebyshev;
 
   single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
                       basis_function, cutoff_function, env, 0, N, lmax,
                       radial_hyps, cutoff_hyps);
 
-//   std::cout << "Positions:" << std::endl;
-//   std::cout << positions << std::endl;
+  //   std::cout << "Positions:" << std::endl;
+  //   std::cout << positions << std::endl;
 
-//   std::cout << "Cell:" << std::endl;
-//   std::cout << cell << std::endl;
+  //   std::cout << "Cell:" << std::endl;
+  //   std::cout << cell << std::endl;
 
-//   std::cout << "Single bond vals:" << std::endl;
-//   std::cout << single_bond_vals << std::endl;
+  //   std::cout << "Single bond vals:" << std::endl;
+  //   std::cout << single_bond_vals << std::endl;
 
-//   std::cout << "Force derivatives:" << std::endl;
-//   std::cout << force_dervs.row(0) << std::endl;
+  //   std::cout << "Force derivatives:" << std::endl;
+  //   std::cout << force_dervs.row(0) << std::endl;
 }
 
 TEST_F(BondEnv, CentTest) {

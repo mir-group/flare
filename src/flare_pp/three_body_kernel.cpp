@@ -44,8 +44,8 @@ double ThreeBodyKernel ::env_env(const LocalEnvironment &env1,
   double cut1 = env1.n_body_cutoffs[1];
   double cut2 = env2.n_body_cutoffs[1];
   std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
-    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
-    rcut_vals_j3(2, 0);
+      rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+      rcut_vals_j3(2, 0);
   int c1 = env1.central_species;
   int c2 = env2.central_species;
 
@@ -174,8 +174,8 @@ ThreeBodyKernel ::self_kernel_env(const StructureDescriptor &struc1, int atom) {
 
   double cut = env_curr.n_body_cutoffs[1];
   std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
-    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
-    rcut_vals_j3(2, 0);
+      rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+      rcut_vals_j3(2, 0);
   int c1 = env_curr.central_species;
   int c2 = c1;
 
@@ -365,8 +365,8 @@ ThreeBodyKernel ::self_kernel_struc(const StructureDescriptor &struc) {
   double vol_inv_sq = vol_inv * vol_inv;
 
   std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
-    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
-    rcut_vals_j3(2, 0);
+      rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+      rcut_vals_j3(2, 0);
 
   std::vector<int> inds1, inds2;
 
@@ -582,8 +582,8 @@ Eigen::VectorXd ThreeBodyKernel ::env_struc_partial(
   double cut1 = env1.n_body_cutoffs[1];
   double cut2 = struc1.n_body_cutoffs[1];
   std::vector<double> rcut_vals_i1(2, 0), rcut_vals_i2(2, 0),
-    rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
-    rcut_vals_j3(2, 0);
+      rcut_vals_i3(2, 0), rcut_vals_j1(2, 0), rcut_vals_j2(2, 0),
+      rcut_vals_j3(2, 0);
   int c1 = env1.central_species;
   int c2 = env2.central_species;
 
@@ -1335,17 +1335,17 @@ std::vector<double> ThreeBodyKernel ::force_stress_helper_2(
 }
 
 Eigen::MatrixXd ThreeBodyKernel ::kernel_transform(Eigen::MatrixXd kernels,
-    Eigen::VectorXd new_hyps){
+                                                   Eigen::VectorXd new_hyps) {
 
-    // Not implemented.
-    return Eigen::MatrixXd::Zero(0, 0);
-    };
+  // Not implemented.
+  return Eigen::MatrixXd::Zero(0, 0);
+};
 
-std::vector<Eigen::MatrixXd> ThreeBodyKernel ::kernel_gradient(
-    Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps){
+std::vector<Eigen::MatrixXd>
+ThreeBodyKernel ::kernel_gradient(Eigen::MatrixXd kernels,
+                                  Eigen::VectorXd new_hyps) {
 
-    // Not implemented.
-    std::vector<Eigen::MatrixXd> grads;
-    return grads;
-
-    }
+  // Not implemented.
+  std::vector<Eigen::MatrixXd> grads;
+  return grads;
+}
