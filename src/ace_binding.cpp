@@ -172,6 +172,7 @@ PYBIND11_MODULE(_C_flare, m) {
     .def("add_sparse_environments", &SparseGP_DTC::add_sparse_environments)
     .def("add_training_structure", &SparseGP_DTC::add_training_structure)
     .def("update_matrices", &SparseGP_DTC::update_matrices)
+    .def("update_matrices_QR", &SparseGP_DTC::update_matrices_QR)
     .def("compute_likelihood", &SparseGP_DTC::compute_likelihood)
     .def("compute_likelihood_gradient",
         &SparseGP_DTC::compute_likelihood_gradient)
