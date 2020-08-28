@@ -103,11 +103,25 @@ TEST_F(SparseTest, Update_QR){
   sparse_gp.update_matrices();
   sparse_gp_qr.update_matrices_QR();
 
-  std::cout << sparse_gp.alpha << std::endl;
-  std::cout << sparse_gp_qr.alpha << std::endl;
+  // Check for agreement in alpha.
+  for (int i = 0; i < sparse_gp.alpha.size(); i++){
+      EXPECT_NEAR(sparse_gp.alpha(i), sparse_gp_qr.alpha(i), 1e-14);
+  }
 
-  std::cout << sparse_gp.Sigma << std::endl;
-  std::cout << sparse_gp_qr.Sigma << std::endl;
+  // Check for agreement in Sigma.
+  for (int i = 0; i < sparse_gp.Sigma.rows(); i++){
+      for (int j = 0; j < sparse_gp.Sigma.cols(); j++){
+          EXPECT_NEAR(sparse_gp.Sigma(i, j), sparse_gp_qr.Sigma(i, j), 1e-13);
+      }
+  }
+
+  // Check for agreement in Kuu_inverse.
+  for (int i = 0; i < sparse_gp.Kuu_inverse.rows(); i++){
+      for (int j = 0; j < sparse_gp.Kuu_inverse.cols(); j++){
+          EXPECT_NEAR(sparse_gp.Kuu_inverse(i, j),
+                      sparse_gp_qr.Kuu_inverse(i, j), 1e-14);
+      }
+  }
 }
 
 TEST_F(SparseTest, Set_Hyps){
