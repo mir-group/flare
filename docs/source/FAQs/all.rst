@@ -54,12 +54,12 @@ OTF (On-the-fly) Training
 -------------------------
 
 1. What is a good strategy for hyperparameter optimization?
-        * ``freeze_hyps``: the hyperparameter will only be optimized for `freeze_hyps` times. 
+        * ``freeze_hyps`` : the hyperparameter will only be optimized for `freeze_hyps` times. 
           Can be set to a small number if optimization is too expensive with a large data set.
 
-        * ``std_tolerance_factor``: the DFT will be called when the predicted uncertainty is above the threshold, 
-           which is defined as `std_tolerance_factor * gp_hyps_noise`. The default value is 1. In general, you 
-           can set it to O(0.1)-O(1). If more DFT calls are desired, you can set it to a lower value.
+        * ``std_tolerance_factor`` : the DFT will be called when the predicted uncertainty is above the threshold, 
+          which is defined as `std_tolerance_factor * gp_hyps_noise`. The default value is 1. In general, you 
+          can set it to O(0.1)-O(1). If more DFT calls are desired, you can set it to a lower value.
 
 2. How to set initial temperatures and rescale temperatures?
         * For initial temperature, if you are using NVE ensemble, and starting from a perfect crystal lattice, 
@@ -74,10 +74,12 @@ OTF (On-the-fly) Training
 
         * Similarly, if you want to rescale the system from 300K to 500K at step 1000, you should set the resaling 
           temperature to be higher than 500K, e.g.
-          ```
-          rescale_temp = [800]
-          rescale_step = [1000]
-          ```
+          
+          .. code-block:: python
+
+                rescale_temp = [800]
+                rescale_step = [1000]
+
           The reason is that we only rescale the velocity of the atoms at the steps specified in ``rescale_step``, 
           at those steps not in the list, we will let the system evolve by itself. Thus, after step 1000, the system's
           temperature will gradually equilibrate at a lower temperature.
@@ -85,9 +87,11 @@ OTF (On-the-fly) Training
 3. Include small perturbation for initial structure
         If you are starting from a perfect lattice, we recommend adding small random perturbations to the atomic positions, 
         such that the symmetry of the crystal lattice is broken. E.g.
-        ```
-        positions = positions + 0.01 * (2 * np.random.rand(len(positions), 3) - 1)
-        ```
+
+        .. code-block:: python
+
+                positions = positions + 0.01 * (2 * np.random.rand(len(positions), 3) - 1)
+
         The reason is that the perfect lattice is highly symmetric, thus usually the force on each atom is zero, and the local 
         environments all look the same. Adding these highly similar environments with close-to-zero forces might raise numerical
         stability issue for GP.
