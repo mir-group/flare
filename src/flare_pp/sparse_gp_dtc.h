@@ -38,6 +38,10 @@ public:
   // Sigma, Kuu_inverse, and alpha.
   void update_matrices();
 
+  // Update matrices with QR decomposition. Expected to be more stable than
+  // explicit inversion.
+  void update_matrices_QR();
+
   // Compute the DTC mean and variance.
   void predict_on_structure(StructureDescriptor &test_structure);
 

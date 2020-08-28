@@ -88,6 +88,28 @@ TEST_F(SparseTest, DTC_Prediction){
   EXPECT_EQ(like1, like2);
 }
 
+TEST_F(SparseTest, Update_QR){
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+
+  sparse_gp.add_sparse_environments(test_struc.local_environments);
+  sparse_gp.add_training_structure(test_struc);
+
+  SparseGP_DTC sparse_gp_qr = sparse_gp;
+
+  sparse_gp.update_matrices();
+  sparse_gp_qr.update_matrices_QR();
+
+  std::cout << sparse_gp.alpha << std::endl;
+  std::cout << sparse_gp_qr.alpha << std::endl;
+
+  std::cout << sparse_gp.Sigma << std::endl;
+  std::cout << sparse_gp_qr.Sigma << std::endl;
+}
+
 TEST_F(SparseTest, Set_Hyps){
     // Check the reset hyperparameters method.
 
