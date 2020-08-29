@@ -73,10 +73,12 @@ def test_input_to_structure(qe_input):
 )
 @pytest.mark.skipif(
     not os.environ.get("PWSCF_COMMAND", False),
-    reason="PWSCF_COMMAND not found "
-    "in environment: Please install Quantum "
-    "ESPRESSO and set the PWSCF_COMMAND env. "
-    "variable to point to pw.x.",
+    reason=(
+        "PWSCF_COMMAND not found "
+        "in environment: Please install Quantum "
+        "ESPRESSO and set the PWSCF_COMMAND env. "
+        "variable to point to pw.x."
+    ),
 )
 def test_espresso_calling(qe_input, qe_output):
 

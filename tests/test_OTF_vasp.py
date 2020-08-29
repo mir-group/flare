@@ -15,10 +15,12 @@ from flare.dft_interface.vasp_util import *
 
 @pytest.mark.skipif(
     not os.environ.get("VASP_COMMAND", False),
-    reason="VASP_COMMAND not found "
-    "in environment: Please install VASP "
-    " and set the VASP_COMMAND env. "
-    "variable to point to cp2k.popt",
+    reason=(
+        "VASP_COMMAND not found "
+        "in environment: Please install VASP "
+        " and set the VASP_COMMAND env. "
+        "variable to point to cp2k.popt"
+    ),
 )
 def test_otf_h2():
     """
