@@ -51,6 +51,6 @@ for n in range(iterations):
 print('mean: %.4f ms' % (np.mean(store_times) * 1e3))
 print('std: %.4f ms' % (np.std(store_times) * 1e3))
 
-# 8/29/20
+# 8/29/20 (c741e3e3464b6f0dc3a4337e4e2c7b25574ed822)
 # Laptop: 18.9(6) ms
 # Tempo: 14.4(9) ms

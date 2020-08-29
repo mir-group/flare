@@ -99,6 +99,6 @@ force_mae = \
 time2 = time.time()
 print('Force MAE: %.3f eV/A' % force_mae)
 
-# 8/29/20
+# 8/29/20 (c741e3e3464b6f0dc3a4337e4e2c7b25574ed822)
 # Laptop: 178(8) ms
 # Tempo: 269(2) ms
