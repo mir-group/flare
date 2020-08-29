@@ -52,5 +52,5 @@ print('mean: %.4f ms' % (np.mean(store_times) * 1e3))
 print('std: %.4f ms' % (np.std(store_times) * 1e3))
 
 # 8/29/20
-# Laptop: 20(3) ms
-# Odyssey:
+# Laptop: 18.9(6) ms
+# Odyssey: 14.4(9) ms
