@@ -114,5 +114,9 @@ force_mae = \
 print('Force MAE: %.3f eV/A' % force_mae)
 
 # 8/29/20 (c741e3e3464b6f0dc3a4337e4e2c7b25574ed822)
-# Laptop: 178(8) ms
-# Tempo: 269(2) ms
+# Laptop: 178(8) ms (M+V)
+# Tempo: 269(2) ms (M+V)
+
+# 8/29/20 (52e9ff7bad8ed5b19468407eb71a748ba74469e9)
+# Laptop: 56(2) ms (M), 126(5) ms (M+V)
+# Tempo: 11(6) ms (M), 52(3) ms (M+V)
