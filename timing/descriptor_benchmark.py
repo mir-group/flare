@@ -53,4 +53,4 @@ print('std: %.4f ms' % (np.std(store_times) * 1e3))
 
 # 8/29/20
 # Laptop: 18.9(6) ms
-# Odyssey: 14.4(9) ms
+# Tempo: 14.4(9) ms

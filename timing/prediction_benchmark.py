@@ -99,6 +99,6 @@ force_mae = \
 time2 = time.time()
 print('Force MAE: %.3f eV/A' % force_mae)
 
-# 8/29/20 - 96 sparse environments
+# 8/29/20
 # Laptop: 178(8) ms
-# Odyssey:
+# Tempo: 269(2) ms
