@@ -4,7 +4,6 @@
 #include <Eigen/Dense>
 #include <Eigen/IterativeLinearSolvers>
 #include <vector>
-
 #include "kernels.h"
 #include "local_environment.h"
 #include "structure.h"

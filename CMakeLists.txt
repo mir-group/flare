@@ -140,6 +140,7 @@ set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(flare_module PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 # Add test directory.

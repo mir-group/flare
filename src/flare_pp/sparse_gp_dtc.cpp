@@ -372,7 +372,7 @@ void SparseGP_DTC ::predict_on_structure(StructureDescriptor &test_structure) {
 
 // Compute the kernel between the test structure and each sparse
 // environment, parallelizing over environments.
-// #pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static)
   for (int i = 0; i < n_sparse; i++) {
     for (int j = 0; j < n_kernels; j++) {
       kern_mats[j].col(i) +=

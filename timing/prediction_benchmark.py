@@ -80,7 +80,23 @@ for train_count, frame_no in enumerate(training_frames):
 
 sparse_gp.update_matrices_QR()
 
-# Time prediction on test structure.
+# Time mean prediction.
+reps = 5
+store_times = np.zeros(reps)
+for n in range(reps):
+    time1 = time.time()
+    efs = sparse_gp.predict(test_structure)
+    time2 = time.time()
+    store_times[n] = time2 - time1
+
+print('Mean prediction time: %.3f ms' % (np.mean(store_times) * 1e3))
+print('Std: %.3f ms' % (np.std(store_times) * 1e3))
+
+force_mae = \
+    np.mean(np.abs(efs[1:-6].reshape(-1, 3) - test_forces))
+print('Force MAE: %.3f eV/A' % force_mae)
+
+# Time mean and variance prediction.
 reps = 5
 store_times = np.zeros(reps)
 for n in range(reps):
@@ -90,13 +106,11 @@ for n in range(reps):
     store_times[n] = time2 - time1
 
 print('Number of sparse environments: %i' % sparse_gp.Kuu.shape[0])
-print('Mean prediction time: %.3f ms' % (np.mean(store_times) * 1e3))
+print('Mean and variance prediction time: %.3f ms' % (np.mean(store_times) * 1e3))
 print('Std: %.3f ms' % (np.std(store_times) * 1e3))
 
-time1 = time.time()
 force_mae = \
     np.mean(np.abs(test_structure.mean_efs[1:-6].reshape(-1, 3) - test_forces))
-time2 = time.time()
 print('Force MAE: %.3f eV/A' % force_mae)
 
 # 8/29/20 (c741e3e3464b6f0dc3a4337e4e2c7b25574ed822)

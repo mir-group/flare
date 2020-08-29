@@ -168,6 +168,7 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<SparseGP_DTC>(m, "SparseGP_DTC")
       .def(py::init<std::vector<Kernel *>, double, double, double>())
       .def("set_hyperparameters", &SparseGP_DTC::set_hyperparameters)
+      .def("predict", &SparseGP_DTC::predict)
       .def("predict_on_structure", &SparseGP_DTC::predict_on_structure)
       .def("add_sparse_environments", &SparseGP_DTC::add_sparse_environments)
       .def("add_training_structure", &SparseGP_DTC::add_training_structure)
