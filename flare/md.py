@@ -27,9 +27,12 @@ def calculate_temperature(structure, dt, noa):
     KE = 0
     for i in range(len(structure.positions)):
         for j in range(3):
-            KE += 0.5 * \
-                structure.mass_dict[structure.species_labels[i]] * \
-                velocities[i][j] * velocities[i][j]
+            KE += (
+                0.5
+                * structure.mass_dict[structure.species_labels[i]]
+                * velocities[i][j]
+                * velocities[i][j]
+            )
 
     # see conversions.nb for derivation
     kb = 0.0000861733034
