@@ -75,6 +75,7 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance which dictates global
             memory access.
     """
+
     def __init__(
         self,
         kernels: List[str] = None,
@@ -192,11 +193,12 @@ class GaussianProcess:
 
         if self.logger_name is None:
             if self.output is None:
-                self.logger_name = self.name+"GaussianProcess"
-                set_logger(self.logger_name, stream=True,
-                           fileout_name=None, verbose="info")
+                self.logger_name = self.name + "GaussianProcess"
+                set_logger(
+                    self.logger_name, stream=True, fileout_name=None, verbose="info"
+                )
             else:
-                self.logger_name = self.output.basename+'log'
+                self.logger_name = self.output.basename + "log"
         logger = logging.getLogger(self.logger_name)
 
         if self.cutoffs == {}:
