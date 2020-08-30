@@ -1,7 +1,5 @@
-import inspect
 import json
 import logging
-import math
 import pickle
 import time
 
@@ -9,36 +7,25 @@ import multiprocessing as mp
 import numpy as np
 
 from collections import Counter
-from copy import deepcopy
 from numpy.random import random
-from scipy.linalg import solve_triangular
 from scipy.optimize import (
     minimize,
     basinhopping,
     differential_evolution,
     dual_annealing,
 )
-from scipy.sparse import triu
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster, optimal_leaf_ordering
-from typing import List, Callable, Union
+from scipy.cluster.hierarchy import linkage, fcluster
+from typing import List
 
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.cm as cmx
 
 plt.switch_backend("agg")
-from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.patches import Rectangle
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import (
     get_like_from_mats,
     get_neg_like_grad,
-    force_force_vector,
-    energy_force_vector,
-    get_force_block,
     get_ky_mat_update,
     _global_training_data,
     _global_training_labels,
@@ -46,48 +33,30 @@ from flare.gp_algebra import (
     _global_energy_labels,
     get_Ky_mat,
     get_kernel_vector,
-    en_kern_vec,
+    get_neg_like,
     kernel_distance_mat,
 )
-from flare.kernels.utils import (
-    str_to_kernel_set,
-    from_mask_to_args,
-    kernel_str_to_array,
-)
-from flare.output import Output, set_logger
+from flare.kernels.utils import from_mask_to_args
+from flare.output import set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
 
 
 class RobustBayesianCommitteeMachine(GaussianProcess):
-    """Gaussian process force field. Implementation is based on Algorithm 2.1
-    (pg. 19) of "Gaussian Processes for Machine Learning" by Rasmussen and
-    Williams.
+    """Robust Bayesian Committee Machine.
+    Splits up prediction and hyperparameter optimzation over a 'comittee'
+    of experts, which gets around the unfavorable nonlinear scaling of
+    preidction and training time with training set size. Particularly for
+    optimizing hyperparameters (typically the most
+    time-consuming individual step of adapting GPs to a new system).
+
     Args:
-        kernels (list, optional): Determine the type of kernels. Example:
-            ['2', '3'], ['2', '3', 'mb'], ['2']. Defaults to ['2', '3']
-        component (str, optional): Determine single- ("sc") or multi-
-            component ("mc") kernel to use. Defaults to "mc"
-        hyps (np.ndarray, optional): Hyperparameters of the GP.
-        cutoffs (Dict, optional): Cutoffs of the GP kernel.
-        hyp_labels (List, optional): List of hyperparameter labels. Defaults
-            to None.
-        opt_algorithm (str, optional): Hyperparameter optimization algorithm.
-            Defaults to 'L-BFGS-B'.
-        maxiter (int, optional): Maximum number of iterations of the
-            hyperparameter optimization algorithm. Defaults to 10.
-        parallel (bool, optional): If True, the covariance matrix K of the GP is
-            computed in parallel. Defaults to False.
-        n_cpus (int, optional): Number of cpus used for parallel
-            calculations. Defaults to 1 (serial)
-        n_sample (int, optional): Size of submatrix to use when parallelizing
-            predictions.
-        output (Output, optional): Output object used to dump hyperparameters
-            during optimization. Defaults to None.
-        hyps_mask (dict, optional): hyps_mask can set up which hyper parameter
-            is used for what interaction. Details see kernels/mc_sephyps.py
-        name (str, optional): Name for the GP instance.
+        n_experts: number of experts to begin with
+        ndata_per_expert: maximum training set size per expert.'
+        prior_variance:
+        per_expert_parallel: bool to parallelize over experts
+        kwargs: same as for GaussianProcess object.
     """
 
     def __init__(
@@ -106,9 +75,18 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         self.per_expert_parallel = per_expert_parallel
 
         GaussianProcess.__init__(self, **kwargs)
+        # Index of which expert is currently addressed
+        self.current_expert = 0
         self.reset_container()
 
     def reset_container(self):
+        """
+        Perform the instantiation of the RBCM by establishing
+        all training data variables as lists: The n-th expert
+        will access the n-th index of each of these containers
+        to get their own training data and GP parameters.
+        :return:
+        """
 
         self.training_data = []
         self.training_labels = []  # Forces acting on central atoms
@@ -131,7 +109,10 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         self.ky_mat_inv = []
         self.likelihood = []
 
-        assert self.n_experts > 0
+        if self.n_experts < 1:
+            logger = logging.getLogger(self.logger_name)
+            logger.warning("Number of experts is not positive.Setting to 1.")
+            self.n_experts = 1
         for i in range(self.n_experts):
             self.add_container()
 
@@ -201,7 +182,12 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             self.hyps, self.cutoffs, self.kernels, self.hyps_mask
         )
 
-    def find_expert_to_add(self):
+    def find_available_expert(self):
+        """
+        Determine expert to recieve new data, based on the
+        ndata per expert internal value.
+        :return:
+        """
 
         expert_id = self.current_expert
         if len(self.training_data[expert_id]) > self.ndata_per_expert:
@@ -211,6 +197,10 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         return expert_id
 
     def add_container(self):
+        """
+        Add a new training set for a new expert to access.
+        :return:
+        """
 
         self.training_data += [[]]
         self.training_labels += [[]]
@@ -242,7 +232,9 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
     ):
         """Given a structure and forces, add local environments from the
         structure to the training set of the GP. If energy is given, add the
-        entire structure to the training set.
+        entire structure to the training set. expert_id indexes which expert
+        gets the new data.
+
         Args:
             struc (Structure): Input structure. Local environments of atoms
                 in this structure will be added to the training set of the GP.
@@ -253,7 +245,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         """
 
         if expert_id is None:
-            expert_id = self.find_expert_to_add()
+            expert_id = self.find_available_expert()
 
         if expert_id >= self.n_experts:
             for i in range(expert_id - self.n_experts + 1):
@@ -282,17 +274,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         # If an energy is given, update the structure list.
         if energy is not None:
             raise NotImplementedError
-            # structure_list = []  # Populate with all environments of the struc
-            # for atom in range(noa):
-            #     env_curr = \
-            #         AtomicEnvironment(struc, atom, self.cutoffs,
-            #                           cutoffs_mask=self.hyps_mask)
-            #     structure_list.append(env_curr)
-
-            # # self.energy_labels[expert_id].append(energy)
-            # self.training_structures[expert_id].append(structure_list)
-            # self.energy_labels_np[expert_id] = np.array(
-            # self.energy_labels[expert_id])
 
         # update list of all labels
         self.all_labels[expert_id] = np.concatenate(
@@ -319,7 +300,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         """
 
         if expert_id is None:
-            expert_id = self.find_expert_to_add()
+            expert_id = self.find_available_expert()
 
         if expert_id >= self.n_experts:
             for i in range(expert_id - self.n_experts + 1):
@@ -505,8 +486,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
     def check_L_alpha(self):
         """
-        Check that the alpha vector is up to date with the training set. If
-        not, update_L_alpha is called.
+        For each expert, check that the alpha vector is up to date with the training
+        set. If not, update_L_alpha is called.
         """
 
         self.sync_data()
@@ -526,15 +507,88 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             elif size3 != self.alpha[i].shape[0]:
                 self.set_L_alpha_part(i)
 
-    def predict(self, x_t: AtomicEnvironment) -> [float, float]:
+    def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
         Predict a force component of the central atom of a local environment.
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+            i (integer):  Force component to predict (1=x, 2=y, 3=z).
+        Return:
+            (float, float): Mean and epistemic variance of the prediction.
+        """
+
+        assert d in [1, 2, 3], "d must be 1, 2 ,or 3."
+
+        # Kernel vector allows for evaluation of atomic environments.
+        if self.parallel and not self.per_atom_par:
+            n_cpus = self.n_cpus
+        else:
+            n_cpus = 1
+
+        self.sync_data()
+
+        k_v = []
+        for i in range(self.n_experts):
+            k_v += [
+                get_kernel_vector(
+                    f"{self.name}_{i}",
+                    self.kernel,
+                    self.energy_force_kernel,
+                    x_t,
+                    d,
+                    self.hyps,
+                    cutoffs=self.cutoffs,
+                    hyps_mask=self.hyps_mask,
+                    n_cpus=n_cpus,
+                    n_sample=self.n_sample,
+                )
+            ]
+
+        # Guarantee that alpha is up to date with training set
+        self.check_L_alpha()
+
+        # get predictive mean
+        variance_rbcm = 0
+        mean = 0.0
+        var = 0.0
+        beta = 0.0
+
+        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
+
+        for i in range(self.n_experts):
+
+            mean_i = np.matmul(self.alpha[i], k_v[i])
+
+            # get predictive variance without cholesky (possibly faster)
+            # pass args to kernel based on if mult. hyperparameters in use
+
+            self_kern = self.kernel(x_t, x_t, d, d, *args)
+            var_i = np.diagonal(
+                self_kern - np.matmul(np.matmul(k_v[i].T, self.ky_mat_inv[i]), k_v[i])
+            )
+
+            beta_i = 0.5 * (self.log_prior_var - np.log(var_i))
+            mean += beta_i / var_i * mean_i
+            var += beta_i / var_i
+            beta += beta_i
+
+        var += (1 - beta) / self.prior_variance
+        pred_var = 1.0 / var
+        pred_mean = pred_var * mean
+
+        return pred_mean, pred_var
+
+    def predict_xyz(self, x_t: AtomicEnvironment) -> [float, float]:
+        """
+        Predict a force component of the central atom of a local environment,
+        getting all 3 force components at once.
         Args:
             x_t (AtomicEnvironment): Input local environment.
         Return:
             (float, float): Mean and epistemic variance of the prediction.
         """
-
+        # TODO
+        raise NotImplementedError
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
             n_cpus = self.n_cpus
@@ -593,70 +647,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         return pred_mean, pred_var
 
-    # def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
-    #     """Predict the local energy of a local environment.
-
-    #     Args:
-    #         x_t (AtomicEnvironment): Input local environment.
-
-    #     Return:
-    #         float: Local energy predicted by the GP.
-    #     """
-
-    #     if self.parallel and not self.per_atom_par:
-    #         n_cpus = self.n_cpus
-    #     else:
-    #         n_cpus = 1
-
-    #     _global_training_data[self.name] = self.training_data
-    #     _global_training_labels[self.name] = self.training_labels_np
-
-    #     k_v = en_kern_vec(self.name, self.energy_force_kernel,
-    #                       self.energy_kernel,
-    #                       x_t, self.hyps, cutoffs=self.cutoffs,
-    #                       hyps_mask=self.hyps_mask, n_cpus=n_cpus,
-    #                       n_sample=self.n_sample)
-
-    #     pred_mean = np.matmul(k_v, self.alpha)
-
-    #     return pred_mean
-
-    # def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
-    #     """Predict the local energy of a local environment and its
-    #     uncertainty.
-
-    #     Args:
-    #         x_t (AtomicEnvironment): Input local environment.
-
-    #     Return:
-    #         (float, float): Mean and predictive variance predicted by the GP.
-    #     """
-
-    #     if self.parallel and not self.per_atom_par:
-    #         n_cpus = self.n_cpus
-    #     else:
-    #         n_cpus = 1
-
-    #     # get kernel vector
-    #     k_v = en_kern_vec(self.name, self.energy_force_kernel,
-    #                       self.energy_kernel,
-    #                       x_t, self.hyps, cutoffs=self.cutoffs,
-    #                       hyps_mask=self.hyps_mask, n_cpus=n_cpus,
-    #                       n_sample=self.n_sample)
-
-    #     # get predictive mean
-    #     pred_mean = np.matmul(k_v, self.alpha)
-
-    #     # get predictive variance
-    #     v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-    #     args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
-
-    #     self_kern = self.energy_kernel(x_t, x_t, *args)
-
-    #     pred_var = self_kern - np.matmul(v_vec, v_vec)
-
-    #     return pred_mean, pred_var
-
     def set_L_alpha(self):
 
         self.sync_data()
@@ -689,7 +679,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                     )
                 for i in range(self.n_experts):
                     ky_mat = results[i].get()
-                    self.compute_one_matrices(ky_mat, i)
+                    self.compute_experts_matrices(ky_mat, i)
                 pool.close()
                 pool.join()
             logger.debug(f"set_L_alpha with per_expert_par {time.time()-time0}")
@@ -713,7 +703,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                     self.n_sample,
                 )
 
-                self.compute_one_matrices(ky_mat, expert_id)
+                self.compute_experts_matrices(ky_mat, expert_id)
                 logger.debug(
                     f"{expert_id} compute_L_alpha {time.time()-time0}"
                     f" {len(self.training_data[expert_id])}"
@@ -737,7 +727,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         The forces and variances are later obtained using alpha.
         """
 
-        self.sync_one_data(expert_id)
+        self.sync_experts_data(expert_id)
 
         if self.per_expert_parallel and self.n_cpus > 1:
             n_cpus = 1
@@ -757,7 +747,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             n_sample=self.n_sample,
         )
 
-        self.compute_one_matrices(ky_mat, expert_id)
+        self.compute_experts_matrices(ky_mat, expert_id)
 
         self.likelihood[expert_id] = get_like_from_mats(
             self.ky_mat[expert_id],
@@ -768,9 +758,9 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
     def sync_data(self):
         for i in range(self.n_experts):
-            self.sync_one_data(i)
+            self.sync_experts_data(i)
 
-    def unsync_one_data(self, expert_id):
+    def unsync_experts_data(self, expert_id):
         """ Reset global variables. """
         if len(self.training_data) > expert_id:
             _global_training_data.pop(f"{self.name}_{expert_id}", None)
@@ -778,7 +768,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             # _global_training_structures.pop(f"{self.name}_{expert_id}",None)
             _global_energy_labels.pop(f"{self.name}_{expert_id}", None)
 
-    def sync_one_data(self, expert_id):
+    def sync_experts_data(self, expert_id):
         """ Reset global variables. """
         if len(self.training_data) > expert_id:
             _global_training_data[f"{self.name}_{expert_id}"] = self.training_data[
@@ -794,30 +784,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 expert_id
             ]
 
-    def write_model(self, name: str, format: str = "json"):
-
-        if np.sum(self.n_envs_prev) > 5000:
-
-            np.savez(f"{name}_ky_mat.npz", self.ky_mat)
-            self.ky_mat_file = f"{name}_ky_mat.npz"
-
-            temp_ky_mat = self.ky_mat
-            temp_l_mat = self.l_mat
-            temp_alpha = self.alpha
-            temp_ky_mat_inv = self.ky_mat_inv
-
-            self.ky_mat = None
-            self.l_mat = None
-            self.alpha = None
-            self.ky_mat_inv = None
-
-        GaussianProcess.write_model(self, name, format)
-
-        self.ky_mat = temp_ky_mat
-        self.l_mat = temp_l_mat
-        self.alpha = temp_alpha
-        self.ky_mat_inv = temp_ky_mat_inv
-
     def update_L_alpha(self, expert_id):
         """
         Update the GP's L matrix and alpha vector without recalculating
@@ -831,7 +797,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             self.set_L_alpha_part(expert_id)
             return
 
-        self.sync_one_data(expert_id)
+        self.sync_experts_data(expert_id)
 
         ky_mat = get_ky_mat_update(
             self.ky_mat[expert_id],
@@ -848,9 +814,9 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             n_sample=self.n_sample,
         )
 
-        self.compute_one_matrices(ky_mat, expert_id)
+        self.compute_experts_matrices(ky_mat, expert_id)
 
-    def compute_one_matrices(self, ky_mat, expert_id):
+    def compute_experts_matrices(self, ky_mat, expert_id):
         """
         When covariance matrix is known, reconstruct other matrices.
         Used in re-loading large GPs.
@@ -878,7 +844,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             joint_data += self.training_data[i]
             # joint_structures += self.training_structures[i]
             joint_labels += self.training_labels[i]
-            self.unsync_one_data(i)
+            self.unsync_experts_data(i)
 
         self.n_experts = 1
         self.reset_container()
@@ -942,7 +908,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         joint_data = []
         joint_structures = []
         for i in list_expert_id:
-            joint_data += self.training_data[expert_id]
+            joint_data += self.training_data[i]
             # joint_structures += self.training_structures[expert_id]
         _global_training_data[f"{self.name}_join"] = joint_data
         _global_training_structures[f"{self.name}_join"] = joint_labels
@@ -971,8 +937,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
     @property
     def training_statistics(self) -> dict:
         """
-        Return a dictionary with statistics about the current training data.
-        Useful for quickly summarizing info about the GP.
+        Return dict with statistics about the current training data by expert.
+        Useful for quickly summarizing info about the RBCM.
         :return:
         """
 
@@ -998,29 +964,22 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
     def write_model(self, name: str, format: str = "pickle"):
         """
         Write model in a variety of formats to a file for later re-use.
+        Currently only pickle / binary is supported for RBCMs.
         Args:
             name (str): Output name.
             format (str): Output format.
         """
 
-        supported_formats = ["json", "pickle", "binary"]
+        supported_formats = ["pickle", "binary"]
 
         for detect in ["json", "pickle", "binary"]:
             if detect in name.lower():
                 format = detect
                 break
 
-        if format is None:
-            format = "pickle"
+        format = format.lower()
 
-        if format.lower() == "json":
-            raise ValueError(
-                "Output format not supported: try from {}".format(supported_formats)
-            )
-            # with open(f'{name}.json', 'w') as f:
-            #     json.dump(self.as_dict(), f, cls=NumpyEncoder)
-
-        elif format.lower() == "pickle" or format.lower() == "binary":
+        if format == "pickle" or format == "binary":
             if ".pickle" != name[-7:]:
                 name += ".pickle"
             with open(f"{name}", "wb") as f:
@@ -1031,7 +990,14 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 "Output format not supported: try from {}".format(supported_formats)
             )
 
-    def get_full_gp(self):
+    def get_full_gp(self) -> GaussianProcess:
+        """
+        "Flatten" an RBCM into a standard Gaussian Process.
+
+        "I think the people of this country have had enough of experts."
+                                                    - Michael Gove
+        :return:
+        """
 
         gp_model = GaussianProcess(**self.__dict__)
         gp_model.training_data = []
@@ -1058,12 +1024,15 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         :return:
         """
 
+        supported_formats = ["pickle", "binary"]
+
         if ".json" in filename or "json" in format:
             raise ValueError(
                 "Output format not supported: try from {}".format(supported_formats)
             )
-            # with open(filename, 'r') as f:
-            #     gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
+
+        if "binary" in format.lower() or "binary" in filename.lower():
+            format = "pickle"
 
         elif ".pickle" in filename or "pickle" in format:
             with open(filename, "rb") as f:
@@ -1079,7 +1048,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 "Warning: Format unspecieified or file is not .json or .pickle format."
             )
 
-        # # TO DO, be careful of this one
+        # TODO, be careful of this one
         # gp_model.check_instantiation()
         gp_model.sync_data()
 
