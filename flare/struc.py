@@ -5,17 +5,21 @@ and *Cartesian coordinates* of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
 """
-import numpy as np
-from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
-from flare.utils.learner import get_max_cutoff
-from json import dumps, loads
 
 from typing import List, Union, Any
+from json import dumps, loads
+
+import pickle as pickle
+import numpy as np
+
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import get_max_cutoff
 
 try:
     # Used for to_pmg_structure method
     import pymatgen.core.structure as pmgstruc
     import pymatgen.io.vasp.inputs as pmgvaspio
+
     _pmg_present = True
 except ImportError:
     _pmg_present = False
@@ -48,11 +52,18 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
-                 positions: 'ndarray', mass_dict: dict = None,
-                 prev_positions: 'ndarray' = None,
-                 species_labels: List[str] = None,
-                 forces=None, stds=None, energy: float=None):
+    def __init__(
+        self,
+        cell: "ndarray",
+        species: Union[List[str], List[int]],
+        positions: "ndarray",
+        mass_dict: dict = None,
+        prev_positions: "ndarray" = None,
+        species_labels: List[str] = None,
+        forces=None,
+        stds=None,
+        energy: float = None,
+    ):
 
         # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
@@ -76,8 +87,9 @@ class Structure:
         if prev_positions is None:
             self.prev_positions = np.copy(self.positions)
         else:
-            assert len(positions) == len(prev_positions), \
-                'Previous positions and positions are not same length'
+            assert len(positions) == len(
+                prev_positions
+            ), "Previous positions and positions are not same length"
             self.prev_positions = prev_positions
 
         # Set forces, energies, and stresses and their uncertainties.
@@ -99,6 +111,8 @@ class Structure:
         self.partial_stress_stds = None
         self.stress = None
         self.stress_stds = None
+
+        # Potential energy attribute needed to mirror ASE atoms object.
         self.potential_energy = None
 
         self.mass_dict = mass_dict
@@ -188,8 +202,9 @@ class Structure:
         return cell_dot
 
     @staticmethod
-    def raw_to_relative(positions: 'ndarray', cell_transpose: 'ndarray',
-                        cell_dot_inverse: 'ndarray') -> 'ndarray':
+    def raw_to_relative(
+        positions: "ndarray", cell_transpose: "ndarray", cell_dot_inverse: "ndarray"
+    ) -> "ndarray":
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -204,16 +219,18 @@ class Structure:
         :rtype: np.ndarray
         """
 
-        relative_positions = \
-            np.matmul(np.matmul(positions, cell_transpose),
-                      cell_dot_inverse)
+        relative_positions = np.matmul(
+            np.matmul(positions, cell_transpose), cell_dot_inverse
+        )
 
         return relative_positions
 
     @staticmethod
-    def relative_to_raw(relative_positions: 'ndarray',
-                        cell_transpose_inverse: 'ndarray',
-                        cell_dot: 'ndarray') -> 'ndarray':
+    def relative_to_raw(
+        relative_positions: "ndarray",
+        cell_transpose_inverse: "ndarray",
+        cell_dot: "ndarray",
+    ) -> "ndarray":
         """Convert fractional coordinates to raw (Cartesian) coordinates.
 
         :param relative_positions: fractional coordinates.
@@ -226,10 +243,11 @@ class Structure:
         :rtype: np.ndarray
         """
 
-        return np.matmul(np.matmul(relative_positions, cell_dot),
-                         cell_transpose_inverse)
+        return np.matmul(
+            np.matmul(relative_positions, cell_dot), cell_transpose_inverse
+        )
 
-    def wrap_positions(self) -> 'ndarray':
+    def wrap_positions(self) -> "ndarray":
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
@@ -238,14 +256,15 @@ class Structure:
         :return: Cartesian coordinates of positions all in unit cell
         :rtype: np.ndarray
         """
-        rel_pos = \
-            self.raw_to_relative(self.positions, self.cell_transpose,
-                                 self.cell_dot_inverse)
+        rel_pos = self.raw_to_relative(
+            self.positions, self.cell_transpose, self.cell_dot_inverse
+        )
 
         rel_wrap = rel_pos - np.floor(rel_pos)
 
-        pos_wrap = self.relative_to_raw(rel_wrap, self.cell_transpose_inverse,
-                                        self.cell_dot)
+        pos_wrap = self.relative_to_raw(
+            rel_wrap, self.cell_transpose_inverse, self.cell_dot
+        )
 
         return pos_wrap
 
@@ -257,8 +276,7 @@ class Structure:
         :return: The indices in the structure at which this element occurs
         :rtype: List[str]
         """
-        return [i for i, spec in enumerate(self.coded_species)
-                if spec == specie]
+        return [i for i, spec in enumerate(self.coded_species) if spec == specie]
 
     # TODO make more descriptive
     def __str__(self) -> str:
@@ -269,8 +287,9 @@ class Structure:
         :rtype: str
         """
 
-        return 'Structure with {} atoms of types {}'\
-            .format(self.nat, set(self.species_labels))
+        return "Structure with {} atoms of types {}".format(
+            self.nat, set(self.species_labels)
+        )
 
     def __len__(self) -> int:
         """
@@ -300,27 +319,31 @@ class Structure:
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
     @staticmethod
-    def from_dict(dictionary: dict) -> 'flare.struc.Structure':
+    def from_dict(dictionary: dict) -> "flare.struc.Structure":
         """
         Assembles a Structure object from a dictionary parameterizing one.
 
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
-        struc = Structure(cell=np.array(dictionary['_cell']),
-                          positions=np.array(dictionary['_positions']),
-                          species=dictionary['coded_species'],
-                          forces=np.array(dictionary.get('forces')),
-                          mass_dict=dictionary.get('mass_dict'),
-                          species_labels=dictionary.get('species_labels'),
-                          energy=dictionary.get('energy', None))
+        struc = Structure(
+            cell=np.array(dictionary.get("_cell", dictionary.get("cell"))),
+            positions=np.array(
+                dictionary.get("_positions", dictionary.get("positions"))
+            ),
+            species=dictionary["coded_species"],
+            forces=np.array(dictionary.get("forces")),
+            mass_dict=dictionary.get("mass_dict"),
+            species_labels=dictionary.get("species_labels"),
+            energy=dictionary.get("energy", None),
+        )
 
-        struc.stds = np.array(dictionary.get('stds'))
+        struc.stds = np.array(dictionary.get("stds"))
 
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms: 'ase.Atoms', cell=None) -> 'flare.struc.Structure':
+    def from_ase_atoms(atoms: "ase.Atoms", cell=None) -> "flare.struc.Structure":
         """
         From an ASE Atoms object, return a FLARE structure
 
@@ -331,14 +354,54 @@ class Structure:
 
         if cell is None:
             cell = np.array(atoms.cell)
-        struc = Structure(cell=cell, positions=atoms.positions,
-                          species=atoms.get_chemical_symbols())
+
+        try:
+            forces = atoms.get_forces()
+        except:
+            forces = None
+
+        try:
+            stds = atoms.get_uncertainties()
+        except:
+            stds = None
+
+        try:
+            energy = atoms.get_potential_energy()
+        except:
+            energy = None
+
+        try:
+            stress = atoms.get_stress()
+        except:
+            stress = None
+
+        struc = Structure(
+            cell=cell,
+            positions=atoms.positions,
+            species=atoms.get_chemical_symbols(),
+            forces=forces,
+            stds=stds,
+            energy=energy,
+        )
+        struc.stress = stress
         return struc
 
-    def to_ase_atoms(self) -> 'ase.Atoms':
+    def to_ase_atoms(self) -> "ase.Atoms":
         from ase import Atoms
-        return Atoms(self.species_labels, positions=self.positions,
-                     cell=self.cell, pbc=True)
+        from ase.calculators.singlepoint import SinglePointCalculator
+
+        atoms = Atoms(
+            self.species_labels, positions=self.positions, cell=self.cell, pbc=True
+        )
+
+        results = {}
+        properties = ["forces", "energy", "stress"]
+        for p in properties:
+            results[p] = getattr(self, p)
+        calculator = SinglePointCalculator(atoms, **results)
+        atoms.set_calculator(calculator)
+
+        return atoms
 
     def to_pmg_structure(self):
         """
@@ -348,25 +411,26 @@ class Structure:
         """
 
         if not _pmg_present:
-            raise ModuleNotFoundError("Pymatgen is not present. Please "
-                                      "install Pymatgen and try again")
+            raise ModuleNotFoundError(
+                "Pymatgen is not present. Please install Pymatgen and try again"
+            )
 
         if self.forces is None:
             forces_temp = np.zeros((len(self.positions), 3))
-            site_properties = {'force:': forces_temp, 'std': self.stds}
+            site_properties = {"force:": forces_temp, "std": self.stds}
         else:
-            site_properties = {'force:': self.forces, 'std': self.stds}
+            site_properties = {"force:": self.forces, "std": self.stds}
 
-        return pmgstruc.Structure(lattice=self.cell,
-                                  species=self.species_labels,
-                                  coords=self.positions,
-                                  coords_are_cartesian=True,
-                                  site_properties=site_properties
-                                  )
+        return pmgstruc.Structure(
+            lattice=self.cell,
+            species=self.species_labels,
+            coords=self.positions,
+            coords_are_cartesian=True,
+            site_properties=site_properties,
+        )
 
     @staticmethod
-    def from_pmg_structure(structure: 'pymatgen Structure') -> \
-            'flare Structure':
+    def from_pmg_structure(structure: "pymatgen Structure") -> "flare Structure":
         """
         Returns Pymatgen structure as FLARE structure.
 
@@ -379,26 +443,45 @@ class Structure:
         species = [str(spec) for spec in structure.species]
         positions = structure.cart_coords.copy()
 
-        new_struc = Structure(cell=cell, species=species,
-                              positions=positions)
+        new_struc = Structure(cell=cell, species=species, positions=positions)
 
         site_props = structure.site_properties
 
-        if 'force' in site_props.keys():
-            forces = site_props['force']
+        if "force" in site_props.keys():
+            forces = site_props["force"]
             new_struc.forces = [np.array(force) for force in forces]
 
-        if 'std' in site_props.keys():
-            stds = site_props['std']
+        if "std" in site_props.keys():
+            stds = site_props["std"]
             new_struc.stds = [np.array(std) for std in stds]
 
         return new_struc
 
-    def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
-               print_forces: bool = False, print_max_stds: bool = False,
-               print_energies: bool = False, predict_energy = None,
-               dft_forces = None, dft_energy = None, timestep=-1,
-               write_file: str = '', append: bool = False) -> str:
+    def is_valid(self, tolerance: float = 0.5) -> bool:
+        """
+        Plugin to pymatgen's is_valid method to gauge if a structure
+        has atoms packed too closely together, which is likely
+        to cause unphysically large forces / energies or present convergence
+        issues in DFT.
+        :return:
+        """
+        pmg_structure = self.to_pmg_structure()
+        return pmg_structure.is_valid(tol=tolerance)
+
+    def to_xyz(
+        self,
+        extended_xyz: bool = True,
+        print_stds: bool = False,
+        print_forces: bool = False,
+        print_max_stds: bool = False,
+        print_energies: bool = False,
+        predict_energy=None,
+        dft_forces=None,
+        dft_energy=None,
+        timestep=-1,
+        write_file: str = "",
+        append: bool = False,
+    ) -> str:
         """
         Convenience function which turns a structure into an extended .xyz
         file; useful for further input into visualization programs like VESTA
@@ -412,8 +495,8 @@ class Structure:
         :return:
         """
         species_list = [Z_to_element(x) for x in self.coded_species]
-        xyz_str = ''
-        xyz_str += f'{len(self.coded_species)} \n'
+        xyz_str = ""
+        xyz_str += f"{len(self.coded_species)} \n"
 
         # Add header line with info about lattice and properties if extended
         #  xyz option is called.
@@ -421,36 +504,36 @@ class Structure:
             cell = self.cell
 
             xyz_str += f'Lattice="{cell[0,0]} {cell[0,1]} {cell[0,2]}'
-            xyz_str += f' {cell[1,0]} {cell[1,1]} {cell[1,2]}'
+            xyz_str += f" {cell[1,0]} {cell[1,1]} {cell[1,2]}"
             xyz_str += f' {cell[2,0]} {cell[2,1]} {cell[2,2]}"'
             if timestep > 0:
-                xyz_str += f' Timestep={timestep}'
+                xyz_str += f" Timestep={timestep}"
             if predict_energy:
-                xyz_str += f' PE={predict_energy}'
+                xyz_str += f" PE={predict_energy}"
             if dft_energy is not None:
-                xyz_str += f' DFT_PE={dft_energy}'
+                xyz_str += f" DFT_PE={dft_energy}"
             xyz_str += f' Proprties="species:S:1:pos:R:3'
 
             if print_stds:
-                xyz_str += ':stds:R:3'
+                xyz_str += ":stds:R:3"
                 stds = self.stds
             if print_forces:
-                xyz_str += ':forces:R:3'
+                xyz_str += ":forces:R:3"
                 forces = self.forces
             if print_max_stds:
-                xyz_str += ':max_std:R:1'
+                xyz_str += ":max_std:R:1"
                 stds = self.stds
             if print_energies:
                 if self.local_energies is None:
                     print_energies = False
                 else:
-                    xyz_str += ':local_energy:R:1'
+                    xyz_str += ":local_energy:R:1"
                     local_energies = self.local_energies
             if dft_forces is not None:
-                xyz_str += ':dft_forces:R:3'
-            xyz_str += '\n'
+                xyz_str += ":dft_forces:R:3"
+            xyz_str += "\n"
         else:
-            xyz_str += '\n'
+            xyz_str += "\n"
 
         for i, pos in enumerate(self.positions):
             # Write positions
@@ -466,17 +549,16 @@ class Structure:
             if print_max_stds and extended_xyz:
                 xyz_str += f" {np.max(stds[i,:])} "
             if dft_forces is not None:
-                xyz_str += f' {dft_forces[i, 0]} {dft_forces[i,1]} ' \
-                          f'{dft_forces[i, 2]}'
-            if i < (len(self.positions)-1):
-                xyz_str += '\n'
+                xyz_str += f" {dft_forces[i, 0]} {dft_forces[i,1]} {dft_forces[i, 2]}"
+            if i < (len(self.positions) - 1):
+                xyz_str += "\n"
 
         # Write to file, optionally
         if write_file:
             if append:
-                fmt = 'a'
+                fmt = "a"
             else:
-                fmt = 'w'
+                fmt = "w"
             with open(write_file, fmt) as f:
                 f.write(xyz_str)
                 f.write("\n")
@@ -484,9 +566,9 @@ class Structure:
         return xyz_str
 
     @staticmethod
-    def from_file(file_name, format='') -> Union['flare.struc.Structure',
-                                                 List['flare.struc.Structure']
-                                                 ]:
+    def from_file(
+        file_name: str, format: str = ""
+    ) -> Union["flare.struc.Structure", List["flare.struc.Structure"]]:
         """
         Load a FLARE structure from a file or a series of FLARE structures
         :param file_name:
@@ -495,37 +577,43 @@ class Structure:
         """
 
         # Ensure the file specified exists.
-        with open(file_name, 'r') as _:
+        with open(file_name, "r") as _:
             pass
 
-        if 'xyz' in file_name or 'xyz' in format.lower():
+        if "pickle" in file_name or (
+            "pickle" in format.lower() or "binary" in format.lower()
+        ):
+            with open(file_name, "rb") as f:
+                return pickle.load(f)
+
+        if "xyz" in file_name or "xyz" in format.lower():
             raise NotImplementedError
 
-        if 'json' in format.lower() or '.json' in file_name:
+        if "json" in format.lower() or ".json" in file_name:
             # Assumed format is one FLARE structure per line,
             # or one line with many FLARE structures
-            with open(file_name, 'r') as f:
+            with open(file_name, "r") as f:
                 thelines = f.readlines()
 
-                non_empty_lines = [loads(line) for line in thelines if
-                                   len(line) > 2]
+                non_empty_lines = [loads(line) for line in thelines if len(line) > 2]
 
-            structures = [Structure.from_dict(struc_dict) for struc_dict in
-                          non_empty_lines]
+            structures = [
+                Structure.from_dict(struc_dict) for struc_dict in non_empty_lines
+            ]
 
             if len(structures) == 1:
                 return structures[0]
             else:
                 return structures
 
-        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name \
-            or 'vasp' in format.lower()
+        is_poscar = (
+            "POSCAR" in file_name or "CONTCAR" in file_name or "vasp" in format.lower()
+        )
         if is_poscar and _pmg_present:
             pmg_structure = pmgvaspio.Poscar.from_file(file_name).structure
             return Structure.from_pmg_structure(pmg_structure)
         elif is_poscar and not _pmg_present:
-            raise ImportError("Pymatgen not imported; "
-                              "functionality requires pymatgen.")
+            raise ImportError("Pymatgen not imported; functionality requires pymatgen.")
 
 
 def get_unique_species(species: List[Any]) -> (List, List[int]):

@@ -7,8 +7,12 @@ from math import exp
 
 
 class ManyBodyKernel:
-    def __init__(self, hyperparameters: 'ndarray', cutoff: float,
-                 cutoff_func: Callable = cf.quadratic_cutoff):
+    def __init__(
+        self,
+        hyperparameters: "ndarray",
+        cutoff: float,
+        cutoff_func: Callable = cf.quadratic_cutoff,
+    ):
         self.hyperparameters = hyperparameters
         self.signal_variance = hyperparameters[0]
         self.length_scale = hyperparameters[1]

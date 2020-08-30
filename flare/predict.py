@@ -14,8 +14,9 @@ from flare.struc import Structure
 from math import nan
 
 
-def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
-        'np.ndarray', 'np.ndarray'):
+def predict_on_atom(
+    param: Tuple[Structure, int, GaussianProcess]
+) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
     in a structure, without necessarily having cast it to a chemical
@@ -31,8 +32,7 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs,
-                                cutoffs_mask=gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
     components = []
     stds = []
     # predict force components and standard deviations
@@ -44,8 +44,9 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     return np.array(components), np.array(stds)
 
 
-def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
-        'np.ndarray', 'np.ndarray', float):
+def predict_on_atom_en(
+    param: Tuple[Structure, int, GaussianProcess]
+) -> ("np.ndarray", "np.ndarray", float):
     """
     Return the forces/std. dev. uncertainty / energy associated with an
     individual atom in a structure, without necessarily having cast it to a
@@ -61,8 +62,7 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs,
-                                cutoffs_mask=gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
     comps = []
     stds = []
     # predict force components and standard deviations
@@ -81,8 +81,7 @@ def predict_on_atom_en_std(param):
     """Predict local energy and predictive std of a chemical environment."""
 
     structure, atom, gp = param
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs,
-                                cutoffs_mask=gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
     # predict local energy
     loc_en, loc_en_var = gp.predict_local_energy_and_var(chemenv)
@@ -101,11 +100,14 @@ def predict_on_atom_efs(param):
     return gp.predict_efs(chemenv)
 
 
-def predict_on_structure(structure: Structure, gp: GaussianProcess,
-                         n_cpus: int = None, write_to_structure: bool = True,
-                         selective_atoms: List[int] = None,
-                         skipped_atom_value=0) \
-        -> ('np.ndarray', 'np.ndarray'):
+def predict_on_structure(
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value=0,
+) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -140,8 +142,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs,
-                                    cutoffs_mask=gp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -156,9 +157,13 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
 
 
 def predict_on_structure_par(
- structure: Structure, gp: GaussianProcess, n_cpus: int = None,
- write_to_structure: bool = True, selective_atoms: List[int] = None,
- skipped_atom_value=0) -> ('np.ndarray', 'np.ndarray'):
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value=0,
+) -> ("np.ndarray", "np.ndarray"):
 
     """
     Return the forces/std. dev. uncertainty associated with each
@@ -179,12 +184,16 @@ def predict_on_structure_par(
     :rtype: (np.ndarray, np.ndarray)
     """
     # Just work in serial in the number of cpus is 1
-    if n_cpus == 1:
+    # or the gp is not parallelized by atoms
+    if (n_cpus is 1) or (not gp.per_atom_par):
         return predict_on_structure(
-            structure=structure, gp=gp, n_cpus=n_cpus,
+            structure=structure,
+            gp=gp,
+            n_cpus=n_cpus,
             write_to_structure=write_to_structure,
             selective_atoms=selective_atoms,
-            skipped_atom_value=skipped_atom_value)
+            skipped_atom_value=skipped_atom_value,
+        )
 
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
@@ -209,8 +218,7 @@ def predict_on_structure_par(
             # Keep length of results equal to nat.
             results.append(None)
             continue
-        results.append(pool.apply_async(predict_on_atom,
-                                        args=[(structure, atom, gp)]))
+        results.append(pool.apply_async(predict_on_atom, args=[(structure, atom, gp)]))
     pool.close()
     pool.join()
 
@@ -227,11 +235,14 @@ def predict_on_structure_par(
     return forces, stds
 
 
-def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
-                             n_cpus: int = None,
-                             write_to_structure: bool = True,
-                             selective_atoms: List[int] = None,
-                             skipped_atom_value=0):
+def predict_on_structure_efs(
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value=0,
+):
 
     local_energies = np.zeros(structure.nat)
     forces = np.zeros((structure.nat, 3))
@@ -244,8 +255,14 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
     for n in range(structure.nat):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
 
-        en_pred, force_pred, stress_pred, en_var, force_var, stress_var = \
-            gp.predict_efs(chemenv)
+        (
+            en_pred,
+            force_pred,
+            stress_pred,
+            en_var,
+            force_var,
+            stress_var,
+        ) = gp.predict_efs(chemenv)
 
         local_energies[n] = en_pred
         forces[n] = force_pred
@@ -262,25 +279,45 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
 
     if write_to_structure:
         write_efs_to_structure(
-            structure, local_energies, forces, partial_stresses,
-            local_energy_stds, force_stds, partial_stress_stds)
+            structure,
+            local_energies,
+            forces,
+            partial_stresses,
+            local_energy_stds,
+            force_stds,
+            partial_stress_stds,
+        )
 
-    return local_energies, forces, partial_stresses, local_energy_stds, \
-        force_stds, partial_stress_stds
+    return (
+        local_energies,
+        forces,
+        partial_stresses,
+        local_energy_stds,
+        force_stds,
+        partial_stress_stds,
+    )
 
 
 def predict_on_structure_efs_par(
- structure: Structure, gp: GaussianProcess, n_cpus: int = None,
- write_to_structure: bool = True, selective_atoms: List[int] = None,
- skipped_atom_value=0):
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value=0,
+):
 
-    # Just work in serial in the number of cpus is 1
-    if n_cpus is 1:
+    # Just work in serial in the number of cpus is 1,
+    # or the gp is not parallelized by atoms
+    if (n_cpus is 1) or (not gp.per_atom_par):
         return predict_on_structure_efs(
-            structure=structure, gp=gp, n_cpus=n_cpus,
+            structure=structure,
+            gp=gp,
+            n_cpus=n_cpus,
             write_to_structure=write_to_structure,
             selective_atoms=selective_atoms,
-            skipped_atom_value=skipped_atom_value)
+            skipped_atom_value=skipped_atom_value,
+        )
 
     local_energies = np.zeros(structure.nat)
     forces = np.zeros((structure.nat, 3))
@@ -299,8 +336,8 @@ def predict_on_structure_efs_par(
     results = []
     for atom in range(structure.nat):
         results.append(
-            pool.apply_async(
-                predict_on_atom_efs, args=[(structure, atom, gp)]))
+            pool.apply_async(predict_on_atom_efs, args=[(structure, atom, gp)])
+        )
 
     pool.close()
     pool.join()
@@ -321,16 +358,34 @@ def predict_on_structure_efs_par(
 
     if write_to_structure:
         write_efs_to_structure(
-            structure, local_energies, forces, partial_stresses,
-            local_energy_stds, force_stds, partial_stress_stds)
+            structure,
+            local_energies,
+            forces,
+            partial_stresses,
+            local_energy_stds,
+            force_stds,
+            partial_stress_stds,
+        )
 
-    return local_energies, forces, partial_stresses, local_energy_stds, \
-        force_stds, partial_stress_stds
+    return (
+        local_energies,
+        forces,
+        partial_stresses,
+        local_energy_stds,
+        force_stds,
+        partial_stress_stds,
+    )
 
 
 def write_efs_to_structure(
- structure, local_energies, forces, partial_stresses, local_energy_stds,
- force_stds, partial_stress_stds):
+    structure,
+    local_energies,
+    forces,
+    partial_stresses,
+    local_energy_stds,
+    force_stds,
+    partial_stress_stds,
+):
 
     structure.local_energies = local_energies
     structure.forces = forces
@@ -349,24 +404,41 @@ def write_efs_to_structure(
     flare_stress = np.sum(partial_stresses, 0) / current_volume
 
     # Convert stress tensor to ASE format: xx yy zz yz xz xy
-    structure.stress = \
-        -np.array([flare_stress[0], flare_stress[3], flare_stress[5],
-                   flare_stress[4], flare_stress[2], flare_stress[1]])
+    structure.stress = -np.array(
+        [
+            flare_stress[0],
+            flare_stress[3],
+            flare_stress[5],
+            flare_stress[4],
+            flare_stress[2],
+            flare_stress[1],
+        ]
+    )
 
     # Record stress uncertainties.
-    stress_stds = \
-        (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) / current_volume)
-    structure.stress_stds = \
-        np.array([stress_stds[0], stress_stds[3], stress_stds[5],
-                  stress_stds[4], stress_stds[2], stress_stds[1]])
+    stress_stds = (
+        np.sqrt(np.sum(structure.partial_stress_stds ** 2, 0)) / current_volume
+    )
+    structure.stress_stds = np.array(
+        [
+            stress_stds[0],
+            stress_stds[3],
+            stress_stds[5],
+            stress_stds[4],
+            stress_stds[2],
+            stress_stds[1],
+        ]
+    )
 
 
-def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
-                            n_cpus: int = None,
-                            write_to_structure: bool = True,
-                            selective_atoms: List[int] = None,
-                            skipped_atom_value=0) -> (
-        'np.ndarray', 'np.ndarray', 'np.ndarray'):
+def predict_on_structure_en(
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value=0,
+) -> ("np.ndarray", "np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -384,8 +456,6 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     forces = np.zeros((structure.nat, 3))
     stds = np.zeros((structure.nat, 3))
     local_energies = np.zeros(structure.nat)
-    forces = np.zeros(shape=(structure.nat, 3))
-    stds = np.zeros(shape=(structure.nat, 3))
 
     if selective_atoms:
         forces.fill(skipped_atom_value)
@@ -401,8 +471,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
         if selective_atoms and n not in selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs,
-                                    cutoffs_mask=gp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -418,12 +487,14 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     return forces, stds, local_energies
 
 
-def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
-                                n_cpus: int = None,
-                                write_to_structure: bool = True,
-                                selective_atoms: List[int] = None,
-                                skipped_atom_value=0) -> (
-        'np.ndarray', 'np.ndarray', 'np.ndarray'):
+def predict_on_structure_par_en(
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value=0,
+) -> ("np.ndarray", "np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
     individual atom in a structure, parallelized over atoms. Forces are
@@ -437,17 +508,20 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Work in serial if the number of cpus is 1
-    if n_cpus == 1:
-        predict_on_structure_en(structure, gp,
-                                n_cpus, write_to_structure,
-                                selective_atoms,
-                                skipped_atom_value)
+    # or the gp is not parallelized by atoms
+    if (n_cpus is 1) or (not gp.per_atom_par):
+        predict_on_structure_en(
+            structure,
+            gp,
+            n_cpus,
+            write_to_structure,
+            selective_atoms,
+            skipped_atom_value,
+        )
 
     forces = np.zeros((structure.nat, 3))
     stds = np.zeros((structure.nat, 3))
     local_energies = np.zeros(structure.nat)
-    forces = np.zeros(shape=(structure.nat, 3))
-    stds = np.zeros(shape=(structure.nat, 3))
 
     if selective_atoms:
         forces.fill(skipped_atom_value)
@@ -469,8 +543,9 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
             results.append(None)
             continue
 
-        results.append(pool.apply_async(predict_on_atom_en,
-                                        args=[(structure, atom_i, gp)]))
+        results.append(
+            pool.apply_async(predict_on_atom_en, args=[(structure, atom_i, gp)])
+        )
     pool.close()
     pool.join()
 
@@ -492,10 +567,10 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     return forces, stds, local_energies
 
 
-def predict_on_atom_mgp(atom: int, structure, mgp,
-                        write_to_structure=False):
-    chemenv = AtomicEnvironment(structure, atom, mgp.cutoffs,
-                                cutoffs_mask=mgp.hyps_mask)
+def predict_on_atom_mgp(atom: int, structure, mgp, write_to_structure=False):
+    chemenv = AtomicEnvironment(
+        structure, atom, mgp.cutoffs, cutoffs_mask=mgp.hyps_mask
+    )
     # predict force components and standard deviations
     force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
@@ -511,16 +586,22 @@ def predict_on_atom_mgp(atom: int, structure, mgp,
     return comps, stds, local_energy
 
 
-def predict_on_structure_mgp(structure: Structure, mgp: MappedGaussianProcess, output=None,
-                             output_name=None, n_cpus: int = None,
-                             write_to_structure: bool = True,
-                             selective_atoms: List[int] = None,
-                             skipped_atom_value: Union[float,int] = 0, energy: bool=False):
+def predict_on_structure_mgp(
+    structure: Structure,
+    mgp: MappedGaussianProcess,
+    output=None,
+    output_name=None,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+    selective_atoms: List[int] = None,
+    skipped_atom_value: Union[float, int] = 0,
+    energy: bool = False,
+):
     """
     Assign forces to structure based on an mgp
     """
     if output and output_name:
-        output.write_to_output('\npredict with mapping:\n', output_name)
+        output.write_to_output("\npredict with mapping:\n", output_name)
 
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
@@ -537,9 +618,9 @@ def predict_on_structure_mgp(structure: Structure, mgp: MappedGaussianProcess, o
         if n not in selective_atoms and selective_atoms:
             continue
 
-        forces[n, :], stds[n, :], local_energy[n] = \
-            predict_on_atom_mgp(n, structure, mgp,
-                                write_to_structure)
+        forces[n, :], stds[n, :], local_energy[n] = predict_on_atom_mgp(
+            n, structure, mgp, write_to_structure
+        )
 
     if energy:
         return forces, stds, local_energy

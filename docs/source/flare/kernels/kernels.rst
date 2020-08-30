@@ -8,7 +8,6 @@ Kernels
    mc_simple
    mc_sephyps
    cutoffs
-   utils
    helper
 
 .. automodule:: flare.gp
