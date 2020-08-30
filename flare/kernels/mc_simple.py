@@ -3598,7 +3598,7 @@ def two_body_mc_stress_en_jit(
     r_cut,
     cutoff_func,
 ):
-    """2-body multi-element kernel between a partial stress component and a 
+    """2-body multi-element kernel between a partial stress component and a
     local energy accelerated with Numba.
 
     Args:

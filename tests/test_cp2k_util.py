@@ -72,10 +72,12 @@ def test_input_to_structure(cp2k_input):
 )
 @pytest.mark.skipif(
     not environ.get("CP2K_COMMAND", False),
-    reason="CP2K_COMMAND not found "
-    "in environment: Please install CP2K "
-    " and set the CP2K_COMMAND env. "
-    "variable to point to cp2k.popt",
+    reason=(
+        "CP2K_COMMAND not found "
+        "in environment: Please install CP2K "
+        " and set the CP2K_COMMAND env. "
+        "variable to point to cp2k.popt"
+    ),
 )
 def test_cp2k_calling(cp2k_input, cp2k_output):
     dft_loc = environ.get("CP2K_COMMAND")

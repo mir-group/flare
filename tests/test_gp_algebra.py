@@ -209,9 +209,9 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
         hyps, name, kernel[0], kernel[2], kernel[3], energy_noise, cutoffs, hyps_mask
     )
     print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=1", time.time() - time0)
-    assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), (
-        "multi hyps implementation is wrong" f"with case {ihyps}"
-    )
+    assert np.isclose(
+        ky_mat, ky_mat_ref, rtol=1e-3
+    ).all(), f"multi hyps implementation is wrongwith case {ihyps}"
 
     # parallel implementation
     time0 = time.time()

@@ -13,7 +13,7 @@ _user_Z_to_element = {}
 
 
 def inject_user_definition(element: str, Z: int):
-    """ Allow user-defined element. The definition
+    """Allow user-defined element. The definition
     will override the default ones from the periodic table.
 
     Example:
@@ -191,9 +191,9 @@ def element_to_Z(element: str) -> int:
     if _element_to_Z.get(element, None) is None:
         warn(
             f"Element as specified not found in list of element-Z mappings. "
-            "If you would like to specify a custom element, use an integer "
-            "of your choosing instead. Setting element {element} to integer "
-            "0"
+            f"If you would like to specify a custom element, use an integer"
+            f" of your choosing instead. Setting element {{element}} to intege"
+            f"r 0"
         )
     return _element_to_Z.get(element, 0)
 
@@ -214,8 +214,7 @@ class NumpyEncoder(JSONEncoder):
     """
 
     def default(self, obj):
-        """
-        """
+        """"""
         if isinstance(
             obj,
             (
@@ -256,7 +255,7 @@ def Z_to_element(Z: int) -> str:
         if Z.isnumeric():
             Z = int(Z)
         else:
-            raise ValueError("Input Z is not a number. It should be an " "integer")
+            raise ValueError("Input Z is not a number. It should be an integer")
 
     return _Z_to_element[Z]
 

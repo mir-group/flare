@@ -29,7 +29,7 @@ def check_vasprun(vasprun: Union[str, Vasprun], vasprun_kwargs: dict = {}) -> Va
     elif type(vasprun) == Vasprun:
         return vasprun
     else:
-        raise ValueError("Vasprun argument is not a string or " "Vasprun instance!")
+        raise ValueError("Vasprun argument is not a string or Vasprun instance!")
 
 
 def parse_dft_input(input: str):

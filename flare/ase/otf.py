@@ -35,12 +35,12 @@ class ASE_OTF(OTF):
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
-        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run, 
+        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run,
             with calculator set as FLARE_Calculator.
         timestep: the timestep in MD. Please use ASE units, e.g. if the
             timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
-        dft_calc (ASE Calculator): any ASE calculator is supported, 
+        dft_calc (ASE Calculator): any ASE calculator is supported,
             e.g. Espresso, VASP etc.
         md_engine (str): the name of MD thermostat, only `VelocityVerlet`,
             `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin`, `NoseHoover`

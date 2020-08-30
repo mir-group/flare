@@ -55,14 +55,19 @@ class OtfAnalysis:
             self.energies = energies
 
     def make_gp(
-        self, cell=None, call_no=None, hyps=None, init_gp=None, hyp_no=None, **kwargs,
+        self,
+        cell=None,
+        call_no=None,
+        hyps=None,
+        init_gp=None,
+        hyp_no=None,
+        **kwargs,
     ):
 
         if "restart" in self.header and self.header["restart"] > 0:
-            assert init_gp is not None, (
-                "Please input the init_gp as the gp model dumpped"
-                "before restarting otf."
-            )
+            assert (
+                init_gp is not None
+            ), "Please input the init_gp as the gp model dumppedbefore restarting otf."
 
         if call_no is None:
             call_no = len(self.gp_position_list)
@@ -179,7 +184,10 @@ class OtfAnalysis:
 
                     post_frame = block[index + 3 + self.noa :]
                     extract_global_info(
-                        self.cell_list, self.stress_list, self.thermostat, post_frame,
+                        self.cell_list,
+                        self.stress_list,
+                        self.thermostat,
+                        post_frame,
                     )
 
                     self.msds.append(
@@ -419,7 +427,10 @@ def parse_frame_line(frame_line):
 
 
 def extract_global_info(
-    cell_list, stress_list, thermostat, block,
+    cell_list,
+    stress_list,
+    thermostat,
+    block,
 ):
 
     for ind, line in enumerate(block):

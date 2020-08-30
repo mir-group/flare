@@ -46,7 +46,14 @@ def read_qe_results(self):
     self.results = output.calc.results
 
 
-md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin", "NoseHoover"]
+md_list = [
+    "VelocityVerlet",
+    "NVTBerendsen",
+    "NPTBerendsen",
+    "NPT",
+    "Langevin",
+    "NoseHoover",
+]
 number_of_steps = 3
 
 
@@ -68,7 +75,7 @@ def md_params():
     md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
     md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
     md_dict["Langevin"].update({"friction": 0.02})
-    md_dict["NoseHoover"].update({"nvt_q": 334.})
+    md_dict["NoseHoover"].update({"nvt_q": 334.0})
 
     yield md_dict
     del md_dict
@@ -169,7 +176,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         "std_tolerance_factor": 2,
         "max_atoms_added": len(super_cell.positions),
         "freeze_hyps": 10,
-        "write_model": 1
+        "write_model": 1,
     }
     #                  'use_mapping': flare_calculator.use_mapping}
 

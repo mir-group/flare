@@ -87,7 +87,7 @@ def test_otf(software, example):
     if not os.environ.get(cmd[software], False):
         pytest.skip(
             f"{cmd[software]} not found in environment:"
-            f" Please install the code "
+            " Please install the code "
             f" and set the {cmd[software]} env. "
             "variable to point to the executable."
         )
@@ -146,13 +146,13 @@ def test_otf_par(software, per_atom_par, n_cpus):
     if not os.environ.get(cmd[software], False):
         pytest.skip(
             f"{cmd[software]} not found in environment:"
-            f" Please install the code "
+            " Please install the code "
             f" and set the {cmd[software]} env. "
             "variable to point to the executable."
         )
     if software == "cp2k":
         if not "popt" in os.environ.get(cmd[software]):
-            pytest.skip(f"cp2k is serial version" f" skipping the parallel test")
+            pytest.skip(f"cp2k is serial version skipping the parallel test")
 
     dft_input = f"{software}.in"
     dft_output = f"{software}.out"
@@ -196,7 +196,7 @@ def test_otf_parser(software):
     if not os.environ.get(cmd[software], False):
         pytest.skip(
             f"{cmd[software]} not found in environment:"
-            f" Please install the code "
+            " Please install the code "
             f" and set the {cmd[software]} env. "
             "variable to point to the executable."
         )
@@ -227,7 +227,7 @@ def test_load_checkpoint(software):
     if not os.environ.get(cmd[software], False):
         pytest.skip(
             f"{cmd[software]} not found in environment:"
-            f" Please install the code "
+            " Please install the code "
             f" and set the {cmd[software]} env. "
             "variable to point to the executable."
         )
@@ -251,7 +251,7 @@ def test_otf_parser_from_checkpt(software):
     if not os.environ.get(cmd[software], False):
         pytest.skip(
             f"{cmd[software]} not found in environment:"
-            f" Please install the code "
+            " Please install the code "
             f" and set the {cmd[software]} env. "
             "variable to point to the executable."
         )

@@ -378,7 +378,7 @@ def get_force_block_pack(
     cutoffs,
     hyps_mask,
 ):
-    """ Compute covariance matrix element between set1 and set2
+    """Compute covariance matrix element between set1 and set2
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
     :param same: whether the row and column are the same
@@ -518,7 +518,7 @@ def get_force_block(
     n_cpus=1,
     n_sample=100,
 ):
-    """ parallel version of get_ky_mat
+    """parallel version of get_ky_mat
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
     :param kernel: function object of the kernel
@@ -1013,7 +1013,9 @@ def energy_energy_vector_unit(
     training_structures = _global_training_structures[name]
 
     size = e - s
-    energy_energy_unit = np.zeros(size,)
+    energy_energy_unit = np.zeros(
+        size,
+    )
 
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -1039,7 +1041,9 @@ def energy_force_vector_unit(
 
     ds = [1, 2, 3]
     size = (e - s) * 3
-    k_v = np.zeros(size,)
+    k_v = np.zeros(
+        size,
+    )
 
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -1060,7 +1064,9 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask, d_
 
     size = e - s
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-    force_energy_unit = np.zeros(size,)
+    force_energy_unit = np.zeros(
+        size,
+    )
 
     for m_index in range(size):
         training_structure = training_structures[m_index + s]
@@ -1692,7 +1698,7 @@ def get_ky_and_hyp(
 
 
 def get_like_from_mats(ky_mat, l_mat, alpha, name):
-    """ compute the likelihood from the covariance matrix
+    """compute the likelihood from the covariance matrix
 
     :param ky_mat: the covariance matrix
 
