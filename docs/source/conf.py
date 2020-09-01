@@ -48,7 +48,9 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
-    'nbsphinx'
+    'nbsphinx',
+    #'sphinx.ext.mathjax',
+    'sphinx.ext.imgmath',
 ]
 napoleon_use_param = False
 # Add any paths that contain templates here, relative to this directory.
