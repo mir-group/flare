@@ -34,10 +34,10 @@ class MappedGaussianProcess:
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
-        var_map (str): if None: only build mapping for mean (force). If 'pca', then 
+        var_map (str): if None: only build mapping for mean (force). If 'pca', then
             use PCA to map the variance, based on `grid_params['xxbody']['svd_rank']`.
-            If 'simple', then only map the diagonal of covariance, and predict the 
-            upper bound of variance. The 'pca' mode is much heavier in terms of 
+            If 'simple', then only map the diagonal of covariance, and predict the
+            upper bound of variance. The 'pca' mode is much heavier in terms of
             memory, but its prediction is much closer to GP variance.
         container_only (bool): if True: only build splines container
             (with no coefficients); if False: Attempt to build map immediately

@@ -12,10 +12,10 @@ from flare.utils.learner import get_max_cutoff
 
 class FLARE_Atoms(Atoms):
     """
-    The `FLARE_Atoms` class is a child class of ASE `Atoms`, 
+    The `FLARE_Atoms` class is a child class of ASE `Atoms`,
     which has completely the same usage as the primitive ASE `Atoms`, and
     in the meanwhile mimic `Structure` class. It is used in the `OTF` module
-    with ASE engine (by `OTF_ASE` module). It enables attributes to be 
+    with ASE engine (by `OTF_ASE` module). It enables attributes to be
     obtained by both the name from ASE `Atoms` and `Structure`.
 
     The input arguments are the same as ASE `Atoms`.

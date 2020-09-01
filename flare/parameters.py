@@ -21,8 +21,7 @@ from flare.utils.element_coder import element_to_Z, Z_to_element
 
 
 class Parameters:
-    """
-    """
+    """"""
 
     all_kernel_types = ["twobody", "threebody", "manybody"]
     cutoff_types = {"cut3b": "threebody"}
@@ -126,7 +125,7 @@ class Parameters:
                         param_dict[k + "_start"] = start
                     if "n" + k not in param_dict:
                         Parameters.logger.debug(
-                            "add in hyper parameter separators" "for", k
+                            "add in hyper parameter separatorsfor", k
                         )
                         param_dict["n" + k] = 1
                         start += Parameters.n_kernel_parameters[k]
@@ -162,9 +161,9 @@ class Parameters:
         # double check nspecie is there
         nspecie = param_dict["nspecie"]
         if nspecie > 1:
-            assert "specie_mask" in param_dict, (
-                "specie_mask key " "missing " "in param_dict dictionary"
-            )
+            assert (
+                "specie_mask" in param_dict
+            ), "specie_mask key missing in param_dict dictionary"
             param_dict["specie_mask"] = nparray(param_dict["specie_mask"], dtype=np.int)
 
         # for each kernel, check whether it is defined
@@ -192,9 +191,9 @@ class Parameters:
 
             if n > 1:
 
-                assert f"{kernel}_mask" in param_dict, (
-                    f"{kernel}_mask key " "missing " "in param_dict dictionary"
-                )
+                assert (
+                    f"{kernel}_mask" in param_dict
+                ), f"{kernel}_mask key missing in param_dict dictionary"
 
                 # check mask has the right dimension and values
                 mask = param_dict[f"{kernel}_mask"]

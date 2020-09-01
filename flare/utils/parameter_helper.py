@@ -390,7 +390,7 @@ class ParameterHelper:
         if group_type == "specie":
             if len(self.all_group_names["specie"]) > 0:
                 raise RuntimeError(
-                    "this function has to be run " "before any define_group"
+                    "this function has to be run before any define_group"
                 )
             if isinstance(definition_list, list):
                 for ele in definition_list:
@@ -406,7 +406,7 @@ class ParameterHelper:
         else:
             if self.n["specie"] == 0:
                 raise RuntimeError(
-                    "this function has to be run " "before any define_group"
+                    "this function has to be run before any define_group"
                 )
             if isinstance(definition_list, list):
                 ngroup = len(definition_list)
@@ -575,7 +575,7 @@ class ParameterHelper:
             element_list = ["H"]
         elif name == "*":
             raise ValueError(
-                "* is reserved for substitution, cannot be used " "as a group name"
+                "* is reserved for substitution, cannot be used as a group name"
             )
 
         if group_type != "specie":
@@ -612,7 +612,7 @@ class ParameterHelper:
                 self.logger.debug(f"Element {ele} will be defined as group {name}")
         else:
             if len(self.all_group_names["specie"]) == 0:
-                raise RuntimeError("The atomic species have to be" "defined in advance")
+                raise RuntimeError("The atomic species have to bedefined in advance")
 
             # first translate element/group name to group name
             group_name_list = []
@@ -627,7 +627,7 @@ class ParameterHelper:
                                 group_name_list += [group_name]
                                 self.logger.debug(
                                     f"Element {ele_name} is used for "
-                                    f"definition, but the whole group "
+                                    "definition, but the whole group "
                                     f"{group_name} is affected"
                                 )
             else:
@@ -664,7 +664,7 @@ class ParameterHelper:
                     )
 
     def find_group(self, group_type, element_list, atomic_str=False):
-        """ find the group that contains the input pair
+        """find the group that contains the input pair
 
         Args:
             group_type (str): species, twobody, threebody, cut3b, manybody
@@ -731,26 +731,22 @@ class ParameterHelper:
         if name == "noise":
             self.noise = parameters
             self.opt["noise"] = opt
-            self.logger.debug(f"noise will be set as " f"{parameters} and opt {opt}")
+            self.logger.debug(f"noise will be set as {parameters} and opt {opt}")
             return
         elif name == "energy_noise":
             self.energy_noise = parameters
             self.opt["energy_noise"] = opt
-            self.logger.debug(
-                f"energy_noise will be set as " f"{parameters} and opt {opt}"
-            )
+            self.logger.debug(f"energy_noise will be set as {parameters} and opt {opt}")
             return
         elif "cutoff" in name:
             self.universal[name] = parameters
-            self.logger.debug(
-                f"universal cutoff {name} will be set as " f"{parameters}"
-            )
+            self.logger.debug(f"universal cutoff {name} will be set as {parameters}")
             return
         elif name in ["sigma", "lengthscale"]:
             self.universal[name] = parameters
             self.opt[name] = opt
             self.logger.debug(
-                f"universal {name} will be set as " f"{parameters} and optimized {opt}"
+                f"universal {name} will be set as {parameters} and optimized {opt}"
             )
             return
 
@@ -761,7 +757,7 @@ class ParameterHelper:
             if cut_name in name:
                 self.all_cutoff[name] = float(parameters)
                 self.logger.debug(
-                    f"Cutoff for group {name} will be set as " f"{parameters}"
+                    f"Cutoff for group {name} will be set as {parameters}"
                 )
                 return
 
@@ -780,9 +776,7 @@ class ParameterHelper:
             if name in self.all_cutoff:
                 self.logger.debug(f"the cutoff of group {name} is overriden")
             self.all_cutoff[name] = parameters[2]
-            self.logger.debug(
-                f"Cutoff for group {name} will be set as " f"{parameters[2]}"
-            )
+            self.logger.debug(f"Cutoff for group {name} will be set as {parameters[2]}")
 
     def set_constraints(self, name, opt):
         """Set the parameters for certain group
@@ -805,7 +799,7 @@ class ParameterHelper:
 
         if name == "noise":
             self.opt["noise"] = opt
-            self.logger.debug(f"noise opt is set to" f"{opt}")
+            self.logger.debug(f"noise opt is set to{opt}")
             return
 
         if isinstance(opt, bool):
@@ -820,9 +814,7 @@ class ParameterHelper:
         self.opt[name + "sig"] = opt[0]
         self.opt[name + "ls"] = opt[1]
         self.logger.debug(
-            f"ParameterHelper for group {name} will be set as "
-            f"sig {opt[0]} "
-            f"ls {opt[1]}"
+            f"ParameterHelper for group {name} will be set as sig {opt[0]} ls {opt[1]}"
         )
 
     def summarize_group(self, group_type):
@@ -852,8 +844,7 @@ class ParameterHelper:
                         self.species_mask = new_mask
                     self.specie_mask[atom_n] = idt
                     self.logger.debug(
-                        f"elemtn {ele} is defined as type {idt} with name "
-                        f"{aeg[idt]}"
+                        f"elemtn {ele} is defined as type {idt} with name {aeg[idt]}"
                     )
             self.logger.debug(f"All the remaining elements are left as type {idt}")
 
@@ -916,7 +907,7 @@ class ParameterHelper:
 
                     if sig < 0 or ls < 0:
                         self.logger.error(
-                            f"hyper parameters for group {name}" " is not defined"
+                            f"hyper parameters for group {name} is not defined"
                         )
                         raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
@@ -955,8 +946,8 @@ class ParameterHelper:
                     if universal_cutoff <= 0:
                         universal_cutoff = np.max(allcut)
                         self.logger.info(
-                            f"universal cutoff for "
-                            f"{group_type} is defined as zero! reset it to {universal_cutoff}"
+                            f"universal cutoff for {group_type} is defined as zero!"
+                            f" reset it to {universal_cutoff}"
                         )
 
                     self.cutoff_list[group_type] = []
@@ -974,7 +965,7 @@ class ParameterHelper:
                     if alldefine:
                         universal_cutoff = max_cutoff
                         self.logger.info(
-                            f"universal cutoff is updated to " f"{universal_cutoff}"
+                            f"universal cutoff is updated to {universal_cutoff}"
                         )
                     elif not np.any(self.cutoff_list[group_type] - max_cutoff):
                         # if not all the cutoffs are defined separately
@@ -984,14 +975,14 @@ class ParameterHelper:
                         if group_type in self.cutoff_types:
                             self.n[group_type] = 0
                         self.logger.info(
-                            f"universal cutoff is updated to " f"{universal_cutoff}"
+                            f"universal cutoff is updated to {universal_cutoff}"
                         )
 
             else:
                 if universal_cutoff <= 0 and len(allcut) > 0:
                     universal_cutoff = np.max(allcut)
                     self.logger.info(
-                        f"threebody universal cutoff is updated to"
+                        "threebody universal cutoff is updated to"
                         f"{universal_cutoff}, but the separate definitions will"
                         "be ignored"
                     )
@@ -1119,7 +1110,7 @@ class ParameterHelper:
 
     @staticmethod
     def from_dict(hyps_mask, verbose=False, init_spec=[]):
-        """ convert dictionary mask to HM instance
+        """convert dictionary mask to HM instance
         This function is not tested yet
         """
 

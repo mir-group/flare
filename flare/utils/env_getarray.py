@@ -421,8 +421,8 @@ def get_m3_body_arrays(
     cutoff_func=cf.quadratic_cutoff,
 ):
     """
-    Note: here we assume the cutoff is not too large, 
-    i.e., 2 * cutoff < cell_size 
+    Note: here we assume the cutoff is not too large,
+    i.e., 2 * cutoff < cell_size
     """
     species_list = np.array(list(set(species)), dtype=np.int8)
 
