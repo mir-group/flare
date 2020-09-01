@@ -1,22 +1,24 @@
 #ifndef COMPACT_STRUCTURE_H
 #define COMPACT_STRUCTURE_H
 
+#include "descriptor.h"
+#include "structure.h"
 #include <Eigen/Dense>
 #include <vector>
-#include "structure.h"
-#include "descriptor.h"
 
 class CompactStructure : public Structure {
 public:
-  std::vector<Eigen::VectorXd> neighbor_count;
-  std::vector<Eigen::MatrixXd> neighbor_lists, relative_positions,
-    descriptors, descriptor_force_dervs, descriptor_stress_dervs;
+  std::vector<Eigen::VectorXd> neighbor_count, structure_indices,
+    position_indices;
+  Eigen::MatrixXd relative_positions;
+  std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
+      descriptor_stress_dervs;
   std::vector<DescriptorCalculator *> descriptor_calculators;
+  std::vector<double> cutoffs;
 
   CompactStructure();
 
-  CompactStructure(const Eigen::MatrixXd &cell,
-                   const std::vector<int> &species,
+  CompactStructure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
                    const Eigen::MatrixXd &positions,
                    std::vector<double> cutoffs,
                    std::vector<DescriptorCalculator *> descriptor_calculators);
