@@ -8,7 +8,9 @@
 
 class CompactStructure : public Structure {
 public:
-  std::vector<Eigen::VectorXd> neighbor_count, structure_indices,
+  // TODO: Simplify by removing vectors. Different cutoffs can be handled
+  // by the descriptor calculators.
+  std::vector<Eigen::VectorXi> neighbor_count, structure_indices,
     position_indices;
   Eigen::MatrixXd relative_positions;
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
@@ -25,7 +27,7 @@ public:
                    std::vector<double> cutoffs,
                    std::vector<DescriptorCalculator *> descriptor_calculators);
 
-  void compute_neighbor_lists();
+  void compute_neighbors();
   void compute_descriptors();
 };
 
