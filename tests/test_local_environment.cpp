@@ -51,7 +51,7 @@ TEST_F(EnvironmentTest, SweepTest) {
   Eigen::MatrixXd cell(3, 3);
   Eigen::MatrixXd positions(5, 3);
 
-  EXPECT_EQ(ceil(cutoff / test_struc.max_cutoff), test_env.sweep);
+  EXPECT_EQ(ceil(cutoff / test_struc.single_sweep_cutoff), test_env.sweep);
 
   // Check that the number of atoms in the local environment is correct.
   std::vector<int> env_ind, env_spec, unique_ind;

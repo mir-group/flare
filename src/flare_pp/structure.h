@@ -12,7 +12,7 @@ public:
   Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse, cell_dot,
       cell_dot_inverse, positions, wrapped_positions;
   std::vector<int> species;
-  double max_cutoff, volume;
+  double single_sweep_cutoff, volume;
   int noa;
 
   Structure();
@@ -22,7 +22,7 @@ public:
 
   Eigen::MatrixXd wrap_positions();
 
-  double get_max_cutoff();
+  double get_single_sweep_cutoff();
 };
 
 // Structure descriptor. Stores the atomic environments in a structure.

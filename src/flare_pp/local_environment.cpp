@@ -13,7 +13,7 @@ LocalEnvironment ::LocalEnvironment(const Structure &structure, int atom,
   noa = structure.wrapped_positions.rows();
   structure_volume = structure.volume;
 
-  int sweep_val = ceil(cutoff / structure.max_cutoff);
+  int sweep_val = ceil(cutoff / structure.single_sweep_cutoff);
   this->sweep = sweep_val;
 
   std::vector<int> environment_indices, environment_species, neighbor_list;

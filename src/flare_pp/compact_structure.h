@@ -15,6 +15,7 @@ public:
       descriptor_stress_dervs;
   std::vector<DescriptorCalculator *> descriptor_calculators;
   std::vector<double> cutoffs;
+  double max_cutoff;
 
   CompactStructure();
 

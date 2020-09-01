@@ -9,6 +9,11 @@ CompactStructure ::CompactStructure(
     : Structure(cell, species, positions) {
 
   this->cutoffs = cutoffs;
+  double max_cut = 0;
+  for (int i = 0; i < cutoffs.size(); i++){
+      if (cutoffs[i] > max_cut) max_cut = cutoffs[i];
+  }
+  this->max_cutoff = max_cut;
   this->descriptor_calculators = descriptor_calculators;
 }
 

@@ -12,7 +12,7 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
   this->cell = cell;
   this->species = species;
   this->positions = positions;
-  max_cutoff = get_max_cutoff();
+  single_sweep_cutoff = get_single_sweep_cutoff();
   volume = abs(cell.determinant());
   noa = species.size();
 
@@ -40,7 +40,7 @@ Eigen::MatrixXd Structure ::wrap_positions() {
   return wrapped_positions;
 }
 
-double Structure ::get_max_cutoff() {
+double Structure ::get_single_sweep_cutoff() {
   Eigen::MatrixXd vec1 = cell.row(0);
   Eigen::MatrixXd vec2 = cell.row(1);
   Eigen::MatrixXd vec3 = cell.row(2);
@@ -62,14 +62,14 @@ double Structure ::get_max_cutoff() {
   max_candidates[4] = b * sqrt(1 - pow(b_dot_c / (b * c), 2));
   max_candidates[5] = c * sqrt(1 - pow(b_dot_c / (b * c), 2));
 
-  double max_cutoff = max_candidates[0];
+  double single_sweep_cutoff = max_candidates[0];
   for (int i = 0; i < 6; i++) {
-    if (max_candidates[i] < max_cutoff) {
-      max_cutoff = max_candidates[i];
+    if (max_candidates[i] < single_sweep_cutoff) {
+      single_sweep_cutoff = max_candidates[i];
     }
   }
 
-  return max_cutoff;
+  return single_sweep_cutoff;
 }
 
 // ----------------------------------------------------------------------------
