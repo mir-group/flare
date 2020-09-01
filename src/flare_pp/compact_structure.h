@@ -11,7 +11,7 @@ public:
   // TODO: Simplify by removing vectors. Different cutoffs can be handled
   // by the descriptor calculators.
   std::vector<Eigen::VectorXi> neighbor_count, structure_indices,
-    position_indices;
+      position_indices;
   Eigen::MatrixXd relative_positions;
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
       descriptor_stress_dervs;

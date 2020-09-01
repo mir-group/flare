@@ -4,9 +4,9 @@
 #include "structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
+#include <chrono>
 #include <cmath>
 #include <iostream>
-#include <chrono>
 
 class CompactStructureTest : public ::testing::Test {
 public:
@@ -41,11 +41,10 @@ public:
 };
 
 TEST_F(CompactStructureTest, TestWrapped) {
-    auto start = std::chrono::steady_clock::now();
-    CompactStructure test_struc = \
-        CompactStructure(cell, species, positions, many_body_cutoffs,
-                         descriptor_calculators);
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end-start;
-    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+  auto start = std::chrono::steady_clock::now();
+  CompactStructure test_struc = CompactStructure(
+      cell, species, positions, many_body_cutoffs, descriptor_calculators);
+  auto end = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end - start;
+  std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 }
