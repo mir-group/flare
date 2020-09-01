@@ -16,6 +16,7 @@ public:
   std::vector<DescriptorCalculator *> descriptor_calculators;
   std::vector<double> cutoffs;
   double max_cutoff;
+  int sweep;
 
   CompactStructure();
 
