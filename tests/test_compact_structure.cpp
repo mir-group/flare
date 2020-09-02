@@ -35,7 +35,7 @@ public:
     desc1 = B2_Calculator(radial_string, cutoff_string, radial_hyps,
                           cutoff_hyps, descriptor_settings, descriptor_index);
     descriptor_calculators.push_back(&desc1);
-    test_struc = CompactStructure(cell, species, positions, many_body_cutoffs,
+    test_struc = CompactStructure(cell, species, positions, cutoff,
                                   descriptor_calculators);
   }
 };
@@ -43,7 +43,7 @@ public:
 TEST_F(CompactStructureTest, TestWrapped) {
   auto start = std::chrono::steady_clock::now();
   CompactStructure test_struc = CompactStructure(
-      cell, species, positions, many_body_cutoffs, descriptor_calculators);
+      cell, species, positions, cutoff, descriptor_calculators);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";

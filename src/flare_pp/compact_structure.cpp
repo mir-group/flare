@@ -6,25 +6,16 @@ CompactStructure ::CompactStructure() {}
 
 CompactStructure ::CompactStructure(
     const Eigen::MatrixXd &cell, const std::vector<int> &species,
-    const Eigen::MatrixXd &positions, std::vector<double> cutoffs,
+    const Eigen::MatrixXd &positions, double cutoff,
     std::vector<DescriptorCalculator *> descriptor_calculators)
     : Structure(cell, species, positions) {
 
-  this->cutoffs = cutoffs;
-  double max_cut = 0;
-  for (int i = 0; i < cutoffs.size(); i++) {
-    if (cutoffs[i] > max_cut)
-      max_cut = cutoffs[i];
-  }
-
-  max_cutoff = max_cut;
+  this->cutoff = cutoff;
   this->descriptor_calculators = descriptor_calculators;
-  sweep = ceil(max_cutoff / single_sweep_cutoff);
+  sweep = ceil(cutoff / single_sweep_cutoff);
 
   // Initialize neighbor count.
-  for (int i = 0; i < cutoffs.size(); i++) {
-    neighbor_count.push_back(Eigen::VectorXi::Zero(noa));
-  }
+  neighbor_count = Eigen::VectorXi::Zero(noa);
 
   compute_neighbors();
 }
@@ -36,7 +27,6 @@ void CompactStructure ::compute_neighbors() {
   int sweep_no = sweep_unit * sweep_unit * sweep_unit;
   Eigen::MatrixXd all_positions =
       Eigen::MatrixXd::Zero(noa * noa * sweep_no, 4);
-  Eigen::VectorXi max_neighbor_count = Eigen::VectorXi::Zero(noa);
 
 // Compute neighbor lists and relative positions.
 #pragma omp parallel for
@@ -54,8 +44,8 @@ void CompactStructure ::compute_neighbors() {
             double dist = sqrt(im(0) * im(0) + im(1) * im(1) + im(2) * im(2));
 
             // Store coordinates and distance.
-            if ((dist < max_cutoff) && (dist != 0)) {
-              max_neighbor_count(i)++;
+            if ((dist < cutoff) && (dist != 0)) {
+              neighbor_count(i)++;
               int row_index = i_index + counter;
               all_positions(row_index, 0) = im(0);
               all_positions(row_index, 1) = im(1);
@@ -68,4 +58,6 @@ void CompactStructure ::compute_neighbors() {
       }
     }
   }
+
+  // TODO: Store relative positions and structure indices.
 }
