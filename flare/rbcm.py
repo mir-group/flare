@@ -72,8 +72,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, n_experts, ndata_per_expert, prior_variance,
-                 per_expert_parallel=False,
+    def __init__(self, n_experts=1, ndata_per_expert=200, prior_variance=.5,
+                 per_expert_parallel=True,
                  **kwargs):
 
         self.n_experts = n_experts
