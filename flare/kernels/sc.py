@@ -2134,8 +2134,9 @@ _str_to_kernel = {
 def str_to_kernel(string: str, include_grad: bool = False):
     if string not in _str_to_kernel.keys():
         raise ValueError(
-            "Kernel {} not found in list of available "
-            "kernels{}:".format(string, _str_to_kernel.keys())
+            "Kernel {} not found in list of available kernels{}:".format(
+                string, _str_to_kernel.keys()
+            )
         )
 
     if not include_grad:

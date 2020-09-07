@@ -99,7 +99,7 @@ def run_dft_en_par(
 
 
 def parse_dft_input(dft_input: str):
-    """ Parse CP2K input file prepared by the user
+    """Parse CP2K input file prepared by the user
     the parser is very limited. The user have to define things
     in a good format.
     It requires the "CELL", "COORD" blocks
@@ -298,7 +298,7 @@ def dft_input_to_structure(dft_input: str):
 
 
 def edit_dft_input_positions(dft_input: str, structure):
-    """ Write the current configuration of the OTF structure to the
+    """Write the current configuration of the OTF structure to the
     qe input file
 
     :param dft_input: intput file name
@@ -362,7 +362,7 @@ def edit_dft_input_positions(dft_input: str, structure):
 
 
 def parse_dft_forces_and_energy(outfile: str):
-    """ Get forces from a pwscf file in eV/A
+    """Get forces from a pwscf file in eV/A
     the input run type to be ENERGY_FORCE
 
     :param outfile: str, Path to dft.output file
@@ -391,7 +391,7 @@ def parse_dft_forces_and_energy(outfile: str):
                 startforce = 0
 
     assert total_energy != np.nan, (
-        "dft parser failed to read " "the file {}. Run failed." + outfile
+        "dft parser failed to read the file {}. Run failed." + outfile
     )
 
     # Convert from ry/au to ev/angstrom
@@ -404,7 +404,7 @@ def parse_dft_forces_and_energy(outfile: str):
 
 
 def parse_dft_forces(outfile: str):
-    """ Get forces from a pwscf file in eV/A
+    """Get forces from a pwscf file in eV/A
 
     :param outfile: str, Path to dft.output file
     :return: list[nparray] , List of forces acting on atoms
