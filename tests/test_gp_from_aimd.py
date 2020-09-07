@@ -482,3 +482,5 @@ def test_active_learning_simple_run():
                                )
     assert len(the_gp) == prev_gp_len
 
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)
