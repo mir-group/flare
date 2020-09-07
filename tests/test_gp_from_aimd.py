@@ -467,7 +467,8 @@ def test_active_learning_simple_run():
                            abs_std_tolerance=0,
                            abs_force_tolerance=.1,
                            max_elts_per_frame={'H':0,
-                                               'O':0}
+                                               'O':0},
+                           max_model_elts={"C":2},
                            )
     assert len(the_gp) == prev_gp_len +1
     prev_carbon_atoms = prev_gp_stats['envs_by_species']['C']
