@@ -483,5 +483,17 @@ def test_active_learning_simple_run():
                                )
     assert len(the_gp) == prev_gp_len
 
+
+    # Test that model doesn't add atoms
+    prev_gp_len = len(the_gp)
+    tt.run_active_learning(frames[5:6],
+                               rel_std_tolerance=0,
+                               abs_std_tolerance=0,
+                               abs_force_tolerance=.1,
+                               max_model_elts={"C":2,'H':1,'O':1}
+                               )
+    assert len(the_gp) == prev_gp_len
+
+
     for f in glob(f"gp_from_aimd*"):
         remove(f)
