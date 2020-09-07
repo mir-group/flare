@@ -185,7 +185,7 @@ def predict_on_structure_par(
     """
     # Just work in serial in the number of cpus is 1
     # or the gp is not parallelized by atoms
-    if (n_cpus is 1) or (not gp.per_atom_par):
+    if n_cpus == 1 or not gp.per_atom_par:
         return predict_on_structure(
             structure=structure,
             gp=gp,
@@ -596,7 +596,7 @@ def predict_on_structure_mgp(
     selective_atoms: List[int] = None,
     skipped_atom_value: Union[float, int] = 0,
     energy: bool = False,
-):
+)->Union[Tuple['np.ndarray','np.ndarray',float],Tuple['np.ndarray','np.ndarray']]:
     """
     Assign forces to structure based on an mgp
     """

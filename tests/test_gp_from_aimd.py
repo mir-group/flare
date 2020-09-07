@@ -411,11 +411,64 @@ def test_passive_learning():
     tt.gp = cur_gp
     tt.run_passive_learning(
         frames=frames,
-        max_atoms_per_element={"O": 0, "C": 1, "H": 5},
-        atoms_per_element={"H": 1},
+        max_model_elts={"O": 0, "C": 1, "H": 5},
+        max_elts_per_frame={"H": 1},
         post_build_matrices=False,
     )
 
     assert "O" not in cur_gp.training_statistics["species"]
     assert cur_gp.training_statistics["envs_by_species"]["C"] == 1
     assert cur_gp.training_statistics["envs_by_species"]["H"] == 5
+
+def test_active_learning_simple_run():
+    """
+    Test simple mechanics of active learning method.
+    :return:
+    """
+
+    the_gp = GaussianProcess(
+        kernel_name="2+3_mc",
+        hyps=np.array(
+            [
+                3.75996759e-06,
+                1.53990678e-02,
+                2.50624782e-05,
+                5.07884426e-01,
+                1.70172923e-03,
+            ]
+        ),
+        cutoffs=np.array([5, 3]),
+        hyp_labels=["l2", "s2", "l3", "s3", "n0"],
+        maxiter=1,
+        opt_algorithm="L-BFGS-B",
+    )
+
+    frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
+
+    tt = TrajectoryTrainer(gp=the_gp)
+
+    tt.run_passive_learning(frames=frames[:1],
+                            max_elts_per_frame={'C':1,"O":1,'H':1},
+                            post_training_iterations=0,
+                            post_build_matrices=True)
+
+    prev_gp_len = len(the_gp)
+    prev_gp_stats = the_gp.training_statistics
+    #tt.run_active_learning(frames[:2],
+    #                       rel_std_tolerance=0,
+    #                       abs_std_tolerance=0,
+    #                       abs_force_tolerance=0
+    #                       )
+    assert len(the_gp) == prev_gp_len
+    # Try on a frame where the Carbon atom is guaranteed to trip the
+    # abs. force tolerance contition
+    tt.run_active_learning(frames[1:2],
+                           rel_std_tolerance=0,
+                           abs_std_tolerance=0,
+                           abs_force_tolerance=.1,
+                           max_elts_per_frame={'H':0,
+                                               'O':0}
+                           )
+    assert len(the_gp) == prev_gp_len +1
+    prev_carbon_atoms = prev_gp_stats['envs_by_species']['C']
+    assert the_gp.training_statistics['envs_by_species']['C'] == prev_carbon_atoms +1

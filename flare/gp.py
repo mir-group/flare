@@ -644,6 +644,20 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
+    def predict_force_xyz(self, x_t: AtomicEnvironment)-> ('np.ndarray','np.ndarray'):
+        """
+        Simple wrapper to predict all three components of a force in one go.
+        :param x_t:
+        :return:
+        """
+        forces = []
+        stds = []
+        for d in (1,2,3):
+            force, std = self.predict(x_t,d)
+            forces.append(force)
+            stds.append(std)
+        return np.array(forces), np.array(stds)
+
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the local energy of a local environment.
 
@@ -1253,6 +1267,9 @@ class GaussianProcess:
 
         gp_model.check_instantiation()
         return gp_model
+
+    def __len__(self):
+        return len(self.training_data)
 
     @property
     def training_statistics(self) -> dict:
