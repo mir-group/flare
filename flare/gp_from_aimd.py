@@ -524,10 +524,10 @@ class TrajectoryTrainer:
                         )
                     else:
                         logger.info(
-                            f"GP is at maximum model size of {max_model_size}."
-                            f"No further atoms will be added for"
+                            f"GP is at maximum model size of {max_model_size}. "
+                            f"No further atoms will be added for "
                             f"remainder of run, but predictions will still be "
-                            f"made. Setting max_atoms_from_frame"
+                            f"made. Setting max_atoms_from_frame "
                             f"to 0."
                         )
                         max_atoms_from_frame = 0
