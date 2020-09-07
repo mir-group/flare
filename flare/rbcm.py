@@ -54,6 +54,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
     opt_algorithm GP kwarg supports "dual annealing" and "differential evolution"
     for the RBCMs.
 
+    See https://arxiv.org/pdf/1806.00720.pdf for a theory background.
+
     Args:
         n_experts: number of experts to begin with
         ndata_per_expert: maximum training set size per expert.'
@@ -295,7 +297,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             else:
                 force_curr = env_curr.force
 
-            self.add_one_env(env_curr, force_curr, train=False)
+            self.add_one_env(env_curr, force_curr, train=False, expert_id=expert_id)
 
         # If an energy is given, update the structure list.
         if energy is not None:
@@ -526,6 +528,14 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
         Predict a force component of the central atom of a local environment.
+
+        Performs prediction over each expert and combines results.
+
+        Weights beta_i for experts computed on a per-expert basis following Cao and
+        Fleet 2014: https://arxiv.org/abs/1410.7827
+        Which Liu et al (https://arxiv.org/pdf/1806.00720.pdf) describe as
+        "the difference in differential entropy between the prior and the posterior".
+
         Args:
             x_t (AtomicEnvironment): Input local environment.
             i (integer):  Force component to predict (1=x, 2=y, 3=z).
@@ -567,7 +577,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         variance_rbcm = 0
         mean = 0.0
         var = 0.0
-        beta = 0.0
+        beta = 0.0  # Represents expert weight
 
         args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
 
@@ -579,81 +589,12 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             # pass args to kernel based on if mult. hyperparameters in use
 
             self_kern = self.kernel(x_t, x_t, d, d, *args)
-            var_i = np.diagonal(
-                self_kern - np.matmul(np.matmul(k_v[i].T, self.ky_mat_inv[i]), k_v[i])
+            var_i = self_kern - np.matmul(
+                np.matmul(k_v[i].T, self.ky_mat_inv[i]), k_v[i]
             )
 
-            beta_i = 0.5 * (self.log_prior_var - np.log(var_i))
-            mean += beta_i / var_i * mean_i
-            var += beta_i / var_i
-            beta += beta_i
-
-        var += (1 - beta) / self.prior_variance
-        pred_var = 1.0 / var
-        pred_mean = pred_var * mean
-
-        return pred_mean, pred_var
-
-    def predict_xyz(self, x_t: AtomicEnvironment) -> [float, float]:
-        """
-        Predict a force component of the central atom of a local environment,
-        getting all 3 force components at once.
-        Args:
-            x_t (AtomicEnvironment): Input local environment.
-        Return:
-            (float, float): Mean and epistemic variance of the prediction.
-        """
-        # TODO
-        raise NotImplementedError
-        # Kernel vector allows for evaluation of atomic environments.
-        if self.parallel and not self.per_atom_par:
-            n_cpus = self.n_cpus
-        else:
-            n_cpus = 1
-
-        self.sync_data()
-
-        k_v = []
-        for i in range(self.n_experts):
-            k_v += [
-                get_kernel_vector(
-                    f"{self.name}_{i}",
-                    self.kernel,
-                    self.energy_force_kernel,
-                    x_t,
-                    self.hyps,
-                    cutoffs=self.cutoffs,
-                    hyps_mask=self.hyps_mask,
-                    n_cpus=n_cpus,
-                    n_sample=self.n_sample,
-                )
-            ]
-
-        # Guarantee that alpha is up to date with training set
-        self.check_L_alpha()
-
-        # get predictive mean
-        variance_rbcm = 0
-        mean = 0.0
-        var = 0.0
-        beta = 0.0
-
-        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
-
-        for i in range(self.n_experts):
-
-            mean_i = np.matmul(self.alpha[i], k_v[i])
-
-            # get predictive variance without cholesky (possibly faster)
-            # pass args to kernel based on if mult. hyperparameters in use
-
-            self_kern = self.kernel(x_t, x_t, *args)
-            var_i = np.diagonal(
-                self_kern - np.matmul(np.matmul(k_v[i].T, self.ky_mat_inv[i]), k_v[i])
-            )
-
-            beta_i = 0.5 * (self.log_prior_var - np.log(var_i))
-            mean += beta_i / var_i * mean_i
+            beta_i = 0.5 * (self.log_prior_var - np.log(var_i))  # This expert's weight
+            mean += mean_i * beta_i / var_i
             var += beta_i / var_i
             beta += beta_i
 
