@@ -385,11 +385,15 @@ class TrajectoryTrainer:
         if len(self.gp) == 0:
             logger.warning(
                 "You are attempting active learning with an empty model. "
-                "New atoms will be added from the first frame, "
+                "One atom of each element will be added from the first frame, "
                 "but be warned: Hyperparameter optimzation on a very small "
                 "subset of data can lead to suboptimal training set "
-                "choices, as the hyperparameters are not representative of "
-                "their converged state relative to the data of interest."
+                "choices, as the hyperparameters will take time to become "
+                "representative of their converged state relative to your data of "
+                "interest."
+            )
+            self.run_passive_learning(
+                frames[0:1], max_model_elts={elt: 1 for elt in frames[0].species_labels}
             )
 
         if isinstance(frames, list):

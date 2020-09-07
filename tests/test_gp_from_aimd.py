@@ -454,11 +454,11 @@ def test_active_learning_simple_run():
 
     prev_gp_len = len(the_gp)
     prev_gp_stats = the_gp.training_statistics
-    #tt.run_active_learning(frames[:2],
-    #                       rel_std_tolerance=0,
-    #                       abs_std_tolerance=0,
-    #                       abs_force_tolerance=0
-    #                       )
+    tt.run_active_learning(frames[:2],
+                           rel_std_tolerance=0,
+                           abs_std_tolerance=0,
+                           abs_force_tolerance=0
+                           )
     assert len(the_gp) == prev_gp_len
     # Try on a frame where the Carbon atom is guaranteed to trip the
     # abs. force tolerance contition
@@ -472,3 +472,13 @@ def test_active_learning_simple_run():
     assert len(the_gp) == prev_gp_len +1
     prev_carbon_atoms = prev_gp_stats['envs_by_species']['C']
     assert the_gp.training_statistics['envs_by_species']['C'] == prev_carbon_atoms +1
+
+    prev_gp_len = len(the_gp)
+    tt.run_active_learning(frames[3:4],
+                               rel_std_tolerance=0,
+                               abs_std_tolerance=0,
+                               abs_force_tolerance=.1,
+                                max_model_size= prev_gp_len
+                               )
+    assert len(the_gp) == prev_gp_len
+
