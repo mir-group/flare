@@ -131,7 +131,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         prior_variance: float = 0.5,
         per_expert_parallel: bool = True,
         post_train: bool = False,
-    ):
+    ) -> "RobustBayesianCommitteeMachine":
         """
         Create an RBCM from a previously existing Gaussian Process with training data.
         Useful for faster hyperparameter optimization!
@@ -370,7 +370,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         print_progress: Union[bool, str] = False,
         **kwargs,
     ):
-        """Train Gaussian Process model on training data. Tunes the
+        """Train RBCM model on training data. Tunes the
         hyperparameters to maximize the likelihood, then computes L and alpha
         (related to the covariance matrix of the training set).
         Args:
@@ -653,6 +653,12 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         return np.array(forces), np.array(stds)
 
     def set_L_alpha(self):
+        """
+        Set the lower-triangular (L) version of the covariance matrix and alpha vector (
+        mapping from  similarity vector of a new training point to output label) for
+        each expert.
+        :return:
+        """
 
         self.sync_data()
 
@@ -762,10 +768,14 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         )
 
     def sync_data(self):
+        """
+        Ensure data is correctly indexed in global memory
+        :return:
+        """
         for i in range(self.n_experts):
             self.sync_experts_data(i)
 
-    def unsync_experts_data(self, expert_id):
+    def unsync_experts_data(self, expert_id: int):
         """ Reset global variables. """
         if len(self.training_data) > expert_id:
             _global_training_data.pop(f"{self.name}_{expert_id}", None)
@@ -773,7 +783,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             # _global_training_structures.pop(f"{self.name}_{expert_id}",None)
             _global_energy_labels.pop(f"{self.name}_{expert_id}", None)
 
-    def sync_experts_data(self, expert_id):
+    def sync_experts_data(self, expert_id: int):
         """ Reset global variables. """
         if len(self.training_data) > expert_id:
             _global_training_data[f"{self.name}_{expert_id}"] = self.training_data[
@@ -789,7 +799,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 expert_id
             ]
 
-    def update_L_alpha(self, expert_id):
+    def update_L_alpha(self, expert_id: int):
         """
         Update the GP's L matrix and alpha vector without recalculating
         the entire covariance matrix K.
@@ -847,7 +857,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         joint_labels = []
         for i in range(self.n_experts):
             joint_data += self.training_data[i]
-            # joint_structures += self.training_structures[i]
             joint_labels += self.training_labels[i]
             self.unsync_experts_data(i)
 
