@@ -41,6 +41,7 @@ from flare.output import set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
+from typing import Union
 
 
 class RobustBayesianCommitteeMachine(GaussianProcess):
@@ -129,9 +130,11 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         ndata_per_expert: int = 200,
         prior_variance: float = 0.5,
         per_expert_parallel: bool = True,
+        post_train: bool = False,
     ):
         """
         Create an RBCM from a previously existing Gaussian Process with training data.
+        Useful for faster hyperparameter optimization!
         """
 
         rbcm = RobustBayesianCommitteeMachine(
@@ -139,10 +142,27 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             ndata_per_expert=ndata_per_expert,
             prior_variance=prior_variance,
             per_expert_parallel=per_expert_parallel,
+            kernels=gp.kernels,
+            hyps=gp.hyps,
+            cutoffs=gp.cutoffs,
+            hyps_mask=gp.hyps_mask,
+            hyp_labels=gp.hyp_labels,
+            opt_algorithm=gp.opt_algorithm,
+            maxiter=gp.maxiter,
+            parallel=gp.parallel,
+            per_atom_par=gp.per_atom_par,
+            n_sample=gp.n_sample,
+            output=gp.output,
+            name=gp.name + "_rbcm",
         )
 
-        # TODO loop through GP data and allocate data across experts.
-        raise NotImplementedError
+        for env in gp.training_data:
+            rbcm.add_one_env(env, force=env.force, train=False)
+
+        if post_train:
+            rbcm.train()
+
+        return rbcm
 
     def check_instantiation(self):
         """
@@ -347,7 +367,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         grad_tol: float = 1e-4,
         x_tol: float = 1e-5,
         line_steps: int = 20,
-        print_progress: bool = False,
+        print_progress: Union[bool, str] = False,
         **kwargs,
     ):
         """Train Gaussian Process model on training data. Tunes the
@@ -365,10 +385,10 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 hyperparameter optimization.
         """
 
-        verbose = "info"
+        verbose = "warning"
         if print_progress:
             verbose = "info"
-        if self.verbose.lower() == "debug":
+        if isinstance(print_progress, str) and print_progress.lower() == "debug":
             verbose = "debug"
         if logger_name is None:
             set_logger(
@@ -378,6 +398,20 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 verbose=verbose,
             )
             logger_name = "gp_algebra"
+
+        supported_algorithms = [
+            "differential evolution",
+            "dual annealing",
+            "L-BFGS-B",
+            "basin hopping",
+            "BFGS",
+        ]
+        if self.opt_algorithm not in supported_algorithms:
+            raise ValueError(
+                f"Optimization Algorithm {self.opt_algorithm} not "
+                f"supported. Please "
+                f"choose from {supported_algorithms}"
+            )
 
         disp = False  # print_progress
 
@@ -603,6 +637,20 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         pred_mean = pred_var * mean
 
         return pred_mean, pred_var
+
+    def predict_force_xyz(self, x_t: AtomicEnvironment) -> ("np.ndarray", "np.ndarray"):
+        """
+        Simple wrapper to predict all three components of a force in one go.
+        :param x_t:
+        :return:
+        """
+        forces = []
+        stds = []
+        for d in (1, 2, 3):
+            force, std = self.predict(x_t, d)
+            forces.append(force)
+            stds.append(std)
+        return np.array(forces), np.array(stds)
 
     def set_L_alpha(self):
 
@@ -944,7 +992,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         else:
             raise ValueError(
-                "Output format not supported: try from {}".format(supported_formats)
+                f"Output format {format} not supported: try "
+                f"from {supported_formats}"
             )
 
     def get_full_gp(self) -> GaussianProcess:
@@ -1006,7 +1055,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             )
 
         # TODO, be careful of this one
-        # gp_model.check_instantiation()
         gp_model.sync_data()
 
         return gp_model

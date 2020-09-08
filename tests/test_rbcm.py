@@ -26,18 +26,27 @@ def test_basic():
     assert isinstance(rbcm, RobustBayesianCommitteeMachine)
 
 
-def test_expert_growth():
+def test_expert_growth_and_training():
     """
     Test that as data is added the data is allocated to experts correctly
+    and that various training algorithms can run correctly on it
     :return:
     """
 
-    rbcm = RobustBayesianCommitteeMachine(ndata_per_expert=2)
-    a = methanol_envs
-    for env in methanol_envs[:5]:
+    rbcm = RobustBayesianCommitteeMachine(ndata_per_expert=10)
+    for env in methanol_envs[:20]:
         rbcm.add_one_env(env, env.force)
 
     assert rbcm.n_experts == 2
+
+    for opt_algorithm in [
+        "differential evolution"
+    ]:
+        rbcm.opt_algorithm = opt_algorithm
+        rbcm.hyps = np.array([2, 2, 2, 2, 2])
+        rbcm.maxiter = 2
+        rbcm.train(line_steps=5)
+        assert not np.array_equal([2, 2, 2, 2, 2], rbcm.hyps)
 
 
 def test_prediction():
@@ -106,3 +115,53 @@ def test_prediction():
 
         assert pred_mean == rbcm_pred[0]
         assert pred_var == rbcm_pred[1]
+
+
+def test_to_from_gp():
+    """
+    To/from methods for creating new RBCMs
+    and turning them back into GPs
+    :return:
+    """
+
+    gp = GaussianProcess()
+
+    for frame in methanol_frames:
+        gp.update_db(frame, forces=frame.forces)
+
+    rbcm = RobustBayesianCommitteeMachine.from_gp(gp)
+
+    new_gp = rbcm.get_full_gp()
+
+    test_env = methanol_envs[0]
+
+    for d in range(1, 4):
+        assert np.array_equal(gp.predict(test_env, d), new_gp.predict(test_env, d))
+
+def test_io():
+    """
+    Read / write methods
+    :return:
+    """
+
+    rbcm = RobustBayesianCommitteeMachine(ndata_per_expert=3)
+    rbcm.update_db(methanol_frames[0],forces=methanol_frames[0].forces)
+
+    rbcm.write_model('test_model.pickle')
+
+    new_model = RobustBayesianCommitteeMachine.from_file('test_model.pickle')
+
+    test_env = methanol_envs[0]
+    assert np.array_equal(rbcm.predict_force_xyz(test_env),
+                          new_model.predict_force_xyz(test_env))
+
+
+def test_convenience_methods():
+
+    #TODO beef up these tests
+    rbcm = RobustBayesianCommitteeMachine(ndata_per_expert=3)
+    rbcm.update_db(methanol_frames[0],forces=methanol_frames[0].forces)
+
+    training_stats = rbcm.training_statistics
+    assert isinstance(training_stats,dict)
+    assert isinstance(str(rbcm),str)
