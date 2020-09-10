@@ -4209,7 +4209,6 @@ def many_body_mc_grad_jit(
         list(set(species1).intersection(set(species2))), dtype=np.int8
     )
 
-    print(species1, species2)
 
     for s in useful_species:
         s1 = np.where(species1 == s)[0][0]
