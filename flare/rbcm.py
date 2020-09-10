@@ -55,7 +55,11 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
     opt_algorithm GP kwarg supports "dual annealing" and "differential evolution"
     for the RBCMs.
 
-    See https://arxiv.org/pdf/1806.00720.pdf for a theory background.
+    See:
+    Marc Deisenroth, Jun Wei Ng;
+    Proceedings of the 32nd International Conference on Machine Learning,
+    PMLR 37:1481-1490, 2015, http://proceedings.mlr.press/v37/deisenroth15.html
+    for a theory background.
 
     Args:
         n_experts: number of experts to begin with
@@ -1074,8 +1078,10 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         thestr = "GaussianProcess Object\n"
         thestr += f"Number of cpu cores: {self.n_cpus}\n"
         thestr += f"Kernel: {self.kernels}\n"
-        thestr += f"Training points: {len(self.training_data)}\n"
+        thestr += f"Training points: {sum([len(x) for x in self.training_data])}\n"
         thestr += f"Cutoffs: {self.cutoffs}\n"
+        thestr += f"Number of Experts: {len(self.training_data)}\n"
+
 
         thestr += f"Number of hyperparameters: {len(self.hyps)}\n"
         thestr += f"Hyperparameters_array: {str(self.hyps)}\n"
