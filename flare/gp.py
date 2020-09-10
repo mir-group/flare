@@ -388,6 +388,12 @@ class GaussianProcess:
             self.training_structures.append(structure_list)
             self.energy_labels_np = np.array(self.energy_labels)
 
+        if forces is None and energy is None and stress is None:
+            logger = logging.getLogger(self.logger_name)
+            logger.warn(
+                "Update DB method called with data but no labels!"
+                "The GP has not been updated with data!"
+            )
         # update list of all labels
         self.all_labels = np.concatenate(
             (self.training_labels_np, self.energy_labels_np)
@@ -612,7 +618,8 @@ class GaussianProcess:
             (float, float): Mean and epistemic variance of the prediction.
         """
 
-        assert d in [1, 2, 3], "d should be 1, 2, or 3"
+        if d not in [1, 2, 3]:
+            raise ValueError("d should be 1, 2, or 3")
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
