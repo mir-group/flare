@@ -16,6 +16,7 @@ CompactStructure ::CompactStructure(
 
   // Initialize neighbor count.
   neighbor_count = Eigen::VectorXi::Zero(noa);
+  cumulative_neighbor_count = Eigen::VectorXi::Zero(noa);
 
   compute_neighbors();
 }
@@ -59,5 +60,15 @@ void CompactStructure ::compute_neighbors() {
     }
   }
 
+  // Store cumulative neighbor counts.
+  for (int i = 0; i < noa; i++) {
+    if (i == 0)
+      cumulative_neighbor_count(i) = neighbor_count(i);
+    else
+      cumulative_neighbor_count(i) +=
+          cumulative_neighbor_count(i - 1) + neighbor_count(i);
+  }
+
   // TODO: Store relative positions and structure indices.
+  //   relative_positions = Eigen::MatrixXd::Zero(neighbor_counter, 4);
 }
