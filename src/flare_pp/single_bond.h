@@ -5,8 +5,14 @@
 #include <vector>
 
 class LocalEnvironment;
+class CompactStructure;
 
 // Single bond basis functions.
+void single_bond_sum_struc(
+    Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
+    const CompactStructure &structure, int descriptor_index
+);
+
 void single_bond_update_env(
     Eigen::VectorXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
     Eigen::MatrixXd &stress_dervs,

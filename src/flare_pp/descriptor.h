@@ -5,6 +5,7 @@
 #include <vector>
 
 class LocalEnvironment;
+class CompactStructure;
 
 // Descriptor calculator.
 class DescriptorCalculator {
@@ -35,6 +36,7 @@ public:
                        int descriptor_index);
 
   virtual void compute(const LocalEnvironment &env) = 0;
+  virtual void compute_struc(CompactStructure &structure) = 0;
 
   void destroy_matrices();
 
@@ -60,6 +62,7 @@ public:
                 int descriptor_index);
 
   void compute(const LocalEnvironment &env);
+  void compute_struc(CompactStructure &structure);
 };
 
 class B2_Calculator : public DescriptorCalculator {
@@ -74,6 +77,7 @@ public:
                 int descriptor_index);
 
   void compute(const LocalEnvironment &env);
+  void compute_struc(CompactStructure &structure);
 };
 
 #endif

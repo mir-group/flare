@@ -144,5 +144,12 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(flare_module PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
+# TODO: Link to MKL to accelerate matrix computations.
+# Download here: https://software.intel.com/content/www/us/en/develop/tools/math-kernel-library/choose-download/macos.html
+# Find LAPACK instructions here: https://cmake.org/cmake/help/v3.14/module/FindLAPACK.html
+# # Find LAPACK.
+# set(BLA_VENDOR Intel10_64lp)
+find_package(LAPACK)
+
 # Add test directory.
 add_subdirectory(tests)

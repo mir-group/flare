@@ -68,16 +68,21 @@ void CompactStructure ::compute_neighbors() {
         cumulative_neighbor_count(i - 1) + neighbor_count(i - 1);
   }
 
-  int total_neighbors = cumulative_neighbor_count(noa);
-  relative_positions = Eigen::MatrixXd::Zero(total_neighbors, 4);
-  structure_indices = Eigen::VectorXi::Zero(total_neighbors);
+  // Store relative positions.
+  n_neighbors = cumulative_neighbor_count(noa);
+  relative_positions = Eigen::MatrixXd::Zero(n_neighbors, 4);
+  structure_indices = Eigen::VectorXi::Zero(n_neighbors);
+  neighbor_species = Eigen::VectorXi::Zero(n_neighbors);
+#pragma omp parallel for
   for (int i = 0; i < noa; i++) {
     int n_neighbors = neighbor_count(i);
     int rel_index = cumulative_neighbor_count(i);
     int all_index = i * noa * sweep_no;
     for (int j = 0; j < n_neighbors; j++) {
-      structure_indices(rel_index + j) = all_indices(all_index + j);
-      for (int k = 0; k < 4; k++){
+      int current_index = all_indices(all_index + j);
+      structure_indices(rel_index + j) = current_index;
+      neighbor_species(rel_index + j) = species[current_index];
+      for (int k = 0; k < 4; k++) {
         relative_positions(rel_index + j, k) = all_positions(all_index + j, k);
       }
     }

@@ -1,4 +1,5 @@
 #include "single_bond.h"
+#include "compact_structure.h"
 #include "local_environment.h"
 #include "radial.h"
 #include "y_grad.h"
@@ -116,5 +117,52 @@ void single_bond_sum_env(
                            basis_function, cutoff_function, x, y, z, r, s,
                            env_ind, cent_ind, rcut, N, lmax, radial_hyps,
                            cutoff_hyps);
+  }
+}
+
+void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
+                           Eigen::MatrixXd &force_dervs,
+                           const CompactStructure &structure,
+                           int descriptor_index) {
+  // Initialize single bond arrays.
+  int n_atoms = structure.noa;
+  int n_neighbors = structure.n_neighbors;
+  int nos = structure.descriptor_calculators[descriptor_index]
+                ->descriptor_settings[0];
+  int N = structure.descriptor_calculators[descriptor_index]
+              ->descriptor_settings[1];
+  int lmax = structure.descriptor_calculators[descriptor_index]
+                 ->descriptor_settings[2];
+  int number_of_harmonics = (lmax + 1) * (lmax + 1);
+  int single_bond_size = N * number_of_harmonics * nos;
+  single_bond_vals = Eigen::MatrixXd::Zero(n_atoms, single_bond_size);
+  force_dervs = Eigen::MatrixXd::Zero(n_neighbors, single_bond_size);
+
+#pragma omp parallel for
+  for (int i = 0; i < n_atoms; i++) {
+    int i_neighbors = structure.neighbor_count(i);
+    int rel_index = structure.cumulative_neighbor_count(i);
+
+    // Initialize radial and spherical harmonic vectors.
+    // TODO: Switch to 2-D arrays.
+    std::vector<double> g = std::vector<double>(N, 0);
+    std::vector<double> gx = std::vector<double>(N, 0);
+    std::vector<double> gy = std::vector<double>(N, 0);
+    std::vector<double> gz = std::vector<double>(N, 0);
+
+    std::vector<double> h = std::vector<double>(number_of_harmonics, 0);
+    std::vector<double> hx = std::vector<double>(number_of_harmonics, 0);
+    std::vector<double> hy = std::vector<double>(number_of_harmonics, 0);
+    std::vector<double> hz = std::vector<double>(number_of_harmonics, 0);
+
+    double x, y, z, r;
+
+    for (int j = 0; j < i_neighbors; j++) {
+      
+    //   calculate_radial(g, gx, gy, gz,
+    //     structure.descriptor_calculators[descriptor_index].basis_function, structure.descriptor_calculators[descriptor_index].cutoff_function,
+    //     x, y, z, r, rcut, N, radial_hyps, cutoff_hyps);
+    //   get_Y(h, hx, hy, hz, x, y, z, lmax);
+    }
   }
 }

@@ -123,6 +123,8 @@ B1_Calculator ::B1_Calculator(const std::string &radial_basis,
                            cutoff_hyps, descriptor_settings, descriptor_index) {
 }
 
+void B1_Calculator ::compute_struc(CompactStructure &structure) {}
+
 void B1_Calculator ::compute(const LocalEnvironment &env) {
   // Initialize single bond vectors.
   int nos = descriptor_settings[0];
@@ -156,6 +158,8 @@ B2_Calculator ::B2_Calculator(const std::string &radial_basis,
     : DescriptorCalculator(radial_basis, cutoff_function, radial_hyps,
                            cutoff_hyps, descriptor_settings, descriptor_index) {
 }
+
+void B2_Calculator ::compute_struc(CompactStructure &structure) {}
 
 void B2_Calculator ::compute(const LocalEnvironment &env) {
   // Initialize single bond vectors.

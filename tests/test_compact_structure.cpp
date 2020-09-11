@@ -48,9 +48,17 @@ TEST_F(CompactStructureTest, TestWrapped) {
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
-  std::cout << "cumulative neighbor count" << std::endl;
-  std::cout << test_struc.cumulative_neighbor_count << std::endl;
+  std::cout << test_struc.n_neighbors << std::endl;
 
-  std::cout << "structure indices" << std::endl;
-  std::cout << test_struc.structure_indices << std::endl;
+//   std::cout << "relative positions" << std::endl;
+//   std::cout << test_struc.relative_positions << std::endl;
+
+//   std::cout << "cumulative neighbor count" << std::endl;
+//   std::cout << test_struc.cumulative_neighbor_count << std::endl;
+
+//   std::cout << "structure indices" << std::endl;
+//   std::cout << test_struc.structure_indices << std::endl;
+
+//   std::cout << "neighbor species" << std::endl;
+//   std::cout << test_struc.neighbor_species << std::endl;
 }
