@@ -16,7 +16,7 @@ CompactStructure ::CompactStructure(
 
   // Initialize neighbor count.
   neighbor_count = Eigen::VectorXi::Zero(noa);
-  cumulative_neighbor_count = Eigen::VectorXi::Zero(noa);
+  cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
 
   compute_neighbors();
 }
@@ -28,6 +28,7 @@ void CompactStructure ::compute_neighbors() {
   int sweep_no = sweep_unit * sweep_unit * sweep_unit;
   Eigen::MatrixXd all_positions =
       Eigen::MatrixXd::Zero(noa * noa * sweep_no, 4);
+  Eigen::VectorXi all_indices = Eigen::VectorXi::Zero(noa * noa * sweep_no);
 
 // Compute neighbor lists and relative positions.
 #pragma omp parallel for
@@ -48,10 +49,11 @@ void CompactStructure ::compute_neighbors() {
             if ((dist < cutoff) && (dist != 0)) {
               neighbor_count(i)++;
               int row_index = i_index + counter;
-              all_positions(row_index, 0) = im(0);
-              all_positions(row_index, 1) = im(1);
-              all_positions(row_index, 2) = im(2);
-              all_positions(row_index, 3) = dist;
+              all_positions(row_index, 0) = dist;
+              all_positions(row_index, 1) = im(0);
+              all_positions(row_index, 2) = im(1);
+              all_positions(row_index, 3) = im(2);
+              all_indices(row_index) = j;
               counter++;
             }
           }
@@ -61,14 +63,23 @@ void CompactStructure ::compute_neighbors() {
   }
 
   // Store cumulative neighbor counts.
-  for (int i = 0; i < noa; i++) {
-    if (i == 0)
-      cumulative_neighbor_count(i) = neighbor_count(i);
-    else
-      cumulative_neighbor_count(i) +=
-          cumulative_neighbor_count(i - 1) + neighbor_count(i);
+  for (int i = 1; i < noa + 1; i++) {
+    cumulative_neighbor_count(i) +=
+        cumulative_neighbor_count(i - 1) + neighbor_count(i - 1);
   }
 
-  // TODO: Store relative positions and structure indices.
-  //   relative_positions = Eigen::MatrixXd::Zero(neighbor_counter, 4);
+  int total_neighbors = cumulative_neighbor_count(noa);
+  relative_positions = Eigen::MatrixXd::Zero(total_neighbors, 4);
+  structure_indices = Eigen::VectorXi::Zero(total_neighbors);
+  for (int i = 0; i < noa; i++) {
+    int n_neighbors = neighbor_count(i);
+    int rel_index = cumulative_neighbor_count(i);
+    int all_index = i * noa * sweep_no;
+    for (int j = 0; j < n_neighbors; j++) {
+      structure_indices(rel_index + j) = all_indices(all_index + j);
+      for (int k = 0; k < 4; k++){
+        relative_positions(rel_index + j, k) = all_positions(all_index + j, k);
+      }
+    }
+  }
 }
