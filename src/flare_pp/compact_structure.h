@@ -8,7 +8,7 @@
 
 class CompactStructure : public Structure {
 public:
-  Eigen::VectorXi neighbor_count, structure_indices;
+  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices;
   Eigen::MatrixXd relative_positions;
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
       descriptor_stress_dervs;

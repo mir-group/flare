@@ -375,3 +375,16 @@ TEST_F(SparseTest, AddOrder) {
 //     std::cout << "QR vector solve (Householder): " <<
 //         elapsed_seconds.count() << "s\n";
 // }
+
+// TEST(TimeMat, TimeMat){
+//     // Benchmark various decompositions.
+//     Eigen::MatrixXd matrix1 = Eigen::MatrixXd::Random(20000, 5000);
+//     Eigen::MatrixXd eye = Eigen::MatrixXd::Identity(4000, 4000);
+
+//     auto start = std::chrono::steady_clock::now();
+//     Eigen::HouseholderQR<Eigen::MatrixXd> qr(matrix1);
+//     auto end = std::chrono::steady_clock::now();
+//     std::chrono::duration<double> elapsed_seconds = end-start;
+//     std::cout << "QR decomposition: " <<
+//         elapsed_seconds.count() << "s\n";
+// }
