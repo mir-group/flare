@@ -3,8 +3,6 @@
 
 #include "descriptor.h"
 #include "structure.h"
-#include <Eigen/Dense>
-#include <vector>
 
 class CompactStructure : public Structure {
 public:
