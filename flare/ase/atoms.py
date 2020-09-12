@@ -6,15 +6,16 @@ from copy import deepcopy
 
 import numpy as np
 from ase import Atoms
+from ase.io import read, write
 from flare.utils.learner import get_max_cutoff
 
 
 class FLARE_Atoms(Atoms):
     """
-    The `FLARE_Atoms` class is a child class of ASE `Atoms`, 
+    The `FLARE_Atoms` class is a child class of ASE `Atoms`,
     which has completely the same usage as the primitive ASE `Atoms`, and
     in the meanwhile mimic `Structure` class. It is used in the `OTF` module
-    with ASE engine (by `OTF_ASE` module). It enables attributes to be 
+    with ASE engine (by `OTF_ASE` module). It enables attributes to be
     obtained by both the name from ASE `Atoms` and `Structure`.
 
     The input arguments are the same as ASE `Atoms`.
@@ -112,3 +113,11 @@ class FLARE_Atoms(Atoms):
     @property
     def max_cutoff(self):
         return get_max_cutoff(self.cell)
+
+    def as_dict(self):
+        return self.todict()
+
+    @staticmethod
+    def from_dict(dct):
+        atoms = Atoms.fromdict(dct)
+        return FLARE_Atoms.from_ase_atoms(atoms)

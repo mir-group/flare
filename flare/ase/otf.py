@@ -1,21 +1,26 @@
 """
-:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
+:class:`ASE_OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
 It needs to be used adjointly with ASE MD engine. 
 """
 import os
 import sys
 import inspect
+import pickle
 from time import time
 from copy import deepcopy
+import logging
 
 import numpy as np
-from ase.md.npt import NPT
+from flare.ase.npt import NPT_mod
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
+from flare.ase.nosehoover import NoseHoover
 from ase import units
+from ase.io import read, write
 
+import flare
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
 
@@ -30,22 +35,23 @@ class ASE_OTF(OTF):
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
-        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run, 
+        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run,
             with calculator set as FLARE_Calculator.
         timestep: the timestep in MD. Please use ASE units, e.g. if the
             timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
-        dft_calc (ASE Calculator): any ASE calculator is supported, 
+        dft_calc (ASE Calculator): any ASE calculator is supported,
             e.g. Espresso, VASP etc.
         md_engine (str): the name of MD thermostat, only `VelocityVerlet`,
-            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin` are supported.
+            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin`, `NoseHoover`
+            are supported.
         md_kwargs (dict): Specify the args for MD as a dictionary, the args are
             as required by the ASE MD modules consistent with the `md_engine`.
         trajectory (ASE Trajectory): default `None`, not recommended,
             currently in experiment.
 
     The following arguments are for on-the-fly training, the user can also
-    refer to :class:`OTF`
+    refer to :class:`flare.otf.OTF`
 
     Args:
         prev_pos_init ([type], optional): Previous positions. Defaults
@@ -97,7 +103,9 @@ class ASE_OTF(OTF):
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+        self.timestep = timestep
         self.md_engine = md_engine
+        self.md_kwargs = md_kwargs
 
         if md_engine == "VelocityVerlet":
             MD = VelocityVerlet
@@ -106,9 +114,11 @@ class ASE_OTF(OTF):
         elif md_engine == "NPTBerendsen":
             MD = NPTBerendsen
         elif md_engine == "NPT":
-            MD = NPT
+            MD = NPT_mod
         elif md_engine == "Langevin":
             MD = Langevin
+        elif md_engine == "NoseHoover":
+            MD = NoseHoover
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
@@ -132,6 +142,10 @@ class ASE_OTF(OTF):
             **otf_kwargs
         )
 
+        self.flare_name = self.output_name + "_flare.json"
+        self.dft_name = self.output_name + "_dft.pickle"
+        self.atoms_name = self.output_name + "_atoms.json"
+
     def get_structure_from_input(self, prev_pos_init):
         self.structure = self.atoms
         if prev_pos_init is None:
@@ -144,6 +158,11 @@ class ASE_OTF(OTF):
 
     def initialize_train(self):
         super().initialize_train()
+
+        # TODO: Turn this into a "reset" method.
+        if not isinstance(self.atoms.calc, FLARE_Calculator):
+            self.flare_calc.reset()
+            self.atoms.calc = self.flare_calc
 
         if self.md_engine == "NPT":
             if not self.md.initialized:
@@ -161,11 +180,13 @@ class ASE_OTF(OTF):
             OTF structure object.
         """
 
-        # Reset FLARE calculator if necessary.
+        # Change to FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.atoms.set_calculator(self.flare_calc)
+            self.flare_calc.reset()
+            self.atoms.calc = self.flare_calc
 
-        self.atoms.calc.calculate(self.atoms)
+        if not self.flare_calc.results:
+            self.atoms.calc.calculate(self.atoms)
 
     def md_step(self):
         """
@@ -175,12 +196,16 @@ class ASE_OTF(OTF):
         # Update previous positions.
         self.structure.prev_positions = np.copy(self.structure.positions)
 
+        # Reset FLARE calculator.
+        self.flare_calc.reset()
+        if self.dft_step:
+            self.atoms.calc = self.flare_calc
+
         # Take MD step.
         self.md.step()
 
-        # Update the positions and cell of the structure object.
-        self.structure.cell = np.copy(self.atoms.cell)
-        self.structure.positions = np.copy(self.atoms.positions)
+    def write_gp(self):
+        self.flare_calc.write_model(self.flare_name)
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -204,10 +229,99 @@ class ASE_OTF(OTF):
         # Convert velocities to Angstrom / ps.
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
-    def update_gp(self, train_atoms, dft_frcs, dft_energy=None,
-                  dft_stress=None):
-        super().update_gp(train_atoms, dft_frcs, dft_energy=dft_energy,
-                          dft_stress=dft_stress)
+    def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
+        self.output.add_atom_info(train_atoms, self.structure.stds)
 
+        # Convert ASE stress (xx, yy, zz, yz, xz, xy) to FLARE stress
+        # (xx, xy, xz, yy, yz, zz).
+        flare_stress = None
+        if dft_stress is not None:
+            flare_stress = -np.array(
+                [
+                    dft_stress[0],
+                    dft_stress[5],
+                    dft_stress[4],
+                    dft_stress[1],
+                    dft_stress[3],
+                    dft_stress[2],
+                ]
+            )
+
+        # update gp model
+        self.gp.update_db(
+            self.structure,
+            dft_frcs,
+            custom_range=train_atoms,
+            energy=dft_energy,
+            stress=flare_stress,
+        )
+
+        self.gp.set_L_alpha()
+
+        # train model
+        if (self.dft_count - 1) < self.freeze_hyps:
+            self.train_gp()
+
+        # update mgp model
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
+
+        # write model
+        if (self.dft_count - 1) < self.freeze_hyps:
+            if self.write_model == 2:
+                self.write_gp()
+        if self.write_model == 3:
+            self.write_gp()
+
+    def as_dict(self):
+
+        # DFT module and Trajectory will cause issue in deepcopy
+        self.dft_module = self.dft_module.__name__
+        md = self.md
+        self.md = None
+
+        dct = deepcopy(dict(vars(self)))
+        self.dft_module = eval(self.dft_module)
+        self.md = md
+
+        # write atoms and flare calculator to separate files
+        write(self.atoms_name, self.atoms)
+        dct["atoms"] = self.atoms_name
+
+        self.flare_calc.write_model(self.flare_name)
+        dct["flare_calc"] = self.flare_name
+
+        # dump dft calculator as pickle
+        with open(self.dft_name, "wb") as f:
+            pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
+        dct["dft_loc"] = self.dft_name
+
+        dct["gp"] = self.gp_name
+
+        for key in ["output", "pred_func", "structure", "dft_input", "md"]:
+            dct.pop(key)
+
+        return dct
+
+    @staticmethod
+    def from_dict(dct):
+        flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        dct["atoms"] = read(dct["atoms"])
+        dct["atoms"].calc = flare_calc
+        dct.pop("gp")
+
+        with open(dct["dft_loc"], "rb") as f:
+            dct["dft_calc"] = pickle.load(f)
+
+        for key in ["dt", "dft_loc"]:
+            dct.pop(key)
+
+        new_otf = ASE_OTF(**dct)
+        new_otf.dft_count = dct["dft_count"]
+        new_otf.curr_step = dct["curr_step"]
+
+        if new_otf.md_engine == "NPT":
+            if not new_otf.md.initialized:
+                new_otf.md.initialize()
+
+        return new_otf

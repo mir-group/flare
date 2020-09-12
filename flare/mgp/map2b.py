@@ -14,7 +14,8 @@ from flare.kernels.utils import from_mask_to_args
 
 class Map2body(MapXbody):
     def __init__(
-        self, **kwargs,
+        self,
+        **kwargs,
     ):
         """
         args: the same arguments as MapXbody, to guarantee they have the same
@@ -26,6 +27,7 @@ class Map2body(MapXbody):
         self.bodies = 2
         self.pred_perm = [[0]]
         self.spc_perm = [[0, 1]]
+        self.num_lmp_maps = 0
         super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):
@@ -35,10 +37,12 @@ class Map2body(MapXbody):
 
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
+        self.num_lmp_maps = 0
         for spc1_ind, spc1 in enumerate(species_list):
             for spc2 in species_list[spc1_ind:]:
                 species = [spc1, spc2]
                 self.spc.append(sorted(species))
+                self.num_lmp_maps += 1
 
     def get_arrays(self, atom_env):
         return get_bonds(atom_env.ctype, atom_env.etypes, atom_env.bond_array_2)

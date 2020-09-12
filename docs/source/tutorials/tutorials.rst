@@ -9,4 +9,3 @@ Tutorials
    otf
    ase
    after_training
-   lammps

@@ -2,8 +2,9 @@
 :class:`MappedGaussianProcess` uses splines to build up interpolation\
 function of the low-dimensional decomposition of Gaussian Process, \
 with little loss of accuracy. Refer to \
+`Xie et al. <https://arxiv.org/abs/2008.11796>`_, \
 `Vandermause et al. <https://www.nature.com/articles/s41524-020-0283-z>`_, \
-`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
+`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_.
 """
 import time, os, math, inspect, subprocess, json, warnings, pickle
 import numpy as np
@@ -33,17 +34,17 @@ class MappedGaussianProcess:
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
-        var_map (str): if None: only build mapping for mean (force). If 'pca', then 
+        var_map (str): if None: only build mapping for mean (force). If 'pca', then
             use PCA to map the variance, based on `grid_params['xxbody']['svd_rank']`.
-            If 'simple', then only map the diagonal of covariance, and predict the 
-            upper bound of variance. The 'pca' mode is much heavier in terms of 
+            If 'simple', then only map the diagonal of covariance, and predict the
+            upper bound of variance. The 'pca' mode is much heavier in terms of
             memory, but its prediction is much closer to GP variance.
         container_only (bool): if True: only build splines container
             (with no coefficients); if False: Attempt to build map immediately
         lmp_file_name (str): LAMMPS coefficient file name
         n_cpus (int): Default None. Set to the number of cores needed for
             parallelization. Used in the construction of the map.
-        n_sample (int): Default 100. The batch size for building map. Not used now.
+        n_sample (int): Default 10. The batch size for building map. Not used now.
 
     Examples:
 
@@ -54,9 +55,9 @@ class MappedGaussianProcess:
     For `grid_params`, the following keys and values are allowed
 
     Args:
-        'two_body' (dict, optional): if 2-body is present, set as a dictionary
+        'twobody' (dict, optional): if 2-body is present, set as a dictionary
             of parameters for 2-body mapping. Parameters see below.
-        'three_body' (dict, optional): if 3-body is present, set as a dictionary
+        'threebody' (dict, optional): if 3-body is present, set as a dictionary
             of parameters for 3-body mapping. Parameters see below.
         'load_grid' (str, optional): Default None. the path to the directory
             where the previously generated grids (``grid_*.npy``) are stored.
@@ -97,9 +98,9 @@ class MappedGaussianProcess:
         GP: GaussianProcess = None,
         var_map: str = None,
         container_only: bool = True,
-        lmp_file_name: str = "lmp.mgp",
+        lmp_file_name: str = "lmp",
         n_cpus: int = None,
-        n_sample: int = 100,
+        n_sample: int = 10,
     ):
 
         # load all arguments as attributes
@@ -113,6 +114,7 @@ class MappedGaussianProcess:
 
         self.hyps_mask = None
         self.cutoffs = None
+        self.training_statistics = None
 
         species_labels = []
         coded_species = []
@@ -160,17 +162,18 @@ class MappedGaussianProcess:
                 xb_maps = mapxbody(**args, **self.__dict__)
                 self.maps[key] = xb_maps
 
-    def build_map(self, GP):
+    def build_map(self, GP: GaussianProcess):
         self.hyps_mask = GP.hyps_mask
         self.cutoffs = GP.cutoffs
+        self.training_statistics = GP.training_statistics
 
         for xb in self.maps:
             self.maps[xb].build_map(GP)
 
         # write to lammps pair style coefficient file
-        self.write_lmp_file(self.lmp_file_name + '.mgp', write_var=False)
-        if self.var_map == 'simple':
-            self.write_lmp_file(self.lmp_file_name + '.var', write_var=True)
+        self.write_lmp_file(self.lmp_file_name + ".mgp", write_var=False)
+        if self.var_map == "simple":
+            self.write_lmp_file(self.lmp_file_name + ".var", write_var=True)
 
     def predict(
         self, atom_env: AtomicEnvironment
@@ -219,8 +222,7 @@ class MappedGaussianProcess:
 
         return force, variance, virial, energy
 
-
-    def write_lmp_file(self, lammps_name, write_var=False):
+    def write_lmp_file(self, lammps_name: str, write_var: bool = False):
         """
         write the coefficients to a file that can be used by lammps pair style
         """
@@ -234,7 +236,7 @@ class MappedGaussianProcess:
         xbodies = ["twobody", "threebody"]
         for xb in xbodies:
             if xb in self.maps:
-                num = len(self.maps[xb].maps)
+                num = self.maps[xb].num_lmp_maps  # len(self.maps[xb].maps)
             else:
                 num = 0
             header += f"{num} "
@@ -255,7 +257,7 @@ class MappedGaussianProcess:
         out_dict.pop("maps")
 
         # Uncertainty mappings currently not serializable;
-        if self.var_map == 'pca':
+        if self.var_map == "pca":
             warnings.warn(
                 "Uncertainty mappings cannot be serialized, "
                 "and so the MGP dict outputted will not have "
@@ -273,7 +275,7 @@ class MappedGaussianProcess:
         return out_dict
 
     @staticmethod
-    def from_dict(dictionary: dict):
+    def from_dict(dictionary: dict) -> "MappedGaussianProcess":
         """
         Create MGP object from dictionary representation.
         """
@@ -313,18 +315,22 @@ class MappedGaussianProcess:
 
         return new_mgp
 
-    def write_model(self, name: str, format: str="json"):
+    def write_model(self, name: str, format: str = "json"):
         """
         Write everything necessary to re-load and re-use the model
         :param model_name:
         :return:
         """
-        if "json" in format.lower() or 'json' in name:
+        if "json" in format.lower() or "json" in name:
             with open(f"{name}.json", "w") as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
-        elif "pickle" in format.lower() or "binary" in format.lower()\
-                or 'pickle' in name or 'binary' in name:
+        elif (
+            "pickle" in format.lower()
+            or "binary" in format.lower()
+            or "pickle" in name
+            or "binary" in name
+        ):
             with open(f"{name}.pickle", "wb") as f:
                 pickle.dump(self, f)
 
@@ -332,13 +338,13 @@ class MappedGaussianProcess:
             raise ValueError("Requested format not found.")
 
     @staticmethod
-    def from_file(filename: str, format: str = ''):
-        if ".json" in filename or format.lower() == 'json':
+    def from_file(filename: str, format: str = ""):
+        if ".json" in filename or format.lower() == "json":
             with open(filename, "r") as f:
                 model = MappedGaussianProcess.from_dict(json.loads(f.readline()))
             return model
 
-        elif "pickle" in filename or format.lower() in ['binary', 'pickle']:
+        elif "pickle" in filename or format.lower() in ["binary", "pickle"]:
             with open(filename, "rb") as f:
                 return pickle.load(f)
         else:
