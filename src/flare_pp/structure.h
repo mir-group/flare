@@ -1,6 +1,7 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
+#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <vector>
 

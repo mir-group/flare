@@ -1,7 +1,7 @@
 #ifndef SINGLE_BOND_H
 #define SINGLE_BOND_H
 
-// #define EIGEN_USE_LAPACKE
+#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <vector>
 

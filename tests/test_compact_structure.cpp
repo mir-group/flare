@@ -3,6 +3,7 @@
 #include "local_environment.h"
 #include "structure.h"
 #include "gtest/gtest.h"
+#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <chrono>
 #include <cmath>

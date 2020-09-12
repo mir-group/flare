@@ -1,6 +1,7 @@
 #ifndef KERNELS_H
 #define KERNELS_H
 
+#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <vector>
 

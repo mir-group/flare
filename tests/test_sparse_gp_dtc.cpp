@@ -379,10 +379,11 @@ TEST_F(SparseTest, AddOrder) {
 TEST(TimeMat, TimeMat){
     // Benchmark various decompositions.
     Eigen::MatrixXd matrix1 = Eigen::MatrixXd::Random(20000, 5000);
-    Eigen::MatrixXd eye = Eigen::MatrixXd::Identity(4000, 4000);
+    Eigen::MatrixXd inv;
 
     auto start = std::chrono::steady_clock::now();
     Eigen::HouseholderQR<Eigen::MatrixXd> qr(matrix1);
+    // inv = matrix1.inverse();
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::cout << "QR decomposition: " <<

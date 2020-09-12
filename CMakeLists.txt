@@ -144,10 +144,15 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(flare_module PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
-# Link to LAPACK.
-find_package(LAPACK)
-target_link_libraries(flare PUBLIC LAPACK)
-target_link_libraries(flare_module PUBLIC LAPACK)
+# Link to LAPACK/MKL. If compiling on a MAC, the location needs to be specified manually.
+if(APPLE)
+    target_link_libraries(flare PUBLIC $ENV{LAPACK})
+    target_link_libraries(flare_module PUBLIC $ENV{LAPACK})
+else()
+    find_package(LAPACK)
+    target_link_libraries(flare PUBLIC LAPACK)
+    target_link_libraries(flare_module PUBLIC LAPACK)
+endif()
 
 # Add test directory.
 add_subdirectory(tests)

@@ -1,6 +1,7 @@
 #ifndef SPARSE_GP_H
 #define SPARSE_GP_H
 
+#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <Eigen/IterativeLinearSolvers>
 #include <vector>
