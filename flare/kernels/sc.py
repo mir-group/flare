@@ -22,6 +22,13 @@ The kernel functions to choose:
     * two_plus_three_en,
     * two_plus_three_force_en
 
+* Two plus many body:
+
+    * two_plus_many_body,
+    * two_plus_many_body_grad,
+    * two_plus_many_body_en,
+    * two_plus_many_body_force_en
+
 * Two plus three plus many body:
 
     * two_plus_three_plus_many_body,
@@ -281,6 +288,216 @@ def two_plus_three_en(env1, env2, hyps, cutoffs, cutoff_func=cf.quadratic_cutoff
     )
 
     return two_term + three_term
+
+
+
+
+# -----------------------------------------------------------------------------
+#                     two plus many body kernels
+# -----------------------------------------------------------------------------
+
+
+def two_plus_many_body(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    d1: int,
+    d2: int,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+many-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2b, ls2b,
+            sigmb, lsmb, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    two_term = two_body_jit(
+        env1.bond_array_2,
+        env2.bond_array_2,
+        d1,
+        d2,
+        hyps[0],
+        hyps[1],
+        cutoffs[0],
+        cutoff_func,
+    )
+
+    many_term = many_body_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.q_neigh_array,
+        env2.q_neigh_array,
+        env1.q_neigh_grads,
+        env2.q_neigh_grads,
+        d1,
+        d2,
+        hyps[2],
+        hyps[3],
+    )
+
+    return two_term + many_term
+
+
+def two_plus_many_body_grad(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    d1: int,
+    d2: int,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+many-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2b, ls2b,
+            sigmb, lsmb, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    kern2, ls2, sig2 = two_body_grad_jit(
+        env1.bond_array_2,
+        env2.bond_array_2,
+        d1,
+        d2,
+        hyps[0],
+        hyps[1],
+        cutoffs[0],
+        cutoff_func,
+    )
+
+    kern_many, sigm, lsm = many_body_grad_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.q_neigh_array,
+        env2.q_neigh_array,
+        env1.q_neigh_grads,
+        env2.q_neigh_grads,
+        d1,
+        d2,
+        hyps[2],
+        hyps[3],
+    )
+
+    return kern2 + kern_many, np.array([sig2, ls2, sigm, lsm])
+
+
+def two_plus_many_body_force_en(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    d1: int,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+3+many-body single-element kernel between two force and energy components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2, ls2,
+            sig3, ls3, sigm, lsm, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    two_term = (
+        two_body_force_en_jit(
+            env1.bond_array_2,
+            env2.bond_array_2,
+            d1,
+            hyps[0],
+            hyps[1],
+            cutoffs[0],
+            cutoff_func,
+        )
+        / 2
+    )
+
+    many_term = many_body_force_en_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.q_neigh_array,
+        env1.q_neigh_grads,
+        d1,
+        hyps[2],
+        hyps[3],
+    )
+
+    return two_term + many_term
+
+
+def two_plus_many_body_en(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+3+many-body single-element energy kernel.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2, ls2,
+            sig3, ls3, sigm, lsm, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    two_term = two_body_en_jit(
+        env1.bond_array_2, env2.bond_array_2, hyps[0], hyps[1], cutoffs[0], cutoff_func
+    )
+
+    three_term = three_body_en_jit(
+        env1.bond_array_3,
+        env2.bond_array_3,
+        env1.cross_bond_inds,
+        env2.cross_bond_inds,
+        env1.cross_bond_dists,
+        env2.cross_bond_dists,
+        env1.triplet_counts,
+        env2.triplet_counts,
+        hyps[2],
+        hyps[3],
+        cutoffs[1],
+        cutoff_func,
+    )
+
+    many_term = many_body_en_jit(env1.q_array, env2.q_array, hyps[4], hyps[5])
+
+    return two_term + three_term + many_term
+
 
 
 # -----------------------------------------------------------------------------
@@ -2116,6 +2333,13 @@ _str_to_kernel = {
     "many_efs_energy": "not implemented",
     "many_efs_force": "not implemented",
     "many_efs_self": "not implemented",
+    "two_plus_many_body": two_plus_many_body,
+    "two_plus_many_body_grad": two_plus_many_body_grad,
+    "two_plus_many_body_en": two_plus_many_body_en,
+    "two_plus_many_body_force_en": two_plus_many_body_force_en,
+    "two_plus_many_body_efs_self": "not implemented",
+    "two_plus_many_body_efs_force": "not implemented",
+    "two_plus_many_body_efs_energy": "not implemented",
     "two_plus_three_plus_many_body": two_plus_three_plus_many_body,
     "two_plus_three_plus_many_body_grad": two_plus_three_plus_many_body_grad,
     "two_plus_three_plus_many_body_en": two_plus_three_plus_many_body_en,
@@ -2127,6 +2351,13 @@ _str_to_kernel = {
     "2+3+many_efs_energy": "not implemented",
     "2+3+many_efs_force": "not implemented",
     "2+3+many_efs_self": "not implemented",
+    "2+many": two_plus_many_body,
+    "2+many_grad": two_plus_many_body_grad,
+    "2+many_en": two_plus_many_body_en,
+    "2+many_force_en": two_plus_many_body_force_en,
+    "2+many_efs_self": "not implemented",
+    "2+many_efs_force": "not implemented",
+    "2+many_efs_energy": "not implemented",
 }
 
 
