@@ -290,8 +290,6 @@ def two_plus_three_en(env1, env2, hyps, cutoffs, cutoff_func=cf.quadratic_cutoff
     return two_term + three_term
 
 
-
-
 # -----------------------------------------------------------------------------
 #                     two plus many body kernels
 # -----------------------------------------------------------------------------
@@ -497,7 +495,6 @@ def two_plus_many_body_en(
     many_term = many_body_en_jit(env1.q_array, env2.q_array, hyps[4], hyps[5])
 
     return two_term + three_term + many_term
-
 
 
 # -----------------------------------------------------------------------------

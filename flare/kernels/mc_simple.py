@@ -622,9 +622,6 @@ def two_plus_three_efs_self(
     return two_e + three_e, two_f + three_f, two_s + three_s
 
 
-
-
-
 # -----------------------------------------------------------------------------
 #                     two plus many body kernels
 # -----------------------------------------------------------------------------
@@ -894,6 +891,7 @@ def two_plus_many_body_mc_en(
     )
 
     return two_term + many_term
+
 
 # -----------------------------------------------------------------------------
 #                     two plus three plus many body kernels
@@ -4307,7 +4305,7 @@ def many_body_mc_jit(
     d1,
     d2,
     sig,
-    ls
+    ls,
 ):
     """many-body multi-element kernel between two force components accelerated
     with Numba.
@@ -4478,7 +4476,6 @@ def many_body_mc_grad_jit(
     useful_species = np.array(
         list(set(species1).intersection(set(species2))), dtype=np.int8
     )
-
 
     for s in useful_species:
         s1 = np.where(species1 == s)[0][0]
