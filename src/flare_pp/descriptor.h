@@ -10,15 +10,13 @@ class CompactStructure;
 
 // Descriptor calculator.
 class DescriptorCalculator {
-protected:
+public:
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>
       radial_pointer;
   std::function<void(std::vector<double> &, double, double,
                      std::vector<double>)>
       cutoff_pointer;
-
-public:
   Eigen::VectorXd single_bond_vals, descriptor_vals;
   Eigen::MatrixXd single_bond_force_dervs, single_bond_stress_dervs,
       descriptor_force_dervs, descriptor_stress_dervs;

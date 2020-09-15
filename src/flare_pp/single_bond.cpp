@@ -134,9 +134,25 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
   int lmax = structure.descriptor_calculators[descriptor_index]
                  ->descriptor_settings[2];
   int number_of_harmonics = (lmax + 1) * (lmax + 1);
-  int single_bond_size = N * number_of_harmonics * nos;
+  int no_bond_vals = N * number_of_harmonics;
+  int single_bond_size = no_bond_vals * nos;
   single_bond_vals = Eigen::MatrixXd::Zero(n_atoms, single_bond_size);
-  force_dervs = Eigen::MatrixXd::Zero(n_neighbors, single_bond_size);
+  force_dervs = Eigen::MatrixXd::Zero(n_neighbors * 3, single_bond_size);
+
+  std::vector<double> radial_hyps =
+      structure.descriptor_calculators[descriptor_index]->radial_hyps;
+  std::vector<double> cutoff_hyps =
+      structure.descriptor_calculators[descriptor_index]->cutoff_hyps;
+  // TODO: Make rcut an attribute of the descriptor calculator.
+  double rcut = radial_hyps[1];
+  std::function<void(std::vector<double> &, std::vector<double> &, double, int,
+                     std::vector<double>)>
+      radial_function =
+          structure.descriptor_calculators[descriptor_index]->radial_pointer;
+  std::function<void(std::vector<double> &, double, double,
+                     std::vector<double>)>
+      cutoff_function =
+          structure.descriptor_calculators[descriptor_index]->cutoff_pointer;
 
 #pragma omp parallel for
   for (int i = 0; i < n_atoms; i++) {
@@ -144,7 +160,6 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
     int rel_index = structure.cumulative_neighbor_count(i);
 
     // Initialize radial and spherical harmonic vectors.
-    // TODO: Switch to 2-D arrays.
     std::vector<double> g = std::vector<double>(N, 0);
     std::vector<double> gx = std::vector<double>(N, 0);
     std::vector<double> gy = std::vector<double>(N, 0);
@@ -155,14 +170,54 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
     std::vector<double> hy = std::vector<double>(number_of_harmonics, 0);
     std::vector<double> hz = std::vector<double>(number_of_harmonics, 0);
 
-    double x, y, z, r;
-
+    double x, y, z, r, bond, bond_x, bond_y, bond_z, g_val, gx_val, gy_val,
+        gz_val, h_val;
+    int s, neigh_index, descriptor_counter;
     for (int j = 0; j < i_neighbors; j++) {
-      
-    //   calculate_radial(g, gx, gy, gz,
-    //     structure.descriptor_calculators[descriptor_index].basis_function, structure.descriptor_calculators[descriptor_index].cutoff_function,
-    //     x, y, z, r, rcut, N, radial_hyps, cutoff_hyps);
-    //   get_Y(h, hx, hy, hz, x, y, z, lmax);
+      neigh_index = rel_index + j;
+      r = structure.relative_positions(neigh_index, 0);
+      if (r > rcut)
+        continue; // Skip if outside cutoff.
+      x = structure.relative_positions(neigh_index, 1);
+      y = structure.relative_positions(neigh_index, 2);
+      z = structure.relative_positions(neigh_index, 3);
+      s = structure.neighbor_species(neigh_index);
+
+      // Compute radial basis values and spherical harmonics.
+      calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
+                       r, rcut, N, radial_hyps, cutoff_hyps);
+      get_Y(h, hx, hy, hz, x, y, z, lmax);
+
+      // Store the products and their derivatives.
+      descriptor_counter = s * no_bond_vals;
+
+      for (int radial_counter = 0; radial_counter < N; radial_counter++) {
+        // Retrieve radial values.
+        g_val = g[radial_counter];
+        gx_val = gx[radial_counter];
+        gy_val = gy[radial_counter];
+        gz_val = gz[radial_counter];
+
+        for (int angular_counter = 0; angular_counter < number_of_harmonics;
+             angular_counter++) {
+
+          h_val = h[angular_counter];
+          bond = g_val * h_val;
+
+          // Calculate derivatives with the product rule.
+          bond_x = gx_val * h_val + g_val * hx[angular_counter];
+          bond_y = gy_val * h_val + g_val * hy[angular_counter];
+          bond_z = gz_val * h_val + g_val * hz[angular_counter];
+
+          // Update single bond arrays.
+          single_bond_vals(i, descriptor_counter) += bond;
+          force_dervs(neigh_index * 3, descriptor_counter) += bond_x;
+          force_dervs(neigh_index * 3 + 1, descriptor_counter) += bond_y;
+          force_dervs(neigh_index * 3 + 2, descriptor_counter) += bond_z;
+
+          descriptor_counter++;
+        }
+      }
     }
   }
 }
