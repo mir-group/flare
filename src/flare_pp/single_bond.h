@@ -11,7 +11,9 @@ class CompactStructure;
 // Single bond basis functions.
 void single_bond_sum_struc(
     Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
-    Eigen::MatrixXd &stress_dervs,
+    Eigen::MatrixXd &stress_dervs, Eigen::VectorXi &neighbor_count,
+    Eigen::VectorXi &cumulative_neighbor_count,
+    Eigen::VectorXi &descriptor_indices,
     const CompactStructure &structure, int descriptor_index
 );
 

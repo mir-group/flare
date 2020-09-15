@@ -49,7 +49,6 @@ protected:
   // Initialize matrices.
   int no_descriptors = nos * N * number_of_harmonics;
   Eigen::VectorXd single_bond_vals, single_bond_vals_2;
-
   Eigen::MatrixXd force_dervs, force_dervs_2, stress_dervs, stress_dervs_2;
 
   BondEnv() {
