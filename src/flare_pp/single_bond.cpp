@@ -122,23 +122,15 @@ void single_bond_sum_env(
 
 void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
                            Eigen::MatrixXd &force_dervs,
+                           Eigen::MatrixXd &stress_dervs,
+                           Eigen::VectorXi &neighbor_count,
+                           Eigen::VectorXi &cumulative_neighbor_count,
+                           Eigen::VectorXi &descriptor_indices,
                            const CompactStructure &structure,
                            int descriptor_index) {
-  // Initialize single bond arrays.
-  int n_atoms = structure.noa;
-  int n_neighbors = structure.n_neighbors;
-  int nos = structure.descriptor_calculators[descriptor_index]
-                ->descriptor_settings[0];
-  int N = structure.descriptor_calculators[descriptor_index]
-              ->descriptor_settings[1];
-  int lmax = structure.descriptor_calculators[descriptor_index]
-                 ->descriptor_settings[2];
-  int number_of_harmonics = (lmax + 1) * (lmax + 1);
-  int no_bond_vals = N * number_of_harmonics;
-  int single_bond_size = no_bond_vals * nos;
-  single_bond_vals = Eigen::MatrixXd::Zero(n_atoms, single_bond_size);
-  force_dervs = Eigen::MatrixXd::Zero(n_neighbors * 3, single_bond_size);
 
+  // Retrieve radial and cutoff information.
+  int n_atoms = structure.noa;
   std::vector<double> radial_hyps =
       structure.descriptor_calculators[descriptor_index]->radial_hyps;
   std::vector<double> cutoff_hyps =
@@ -154,10 +146,51 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
       cutoff_function =
           structure.descriptor_calculators[descriptor_index]->cutoff_pointer;
 
+  // Count atoms inside the descriptor cutoff.
+  // Record neighbor count, cumulative neighbor count, and structure indices.
+  neighbor_count = Eigen::VectorXi::Zero(n_atoms);
+  cumulative_neighbor_count = Eigen::VectorXi::Zero(n_atoms + 1);
 #pragma omp parallel for
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
+    for (int j = 0; j < i_neighbors; j++) {
+      int neigh_index = rel_index + j;
+      double r = structure.relative_positions(neigh_index, 0);
+      if (r <= rcut) {
+        neighbor_count(i)++;
+      }
+    }
+  }
+
+  for (int i = 1; i < n_atoms + 1; i++) {
+    cumulative_neighbor_count(i) +=
+        cumulative_neighbor_count(i - 1) + neighbor_count(i - 1);
+  }
+
+  int bond_neighbors = cumulative_neighbor_count(n_atoms);
+  descriptor_indices = Eigen::VectorXi::Zero(bond_neighbors);
+
+  // Initialize single bond arrays.
+  int nos = structure.descriptor_calculators[descriptor_index]
+                ->descriptor_settings[0];
+  int N = structure.descriptor_calculators[descriptor_index]
+              ->descriptor_settings[1];
+  int lmax = structure.descriptor_calculators[descriptor_index]
+                 ->descriptor_settings[2];
+  int number_of_harmonics = (lmax + 1) * (lmax + 1);
+  int no_bond_vals = N * number_of_harmonics;
+  int single_bond_size = no_bond_vals * nos;
+
+  single_bond_vals = Eigen::MatrixXd::Zero(n_atoms, single_bond_size);
+  force_dervs = Eigen::MatrixXd::Zero(bond_neighbors * 3, single_bond_size);
+  stress_dervs = Eigen::MatrixXd::Zero(n_atoms * 6, single_bond_size);
+
+#pragma omp parallel for
+  for (int i = 0; i < n_atoms; i++) {
+    int i_neighbors = structure.neighbor_count(i);
+    int rel_index = structure.cumulative_neighbor_count(i);
+    int bond_index = cumulative_neighbor_count(i);
 
     // Initialize radial and spherical harmonic vectors.
     std::vector<double> g = std::vector<double>(N, 0);
@@ -172,7 +205,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
 
     double x, y, z, r, bond, bond_x, bond_y, bond_z, g_val, gx_val, gy_val,
         gz_val, h_val;
-    int s, neigh_index, descriptor_counter;
+    int s, neigh_index, descriptor_counter, ind;
     for (int j = 0; j < i_neighbors; j++) {
       neigh_index = rel_index + j;
       r = structure.relative_positions(neigh_index, 0);
@@ -182,6 +215,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
       y = structure.relative_positions(neigh_index, 2);
       z = structure.relative_positions(neigh_index, 3);
       s = structure.neighbor_species(neigh_index);
+      ind = structure.structure_indices(neigh_index);
 
       // Compute radial basis values and spherical harmonics.
       calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
@@ -201,6 +235,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
         for (int angular_counter = 0; angular_counter < number_of_harmonics;
              angular_counter++) {
 
+          // Compute single bond value.
           h_val = h[angular_counter];
           bond = g_val * h_val;
 
@@ -211,13 +246,23 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
 
           // Update single bond arrays.
           single_bond_vals(i, descriptor_counter) += bond;
-          force_dervs(neigh_index * 3, descriptor_counter) += bond_x;
-          force_dervs(neigh_index * 3 + 1, descriptor_counter) += bond_y;
-          force_dervs(neigh_index * 3 + 2, descriptor_counter) += bond_z;
 
+          force_dervs(bond_index * 3, descriptor_counter) += bond_x;
+          force_dervs(bond_index * 3 + 1, descriptor_counter) += bond_y;
+          force_dervs(bond_index * 3 + 2, descriptor_counter) += bond_z;
+
+          stress_dervs(i * 6, descriptor_counter) += bond_x * x;
+          stress_dervs(i * 6 + 1, descriptor_counter) += bond_x * y;
+          stress_dervs(i * 6 + 2, descriptor_counter) += bond_x * z;
+          stress_dervs(i * 6 + 3, descriptor_counter) += bond_y * y;
+          stress_dervs(i * 6 + 4, descriptor_counter) += bond_y * z;
+          stress_dervs(i * 6 + 5, descriptor_counter) += bond_z * z;
+
+          descriptor_indices(bond_index) = ind;
           descriptor_counter++;
         }
       }
+      bond_index++;
     }
   }
 }
