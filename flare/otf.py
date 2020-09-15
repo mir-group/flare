@@ -286,7 +286,8 @@ class OTF:
 
             counter += 1
             # TODO: Reinstate velocity rescaling.
-            self.md_step()
+            self.md_step() # update positions by Verlet
+            self.rescale_temperature(self.structure.positions)
             self.curr_step += 1
 
             if self.write_model == 3:
@@ -451,8 +452,8 @@ class OTF:
         f.info(f"mean absolute error: {mae:.4f} eV/A")
         f.info(f"mean absolute dft component: {mac:.4f} eV/A")
 
-    def update_positions(self, new_pos: "ndarray"):
-        """Performs a Verlet update of the atomic positions.
+    def rescale_temperature(self, new_pos: "ndarray"):
+        """Change the previous positions to update the temperature
 
         Args:
             new_pos (np.ndarray): Positions of atoms in the next MD frame.
@@ -464,10 +465,6 @@ class OTF:
             self.structure.prev_positions = (
                 new_pos - self.velocities * self.dt * vel_fac
             )
-        else:
-            self.structure.prev_positions = self.structure.positions
-        self.structure.positions = new_pos
-        self.structure.positions[:] = self.structure.wrap_positions()
 
     def update_temperature(self):
         """Updates the instantaneous temperatures of the system.

@@ -207,9 +207,12 @@ class ASE_OTF(OTF):
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
 
-    def update_positions(self, new_pos):
+    def write_gp(self):
+        self.flare_calc.write_model(self.flare_name)
+
+    def rescale_temperature(self, new_pos):
         # call OTF method
-        super().update_positions(new_pos)
+        super().rescale_temperature(new_pos)
 
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
