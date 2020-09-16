@@ -10,6 +10,6 @@ module load intel-mkl/2019.5.281-fasrc01
 
 And set the following environment variables (to link Eigen to MKL):
 export MKL_ROOT=/n/sw/intel-cluster-studio-2019/mkl/lib/intel64_lin
-export MKL_INT=$MKL_ROOT/libmkl_intel_lp64.a
-export MKL_THREAD=$MKL_ROOT/libmkl_gnu_thread.a
-export MKL_CORE=$MKL_ROOT/libmkl_core.a
+export MKL_INT=$MKL_ROOT/libmkl_intel_lp64.so
+export MKL_THREAD=$MKL_ROOT/libmkl_gnu_thread.so
+export MKL_CORE=$MKL_ROOT/libmkl_core.so
