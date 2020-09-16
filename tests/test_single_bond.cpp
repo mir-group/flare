@@ -320,3 +320,46 @@ TEST_F(BondEnv, StrucTest) {
     }
   }
 }
+
+TEST_F(BondEnv, BigStruc) {
+    int n_atoms = 400;
+    cell << 10, 0, 0, 0, 10, 0, 0, 0, 10;
+    Eigen::MatrixXd positions = Eigen::MatrixXd::Random(n_atoms, 3) * 10;
+    std::vector<int> species(n_atoms, 0);
+    double compact_cut = 3;
+
+    // Prepare descriptor calculator.
+    std::string radial_string = "chebyshev";
+    std::string cutoff_string = "cosine";
+    int N = 10;
+    int lmax = 10;
+    std::vector<int> descriptor_settings{1, N, lmax};
+    std::vector<double> radial_hyps = {0, compact_cut};
+    int descriptor_index = 0;
+    B2_Calculator descriptor;
+    std::vector<DescriptorCalculator *> descriptors;
+    descriptor =
+        B2_Calculator(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+                      descriptor_settings, descriptor_index);
+    descriptors.push_back(&descriptor);
+
+    compact_struc =
+        CompactStructure(cell, species, positions, compact_cut, descriptors);
+
+    Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
+        stress_dervs_struc;
+    Eigen::VectorXi neighbor_count, cumulative_neighbor_count,
+        descriptor_indices;
+
+    auto start = std::chrono::steady_clock::now();
+    single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
+                          stress_dervs_struc, neighbor_count,
+                          cumulative_neighbor_count, descriptor_indices,
+                          compact_struc, descriptor_index);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::cout << elapsed_seconds.count() << "s\n";
+
+    // std::cout << force_dervs_struc.rows() << std::endl;
+    // std::cout << neighbor_count << std::endl;
+}
