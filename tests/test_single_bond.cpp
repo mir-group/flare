@@ -1,3 +1,4 @@
+#include "compact_structure.h"
 #include "cutoffs.h"
 #include "descriptor.h"
 #include "local_environment.h"
@@ -9,6 +10,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>
+#include <chrono>
 
 class BondEnv : public ::testing::Test {
 protected:
@@ -41,15 +43,25 @@ protected:
   double first_gauss = 0;
   double final_gauss = 3;
   int N = 10;
-  std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
+  std::vector<double> radial_hyps = {first_gauss, final_gauss};
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>
-      basis_function = equispaced_gaussians;
+      basis_function = chebyshev;
 
   // Initialize matrices.
   int no_descriptors = nos * N * number_of_harmonics;
   Eigen::VectorXd single_bond_vals, single_bond_vals_2;
   Eigen::MatrixXd force_dervs, force_dervs_2, stress_dervs, stress_dervs_2;
+
+  // Prepare descriptor calculator.
+  std::string radial_string = "chebyshev";
+  std::string cutoff_string = "cosine";
+  std::vector<int> descriptor_settings{nos, N, lmax};
+  int descriptor_index = 0;
+  B2_Calculator descriptor;
+  std::vector<DescriptorCalculator *> descriptors;
+
+  CompactStructure compact_struc;
 
   BondEnv() {
     // Create arbitrary structure.
@@ -66,6 +78,17 @@ protected:
     single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
     force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
     stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
+
+    // Create descriptor calculator.
+    descriptor =
+        B2_Calculator(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+                      descriptor_settings, descriptor_index);
+    descriptors.push_back(&descriptor);
+
+    // Create compact structure.
+    double compact_cut = 5.0;
+    compact_struc =
+        CompactStructure(cell, species, positions_1, compact_cut, descriptors);
   }
 };
 
@@ -153,7 +176,7 @@ TEST_F(BondEnv, CentTest) {
                         radial_hyps, cutoff_hyps);
 
     double finite_diff, exact, diff;
-    double tolerance = 1e-6;
+    double tolerance = 5e-6;
 
     // Check derivatives.
     for (int n = 0; n < single_bond_vals.rows(); n++) {
@@ -249,6 +272,51 @@ TEST_F(BondEnv, StressTest) {
       }
 
       stress_ind++;
+    }
+  }
+}
+
+TEST_F(BondEnv, StrucTest) {
+
+  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc, stress_dervs_struc;
+  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
+
+  auto start = std::chrono::steady_clock::now();
+  single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
+                        stress_dervs_struc, neighbor_count,
+                        cumulative_neighbor_count, descriptor_indices,
+                        compact_struc, descriptor_index);
+  auto end = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  std::cout << elapsed_seconds.count() << "s\n";
+
+  single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
+                      basis_function, cutoff_function, env1, 0, N, lmax,
+                      radial_hyps, cutoff_hyps);
+
+  // Check that the single bond values match.
+  double tolerance = 1e-16;
+  for (int i = 0; i < single_bond_vals.size(); i++) {
+    EXPECT_EQ(single_bond_vals_struc(0, i), single_bond_vals(i));
+  }
+
+  // Check that the force values match.
+  for (int i = 0; i < neighbor_count(0); i++) {
+    int atom_index = descriptor_indices(i);
+    if (atom_index != 0) {
+      for (int j = 0; j < 3; j++) {
+        for (int k = 0; k < single_bond_vals.size(); k++) {
+          EXPECT_EQ(force_dervs_struc(i * 3 + j, k),
+                    force_dervs(atom_index * 3 + j, k));
+        }
+      }
+    }
+  }
+
+  // Check that the stress values match.
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < single_bond_vals.size(); j++) {
+      EXPECT_EQ(stress_dervs_struc(i, j), stress_dervs(i, j));
     }
   }
 }

@@ -123,7 +123,7 @@ void single_bond_sum_env(
 void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
                            Eigen::MatrixXd &force_dervs,
                            Eigen::MatrixXd &stress_dervs,
-                           Eigen::VectorXi &neighbor_count,
+                           Eigen::VectorXi &unique_neighbor_count,
                            Eigen::VectorXi &cumulative_neighbor_count,
                            Eigen::VectorXi &descriptor_indices,
                            const CompactStructure &structure,
@@ -131,6 +131,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
 
   // Retrieve radial and cutoff information.
   int n_atoms = structure.noa;
+  int n_neighbors = structure.n_neighbors;
   std::vector<double> radial_hyps =
       structure.descriptor_calculators[descriptor_index]->radial_hyps;
   std::vector<double> cutoff_hyps =
@@ -147,29 +148,64 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
           structure.descriptor_calculators[descriptor_index]->cutoff_pointer;
 
   // Count atoms inside the descriptor cutoff.
-  // Record neighbor count, cumulative neighbor count, and structure indices.
-  neighbor_count = Eigen::VectorXi::Zero(n_atoms);
-  cumulative_neighbor_count = Eigen::VectorXi::Zero(n_atoms + 1);
+  unique_neighbor_count = Eigen::VectorXi::Zero(n_atoms);
+  Eigen::VectorXi neighbor_count = Eigen::VectorXi::Zero(n_atoms);
+  Eigen::VectorXi store_unique_neighbors = Eigen::VectorXi::Zero(n_neighbors);
+  Eigen::VectorXi store_unique_indices = Eigen::VectorXi::Zero(n_neighbors);
 #pragma omp parallel for
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
+      int current_count = unique_neighbor_count(i);
       int neigh_index = rel_index + j;
       double r = structure.relative_positions(neigh_index, 0);
+      // Check that atom is within descriptor cutoff.
       if (r <= rcut) {
+        // Check if the atom has already been counted.
+        int struc_index = structure.structure_indices(neigh_index);
+        int counted = 0;
+        int unique_index;
+        for (int k = 0; k < current_count; k++) {
+          if (store_unique_neighbors(rel_index + k) == struc_index) {
+            counted = 1;
+            unique_index = k;
+          }
+        }
+
+        // If not, update unique neighbor list.
+        if (counted == 0) {
+          unique_index = current_count;
+          store_unique_neighbors(rel_index + current_count) = struc_index;
+          unique_neighbor_count(i)++;
+        }
+
+        // Store unique neighbor list index.
+        store_unique_indices(rel_index + neighbor_count(i)) = unique_index;
         neighbor_count(i)++;
       }
     }
   }
 
+  // Count cumulative number of unique neighbors.
+  cumulative_neighbor_count = Eigen::VectorXi::Zero(n_atoms + 1);
   for (int i = 1; i < n_atoms + 1; i++) {
     cumulative_neighbor_count(i) +=
-        cumulative_neighbor_count(i - 1) + neighbor_count(i - 1);
+        cumulative_neighbor_count(i - 1) + unique_neighbor_count(i - 1);
   }
 
+  // Record descriptor indices.
   int bond_neighbors = cumulative_neighbor_count(n_atoms);
   descriptor_indices = Eigen::VectorXi::Zero(bond_neighbors);
+#pragma omp parallel for
+  for (int i = 0; i < n_atoms; i++) {
+    int i_neighbors = unique_neighbor_count(i);
+    int ind1 = cumulative_neighbor_count(i);
+    int ind2 = structure.cumulative_neighbor_count(i);
+    for (int j = 0; j < i_neighbors; j++) {
+      descriptor_indices(ind1 + j) = store_unique_neighbors(ind2 + j);
+    }
+  }
 
   // Initialize single bond arrays.
   int nos = structure.descriptor_calculators[descriptor_index]
@@ -190,7 +226,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
-    int bond_index = cumulative_neighbor_count(i);
+    int bond_index = rel_index;
 
     // Initialize radial and spherical harmonic vectors.
     std::vector<double> g = std::vector<double>(N, 0);
@@ -205,7 +241,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
 
     double x, y, z, r, bond, bond_x, bond_y, bond_z, g_val, gx_val, gy_val,
         gz_val, h_val;
-    int s, neigh_index, descriptor_counter, ind;
+    int s, neigh_index, descriptor_counter, unique_ind;
     for (int j = 0; j < i_neighbors; j++) {
       neigh_index = rel_index + j;
       r = structure.relative_positions(neigh_index, 0);
@@ -215,7 +251,8 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
       y = structure.relative_positions(neigh_index, 2);
       z = structure.relative_positions(neigh_index, 3);
       s = structure.neighbor_species(neigh_index);
-      ind = structure.structure_indices(neigh_index);
+      unique_ind =
+          cumulative_neighbor_count(i) + store_unique_indices(bond_index);
 
       // Compute radial basis values and spherical harmonics.
       calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
@@ -247,9 +284,9 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
           // Update single bond arrays.
           single_bond_vals(i, descriptor_counter) += bond;
 
-          force_dervs(bond_index * 3, descriptor_counter) += bond_x;
-          force_dervs(bond_index * 3 + 1, descriptor_counter) += bond_y;
-          force_dervs(bond_index * 3 + 2, descriptor_counter) += bond_z;
+          force_dervs(unique_ind * 3, descriptor_counter) += bond_x;
+          force_dervs(unique_ind * 3 + 1, descriptor_counter) += bond_y;
+          force_dervs(unique_ind * 3 + 2, descriptor_counter) += bond_z;
 
           stress_dervs(i * 6, descriptor_counter) += bond_x * x;
           stress_dervs(i * 6 + 1, descriptor_counter) += bond_x * y;
@@ -258,7 +295,6 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
           stress_dervs(i * 6 + 4, descriptor_counter) += bond_y * z;
           stress_dervs(i * 6 + 5, descriptor_counter) += bond_z * z;
 
-          descriptor_indices(bond_index) = ind;
           descriptor_counter++;
         }
       }
