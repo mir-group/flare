@@ -7,6 +7,7 @@ from os import remove
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.utils import NumpyEncoder
+from flare.kernels.cutoffs import quadratic_cutoff, sqrt_cutoff
 
 np.random.seed(0)
 
@@ -228,3 +229,24 @@ def test_auto_sweep():
     arbitrary_environment.compute_env()
     n_neighbors_3 = len(arbitrary_environment.etypes)
     assert n_neighbors_1 == n_neighbors_3
+
+
+def test_alt_mb_cutoffs(structure):
+    """Test that alternate many-body cutoffs can be passed in via
+    cutoffs masks."""
+
+    # Construct an environment.
+    cutoffs = {
+        "twobody": 1,
+        "threebody": 1,
+        "manybody": 1,
+        "manybody_type": sqrt_cutoff,
+    }
+
+    arbenv1 = AtomicEnvironment(structure, 0, cutoffs)
+
+    cutoffs["manybody_type"] = quadratic_cutoff
+
+    arbenv2 = AtomicEnvironment(structure, 0, cutoffs=cutoffs)
+
+    assert not np.array_equal(arbenv1.q_array, arbenv2.q_array)

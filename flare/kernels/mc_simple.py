@@ -692,6 +692,7 @@ def two_plus_many_body_mc(
         d2,
         sigm,
         lsm,
+        cutoff_func=cf.quadratic_cutoff,
     )
 
     return two_term + many_term
@@ -905,7 +906,8 @@ def two_plus_three_plus_many_body_mc(
     d2: int,
     hyps,
     cutoffs,
-    cutoff_func=cf.quadratic_cutoff,
+    cutoff_func: callable = cf.quadratic_cutoff,
+    mb_cutoff_func: callable = None,
 ):
     """2+3-body single-element kernel between two force components.
 
@@ -923,6 +925,8 @@ def two_plus_three_plus_many_body_mc(
     Return:
         float: Value of the 2+3+many-body kernel.
     """
+    if mb_cutoff_func is None:
+        mb_cutoff_func = cutoff_func
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -987,6 +991,7 @@ def two_plus_three_plus_many_body_mc(
         d2,
         sigm,
         lsm,
+        mb_cutoff_func,
     )
 
     return two_term + three_term + many_term
@@ -999,7 +1004,8 @@ def two_plus_three_plus_many_body_mc_grad(
     d2: int,
     hyps,
     cutoffs,
-    cutoff_func=cf.quadratic_cutoff,
+    cutoff_func: callable = cf.quadratic_cutoff,
+    mb_cutoff_func: callable = None,
 ):
     """2+3+many-body single-element kernel between two force components.
 
@@ -1017,6 +1023,8 @@ def two_plus_three_plus_many_body_mc_grad(
     Return:
         float: Value of the 2+3+many-body kernel.
     """
+    if mb_cutoff_func is None:
+        mb_cutoff_func = cutoff_func
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -1092,7 +1100,8 @@ def two_plus_three_plus_many_body_mc_force_en(
     d1: int,
     hyps,
     cutoffs,
-    cutoff_func=cf.quadratic_cutoff,
+    cutoff_func: callable = cf.quadratic_cutoff,
+    mb_cutoff_func: callable = None,
 ):
     """2+3+many-body single-element kernel between two force and energy
         components.
@@ -1110,6 +1119,9 @@ def two_plus_three_plus_many_body_mc_force_en(
     Return:
         float: Value of the 2+3+many-body kernel.
     """
+
+    if mb_cutoff_func is None:
+        mb_cutoff_func = cutoff_func
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -1185,7 +1197,8 @@ def two_plus_three_plus_many_body_mc_en(
     env2: AtomicEnvironment,
     hyps,
     cutoffs,
-    cutoff_func=cf.quadratic_cutoff,
+    cutoff_func: callable = cf.quadratic_cutoff,
+    mb_cutoff_func: callable = None,
 ):
     """2+3+many-body single-element energy kernel.
 
@@ -1201,6 +1214,9 @@ def two_plus_three_plus_many_body_mc_en(
     Return:
         float: Value of the 2+3+many-body kernel.
     """
+
+    if mb_cutoff_func is None:
+        mb_cutoff_func = cutoff_func
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -1260,6 +1276,7 @@ def two_plus_three_plus_many_body_mc_en(
         env2.unique_species,
         sigm,
         lsm,
+        mb_cutoff_func,
     )
 
     return two_term + three_term + many_term
@@ -4306,6 +4323,7 @@ def many_body_mc_jit(
     d2,
     sig,
     ls,
+    cutoff_func,
 ):
     """many-body multi-element kernel between two force components accelerated
     with Numba.
@@ -4369,7 +4387,7 @@ def many_body_mc_jit(
         # neighbour atoms in the two configurations
         # Loop over neighbours i of 1st configuration
         for i in range(q_neigh_array_1.shape[0]):
-            qis = q1i_grads = qi1_grads = ki2s = 0
+            q1i_grads = qi1_grads = ki2s = 0
 
             if etypes1[i] == s:
                 # derivative of pairwise component of many body descriptor q1i
@@ -4387,7 +4405,7 @@ def many_body_mc_jit(
 
             # Loop over neighbours j of 2
             for j in range(q_neigh_array_2.shape[0]):
-                qjs = qj2_grads = q2j_grads = k1js = 0
+                qj2_grads = q2j_grads = k1js = 0
 
                 if etypes2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2 - 1]
@@ -4493,7 +4511,7 @@ def many_body_mc_grad_jit(
 
         # Compute  ki2s, qi1_grads, and qis
         for i in range(q_neigh_array_1.shape[0]):
-            qis = q1i_grads = qi1_grads = ki2s = dki2s = 0
+            q1i_grads = qi1_grads = ki2s = dki2s = 0
             if etypes1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1 - 1]
 

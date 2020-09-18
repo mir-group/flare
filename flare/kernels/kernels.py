@@ -1322,7 +1322,7 @@ def k_sq_exp_dev(q1, q2, sig, ls):
 @njit
 def coordination_number(rij, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on number of
-        atoms in the environment
+        atoms in the environment based on a given cutoff function.
 
     Args:
         rij (float): distance between atoms i and j
@@ -1342,7 +1342,8 @@ def coordination_number(rij, cij, r_cut, cutoff_func):
 
 @njit
 def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
-    """Compute value of many-body descriptor based on distances of atoms
+    """
+    Compute value of many-body descriptor based on distances of atoms
     in the local many-body environment.
 
     Args:
@@ -1396,8 +1397,8 @@ def q_value_mc(
 def q_value_mc(
     distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number
 ):
-    """Compute value of many-body many components descriptor based
-    on distances of atoms in the local many-body environment.
+    """Compute value of many-body multiple-component descriptor based
+    on distances of atoms in the local two-body environment.
 
     Args:
         distances (np.ndarray): distances between atoms i and j

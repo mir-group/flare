@@ -92,7 +92,9 @@ class AtomicEnvironment:
         self.cell = np.array(structure.cell)
         self.species = structure.coded_species
 
-        # backward compatability
+        # backward compatability; make cutoff dictionary from numpy array.
+        # Note that this assumes 2+3+mb if mb is used. This will not support
+        # 2+mb.
         if not isinstance(cutoffs, dict):
             newcutoffs = {"twobody": cutoffs[0]}
             if len(cutoffs) > 1:
@@ -107,7 +109,8 @@ class AtomicEnvironment:
             cutoffs_mask["cutoffs"] = deepcopy(cutoffs)
 
         # Set the sweep array based on the max cutoff.
-        sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
+        cutoff_values = [val for val in cutoffs.values() if not callable(val)]
+        sweep_val = ceil(np.max(cutoff_values) / structure.max_cutoff)
         self.sweep_val = sweep_val
         self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
 
@@ -130,6 +133,9 @@ class AtomicEnvironment:
         self.twobody_cutoff_list = None
         self.threebody_cutoff_list = None
         self.manybody_cutoff_list = None
+
+        self.cutoffs_mask = deepcopy(cutoffs_mask)
+        self.cutoffs = self.cutoffs_mask["cutoffs"]
 
         self.setup_mask(cutoffs_mask)
 
@@ -157,16 +163,19 @@ class AtomicEnvironment:
 
         self.compute_env()
 
-    def setup_mask(self, cutoffs_mask):
+    def setup_mask(self, cutoffs_mask: dict) -> None:
+        """
+        Use cutoffs_mask to parameterize various attributes
+        :param cutoffs_mask:
+        :return:
+        """
 
-        self.cutoffs_mask = deepcopy(cutoffs_mask)
-        self.cutoffs = cutoffs_mask["cutoffs"]
-
+        # Assign cutoffs based on kernels detected in cutoffs
         for kernel in AtomicEnvironment.all_kernel_types:
-            ndim = AtomicEnvironment.ndim[kernel]
             if kernel in self.cutoffs:
                 setattr(self, kernel + "_cutoff", self.cutoffs[kernel])
 
+        # 2B cutoff draws from 3b, mb if not supplied
         if self.twobody_cutoff == 0:
             self.twobody_cutoff = np.max([self.threebody_cutoff, self.manybody_cutoff])
 
@@ -176,8 +185,8 @@ class AtomicEnvironment:
         if "specie_mask" in cutoffs_mask:
             self.specie_mask = np.array(cutoffs_mask["specie_mask"], dtype=np.int)
 
+        # Loop through known kernel types and assign cutoffs
         for kernel in AtomicEnvironment.all_kernel_types:
-            ndim = AtomicEnvironment.ndim[kernel]
             if kernel in self.cutoffs:
                 setattr(self, kernel + "_cutoff", self.cutoffs[kernel])
                 setattr(self, "n" + kernel, 1)
@@ -198,7 +207,11 @@ class AtomicEnvironment:
                             cutoffs_mask["threebody_cutoff_list"], dtype=np.float
                         )
 
-    def compute_env(self):
+    def compute_env(self) -> None:
+        """
+        Store two-body, three-body, many terms as class attributes for later access
+        :return:
+        """
 
         # get 2-body arrays
         if self.ntwobody >= 1:
@@ -243,8 +256,11 @@ class AtomicEnvironment:
             self.cross_bond_dists = cross_bond_dists
             self.triplet_counts = triplet_counts
 
-        # if 3 cutoffs are given, create many-body arrays
+        # if many-body cutoff is given, create many-body arrays
         if self.nmanybody > 0:
+
+            mb_cutoff_func = self.cutoffs.get("manybody_type", cf.quadratic_cutoff)
+
             (
                 self.q_array,
                 self.q_neigh_array,
@@ -263,7 +279,7 @@ class AtomicEnvironment:
                 self.nspecie,
                 self.specie_mask,
                 self.manybody_mask,
-                cf.quadratic_cutoff,
+                mb_cutoff_func,
             )
 
     def as_str(self) -> str:
@@ -275,7 +291,7 @@ class AtomicEnvironment:
         """
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
-    def as_dict(self, include_structure: bool = False):
+    def as_dict(self, include_structure: bool = False) -> dict:
         """
         Returns Atomic Environment object as a dictionary for serialization
         purposes. Optional to not include the structure to avoid redundant
@@ -303,7 +319,7 @@ class AtomicEnvironment:
         return dictionary
 
     @staticmethod
-    def from_dict(dictionary):
+    def from_dict(dictionary) -> "flare.env.AtomicEnvironment":
         """
         Loads in atomic environment object from a dictionary which was
         serialized by the to_dict method.
@@ -367,7 +383,7 @@ class AtomicEnvironment:
             else:
                 return envs
 
-    def __str__(self):
+    def __str__(self) -> str:
         atom_type = self.ctype
         neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
