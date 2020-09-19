@@ -312,9 +312,11 @@ void SparseGP_DTC ::update_matrices_QR() {
   b.segment(0, Kuf.cols()) = noise_vector_sqrt.asDiagonal() * y;
 
   // QR decompose A inplace.
-  Eigen::HouseholderQR<Eigen::Ref<Eigen::MatrixXd>> qr(A);
+  // TODO: Check if inplace QR decomposition is handled by MKL.
+  Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
   Eigen::MatrixXd Q_trans = qr.householderQ().transpose();
-  Eigen::MatrixXd R_inv = A.block(0, 0, Kuu.cols(), Kuu.cols())
+  Eigen::MatrixXd R_inv = qr.matrixQR()
+                              .block(0, 0, Kuu.cols(), Kuu.cols())
                               .triangularView<Eigen::Upper>()
                               .solve(Kuu_eye);
   alpha = R_inv * Q_trans * b;
