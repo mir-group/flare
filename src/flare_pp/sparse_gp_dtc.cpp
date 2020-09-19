@@ -292,15 +292,18 @@ void SparseGP_DTC ::update_matrices_QR() {
   y.segment(n_struc_labels, n_env_labels) = y_env;
 
   // Cholesky decompose Kuu.
+  std::cout << "Cholesky decomposing Kuu..." << std::endl;
   Eigen::LLT<Eigen::MatrixXd> chol(
       Kuu + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()));
 
   // Get the inverse from Cholesky decomposition.
   // TODO: Check if this is actually faster than explicit inversion.
+  std::cout << "Inverting Kuu..." << std::endl;
   Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
   Kuu_inverse = chol.solve(Kuu_eye);
 
   // Form A matrix.
+  std::cout << "Forming A matrix..." << std::endl;
   Eigen::MatrixXd A =
       Eigen::MatrixXd::Zero(Kuf.cols() + Kuu.cols(), Kuu.cols());
   A.block(0, 0, Kuf.cols(), Kuu.cols()) =
@@ -313,12 +316,17 @@ void SparseGP_DTC ::update_matrices_QR() {
 
   // QR decompose A inplace.
   // TODO: Check if inplace QR decomposition is handled by MKL.
+  std::cout << "QR decomposing A..." << std::endl;
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
   Eigen::MatrixXd Q_trans = qr.householderQ().transpose();
+
+  std::cout << "Inverting R..." << std::endl;
   Eigen::MatrixXd R_inv = qr.matrixQR()
                               .block(0, 0, Kuu.cols(), Kuu.cols())
                               .triangularView<Eigen::Upper>()
                               .solve(Kuu_eye);
+
+  std::cout << "Computing alpha and Sigma..." << std::endl;
   alpha = R_inv * Q_trans * b;
   Sigma = R_inv * R_inv.transpose();
 }
