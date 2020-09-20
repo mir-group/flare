@@ -40,15 +40,15 @@ FetchContent_MakeAvailable(googletest)
 # Kokkos
 ################################################################################
 
-FetchContent_Declare(kokkos
-    GIT_REPOSITORY https://github.com/kokkos/kokkos
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/kokkos
-    UPDATE_COMMAND ""
-)
-FetchContent_GetProperties(kokkos)
-FetchContent_Populate(kokkos)
-add_subdirectory(${kokkos_SOURCE_DIR} ${kokkos_BINARY_DIR})
-include_directories(${Kokkos_SOURCE_DIR})
+#FetchContent_Declare(kokkos
+#    GIT_REPOSITORY https://github.com/kokkos/kokkos
+#    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/kokkos
+#    UPDATE_COMMAND ""
+#)
+#FetchContent_GetProperties(kokkos)
+#FetchContent_Populate(kokkos)
+#add_subdirectory(${kokkos_SOURCE_DIR} ${kokkos_BINARY_DIR})
+#include_directories(${Kokkos_SOURCE_DIR})
 
 
 # Eigen3
@@ -123,34 +123,28 @@ set(PYBIND_SOURCES
 # Include sources.
 include_directories(src/flare_pp)
 
-# Create shared library for unit tests.
+# Create flare library.
 add_library(flare SHARED ${FLARE_SOURCES})
-target_link_libraries(flare PUBLIC kokkos)
 add_dependencies(flare eigen_project)
-
-# Create pybind module.
-add_library(flare_module SHARED ${FLARE_SOURCES} ${PYBIND_SOURCES})
-target_link_libraries(flare_module PUBLIC pybind11 kokkos)
-set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                              SUFFIX "${PYTHON_MODULE_EXTENSION}")
-
-add_dependencies(flare_module eigen_project pybind11_project)
-set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Find OpenMP.
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
-    target_link_libraries(flare_module PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 # Link to MKL.
 include_directories($ENV{MKL_INCLUDE})
 target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
-target_compile_definitions(flare_module PUBLIC EIGEN_USE_MKL_ALL=1)
-
 target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
-target_link_libraries(flare_module PUBLIC $ENV{MKL_LIBS})
+
+# Create pybind module.
+add_library(flare_module SHARED ${PYBIND_SOURCES})
+target_link_libraries(flare_module PUBLIC flare pybind11)
+set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                              SUFFIX "${PYTHON_MODULE_EXTENSION}")
+add_dependencies(flare_module pybind11_project)
+set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
 add_subdirectory(tests)
