@@ -41,6 +41,7 @@ public:
   // Update matrices with QR decomposition. Expected to be more stable than
   // explicit inversion.
   void update_matrices_QR();
+  void QR_test(const Eigen::MatrixXd &test_mat);
 
   // Compute the DTC mean and variance.
   void predict_on_structure(StructureDescriptor &test_structure);

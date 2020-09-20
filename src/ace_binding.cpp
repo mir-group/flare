@@ -166,6 +166,7 @@ PYBIND11_MODULE(_C_flare, m) {
 
   // Sparse GP DTC
   py::class_<SparseGP_DTC>(m, "SparseGP_DTC")
+      .def(py::init<>())
       .def(py::init<std::vector<Kernel *>, double, double, double>())
       .def("set_hyperparameters", &SparseGP_DTC::set_hyperparameters)
       .def("predict", &SparseGP_DTC::predict)
@@ -174,6 +175,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("add_training_structure", &SparseGP_DTC::add_training_structure)
       .def("update_matrices", &SparseGP_DTC::update_matrices)
       .def("update_matrices_QR", &SparseGP_DTC::update_matrices_QR)
+      .def("QR_test", &SparseGP_DTC::QR_test)
       .def("compute_likelihood", &SparseGP_DTC::compute_likelihood)
       .def("compute_likelihood_gradient",
            &SparseGP_DTC::compute_likelihood_gradient)
