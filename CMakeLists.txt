@@ -145,8 +145,12 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 # Link to MKL.
-target_link_libraries(flare PUBLIC $ENV{MKL_INT} $ENV{MKL_THREAD} $ENV{MKL_CORE})
-target_link_libraries(flare_module PUBLIC $ENV{MKL_INT} $ENV{MKL_THREAD} $ENV{MKL_CORE})
+include_directories($ENV{MKL_INCLUDE})
+target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
+target_compile_definitions(flare_module PUBLIC EIGEN_USE_MKL_ALL=1)
+
+target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
+target_link_libraries(flare_module PUBLIC $ENV{MKL_LIBS})
 
 # Add test directory.
 add_subdirectory(tests)

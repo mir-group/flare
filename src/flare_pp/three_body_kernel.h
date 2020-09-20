@@ -2,7 +2,6 @@
 #define THREE_BODY_KERNEL_H
 
 #include "kernels.h"
-#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <vector>
 

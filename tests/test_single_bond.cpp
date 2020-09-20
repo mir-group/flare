@@ -6,7 +6,6 @@
 #include "single_bond.h"
 #include "structure.h"
 #include "gtest/gtest.h"
-#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>

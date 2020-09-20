@@ -7,7 +7,6 @@
 #include "three_body_kernel.h"
 #include "two_body_kernel.h"
 #include "gtest/gtest.h"
-#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>
