@@ -1,6 +1,4 @@
 #include "sparse_gp_dtc.h"
-#include <iostream>
-#include <chrono>
 
 SparseGP_DTC ::SparseGP_DTC() {}
 
@@ -266,30 +264,6 @@ void SparseGP_DTC ::add_training_structure(
       Eigen::VectorXd::Constant(n_stress_labels, 1 / (sigma_s * sigma_s));
 }
 
-void SparseGP_DTC ::QR_test(const Eigen::MatrixXd &test_mat) {
-    auto time1 = std::chrono::steady_clock::now();
-    Eigen::HouseholderQR<Eigen::MatrixXd> qr(test_mat);
-    auto time2 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> qr_time = time2 - time1;
-    std::cout << "QR time:" << std::endl;
-    std::cout << qr_time.count() << std::endl;
-
-    auto time3 = std::chrono::steady_clock::now();
-    Eigen::MatrixXd Q_trans = qr.householderQ().transpose();
-    auto time4 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> q_time = time4 - time3;
-    std::cout << "Q time:" << std::endl;
-    std::cout << q_time.count() << std::endl;
-
-    Eigen::VectorXd vec1 = Eigen::VectorXd::Random(test_mat.rows());
-    auto time5 = std::chrono::steady_clock::now();
-    Eigen::VectorXd vec2 = qr.householderQ().transpose() * vec1;
-    auto time6 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> vec_time = time6 - time5;
-    std::cout << "Vec time:" << std::endl;
-    std::cout << vec_time.count() << std::endl;
-}
-
 void SparseGP_DTC ::update_matrices_QR() {
   // Combine Kuf_struc and Kuf_env.
   int n_sparse = Kuf_struc.rows();
@@ -317,18 +291,15 @@ void SparseGP_DTC ::update_matrices_QR() {
   y.segment(n_struc_labels, n_env_labels) = y_env;
 
   // Cholesky decompose Kuu.
-  std::cout << "Cholesky decomposing Kuu..." << std::endl;
   Eigen::LLT<Eigen::MatrixXd> chol(
       Kuu + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()));
 
   // Get the inverse from Cholesky decomposition.
   // TODO: Check if this is actually faster than explicit inversion.
-  std::cout << "Inverting Kuu..." << std::endl;
   Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
   Kuu_inverse = chol.solve(Kuu_eye);
 
   // Form A matrix.
-  std::cout << "Forming A matrix..." << std::endl;
   Eigen::MatrixXd A =
       Eigen::MatrixXd::Zero(Kuf.cols() + Kuu.cols(), Kuu.cols());
   A.block(0, 0, Kuf.cols(), Kuu.cols()) =
@@ -340,20 +311,12 @@ void SparseGP_DTC ::update_matrices_QR() {
   b.segment(0, Kuf.cols()) = noise_vector_sqrt.asDiagonal() * y;
 
   // QR decompose A.
-  std::cout << "QR decomposing A..." << std::endl;
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
-
-  // This is extremely slow! Faster to directly multiply into b.
-//   Eigen::MatrixXd Q_trans = qr.householderQ().transpose();
   Eigen::VectorXd Q_b = qr.householderQ().transpose() * b;
-
-  std::cout << "Inverting R..." << std::endl;
   Eigen::MatrixXd R_inv = qr.matrixQR()
                               .block(0, 0, Kuu.cols(), Kuu.cols())
                               .triangularView<Eigen::Upper>()
                               .solve(Kuu_eye);
-
-  std::cout << "Computing alpha and Sigma..." << std::endl;
   alpha = R_inv * Q_b;
   Sigma = R_inv * R_inv.transpose();
 }
