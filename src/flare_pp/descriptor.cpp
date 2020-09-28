@@ -53,6 +53,48 @@ void DescriptorCalculator::destroy_matrices() {
   descriptor_stress_dervs.resize(0, 0);
 }
 
+void B2_descriptor_struc(Eigen::VectorXd &B2_vals,
+                         Eigen::MatrixXd &B2_force_dervs,
+                         Eigen::MatrixXd &B2_stress_dervs,
+                         const Eigen::VectorXd &single_bond_vals,
+                         const Eigen::MatrixXd &single_bond_force_dervs,
+                         const Eigen::MatrixXd &single_bond_stress_dervs,
+                         const Eigen::VectorXi &unique_neighbor_count,
+                         const Eigen::VectorXi &cumulative_neighbor_count,
+                         const Eigen::VectorXi &descriptor_indices,
+                         const CompactStructure &structure,
+                         int nos, int N, int lmax){
+
+  int n_atoms = single_bond_vals.rows();
+  int n_neighbors = cumulative_neighbor_count(n_atoms);
+  int n_radial = nos * N;
+  int n_harmonics = (lmax + 1) * (lmax + 1);
+  int n_bond = n_radial * n_harmonics;
+  int n_descriptors = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
+
+  // Initialize matrices.
+  B2_vals = Eigen::VectorXd::Zero(n_descriptors);
+  B2_force_dervs = Eigen::MatrixXd::Zero(n_neighbors * 3, n_descriptors);
+  B2_stress_dervs = Eigen::MatrixXd::Zero(n_atoms * 6, n_descriptors);
+
+  for (int atom = 0; atom < n_atoms; atom++){
+    int n1, n2, l, m, n1_l, n2_l;
+    int counter = 0;
+    for (int n1 = 0; n1 < n_radial; n1++){
+      for (int n2 = n1; n2 < n_radial; n2++){
+        for (int l = 0; l < (lmax + 1); l++) {
+          for (int m = 0; m < (2 * l + 1); m++) {
+            n1_l = n1 * n_harmonics + (l * l + m);
+            n2_l = n2 * n_harmonics + (l * l + m);
+            B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
+          }
+          counter ++;
+        }
+      }
+    }
+  }
+}
+
 void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
                    Eigen::MatrixXd &B2_stress_dervs,
                    const Eigen::VectorXd &single_bond_vals,
@@ -71,9 +113,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
   int n2_count;
 
   for (int n1 = no_radial - 1; n1 >= 0; n1--) {
-
     for (int n2 = n1; n2 < no_radial; n2++) {
-
       for (int l = 0; l < (lmax + 1); l++) {
         for (int m = 0; m < (2 * l + 1); m++) {
           n1_l = n1 * no_harmonics + (l * l + m);
@@ -159,7 +199,21 @@ B2_Calculator ::B2_Calculator(const std::string &radial_basis,
                            cutoff_hyps, descriptor_settings, descriptor_index) {
 }
 
-void B2_Calculator ::compute_struc(CompactStructure &structure) {}
+void B2_Calculator ::compute_struc(CompactStructure &structure) {
+    // Assign descriptors and descriptor gradients to structure.
+    // Organize by species.
+
+    // Compute single bond values.
+    Eigen::MatrixXd single_bond_vals, force_dervs, stress_dervs;
+    Eigen::VectorXi unique_neighbor_count, cumulative_neighbor_count,
+        descriptor_indices;
+
+    single_bond_sum_struc(single_bond_vals, force_dervs, stress_dervs,
+        unique_neighbor_count, cumulative_neighbor_count, descriptor_indices,
+        structure, descriptor_index);
+    
+    // Compute descriptor values.
+}
 
 void B2_Calculator ::compute(const LocalEnvironment &env) {
   // Initialize single bond vectors.
