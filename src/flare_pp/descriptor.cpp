@@ -53,16 +53,15 @@ void DescriptorCalculator::destroy_matrices() {
   descriptor_stress_dervs.resize(0, 0);
 }
 
-void B2_descriptor_struc(Eigen::VectorXd &B2_vals,
+void B2_descriptor_struc(Eigen::MatrixXd &B2_vals,
                          Eigen::MatrixXd &B2_force_dervs,
                          Eigen::MatrixXd &B2_stress_dervs,
-                         const Eigen::VectorXd &single_bond_vals,
+                         const Eigen::MatrixXd &single_bond_vals,
                          const Eigen::MatrixXd &single_bond_force_dervs,
                          const Eigen::MatrixXd &single_bond_stress_dervs,
                          const Eigen::VectorXi &unique_neighbor_count,
                          const Eigen::VectorXi &cumulative_neighbor_count,
                          const Eigen::VectorXi &descriptor_indices,
-                         const CompactStructure &structure,
                          int nos, int N, int lmax){
 
   int n_atoms = single_bond_vals.rows();
@@ -73,11 +72,14 @@ void B2_descriptor_struc(Eigen::VectorXd &B2_vals,
   int n_descriptors = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
 
   // Initialize matrices.
-  B2_vals = Eigen::VectorXd::Zero(n_descriptors);
+  B2_vals = Eigen::MatrixXd::Zero(n_atoms, n_descriptors);
   B2_force_dervs = Eigen::MatrixXd::Zero(n_neighbors * 3, n_descriptors);
   B2_stress_dervs = Eigen::MatrixXd::Zero(n_atoms * 6, n_descriptors);
 
+#pragma omp parallel for
   for (int atom = 0; atom < n_atoms; atom++){
+    int n_atom_neighbors = unique_neighbor_count(atom);
+    int start_index = cumulative_neighbor_count(atom) * 3;
     int n1, n2, l, m, n1_l, n2_l;
     int counter = 0;
     for (int n1 = 0; n1 < n_radial; n1++){
@@ -86,7 +88,31 @@ void B2_descriptor_struc(Eigen::VectorXd &B2_vals,
           for (int m = 0; m < (2 * l + 1); m++) {
             n1_l = n1 * n_harmonics + (l * l + m);
             n2_l = n2 * n_harmonics + (l * l + m);
-            B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
+            B2_vals(atom, counter) +=
+                single_bond_vals(atom, n1_l) * single_bond_vals(atom, n2_l);
+
+            // Store force derivatives.
+            for (int n = 0; n < n_atom_neighbors; n++) {
+              for (int comp = 0; comp < 3; comp++) {
+                int ind = start_index + n * 3 + comp;
+                B2_force_dervs(ind, counter) +=
+                    single_bond_vals(atom, n1_l) *
+                      single_bond_force_dervs(ind, n2_l) +
+                    single_bond_force_dervs(ind, n1_l) *
+                      single_bond_vals(atom, n2_l);
+              }
+            }
+
+          // Store stress derivatives.
+          for (int p = 0; p < 6; p++) {
+            int ind = atom * 6 + p;
+            B2_stress_dervs(ind, counter) +=
+                single_bond_vals(atom, n1_l) *
+                  single_bond_stress_dervs(ind, n2_l) +
+                single_bond_stress_dervs(ind, n1_l) *
+                  single_bond_vals(atom, n2_l);
+          }
+
           }
           counter ++;
         }
@@ -201,7 +227,6 @@ B2_Calculator ::B2_Calculator(const std::string &radial_basis,
 
 void B2_Calculator ::compute_struc(CompactStructure &structure) {
     // Assign descriptors and descriptor gradients to structure.
-    // Organize by species.
 
     // Compute single bond values.
     Eigen::MatrixXd single_bond_vals, force_dervs, stress_dervs;
@@ -210,9 +235,20 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
 
     single_bond_sum_struc(single_bond_vals, force_dervs, stress_dervs,
         unique_neighbor_count, cumulative_neighbor_count, descriptor_indices,
-        structure, descriptor_index);
-    
+        structure);
+
     // Compute descriptor values.
+    Eigen::MatrixXd B2_vals, B2_force_dervs, B2_stress_dervs;
+    int nos = descriptor_settings[0];
+    int N = descriptor_settings[1];
+    int lmax = descriptor_settings[2];
+
+    B2_descriptor_struc(B2_vals, B2_force_dervs, B2_stress_dervs,
+                        single_bond_vals, force_dervs, stress_dervs,
+                        unique_neighbor_count, cumulative_neighbor_count,
+                        descriptor_indices, nos, N, lmax);
+
+    // TODO: Organize by species and assign to structure.
 }
 
 void B2_Calculator ::compute(const LocalEnvironment &env) {

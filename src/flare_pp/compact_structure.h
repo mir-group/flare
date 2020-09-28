@@ -9,11 +9,13 @@ public:
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
     neighbor_species;
   Eigen::MatrixXd relative_positions;
+
+  // Store descriptors and gradients by species.
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
     descriptor_stress_dervs;
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
-    descriptor_indices;
-  std::vector<DescriptorCalculator *> descriptor_calculators;
+    atom_indices, neighbor_indices;
+  DescriptorCalculator * descriptor_calculator;
   double cutoff;
   int sweep, n_neighbors;
 
@@ -22,7 +24,7 @@ public:
   CompactStructure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
                    const Eigen::MatrixXd &positions,
                    double cutoff,
-                   std::vector<DescriptorCalculator *> descriptor_calculators);
+                   DescriptorCalculator * descriptor_calculator);
 
   void compute_neighbors();
   void compute_descriptors();

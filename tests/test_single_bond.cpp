@@ -87,7 +87,7 @@ protected:
     // Create compact structure.
     double compact_cut = 5.0;
     compact_struc =
-        CompactStructure(cell, species, positions_1, compact_cut, descriptors);
+        CompactStructure(cell, species, positions_1, compact_cut, &descriptor);
   }
 };
 
@@ -284,7 +284,7 @@ TEST_F(BondEnv, StrucTest) {
   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
                         stress_dervs_struc, neighbor_count,
                         cumulative_neighbor_count, descriptor_indices,
-                        compact_struc, descriptor_index);
+                        compact_struc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end-start;
   std::cout << elapsed_seconds.count() << "s\n";
@@ -343,7 +343,7 @@ TEST_F(BondEnv, BigStruc) {
     descriptors.push_back(&descriptor);
 
     compact_struc =
-        CompactStructure(cell, species, positions, compact_cut, descriptors);
+        CompactStructure(cell, species, positions, compact_cut, &descriptor);
 
     Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
         stress_dervs_struc;
@@ -354,7 +354,7 @@ TEST_F(BondEnv, BigStruc) {
     single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
                           stress_dervs_struc, neighbor_count,
                           cumulative_neighbor_count, descriptor_indices,
-                          compact_struc, descriptor_index);
+                          compact_struc);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::cout << elapsed_seconds.count() << "s\n";

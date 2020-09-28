@@ -126,26 +126,25 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
                            Eigen::VectorXi &unique_neighbor_count,
                            Eigen::VectorXi &cumulative_neighbor_count,
                            Eigen::VectorXi &descriptor_indices,
-                           const CompactStructure &structure,
-                           int descriptor_index) {
+                           const CompactStructure &structure) {
 
   // Retrieve radial and cutoff information.
   int n_atoms = structure.noa;
   int n_neighbors = structure.n_neighbors;
   std::vector<double> radial_hyps =
-      structure.descriptor_calculators[descriptor_index]->radial_hyps;
+      structure.descriptor_calculator->radial_hyps;
   std::vector<double> cutoff_hyps =
-      structure.descriptor_calculators[descriptor_index]->cutoff_hyps;
+      structure.descriptor_calculator->cutoff_hyps;
   // TODO: Make rcut an attribute of the descriptor calculator.
   double rcut = radial_hyps[1];
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>
       radial_function =
-          structure.descriptor_calculators[descriptor_index]->radial_pointer;
+          structure.descriptor_calculator->radial_pointer;
   std::function<void(std::vector<double> &, double, double,
                      std::vector<double>)>
       cutoff_function =
-          structure.descriptor_calculators[descriptor_index]->cutoff_pointer;
+          structure.descriptor_calculator->cutoff_pointer;
 
   // Count atoms inside the descriptor cutoff.
   unique_neighbor_count = Eigen::VectorXi::Zero(n_atoms);
@@ -208,12 +207,9 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
   }
 
   // Initialize single bond arrays.
-  int nos = structure.descriptor_calculators[descriptor_index]
-                ->descriptor_settings[0];
-  int N = structure.descriptor_calculators[descriptor_index]
-              ->descriptor_settings[1];
-  int lmax = structure.descriptor_calculators[descriptor_index]
-                 ->descriptor_settings[2];
+  int nos = structure.descriptor_calculator->descriptor_settings[0];
+  int N = structure.descriptor_calculator->descriptor_settings[1];
+  int lmax = structure.descriptor_calculator->descriptor_settings[2];
   int number_of_harmonics = (lmax + 1) * (lmax + 1);
   int no_bond_vals = N * number_of_harmonics;
   int single_bond_size = no_bond_vals * nos;

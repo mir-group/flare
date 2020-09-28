@@ -14,7 +14,7 @@ void single_bond_sum_struc(
     Eigen::MatrixXd &stress_dervs, Eigen::VectorXi &unique_neighbor_count,
     Eigen::VectorXi &cumulative_neighbor_count,
     Eigen::VectorXi &descriptor_indices,
-    const CompactStructure &structure, int descriptor_index
+    const CompactStructure &structure
 );
 
 void single_bond_update_env(

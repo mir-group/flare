@@ -7,11 +7,11 @@ CompactStructure ::CompactStructure() {}
 CompactStructure ::CompactStructure(
     const Eigen::MatrixXd &cell, const std::vector<int> &species,
     const Eigen::MatrixXd &positions, double cutoff,
-    std::vector<DescriptorCalculator *> descriptor_calculators)
+    DescriptorCalculator * descriptor_calculator)
     : Structure(cell, species, positions) {
 
   this->cutoff = cutoff;
-  this->descriptor_calculators = descriptor_calculators;
+  this->descriptor_calculator = descriptor_calculator;
   sweep = ceil(cutoff / single_sweep_cutoff);
 
   // Initialize neighbor count.

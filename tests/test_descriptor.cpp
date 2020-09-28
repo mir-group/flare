@@ -4,6 +4,7 @@
 #include "radial.h"
 #include "single_bond.h"
 #include "structure.h"
+#include "compact_structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
 #include <cmath>
@@ -21,9 +22,11 @@ protected:
   Eigen::MatrixXd positions_1{noa, 3}, positions_2{noa, 3}, positions_3{noa, 3};
 
   Structure struc1, struc2, struc3;
+  CompactStructure compact_struc;
   LocalEnvironment env1, env2, env3;
   B1_Calculator desc1, desc2, desc3;
   B2_Calculator desc4, desc5, desc6;
+  std::vector<DescriptorCalculator *> descriptors;
 
   std::vector<int> descriptor_settings{5, 10, 10};
 
@@ -103,6 +106,12 @@ protected:
     desc4 = B2_Calculator(radial_string, cutoff_string, radial_hyps,
                           cutoff_hyps, descriptor_settings, descriptor_index);
     desc5 = desc6 = desc4;
+
+    // Create compact structure.
+    double compact_cut = 5.0;
+    descriptors.push_back(&desc4);
+    compact_struc =
+        CompactStructure(cell, species, positions_1, compact_cut, &desc4);
   }
 };
 
@@ -340,4 +349,8 @@ TEST_F(DescriptorTest, StressTest) {
       stress_ind++;
     }
   }
+}
+
+TEST_F(DescriptorTest, DescriptorStruc) {
+    desc4.compute_struc(compact_struc);
 }
