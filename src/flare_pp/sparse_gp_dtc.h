@@ -2,7 +2,6 @@
 #define SPARSE_GP_DTC_H
 
 #include "sparse_gp.h"
-#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 
 class SparseGP_DTC : public SparseGP {

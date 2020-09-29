@@ -10,6 +10,8 @@ public:
     neighbor_species;
   Eigen::MatrixXd relative_positions;
 
+  Eigen::MatrixXd descriptor_vals;
+
   // Store descriptors and gradients by species.
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
     descriptor_stress_dervs;
