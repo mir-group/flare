@@ -13,6 +13,8 @@ public:
   // Store descriptors and gradients by species.
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
     descriptor_stress_dervs;
+  std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots,
+    descriptor_stress_dots;
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
     atom_indices, neighbor_indices;
   DescriptorCalculator * descriptor_calculator;
@@ -22,8 +24,7 @@ public:
   CompactStructure();
 
   CompactStructure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
-                   const Eigen::MatrixXd &positions,
-                   double cutoff,
+                   const Eigen::MatrixXd &positions, double cutoff,
                    DescriptorCalculator * descriptor_calculator);
 
   void compute_neighbors();
