@@ -19,6 +19,7 @@ CompactStructure ::CompactStructure(
   cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
 
   compute_neighbors();
+  this->descriptor_calculator->compute_struc(*this);
 }
 
 void CompactStructure ::compute_neighbors() {

@@ -39,25 +39,26 @@ public:
   }
 };
 
-TEST_F(CompactStructureTest, TestWrapped) {
+TEST_F(CompactStructureTest, TestDescriptor) {
   auto start = std::chrono::steady_clock::now();
-  CompactStructure test_struc = CompactStructure(
+  CompactStructure struc1 = CompactStructure(
       cell, species, positions, cutoff, &desc1);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
-  std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+  std::cout << "Compact structure construction: " <<
+    elapsed_seconds.count() << "s\n";
 
-  std::cout << test_struc.n_neighbors << std::endl;
+  start = std::chrono::steady_clock::now();
+  StructureDescriptor struc2 =
+    StructureDescriptor(cell, species, positions, cutoff, many_body_cutoffs,
+                        descriptor_calculators);
+  end = std::chrono::steady_clock::now();
+  elapsed_seconds = end - start;
+  std::cout << "Structure descriptor construction: " <<
+    elapsed_seconds.count() << "s\n";
+}
 
-//   std::cout << "relative positions" << std::endl;
-//   std::cout << test_struc.relative_positions << std::endl;
+TEST_F(CompactStructureTest, TestStrucs){
+    CompactStructures test_strucs;
 
-//   std::cout << "cumulative neighbor count" << std::endl;
-//   std::cout << test_struc.cumulative_neighbor_count << std::endl;
-
-//   std::cout << "structure indices" << std::endl;
-//   std::cout << test_struc.structure_indices << std::endl;
-
-//   std::cout << "neighbor species" << std::endl;
-//   std::cout << test_struc.neighbor_species << std::endl;
 }
