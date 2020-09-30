@@ -5,6 +5,8 @@
 #include "structure.h"
 #include <vector>
 
+// Note: This class may not be needed; might be roughly as efficient to work
+// with individual structures.
 class CompactStructures {
 public:
   CompactStructures();
@@ -36,11 +38,9 @@ public:
 class CompactStructure : public Structure {
 public:
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
-      neighbor_species;
+      neighbor_species, species_indices;
   std::vector<int> n_atoms_by_species, n_neighbors_by_species;
   Eigen::MatrixXd relative_positions;
-
-  Eigen::MatrixXd descriptor_vals;
 
   // Store descriptors and gradients by species.
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,

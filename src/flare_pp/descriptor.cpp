@@ -248,13 +248,13 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
                         descriptor_indices, structure);
 
   // Compute descriptor values.
-  Eigen::MatrixXd B2_force_dervs, B2_stress_dervs;
+  Eigen::MatrixXd B2_vals, B2_force_dervs, B2_stress_dervs;
   Eigen::VectorXd B2_norms, B2_force_dots, B2_stress_dots;
   int nos = descriptor_settings[0];
   int N = descriptor_settings[1];
   int lmax = descriptor_settings[2];
 
-  B2_descriptor_struc(structure.descriptor_vals, B2_force_dervs,
+  B2_descriptor_struc(B2_vals, B2_force_dervs,
                       B2_stress_dervs, B2_norms, B2_force_dots, B2_stress_dots,
                       single_bond_vals, force_dervs, stress_dervs,
                       unique_neighbor_count, cumulative_neighbor_count,
@@ -272,7 +272,8 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
   }
 
   // Initialize arrays.
-  int n_d = structure.descriptor_vals.cols();
+  int n_d = B2_vals.cols();
+  structure.species_indices = Eigen::VectorXi::Zero(noa);
   for (int s = 0; s < nos; s++) {
     int n_s = species_count(s);
     int n_neigh = neighbor_count(s);
@@ -308,7 +309,7 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
     int n_count = neighbor_counter(s);
     int cum_neigh = cumulative_neighbor_count(i);
 
-    structure.descriptors[s].row(s_count) = structure.descriptor_vals.row(i);
+    structure.descriptors[s].row(s_count) = B2_vals.row(i);
     structure.descriptor_force_dervs[s].block(n_count * 3, 0, n_neigh * 3,
                                               n_d) =
         B2_force_dervs.block(cum_neigh * 3, 0, n_neigh * 3, n_d);
@@ -326,6 +327,7 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
     structure.atom_indices[s](s_count) = i;
     structure.neighbor_indices[s].segment(n_count, n_neigh) =
         descriptor_indices.segment(cum_neigh, n_neigh);
+    structure.species_indices(i) = s_count;
 
     species_counter(s)++;
     neighbor_counter(s) += n_neigh;

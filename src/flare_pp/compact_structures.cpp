@@ -70,7 +70,7 @@ void CompactStructures ::add_structure(const CompactStructure &structure) {
   }
   cumulative_atom_counts.push_back(cum_atom);
   cumulative_neighbor_counts.push_back(cum_neigh);
-  n_atoms.push_back(structure.descriptor_vals.rows());
+  n_atoms.push_back(structure.noa);
   if (n_strucs == 0)
     c_atoms.push_back(0);
   else

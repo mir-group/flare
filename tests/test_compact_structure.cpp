@@ -1,4 +1,5 @@
 #include "compact_structure.h"
+#include "compact_environments.h"
 #include "descriptor.h"
 #include "local_environment.h"
 #include "structure.h"
@@ -58,10 +59,27 @@ TEST_F(CompactStructureTest, TestDescriptor) {
             << "s\n";
 }
 
+TEST_F(CompactStructureTest, TestEnvironments){
+    CompactEnvironments envs;
+    std::vector<int> env_inds_1 {0, 1, 3};
+    envs.add_environments(test_struc, env_inds_1);
+
+    std::vector<int> env_inds_2 {2, 4};
+    envs.add_environments(test_struc, env_inds_2);
+
+    // Check descriptor values.
+    for (int s = 0; s < 5; s ++){
+      EXPECT_EQ(envs.descriptors[s].rows(), 1);
+      EXPECT_EQ(envs.descriptor_norms[s].size(), 1);
+      EXPECT_EQ(envs.descriptor_norms[s][0],
+        test_struc.descriptor_norms[s][0]);
+    }
+
+    EXPECT_EQ(envs.n_envs, envs.c_atoms[4]+1);
+}
+
 TEST_F(CompactStructureTest, TestStrucs) {
   CompactStructures test_strucs;
   test_strucs.add_structure(test_struc);
-  std::cout << test_strucs.descriptors[0].rows() << std::endl;
   test_strucs.add_structure(test_struc);
-  std::cout << test_strucs.descriptors[0].rows() << std::endl;
 }

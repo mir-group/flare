@@ -117,7 +117,9 @@ set(FLARE_SOURCES
     src/flare_pp/sparse_gp_dtc.cpp
     src/flare_pp/compact_structure.cpp
     src/flare_pp/compact_structures.cpp
-    src/flare_pp/compact_gp.cpp)
+    src/flare_pp/compact_gp.cpp
+    src/flare_pp/compact_kernel.cpp
+    src/flare_pp/compact_environments.cpp)
 
 set(PYBIND_SOURCES
     src/ace_binding.cpp)
