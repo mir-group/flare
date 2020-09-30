@@ -282,6 +282,10 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
         int n_s = species_count(s);
         int n_neigh = neighbor_count(s);
 
+        // Record species and neighbor count.
+        structure.n_atoms_by_species.push_back(n_s);
+        structure.n_neighbors_by_species.push_back(n_neigh);
+
         structure.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, n_d));
         structure.descriptor_force_dervs.push_back(
             Eigen::MatrixXd::Zero(n_neigh * 3, n_d));

@@ -59,6 +59,9 @@ TEST_F(CompactStructureTest, TestDescriptor) {
 }
 
 TEST_F(CompactStructureTest, TestStrucs){
-    CompactStructures test_strucs;
-
+  CompactStructures test_strucs;
+  test_strucs.add_structure(test_struc);
+  std::cout << test_strucs.descriptors[0].rows() << std::endl;
+  test_strucs.add_structure(test_struc);
+  std::cout << test_strucs.descriptors[0].rows() << std::endl;
 }
