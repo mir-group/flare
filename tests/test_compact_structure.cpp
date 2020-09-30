@@ -41,24 +41,24 @@ public:
 
 TEST_F(CompactStructureTest, TestDescriptor) {
   auto start = std::chrono::steady_clock::now();
-  CompactStructure struc1 = CompactStructure(
-      cell, species, positions, cutoff, &desc1);
+  CompactStructure struc1 =
+      CompactStructure(cell, species, positions, cutoff, &desc1);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
-  std::cout << "Compact structure construction: " <<
-    elapsed_seconds.count() << "s\n";
+  std::cout << "Compact structure construction: " << elapsed_seconds.count()
+            << "s\n";
 
   start = std::chrono::steady_clock::now();
   StructureDescriptor struc2 =
-    StructureDescriptor(cell, species, positions, cutoff, many_body_cutoffs,
-                        descriptor_calculators);
+      StructureDescriptor(cell, species, positions, cutoff, many_body_cutoffs,
+                          descriptor_calculators);
   end = std::chrono::steady_clock::now();
   elapsed_seconds = end - start;
-  std::cout << "Structure descriptor construction: " <<
-    elapsed_seconds.count() << "s\n";
+  std::cout << "Structure descriptor construction: " << elapsed_seconds.count()
+            << "s\n";
 }
 
-TEST_F(CompactStructureTest, TestStrucs){
+TEST_F(CompactStructureTest, TestStrucs) {
   CompactStructures test_strucs;
   test_strucs.add_structure(test_struc);
   std::cout << test_strucs.descriptors[0].rows() << std::endl;

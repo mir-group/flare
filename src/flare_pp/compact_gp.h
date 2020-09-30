@@ -1,10 +1,10 @@
 #ifndef COMPACT_GP_H
 #define COMPACT_GP_H
 
-#include <Eigen/Dense>
-#include <vector>
 #include "compact_structure.h"
 #include "kernels.h"
+#include <Eigen/Dense>
+#include <vector>
 
 class CompactGP {
 
@@ -18,12 +18,11 @@ class CompactGP {
   Eigen::MatrixXd Sigma, Kuu_inverse, Kuf;
 
   CompactGP();
-  CompactGP(Kernel * kernel, double sigma_e, double sigma_f, double sigma_s);
+  CompactGP(Kernel *kernel, double sigma_e, double sigma_f, double sigma_s);
 
   void add_sparse_environments(const CompactStructure &structure,
-    std::vector<int> environments);
+                               std::vector<int> environments);
   void add_training_structure(const CompactStructure &structure);
-
 };
 
 #endif

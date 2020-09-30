@@ -139,12 +139,10 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
   double rcut = radial_hyps[1];
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>
-      radial_function =
-          structure.descriptor_calculator->radial_pointer;
+      radial_function = structure.descriptor_calculator->radial_pointer;
   std::function<void(std::vector<double> &, double, double,
                      std::vector<double>)>
-      cutoff_function =
-          structure.descriptor_calculator->cutoff_pointer;
+      cutoff_function = structure.descriptor_calculator->cutoff_pointer;
 
   // Count atoms inside the descriptor cutoff.
   unique_neighbor_count = Eigen::VectorXi::Zero(n_atoms);

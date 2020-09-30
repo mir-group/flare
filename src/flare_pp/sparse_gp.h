@@ -1,12 +1,12 @@
 #ifndef SPARSE_GP_H
 #define SPARSE_GP_H
 
-#include <Eigen/Dense>
-#include <Eigen/IterativeLinearSolvers>
-#include <vector>
 #include "kernels.h"
 #include "local_environment.h"
 #include "structure.h"
+#include <Eigen/Dense>
+#include <Eigen/IterativeLinearSolvers>
+#include <vector>
 
 class SparseGP {
 public:

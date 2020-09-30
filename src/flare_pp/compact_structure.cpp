@@ -4,10 +4,11 @@
 
 CompactStructure ::CompactStructure() {}
 
-CompactStructure ::CompactStructure(
-    const Eigen::MatrixXd &cell, const std::vector<int> &species,
-    const Eigen::MatrixXd &positions, double cutoff,
-    DescriptorCalculator * descriptor_calculator)
+CompactStructure ::CompactStructure(const Eigen::MatrixXd &cell,
+                                    const std::vector<int> &species,
+                                    const Eigen::MatrixXd &positions,
+                                    double cutoff,
+                                    DescriptorCalculator *descriptor_calculator)
     : Structure(cell, species, positions) {
 
   this->cutoff = cutoff;

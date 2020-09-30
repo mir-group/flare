@@ -1,10 +1,10 @@
+#include "compact_structure.h"
 #include "cutoffs.h"
 #include "descriptor.h"
 #include "local_environment.h"
 #include "radial.h"
 #include "single_bond.h"
 #include "structure.h"
-#include "compact_structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
 #include <cmath>
@@ -351,6 +351,4 @@ TEST_F(DescriptorTest, StressTest) {
   }
 }
 
-TEST_F(DescriptorTest, DescriptorStruc) {
-    desc4.compute_struc(compact_struc);
-}
+TEST_F(DescriptorTest, DescriptorStruc) { desc4.compute_struc(compact_struc); }
