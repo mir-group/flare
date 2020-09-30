@@ -1,5 +1,6 @@
 #include "compact_structure.h"
 #include "compact_environments.h"
+#include "compact_kernel.h"
 #include "descriptor.h"
 #include "local_environment.h"
 #include "structure.h"
@@ -27,6 +28,10 @@ public:
   double cutoff = 3;
   std::vector<double> many_body_cutoffs{cutoff};
 
+  double sigma = 1.0;
+  int power = 2;
+  CompactKernel kernel;
+
   CompactStructureTest() {
     cell << 4.0, 0.5, 0.8, -1.2, 3.9, 0.73, -0.8, 0.1, 4.1;
 
@@ -37,6 +42,8 @@ public:
                           cutoff_hyps, descriptor_settings, descriptor_index);
     descriptor_calculators.push_back(&desc1);
     test_struc = CompactStructure(cell, species, positions, cutoff, &desc1);
+
+    kernel = CompactKernel(sigma, power);
   }
 };
 
@@ -76,6 +83,15 @@ TEST_F(CompactStructureTest, TestEnvironments){
     }
 
     EXPECT_EQ(envs.n_envs, envs.c_atoms[4]+1);
+}
+
+TEST_F(CompactStructureTest, TestKernel){
+    CompactEnvironments envs;
+    std::vector<int> env_inds_1 {0, 1, 3};
+    envs.add_environments(test_struc, env_inds_1);
+    Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc);
+
+    std::cout << kern_mat << std::endl;
 }
 
 TEST_F(CompactStructureTest, TestStrucs) {

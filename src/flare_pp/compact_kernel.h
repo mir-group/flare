@@ -5,6 +5,7 @@
 #include <vector>
 
 class CompactStructure;
+class CompactEnvironments;
 
 class CompactKernel{
 public:
@@ -14,10 +15,10 @@ public:
 
   CompactKernel(double sigma, double power);
 
-  double envs_envs(const std::vector<Eigen::MatrixXd> &envs1,
-                   const std::vector<Eigen::MatrixXd> &envs2);
+  double envs_envs(const CompactEnvironments &envs1,
+                   const CompactEnvironments &envs2);
 
-  Eigen::VectorXd envs_struc(const std::vector<Eigen::MatrixXd> &envs1,
+  Eigen::MatrixXd envs_struc(const CompactEnvironments &envs,
                              const CompactStructure &struc);
 
   Eigen::VectorXd self_kernel_struc(const CompactStructure &struc);
