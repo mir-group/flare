@@ -125,9 +125,10 @@ void B2_descriptor_struc(
     B2_norms(atom) = sqrt(B2_vals.row(atom).dot(B2_vals.row(atom)));
     B2_force_dots.segment(force_start, n_atom_neighbors * 3) =
         B2_force_dervs.block(force_start, 0, n_atom_neighbors * 3, n_d) *
-        B2_vals.row(atom);
+        B2_vals.row(atom).transpose();
     B2_stress_dots.segment(atom * 6, 6) =
-        B2_stress_dervs.block(atom * 6, 0, 6, n_d) * B2_vals.row(atom);
+        B2_stress_dervs.block(atom * 6, 0, 6, n_d) *
+        B2_vals.row(atom).transpose();
   }
 }
 
