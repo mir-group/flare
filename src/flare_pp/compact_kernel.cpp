@@ -20,6 +20,8 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
     Eigen::MatrixXd::Zero(envs.n_envs, 1 + struc.noa * 3 + 6);
   int n_species = envs.n_species;
 
+  double empty_thresh = 1e-8;
+
   for (int s = 0; s < n_species; s++){
     // Compute dot products. (Should be done in parallel with MKL.)
     Eigen::MatrixXd dot_vals =
@@ -37,28 +39,20 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
     int n_struc = struc.n_atoms_by_species[s];
     int c_sparse = envs.c_atoms[s];
 
-    // std::cout << "Species:" << std::endl;
-    // std::cout << s << std::endl;
-
-    // std::cout << "Dot vals rows:" << std::endl;
-    // std::cout << dot_vals.rows() << std::endl;
-
-    // std::cout << "Dot vals cols:" << std::endl;
-    // std::cout << dot_vals.cols() << std::endl;
-
-    // std::cout << "Force dot rows:" << std::endl;
-    // std::cout << force_dot.rows() << std::endl;
-
-    // std::cout << "Force dot cols:" << std::endl;
-    // std::cout << force_dot.cols() << std::endl;
-
     for (int i = 0; i < n_sparse; i++){
       double norm_i = envs.descriptor_norms[s][i];
+
+      // Continue if sparse environment i has no neighbors.
+      if (norm_i < empty_thresh)
+        continue;
       int sparse_index = c_sparse + i;
 
       for (int j = 0; j < n_struc; j++){
           // Energy kernel.
           double norm_j = struc.descriptor_norms[s](j);
+          // Continue if atom j has no neighbors.
+          if (norm_j < empty_thresh)
+            continue;
           double norm_j_3 = norm_j * norm_j * norm_j;
           double norm_dot = dot_vals(i, j) / (norm_i * norm_j);
           kern_mat(sparse_index, 0) += pow(norm_dot, power);
