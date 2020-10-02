@@ -92,7 +92,7 @@ TEST_F(CompactStructureTest, TestKernel){
     Eigen::VectorXd kern_vec = kernel_2.env_struc(
         struc2.local_environments[0], struc2);
     
-    for (int i = 0; i < kern_vec.size() - 6; i++){
+    for (int i = 0; i < kern_vec.size(); i++){
         EXPECT_NEAR(kern_mat(0, i), kern_vec(i), 1e-8);
     }
 }

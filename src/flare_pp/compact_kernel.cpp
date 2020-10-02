@@ -20,6 +20,7 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
     Eigen::MatrixXd::Zero(envs.n_envs, 1 + struc.noa * 3 + 6);
   int n_species = envs.n_species;
 
+  double vol_inv = 1 / struc.volume;
   double empty_thresh = 1e-8;
 
   for (int s = 0; s < n_species; s++){
@@ -39,6 +40,7 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
     int n_struc = struc.n_atoms_by_species[s];
     int c_sparse = envs.c_atoms[s];
 
+#pragma omp parallel for
     for (int i = 0; i < n_sparse; i++){
       double norm_i = envs.descriptor_norms[s][i];
 
@@ -48,16 +50,20 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
       int sparse_index = c_sparse + i;
 
       for (int j = 0; j < n_struc; j++){
-          // Energy kernel.
           double norm_j = struc.descriptor_norms[s](j);
+          double norm_ij = norm_i * norm_j;
+          double norm_ij3 = norm_ij * norm_j * norm_j;
+
           // Continue if atom j has no neighbors.
           if (norm_j < empty_thresh)
             continue;
-          double norm_j_3 = norm_j * norm_j * norm_j;
-          double norm_dot = dot_vals(i, j) / (norm_i * norm_j);
+
+          // Energy kernel.
+          double norm_dot = dot_vals(i, j) / norm_ij;
+          double dval = power * pow(norm_dot, power - 1);
           kern_mat(sparse_index, 0) += pow(norm_dot, power);
 
-          // TODO: Force kernel.
+          // Force kernel.
           int n_neigh = struc.neighbor_counts[s](j);
           int c_neigh = struc.cumulative_neighbor_counts[s](j);
           int atom_index = struc.atom_indices[s](j);
@@ -67,13 +73,10 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
 
               for (int comp = 0; comp < 3; comp++){
                 int force_index = 3 * (c_neigh + k) + comp;
-                double f1 =
-                  force_dot(i, force_index) / (norm_i * norm_j);
+                double f1 = force_dot(i, force_index) / norm_ij;
                 double f2 =
-                  dot_vals(i, j) * struc_force_dot(force_index) /
-                  (norm_i * norm_j_3);
+                  dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
                 double f3 = f1 - f2;
-                double dval = power * pow(norm_dot, power - 1);
                 double kern_val = dval * f3;
 
                 kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
@@ -83,7 +86,17 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
               }
           }
 
-          // TODO: Stress kernel.
+          // Stress kernel.
+          for (int comp = 0; comp < 6; comp++){
+              int stress_index = j * 6 + comp;
+              double s1 = stress_dot(i, stress_index) / norm_ij;
+              double s2 =
+                dot_vals(i, j) * struc_stress_dot(stress_index) / norm_ij3;
+              double s3 = s1 - s2;
+              double kern_val = dval * s3;
+              kern_mat(sparse_index, 1 + 3 * struc.noa + comp) +=
+                -sig2 * kern_val * vol_inv;
+          }
       }
     }
   }
