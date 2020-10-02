@@ -590,7 +590,8 @@ class SingleMapXbody:
         )
 
         lower_bound = np.min(upper_bound)
-        for env in _global_training_data[GP.name]:
+        training_data = _global_training_data[GP.name]
+        for env in training_data:
             if len(env.bond_array_2) == 0:
                 continue
 
@@ -598,7 +599,8 @@ class SingleMapXbody:
             if min_dist < lower_bound:
                 lower_bound = min_dist
 
-        for struc in _global_training_structures[GP.name]:
+        training_struc = _global_training_structures[GP.name]
+        for struc in training_struc:
             for env in struc:
                 if len(env.bond_array_2) == 0:
                     continue
