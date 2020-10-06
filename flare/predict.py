@@ -33,15 +33,12 @@ def predict_on_atom(
     structure, atom, gp = param
     # Obtain the associated chemical environment
     chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
-    components = []
-    stds = []
     # predict force components and standard deviations
-    for i in range(3):
-        force, var = gp.predict(chemenv, i + 1)
-        components.append(float(force))
-        stds.append(np.sqrt(np.abs(var)))
 
-    return np.array(components), np.array(stds)
+    force, var = gp.predict_force_xyz(chemenv)
+    std = np.sqrt(np.abs(var))
+
+    return force, std
 
 
 def predict_on_atom_en(
@@ -63,18 +60,13 @@ def predict_on_atom_en(
     structure, atom, gp = param
     # Obtain the associated chemical environment
     chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
-    comps = []
-    stds = []
-    # predict force components and standard deviations
-    for i in range(3):
-        force, var = gp.predict(chemenv, i + 1)
-        comps.append(float(force))
-        stds.append(np.sqrt(np.abs(var)))
 
-    # predict local energy
+    # Predict forces / std. dev / energy
+    force, var = gp.predict_force_xyz(chemenv)
+    std = np.sqrt(np.abs(var))
     local_energy = gp.predict_local_energy(chemenv)
 
-    return np.array(comps), np.array(stds), local_energy
+    return force, std, local_energy
 
 
 def predict_on_atom_en_std(param):
@@ -144,14 +136,15 @@ def predict_on_structure(
 
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
-        for i in range(3):
-            force, var = gp.predict(chemenv, i + 1)
-            forces[n][i] = float(force)
-            stds[n][i] = float(np.sqrt(np.absolute(var)))
+        force, var = gp.predict_force_xyz(chemenv)
+        std = np.sqrt(np.abs(var))
 
-            if write_to_structure:
-                structure.forces[n][i] = force
-                structure.stds[n][i] = np.sqrt(np.abs(var))
+        forces[n] = force
+        stds[n] = std
+
+        if write_to_structure:
+            structure.forces[n] = force
+            structure.stds[n] = std
 
     return forces, stds
 
@@ -474,13 +467,16 @@ def predict_on_structure_en(
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
-            force, var = gp.predict(chemenv, i + 1)
-            forces[n][i] = float(force)
-            stds[n][i] = np.sqrt(np.abs(var))
+
+            force, var = gp.predict_force_xyz(chemenv)
+            std = np.sqrt(np.abs(var))
+
+            forces[n] = force
+            stds[n] = std
 
             if write_to_structure and structure.forces is not None:
-                structure.forces[n][i] = float(force)
-                structure.stds[n][i] = np.sqrt(np.abs(var))
+                structure.forces[n] = force
+                structure.stds[n] = std
 
         local_energies[n] = gp.predict_local_energy(chemenv)
 
