@@ -41,6 +41,8 @@ class OTF:
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
+        force_only (bool, optional): If True, only use forces for training. 
+            Default to False, use forces, energy and stress for training.
 
         std_tolerance_factor (float, optional): Threshold that determines
             when DFT is called. Specifies a multiple of the current noise
@@ -106,6 +108,7 @@ class OTF:
         calculate_energy: bool = False,
         calculate_efs: bool = False,
         write_model: int = 0,
+        force_only: bool = False,
         # otf args
         std_tolerance_factor: float = 1,
         skip: int = 0,
@@ -153,6 +156,7 @@ class OTF:
             self.local_energies = np.zeros(self.noa)
         else:
             self.local_energies = None
+        self.force_only = force_only
 
         # set otf
         self.std_tolerance = std_tolerance_factor
@@ -406,6 +410,10 @@ class OTF:
             dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
         """
         self.output.add_atom_info(train_atoms, self.structure.stds)
+
+        if self.force_only:
+            dft_energy = None
+            dft_stress = None
 
         # update gp model
         self.gp.update_db(

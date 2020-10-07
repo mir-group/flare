@@ -247,6 +247,10 @@ class ASE_OTF(OTF):
                 ]
             )
 
+        if self.force_only:
+            dft_energy = None
+            flare_stress = None
+
         # update gp model
         self.gp.update_db(
             self.structure,
