@@ -21,6 +21,7 @@ CompactStructure ::CompactStructure(const Eigen::MatrixXd &cell,
 
   compute_neighbors();
   this->descriptor_calculator->compute_struc(*this);
+  n_species = descriptors.size();
 }
 
 void CompactStructure ::compute_neighbors() {

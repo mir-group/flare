@@ -95,6 +95,24 @@ TEST_F(CompactStructureTest, TestKernel){
     double kern_val = kernel_2.env_env(
         struc2.local_environments[0], struc2.local_environments[1]);
 
+    auto start = std::chrono::steady_clock::now();
+    Eigen::VectorXd self_kern = kernel.self_kernel_struc(test_struc);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "Compact self kernel: " << elapsed_seconds.count()
+            << "s\n";
+
+    start = std::chrono::steady_clock::now();
+    Eigen::VectorXd prev_self = kernel_2.self_kernel_struc(struc2);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end - start;
+    std::cout << "Non-compact self kernel: " << elapsed_seconds.count()
+            << "s\n";
+
+    for (int i = 0; i < self_kern.size(); i++){
+        EXPECT_NEAR(self_kern(i), prev_self(i), 1e-8);
+    }
+
     EXPECT_NEAR(env_kern_mat(0, 1), kern_val, 1e-8);
 
     for (int i = 0; i < kern_vec.size(); i++){
