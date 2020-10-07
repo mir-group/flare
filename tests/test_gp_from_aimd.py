@@ -271,12 +271,11 @@ def test_mgp_gpfa(all_mgp, all_gp):
     gp_model = get_gp("3", "mc", False)
     gp_model.set_L_alpha()
 
-    grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
     grid_params_3b = {
-        "lower_bound": [lower_cut for d in range(3)],
-        "grid_num": [grid_num_3 for d in range(3)],
+        "lower_bound": [lower_cut] * 3,
+        "grid_num": [grid_num_3] * 3,
         "svd_rank": "auto",
     }
     grid_params = {"load_grid": None, "update": False}
@@ -305,7 +304,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
         abs_force_tolerance=1e-8,
         print_training_plan=True,
     )
-    assert tt.mgp is True
+    assert tt.gp_is_mapped is True
     tt.run()
 
     # Test that training plan is properly written
@@ -420,6 +419,7 @@ def test_passive_learning():
     assert cur_gp.training_statistics["envs_by_species"]["C"] == 1
     assert cur_gp.training_statistics["envs_by_species"]["H"] == 5
 
+
 def test_active_learning_simple_run():
     """
     Test simple mechanics of active learning method.
@@ -447,53 +447,53 @@ def test_active_learning_simple_run():
 
     tt = TrajectoryTrainer(gp=the_gp)
 
-    tt.run_passive_learning(frames=frames[:1],
-                            max_elts_per_frame={'C':1,"O":1,'H':1},
-                            post_training_iterations=0,
-                            post_build_matrices=True)
+    tt.run_passive_learning(
+        frames=frames[:1],
+        max_elts_per_frame={"C": 1, "O": 1, "H": 1},
+        post_training_iterations=0,
+        post_build_matrices=True,
+    )
 
     prev_gp_len = len(the_gp)
     prev_gp_stats = the_gp.training_statistics
-    tt.run_active_learning(frames[:2],
-                           rel_std_tolerance=0,
-                           abs_std_tolerance=0,
-                           abs_force_tolerance=0
-                           )
+    tt.run_active_learning(
+        frames[:2], rel_std_tolerance=0, abs_std_tolerance=0, abs_force_tolerance=0
+    )
     assert len(the_gp) == prev_gp_len
     # Try on a frame where the Carbon atom is guaranteed to trip the
     # abs. force tolerance contition
-    tt.run_active_learning(frames[1:2],
-                           rel_std_tolerance=0,
-                           abs_std_tolerance=0,
-                           abs_force_tolerance=.1,
-                           max_elts_per_frame={'H':0,
-                                               'O':0},
-                           max_model_elts={"C":2},
-                           )
-    assert len(the_gp) == prev_gp_len +1
-    prev_carbon_atoms = prev_gp_stats['envs_by_species']['C']
-    assert the_gp.training_statistics['envs_by_species']['C'] == prev_carbon_atoms +1
+    tt.run_active_learning(
+        frames[1:2],
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.1,
+        max_elts_per_frame={"H": 0, "O": 0},
+        max_model_elts={"C": 2},
+    )
+    assert len(the_gp) == prev_gp_len + 1
+    prev_carbon_atoms = prev_gp_stats["envs_by_species"]["C"]
+    assert the_gp.training_statistics["envs_by_species"]["C"] == prev_carbon_atoms + 1
 
     prev_gp_len = len(the_gp)
-    tt.run_active_learning(frames[3:4],
-                               rel_std_tolerance=0,
-                               abs_std_tolerance=0,
-                               abs_force_tolerance=.1,
-                                max_model_size= prev_gp_len
-                               )
+    tt.run_active_learning(
+        frames[3:4],
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.1,
+        max_model_size=prev_gp_len,
+    )
     assert len(the_gp) == prev_gp_len
-
 
     # Test that model doesn't add atoms
     prev_gp_len = len(the_gp)
-    tt.run_active_learning(frames[5:6],
-                               rel_std_tolerance=0,
-                               abs_std_tolerance=0,
-                               abs_force_tolerance=.1,
-                               max_model_elts={"C":2,'H':1,'O':1}
-                               )
+    tt.run_active_learning(
+        frames[5:6],
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.1,
+        max_model_elts={"C": 2, "H": 1, "O": 1},
+    )
     assert len(the_gp) == prev_gp_len
-
 
     for f in glob(f"gp_from_aimd*"):
         remove(f)

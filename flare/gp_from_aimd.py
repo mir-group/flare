@@ -167,7 +167,7 @@ class TrajectoryTrainer:
         # GP Training and Execution parameters
         self.gp = gp
         # Check to see if GP is MGP for later flagging
-        self.mgp = isinstance(gp, MappedGaussianProcess)
+        self.gp_is_mapped = isinstance(gp, MappedGaussianProcess)
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.abs_force_tolerance = abs_force_tolerance
@@ -188,7 +188,7 @@ class TrajectoryTrainer:
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
-        if self.mgp:
+        if self.gp_is_mapped:
             self.pred_func = predict_on_structure_mgp
             self.pred_func_env = self.gp.predict
         else:
@@ -278,7 +278,7 @@ class TrajectoryTrainer:
         the GP has no training set, then seed with at least one atom from each
         """
 
-        if self.mgp:
+        if self.gp_is_mapped:
             raise NotImplementedError("Passive learning not yet configured for MGP")
         if max_elts_per_frame is None:
             max_elts_per_frame = dict()
@@ -423,7 +423,7 @@ class TrajectoryTrainer:
 
             # Three different predictions: Either MGP, GP with energy,
             # or GP without
-            if self.mgp:
+            if self.gp_is_mapped:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame,
                     mgp=self.gp,
@@ -479,8 +479,8 @@ class TrajectoryTrainer:
             )
 
             if i < train_frame:
-                # Noise hyperparameter & relative std tolerance is not for mgp.
-                if self.mgp:
+                # Noise hyperparameter & relative std tolerance is not for gp_is_mapped.
+                if self.gp_is_mapped:
                     noise = 0
                 else:
                     noise = Parameters.get_noise(
@@ -512,7 +512,7 @@ class TrajectoryTrainer:
                         (int(a), uncertainties[a], force_errors[a]) for a in train_atoms
                     ]
 
-                    if self.mgp:
+                    if self.gp_is_mapped:
                         continue
 
                     if len(self.gp) + len(train_atoms) <= max_model_size:
@@ -568,7 +568,7 @@ class TrajectoryTrainer:
             with open(f"{self.output_name}_training_plan.json", "w") as f:
                 f.write(json.dumps(training_plan, cls=NumpyEncoder))
 
-        if self.model_format and post_write and not self.mgp:
+        if self.model_format and post_write and not self.gp_is_mapped:
             self.gp.write_model(f"{self.output_name}_model", self.model_format)
 
     def write_model_decision(
@@ -616,7 +616,7 @@ class TrajectoryTrainer:
             },
         )
 
-        if self.mgp:
+        if self.gp_is_mapped:
             raise NotImplementedError("Passive learning not yet configured for " "MGP")
 
         self.start_time = time.time()
@@ -702,7 +702,7 @@ class TrajectoryTrainer:
             self.gp.check_L_alpha()
             logger.debug(f"Done check_L_alpha {time.time()-time0}")
 
-        if self.model_format and not self.mgp:
+        if self.model_format and not self.gp_is_mapped:
             self.gp.write_model(f"{self.output_name}_prerun", self.model_format)
 
     def run(self):
@@ -720,7 +720,7 @@ class TrajectoryTrainer:
         # Perform pre-run, in which seed trames are used.
         logger = logging.getLogger(self.logger_name)
         logger.debug("Commencing run with pre-run...")
-        if not self.mgp:
+        if not self.gp_is_mapped:
             self.pre_run()
 
         # Past this frame, stop adding atoms to the training set
@@ -751,7 +751,7 @@ class TrajectoryTrainer:
 
             # Three different predictions: Either MGP, GP with energy,
             # or GP without
-            if self.mgp:
+            if self.gp_is_mapped:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame,
                     mgp=self.gp,
@@ -807,8 +807,8 @@ class TrajectoryTrainer:
             )
 
             if i < train_frame:
-                # Noise hyperparameter & relative std tolerance is not for mgp.
-                if self.mgp:
+                # Noise hyperparameter & relative std tolerance is not for gp_is_mapped.
+                if self.gp_is_mapped:
                     noise = 0
                 else:
                     noise = Parameters.get_noise(
@@ -899,7 +899,7 @@ class TrajectoryTrainer:
                             f"{self.output_name}_checkpt", self.model_format
                         )
 
-                if (i + 1) == train_frame and not self.mgp:
+                if (i + 1) == train_frame and not self.gp_is_mapped:
                     self.gp.check_L_alpha()
 
         # Print training statistics for GP model used
@@ -912,7 +912,7 @@ class TrajectoryTrainer:
             with open(f"{self.output_name}_training_plan.json", "w") as f:
                 f.write(json.dumps(training_plan, cls=NumpyEncoder))
 
-        if self.model_format and not self.mgp:
+        if self.model_format and not self.gp_is_mapped:
             self.gp.write_model(f"{self.output_name}_model", self.model_format)
 
     def update_gp_and_print(
@@ -959,7 +959,7 @@ class TrajectoryTrainer:
         logger.info(f"New GP Statistics: {json.dumps(self.gp.training_statistics)}\n")
 
         # update gp model; handling differently if it's an MGP
-        if not self.mgp:
+        if not self.gp_is_mapped:
             self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
 
             if train:
@@ -978,7 +978,7 @@ class TrajectoryTrainer:
         """
         logger = logging.getLogger(self.logger_name)
 
-        if self.mgp:
+        if self.gp_is_mapped:
             logger.debug("Training skipped because of MGP")
             return
 
