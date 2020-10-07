@@ -30,7 +30,7 @@ public:
   double cutoff = 3;
   std::vector<double> many_body_cutoffs{cutoff};
 
-  double sigma = 1.0;
+  double sigma = 2.0;
   int power = 2;
   CompactKernel kernel;
   DotProductKernel kernel_2;
@@ -88,10 +88,15 @@ TEST_F(CompactStructureTest, TestKernel){
     std::vector<int> env_inds_1 {0, 1, 3};
     envs.add_environments(test_struc, env_inds_1);
     Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc);
+    Eigen::MatrixXd env_kern_mat = kernel.envs_envs(envs, envs);
 
     Eigen::VectorXd kern_vec = kernel_2.env_struc(
         struc2.local_environments[0], struc2);
-    
+    double kern_val = kernel_2.env_env(
+        struc2.local_environments[0], struc2.local_environments[1]);
+
+    EXPECT_NEAR(env_kern_mat(0, 1), kern_val, 1e-8);
+
     for (int i = 0; i < kern_vec.size(); i++){
         EXPECT_NEAR(kern_mat(0, i), kern_vec(i), 1e-8);
     }

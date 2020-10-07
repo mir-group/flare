@@ -15,8 +15,8 @@ public:
 
   CompactKernel(double sigma, double power);
 
-  double envs_envs(const CompactEnvironments &envs1,
-                   const CompactEnvironments &envs2);
+  Eigen::MatrixXd envs_envs(const CompactEnvironments &envs1,
+                            const CompactEnvironments &envs2);
 
   Eigen::MatrixXd envs_struc(const CompactEnvironments &envs,
                              const CompactStructure &struc);

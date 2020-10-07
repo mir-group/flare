@@ -13,6 +13,52 @@ CompactKernel ::CompactKernel(double sigma, double power) {
   this->power = power;
 }
 
+Eigen::MatrixXd CompactKernel ::envs_envs(const CompactEnvironments &envs1,
+                                          const CompactEnvironments &envs2){
+
+  Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(envs1.n_envs, envs2.n_envs);
+  int n_species = envs1.n_species;
+  double empty_thresh = 1e-8;
+
+  for (int s = 0; s < n_species; s++){
+    // Compute dot products. (Should be done in parallel with MKL.)
+    Eigen::MatrixXd dot_vals =
+      envs1.descriptors[s] * envs2.descriptors[s].transpose();
+
+    // Compute kernels.
+    int n_sparse_1 = envs1.n_atoms[s];
+    int c_sparse_1 = envs1.c_atoms[s];
+    int n_sparse_2 = envs2.n_atoms[s];
+    int c_sparse_2 = envs2.c_atoms[s];
+
+#pragma omp parallel for
+    for (int i = 0; i < n_sparse_1; i++){
+      double norm_i = envs1.descriptor_norms[s][i];
+
+      // Continue if sparse environment i has no neighbors.
+      if (norm_i < empty_thresh)
+        continue;
+      int ind1 = c_sparse_1 + i;
+
+      for (int j = 0; j < n_sparse_2; j++){
+          double norm_j = envs2.descriptor_norms[s][j];
+          double norm_ij = norm_i * norm_j;
+
+          // Continue if atom j has no neighbors.
+          if (norm_j < empty_thresh)
+            continue;
+          int ind2 = c_sparse_2 + j;
+
+          // Energy kernel.
+          double norm_dot = dot_vals(i, j) / norm_ij;
+          double dval = power * pow(norm_dot, power - 1);
+          kern_mat(ind1, ind2) += sig2 * pow(norm_dot, power);
+      }
+    }
+  }
+  return kern_mat;
+}
+
 Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
                                            const CompactStructure &struc){
 
@@ -61,7 +107,7 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
           // Energy kernel.
           double norm_dot = dot_vals(i, j) / norm_ij;
           double dval = power * pow(norm_dot, power - 1);
-          kern_mat(sparse_index, 0) += pow(norm_dot, power);
+          kern_mat(sparse_index, 0) += sig2 * pow(norm_dot, power);
 
           // Force kernel.
           int n_neigh = struc.neighbor_counts[s](j);
