@@ -197,8 +197,8 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Reset FLARE calculator.
-        self.flare_calc.reset()
         if self.dft_step:
+            self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
         # Take MD step.
