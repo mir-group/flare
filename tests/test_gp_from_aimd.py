@@ -12,6 +12,7 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
+from flare.utils.element_coder import Z_to_element
 from flare.gp_from_aimd import (
     TrajectoryTrainer,
     parse_trajectory_trainer_output,
@@ -270,12 +271,11 @@ def test_mgp_gpfa(all_mgp, all_gp):
     gp_model = get_gp("3", "mc", False)
     gp_model.set_L_alpha()
 
-    grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
     grid_params_3b = {
-        "lower_bound": [lower_cut for d in range(3)],
-        "grid_num": [grid_num_3 for d in range(3)],
+        "lower_bound": [lower_cut] * 3,
+        "grid_num": [grid_num_3] * 3,
         "svd_rank": "auto",
     }
     grid_params = {"load_grid": None, "update": False}
@@ -304,7 +304,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
         abs_force_tolerance=1e-8,
         print_training_plan=True,
     )
-    assert tt.mgp is True
+    assert tt.gp_is_mapped is True
     tt.run()
 
     # Test that training plan is properly written
@@ -361,3 +361,139 @@ def test_parse_gpfa_output():
         assert np.array_equal(struc.species_labels, frame["species"])
         assert np.array_equal(struc.positions, frame["positions"])
         assert np.array_equal(struc.forces, frame["dft_forces"])
+
+
+def test_passive_learning():
+    the_gp = GaussianProcess(
+        kernel_name="2+3_mc",
+        hyps=np.array(
+            [
+                3.75996759e-06,
+                1.53990678e-02,
+                2.50624782e-05,
+                5.07884426e-01,
+                1.70172923e-03,
+            ]
+        ),
+        cutoffs=np.array([5, 3]),
+        hyp_labels=["l2", "s2", "l3", "s3", "n0"],
+        maxiter=1,
+        opt_algorithm="L-BFGS-B",
+    )
+
+    frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
+    envs = AtomicEnvironment.from_file(path.join(TEST_FILE_DIR, "methanol_envs.json"))
+    cur_gp = deepcopy(the_gp)
+    tt = TrajectoryTrainer(frames=None, gp=cur_gp)
+
+    # TEST ENVIRONMENT ADDITION
+    envs_species = set(Z_to_element(env.ctype) for env in envs)
+    tt.run_passive_learning(environments=envs, post_build_matrices=False)
+
+    assert cur_gp.training_statistics["N"] == len(envs)
+    assert set(cur_gp.training_statistics["species"]) == envs_species
+
+    # TEST FRAME ADDITION: ALL ARE ADDED
+    cur_gp = deepcopy(the_gp)
+    tt.gp = cur_gp
+    tt.run_passive_learning(frames=frames, post_build_matrices=False)
+    assert len(cur_gp.training_data) == sum([len(fr) for fr in frames])
+
+    # TEST FRAME ADDITION: MAX OUT MODEL SIZE AT 1
+    cur_gp = deepcopy(the_gp)
+    tt.gp = cur_gp
+    tt.run_passive_learning(frames=frames, max_model_size=1, post_training_iterations=1)
+    assert len(cur_gp.training_data) == 1
+
+    # TEST FRAME ADDITION: EXCLUDE OXYGEN, LIMIT CARBON TO 1, 1 H PER FRAME
+    cur_gp = deepcopy(the_gp)
+    tt.gp = cur_gp
+    tt.run_passive_learning(
+        frames=frames,
+        max_model_elts={"O": 0, "C": 1, "H": 5},
+        max_elts_per_frame={"H": 1},
+        post_build_matrices=False,
+    )
+
+    assert "O" not in cur_gp.training_statistics["species"]
+    assert cur_gp.training_statistics["envs_by_species"]["C"] == 1
+    assert cur_gp.training_statistics["envs_by_species"]["H"] == 5
+
+
+def test_active_learning_simple_run():
+    """
+    Test simple mechanics of active learning method.
+    :return:
+    """
+
+    the_gp = GaussianProcess(
+        kernel_name="2+3_mc",
+        hyps=np.array(
+            [
+                3.75996759e-06,
+                1.53990678e-02,
+                2.50624782e-05,
+                5.07884426e-01,
+                1.70172923e-03,
+            ]
+        ),
+        cutoffs=np.array([5, 3]),
+        hyp_labels=["l2", "s2", "l3", "s3", "n0"],
+        maxiter=1,
+        opt_algorithm="L-BFGS-B",
+    )
+
+    frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
+
+    tt = TrajectoryTrainer(gp=the_gp)
+
+    tt.run_passive_learning(
+        frames=frames[:1],
+        max_elts_per_frame={"C": 1, "O": 1, "H": 1},
+        post_training_iterations=0,
+        post_build_matrices=True,
+    )
+
+    prev_gp_len = len(the_gp)
+    prev_gp_stats = the_gp.training_statistics
+    tt.run_active_learning(
+        frames[:2], rel_std_tolerance=0, abs_std_tolerance=0, abs_force_tolerance=0
+    )
+    assert len(the_gp) == prev_gp_len
+    # Try on a frame where the Carbon atom is guaranteed to trip the
+    # abs. force tolerance contition
+    tt.run_active_learning(
+        frames[1:2],
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.1,
+        max_elts_per_frame={"H": 0, "O": 0},
+        max_model_elts={"C": 2},
+    )
+    assert len(the_gp) == prev_gp_len + 1
+    prev_carbon_atoms = prev_gp_stats["envs_by_species"]["C"]
+    assert the_gp.training_statistics["envs_by_species"]["C"] == prev_carbon_atoms + 1
+
+    prev_gp_len = len(the_gp)
+    tt.run_active_learning(
+        frames[3:4],
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.1,
+        max_model_size=prev_gp_len,
+    )
+    assert len(the_gp) == prev_gp_len
+
+    # Test that model doesn't add atoms
+    prev_gp_len = len(the_gp)
+    tt.run_active_learning(
+        frames[5:6],
+        rel_std_tolerance=0,
+        abs_std_tolerance=0,
+        abs_force_tolerance=0.1,
+        max_model_elts={"C": 2, "H": 1, "O": 1},
+    )
+    assert len(the_gp) == prev_gp_len
+
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)

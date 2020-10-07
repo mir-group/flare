@@ -349,3 +349,6 @@ class MappedGaussianProcess:
                 return pickle.load(f)
         else:
             raise NotImplementedError
+
+    def __len__(self):
+        return self.training_statistics["N"]

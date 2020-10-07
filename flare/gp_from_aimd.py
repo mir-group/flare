@@ -40,25 +40,24 @@ import warnings
 
 from copy import deepcopy
 from math import inf
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict
+from random import sample
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
 from flare.output import Output
 from flare.predict import (
-    predict_on_atom,
-    predict_on_atom_en,
     predict_on_structure_par,
     predict_on_structure_par_en,
     predict_on_structure_mgp,
 )
-from flare.struc import Structure
+from flare.struc import Structure, Trajectory
 from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from flare.utils.learner import (
     subset_of_frame_by_element,
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,
+    evaluate_training_atoms,
 )
 from flare.mgp import MappedGaussianProcess
 from flare.parameters import Parameters
@@ -67,8 +66,8 @@ from flare.parameters import Parameters
 class TrajectoryTrainer:
     def __init__(
         self,
-        frames: List[Structure],
-        gp: Union[GaussianProcess, MappedGaussianProcess],
+        frames: List[Structure] = None,
+        gp: Union[GaussianProcess, MappedGaussianProcess] = None,
         rel_std_tolerance: float = 4,
         abs_std_tolerance: float = 1,
         abs_force_tolerance: float = 0,
@@ -96,7 +95,7 @@ class TrajectoryTrainer:
         checkpoint_interval: int = 1,
         atom_checkpoint_interval: int = 100,
         print_training_plan: bool = True,
-        model_format: str = "json",
+        model_format: str = "pickle",
     ):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
@@ -168,7 +167,7 @@ class TrajectoryTrainer:
         # GP Training and Execution parameters
         self.gp = gp
         # Check to see if GP is MGP for later flagging
-        self.mgp = isinstance(gp, MappedGaussianProcess)
+        self.gp_is_mapped = isinstance(gp, MappedGaussianProcess)
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.abs_force_tolerance = abs_force_tolerance
@@ -189,14 +188,15 @@ class TrajectoryTrainer:
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
-        if not self.mgp:
+        if self.gp_is_mapped:
+            self.pred_func = predict_on_structure_mgp
+            self.pred_func_env = self.gp.predict
+        else:
             if calculate_energy:
                 self.pred_func = predict_on_structure_par_en
             else:
                 self.pred_func = predict_on_structure_par
-
-        elif self.mgp:
-            self.pred_func = predict_on_structure_mgp
+            self.pred_func_env = self.gp.predict_force_xyz
 
         # Parameters for negotiating with the training frames
 
@@ -252,18 +252,357 @@ class TrajectoryTrainer:
         self.train_count = 0
         self.start_time = time.time()
 
-    def pre_run(self):
+    def run_passive_learning(
+        self,
+        frames: List[Structure] = (),
+        environments: List[AtomicEnvironment] = (),
+        max_atoms_per_frame: int = np.inf,
+        post_training_iterations: int = 0,
+        post_build_matrices: bool = False,
+        max_elts_per_frame: Dict[str, int] = None,
+        max_model_size: int = np.inf,
+        max_model_elts: Dict[str, int] = None,
+    ):
         """
         Various tasks to set up the AIMD training before commencing
         the run through the AIMD trajectory.
-        1. Print the output.
-        2. Pre-train the GP with the seed frames and
-        environments. If no seed frames or environments and the GP has no
-        training set, then seed with at least one atom from each
+
+        If you want to skip frames, splice the input as
+        frames[::skip_n].
+
+        If you want to randomize the frame order, try the random module's shuffle function.
+
+        Loads the GP with the seed frames and
+        environments. ALL environments passed in will be added. Randomly chosen
+        atoms from each frame will be added. If no seed frames or environments and
+        the GP has no training set, then seed with at least one atom from each
         """
 
-        if self.mgp:
-            raise NotImplementedError("Pre-running notyet configured for MGP")
+        if self.gp_is_mapped:
+            raise NotImplementedError("Passive learning not yet configured for MGP")
+        if max_elts_per_frame is None:
+            max_elts_per_frame = dict()
+        if max_model_elts is None:
+            max_model_elts = dict()
+
+        logger = logging.getLogger(self.logger_name)
+        logger.debug("Beginning passive learning.")
+        # If seed environments were passed in, add them to the GP.
+
+        for env in environments:
+            self.gp.add_one_env(env, env.force, train=False)
+
+        # Ensure compatibility with number / symbol elemental notation
+        for cur_dict in [max_elts_per_frame, max_model_elts]:
+            for key in list(cur_dict.keys()):
+                if isinstance(key, int):
+                    cur_dict[Z_to_element(key)] = cur_dict[key]
+                elif isinstance(key, str):
+                    cur_dict[element_to_Z(key)] = cur_dict[key]
+
+        # Main frame loop
+        total_added = 0
+        for frame in frames:
+            current_stats = self.gp.training_statistics
+            available_to_add = max_model_size - current_stats["N"]
+
+            train_atoms = []
+            for species_i in set(frame.coded_species):
+                # Get a randomized set of atoms of species i from the frame
+                # So that it is not always the lowest-indexed atoms chosen
+                elt = Z_to_element(species_i)
+                atoms_of_specie = frame.indices_of_specie(species_i)
+                n_at = len(atoms_of_specie)
+                # Determine how many to add based on user defined cutoffs
+                n_add = min(
+                    n_at,
+                    max_elts_per_frame.get(species_i, inf),
+                    max_atoms_per_frame - len(train_atoms),
+                    available_to_add - len(train_atoms),
+                    max_model_elts.get(elt, np.inf)
+                    - current_stats["envs_by_species"].get(elt, 0),
+                )
+                n_add = max(0, n_add)
+
+                train_atoms += sample(atoms_of_specie, n_add)
+                available_to_add -= n_add
+                total_added += n_add
+
+            self.update_gp_and_print(
+                frame=frame,
+                train_atoms=train_atoms,
+                uncertainties=[],
+                train=False,
+            )
+
+        logger = logging.getLogger(self.logger_name)
+        logger.info(
+            f"Added {total_added} atoms to "
+            "GP.\n"
+            "Current GP Statistics: "
+            f"{json.dumps(self.gp.training_statistics)} "
+        )
+
+        if post_training_iterations:
+            logger.debug(
+                "Now commencing pre-run training of GP (which has "
+                "non-empty training set)"
+            )
+            time0 = time.time()
+            self.train_gp(max_iter=post_training_iterations)
+            logger.debug(f"Done train_gp {time.time() - time0}")
+        elif post_build_matrices:
+            logger.debug(
+                "Now commencing pre-run set up of GP (which has non-empty training set)"
+            )
+            time0 = time.time()
+            self.gp.check_L_alpha()
+            logger.debug(f"Done check_L_alpha {time.time() - time0}")
+
+    def run_active_learning(
+        self,
+        frames: Union[List[Structure], Trajectory] = (),
+        rel_std_tolerance: float = 4,
+        abs_std_tolerance: float = 0,
+        abs_force_tolerance: float = 0.15,
+        min_atoms_per_train: int = 200,
+        max_force_error: float = inf,
+        max_atoms_from_frame: int = inf,
+        max_trains: int = inf,
+        max_model_size: int = inf,
+        max_elts_per_frame: Dict[str, int] = None,
+        max_model_elts: Dict[str, int] = None,
+        predict_atoms_per_elt: Dict[str, int] = None,
+        write_model_train_interval: int = 1,
+        write_model_atom_interval: int = 100,
+        validate_ratio: float = 0,
+        post_write: bool = True,
+    ):
+
+        # Perform pre-run, in which seed trames are used.
+        logger = logging.getLogger(self.logger_name)
+
+        if len(self.gp) == 0:
+            logger.warning(
+                "You are attempting active learning with an empty model. "
+                "One atom of each element will be added from the first frame, "
+                "but be warned: Hyperparameter optimzation on a very small "
+                "subset of data can lead to suboptimal training set "
+                "choices, as the hyperparameters will take time to become "
+                "representative of their converged state relative to your data of "
+                "interest."
+            )
+            self.run_passive_learning(
+                frames[0:1], max_model_elts={elt: 1 for elt in frames[0].species_labels}
+            )
+
+        if isinstance(frames, list):
+            frames = Trajectory(deepcopy(frames))
+
+        train_frame = int(len(frames) * (1 - validate_ratio))
+
+        # Loop through trajectory.
+        train_model_atom_counter = 0  # Track atoms added for training
+        write_model_atom_counter = 0  # Track atoms added for writing
+        train_counter = 0  # Track # of times training done
+
+        # Keep track of which atoms trigger force / uncertainty condition
+        training_plan = {}
+
+        # MAIN LOOP - Frames
+        for i, cur_frame in enumerate(frames):
+            frame_start_time = time.time()
+            logger.info(f"=====NOW ON FRAME {i}=====")
+
+            # If no predict_atoms_per_element was specified, predict_atoms
+            # will be equal to every atom in the frame.
+            predict_atoms = subset_of_frame_by_element(cur_frame, predict_atoms_per_elt)
+
+            # Atoms which are skipped will have NaN as their force / std values
+            local_energies = None
+
+            # Three different predictions: Either MGP, GP with energy,
+            # or GP without
+            if self.gp_is_mapped:
+                pred_forces, pred_stds, local_energies = self.pred_func(
+                    structure=cur_frame,
+                    mgp=self.gp,
+                    write_to_structure=False,
+                    selective_atoms=predict_atoms,
+                    skipped_atom_value=np.nan,
+                    energy=True,
+                )
+            elif self.calculate_energy:
+                pred_forces, pred_stds, local_energies = self.pred_func(
+                    structure=cur_frame,
+                    gp=self.gp,
+                    n_cpus=self.n_cpus,
+                    write_to_structure=False,
+                    selective_atoms=predict_atoms,
+                    skipped_atom_value=np.nan,
+                )
+            else:
+                pred_forces, pred_stds = self.pred_func(
+                    structure=cur_frame,
+                    gp=self.gp,
+                    n_cpus=self.n_cpus,
+                    write_to_structure=False,
+                    selective_atoms=predict_atoms,
+                    skipped_atom_value=np.nan,
+                )
+
+            # Get Error
+            dft_forces = cur_frame.forces
+            dft_energy = cur_frame.energy
+            error = np.abs(pred_forces - dft_forces)
+
+            # Create dummy frame with the predicted forces written
+            dummy_frame = deepcopy(cur_frame)
+            dummy_frame.forces = pred_forces
+            dummy_frame.stds = pred_stds
+            cur_frame.stds = pred_stds
+
+            self.output.write_gp_dft_comparison(
+                curr_step=i,
+                frame=dummy_frame,
+                start_time=frame_start_time,
+                dft_forces=dft_forces,
+                dft_energy=dft_energy,
+                error=error,
+                local_energies=local_energies,
+                KE=0,
+                cell=cur_frame.cell,
+            )
+
+            logger.debug(
+                f"Single frame calculation time {time.time()-frame_start_time}"
+            )
+
+            if i < train_frame:
+                # Noise hyperparameter & relative std tolerance is not for gp_is_mapped.
+                if self.gp_is_mapped:
+                    noise = 0
+                else:
+                    noise = Parameters.get_noise(
+                        self.gp.hyps_mask, self.gp.hyps, constraint=False
+                    )
+
+                in_bound, train_atoms = evaluate_training_atoms(
+                    rel_std_tolerance=rel_std_tolerance,
+                    abs_std_tolerance=abs_std_tolerance,
+                    noise=noise,
+                    abs_force_tolerance=abs_force_tolerance,
+                    max_force_error=max_force_error,
+                    pred_forces=pred_forces,
+                    dft_forces=dft_forces,
+                    structure=dummy_frame,
+                    max_model_elts=max_model_elts,
+                    max_atoms_from_frame=max_atoms_from_frame,
+                    max_elts_per_frame=max_elts_per_frame,
+                    training_statistics=self.gp.training_statistics,
+                )
+
+                # Protocol for adding atoms to training set
+                if not in_bound:
+
+                    # Record frame and training atoms, uncertainty, error
+                    force_errors = list(np.abs(pred_forces - dft_forces))
+                    uncertainties = list(dummy_frame.stds)
+                    training_plan[int(i)] = [
+                        (int(a), uncertainties[a], force_errors[a]) for a in train_atoms
+                    ]
+
+                    if self.gp_is_mapped:
+                        continue
+
+                    if len(self.gp) + len(train_atoms) <= max_model_size:
+                        self.update_gp_and_print(
+                            cur_frame,
+                            train_atoms=train_atoms,
+                            uncertainties=pred_stds[train_atoms],
+                            train=False,
+                        )
+                    else:
+                        logger.info(
+                            f"GP is at maximum model size of {max_model_size}. "
+                            f"No further atoms will be added for "
+                            f"remainder of run, but predictions will still be "
+                            f"made. Setting max_atoms_from_frame "
+                            f"to 0."
+                        )
+                        max_atoms_from_frame = 0
+                        if self.model_format:
+                            self.gp.write_model(
+                                f"{self.output_name}_saturated", self.model_format
+                            )
+                    train_model_atom_counter += len(train_atoms)
+                    write_model_atom_counter += len(train_atoms)
+
+                    # Re-train if number of sampled atoms is high enough
+                    if (
+                        train_model_atom_counter >= min_atoms_per_train
+                        or (i + 1) == train_frame
+                        and train_counter <= max_trains
+                    ):
+                        self.train_gp()
+                        train_counter += 1
+                        train_model_atom_counter = 0
+                    else:
+                        self.gp.update_L_alpha()
+                    written = self.write_model_decision(
+                        write_model_train_interval,
+                        write_model_atom_counter,
+                        write_model_atom_interval,
+                        train_counter,
+                    )
+                    if written:
+                        write_model_atom_counter = 0
+
+        # Print training statistics for GP model used
+        conclusion_strings = [
+            "Final GP statistics:" + json.dumps(self.gp.training_statistics)
+        ]
+        self.output.conclude_run(conclusion_strings)
+
+        if self.print_training_plan:
+            with open(f"{self.output_name}_training_plan.json", "w") as f:
+                f.write(json.dumps(training_plan, cls=NumpyEncoder))
+
+        if self.model_format and post_write and not self.gp_is_mapped:
+            self.gp.write_model(f"{self.output_name}_model", self.model_format)
+
+    def write_model_decision(
+        self,
+        write_model_train_interval: int,
+        write_model_atom_counter: int,
+        write_model_atom_interval: int,
+        train_counter: int,
+    ) -> bool:
+
+        # Loop deicing if model should be written
+        will_write = False
+
+        # Train checkpoint interval
+        if (
+            write_model_train_interval
+            and train_counter % write_model_train_interval == 0
+        ):
+            will_write = True
+        # Atoms added checkpoint interval
+        if (
+            write_model_atom_interval
+            and write_model_atom_counter
+            and write_model_atom_interval <= write_model_atom_counter
+        ):
+            will_write = True
+
+        if self.model_format and will_write:
+            self.gp.check_L_alpha()
+            self.gp.write_model(f"{self.output_name}_checkpt", self.model_format)
+        return will_write
+
+    def pre_run(self):
+
         self.output.write_header(
             str(self.gp),
             dt=0,
@@ -276,6 +615,9 @@ class TrajectoryTrainer:
                 "GP Write Name": self.output_name + "_model." + self.model_format,
             },
         )
+
+        if self.gp_is_mapped:
+            raise NotImplementedError("Passive learning not yet configured for " "MGP")
 
         self.start_time = time.time()
         logger = logging.getLogger(self.logger_name)
@@ -360,11 +702,13 @@ class TrajectoryTrainer:
             self.gp.check_L_alpha()
             logger.debug(f"Done check_L_alpha {time.time()-time0}")
 
-        if self.model_format and not self.mgp:
+        if self.model_format and not self.gp_is_mapped:
             self.gp.write_model(f"{self.output_name}_prerun", self.model_format)
 
     def run(self):
         """
+        UPDATE: SOON TO BE DEPRECATED, CIRCA SEPTEMBER 2020
+
         Loop through frames and record the error between
         the GP predictions and the ground-truth forces. Train the GP and update
         the training set upon the triggering of the uncertainty or force error
@@ -376,7 +720,7 @@ class TrajectoryTrainer:
         # Perform pre-run, in which seed trames are used.
         logger = logging.getLogger(self.logger_name)
         logger.debug("Commencing run with pre-run...")
-        if not self.mgp:
+        if not self.gp_is_mapped:
             self.pre_run()
 
         # Past this frame, stop adding atoms to the training set
@@ -407,7 +751,7 @@ class TrajectoryTrainer:
 
             # Three different predictions: Either MGP, GP with energy,
             # or GP without
-            if self.mgp:
+            if self.gp_is_mapped:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame,
                     mgp=self.gp,
@@ -463,8 +807,8 @@ class TrajectoryTrainer:
             )
 
             if i < train_frame:
-                # Noise hyperparameter & relative std tolerance is not for mgp.
-                if self.mgp:
+                # Noise hyperparameter & relative std tolerance is not for gp_is_mapped.
+                if self.gp_is_mapped:
                     noise = 0
                 else:
                     noise = Parameters.get_noise(
@@ -555,21 +899,20 @@ class TrajectoryTrainer:
                             f"{self.output_name}_checkpt", self.model_format
                         )
 
-                if (i + 1) == train_frame and not self.mgp:
+                if (i + 1) == train_frame and not self.gp_is_mapped:
                     self.gp.check_L_alpha()
 
         # Print training statistics for GP model used
-        conclusion_strings = []
-        conclusion_strings.append(
+        conclusion_strings = [
             "Final GP statistics:" + json.dumps(self.gp.training_statistics)
-        )
+        ]
         self.output.conclude_run(conclusion_strings)
 
         if self.print_training_plan:
             with open(f"{self.output_name}_training_plan.json", "w") as f:
                 f.write(json.dumps(training_plan, cls=NumpyEncoder))
 
-        if self.model_format and not self.mgp:
+        if self.model_format and not self.gp_is_mapped:
             self.gp.write_model(f"{self.output_name}_model", self.model_format)
 
     def update_gp_and_print(
@@ -589,6 +932,9 @@ class TrajectoryTrainer:
         :param train: Train or not
         :return: None
         """
+
+        if not train_atoms:
+            return
 
         # Group added atoms by species for easier output
         added_species = [Z_to_element(frame.coded_species[at]) for at in train_atoms]
@@ -613,7 +959,7 @@ class TrajectoryTrainer:
         logger.info(f"New GP Statistics: {json.dumps(self.gp.training_statistics)}\n")
 
         # update gp model; handling differently if it's an MGP
-        if not self.mgp:
+        if not self.gp_is_mapped:
             self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
 
             if train:
@@ -632,7 +978,7 @@ class TrajectoryTrainer:
         """
         logger = logging.getLogger(self.logger_name)
 
-        if self.mgp:
+        if self.gp_is_mapped:
             logger.debug("Training skipped because of MGP")
             return
 

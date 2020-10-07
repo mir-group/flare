@@ -8,6 +8,7 @@ input coordinates don't need to lie inside the box.
 
 from typing import List, Union, Any
 from json import dumps, loads
+from abc import abstractmethod
 
 import pickle as pickle
 import numpy as np
@@ -567,7 +568,7 @@ class Structure:
 
     @staticmethod
     def from_file(
-        file_name: str, format: str = ""
+        file_name: str, format: str = "", as_trajectory: bool = False
     ) -> Union["flare.struc.Structure", List["flare.struc.Structure"]]:
         """
         Load a FLARE structure from a file or a series of FLARE structures
@@ -614,6 +615,118 @@ class Structure:
             return Structure.from_pmg_structure(pmg_structure)
         elif is_poscar and not _pmg_present:
             raise ImportError("Pymatgen not imported; functionality requires pymatgen.")
+
+    def __eq__(self, other):
+        """
+        Very crude equality measure that will check to see if positions,
+        cell, and species are identical. Will not detect e.g. symmetry
+        equivalence, translation, if one structure is a supercell of another,
+        etc. Requires that species are in the same order.
+        :param other:
+        :return:
+        """
+        if not isinstance(other, Structure):
+            return False
+
+        if len(other) != len(self):
+            return False
+        if not all(other.coded_species == self.coded_species):
+            return False
+        if not np.allclose(other.positions, self.positions):
+            return False
+        if not np.allclose(other.cell, self.cell):
+            return False
+
+        return True
+
+
+class StructureSource(object):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_next_structure(self) -> Structure:
+        raise NotImplementedError
+
+    def write_file(self):
+        raise NotImplementedError
+
+
+class ForceSource(object):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_next_force(self, *args, **kwargs) -> "np.ndarray":
+        raise NotImplementedError
+
+    def pre_force(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class Trajectory(StructureSource, ForceSource):
+    def __init__(
+        self, frames: List[Structure] = None, iterate_strategy: Union[int, str] = 1
+    ):
+        if frames is None:
+            frames = []
+        self.frames = frames
+        self.cur_idx = 0
+        self.iterate_strategy = iterate_strategy
+        self.seen_before = []
+
+        if self.iterate_strategy == "shuffle":
+            self.frames = np.random.shuffle(frames)
+        if isinstance(iterate_strategy, int):
+            self.frames = frames[::iterate_strategy]
+
+    def get_next_structure(self) -> Union[Structure, None]:
+
+        if self.cur_idx == len(self):
+            self.cur_idx = 0
+            return None
+
+        cur_frame = self.frames[self.cur_idx]
+        self.cur_idx += 1
+        return cur_frame
+
+    @property
+    def cur_frame(self):
+        return self.frames[self.cur_idx]
+
+    @property
+    def cur_forces(self):
+        return self.frames[self.cur_idx].forces
+
+    def get_next_force(self, index: int = -1) -> "np.ndarray":
+        """
+        Return the forces associated with a current structure,
+        and if an index is passed, that atom.
+        :param index:
+        :return:
+        """
+        if index != 1:
+            return self.cur_frame.forces[index]
+        return self.cur_frame.forces
+
+    def __getitem__(self, item):
+        return self.frames[item]
+
+    def __len__(self):
+        return len(self.frames)
+
+    def __next__(self):
+        struc = self.get_next_structure()
+        if struc is None:
+            raise StopIteration()
+        return struc
+
+    def __iter__(self):
+        self.cur_idx = 0
+        return self
+
+    def append(self, frame: Structure):
+        self.frames.append(frame)
 
 
 def get_unique_species(species: List[Any]) -> (List, List[int]):
