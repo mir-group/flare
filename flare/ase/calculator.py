@@ -97,6 +97,9 @@ class FLARE_Calculator(Calculator):
         self.results["stress"] = total_stress / volume
         self.results["energy"] = np.sum(self.results["local_energies"])
 
+    def set_atoms(self, atoms):
+        self.atoms = atoms
+
     def calculate_gp(self, atoms):
         # Compute energy, forces, and stresses and their uncertainties
         if self.par:
