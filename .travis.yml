@@ -7,7 +7,20 @@ python: 3.7
 cache:
     - pip
 
+matrix:
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+
 before_install:
+    - eval "${MATRIX_EVAL}"
     - sudo apt update
     - sudo apt install -y quantum-espresso 
     - pip install codecov pytest pytest-cov pytest_mock
@@ -16,7 +29,7 @@ before_install:
     - ls
     - cp lammps_plugins/pair_mgp*.* lammps/src
     - cd lammps/src
-    - CXXFLAGS='-std=c++11' make serial
+    - make serial
     - cd ../..
     - "wget https://github.com/cp2k/cp2k/releases/download/\
       v7.1.0/cp2k-7.1-Linux-x86_64.sopt"
