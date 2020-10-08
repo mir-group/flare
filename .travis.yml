@@ -12,6 +12,8 @@ before_install:
     - sudo apt install -y quantum-espresso 
     - pip install codecov pytest pytest-cov pytest_mock
     - git clone https://github.com/lammps/lammps.git lammps
+    - pwd
+    - ls
     - cp lammps_plugin/pair_mgp*.* lammps/src
     - cd lammps/src
     - make serial
