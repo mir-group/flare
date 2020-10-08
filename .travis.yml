@@ -11,11 +11,13 @@ before_install:
     - sudo apt update
     - sudo apt install -y quantum-espresso 
     - pip install codecov pytest pytest-cov pytest_mock
-    - pwd
-    - wget http://folk.uio.no/anjohan/lmp
+    - git clone https://github.com/lammps/lammps.git lammps
+    - cp lammps_plugin/pair_mgp.* lammps/src
+    - cd lammps/src
+    - make serial
+    - cd ../..
     - "wget https://github.com/cp2k/cp2k/releases/download/\
       v7.1.0/cp2k-7.1-Linux-x86_64.sopt"
-    - chmod u+x lmp
     - chmod u+x cp2k-7.1-Linux-x86_64.sopt
     - pip install -r requirements.txt
 
@@ -24,7 +26,7 @@ script:
     - cd tests
     - ls test_files
     - PWSCF_COMMAND=pw.x
-      lmp=$(pwd)/../lmp
+      lmp=$(pwd)/../lammps/src/lmp
       CP2K_COMMAND=../cp2k-7.1-Linux-x86_64.sopt
       pytest -vv --durations=0 --cov=../flare/
     - coverage xml
