@@ -14,7 +14,7 @@ before_install:
     - git clone https://github.com/lammps/lammps.git lammps
     - pwd
     - ls
-    - cp lammps_plugin/pair_mgp*.* lammps/src
+    - cp lammps_plugins/pair_mgp*.* lammps/src
     - cd lammps/src
     - make serial
     - cd ../..
