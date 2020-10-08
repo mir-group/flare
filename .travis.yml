@@ -41,7 +41,7 @@ script:
     - cd tests
     - ls test_files
     - PWSCF_COMMAND=pw.x
-      lmp=$(pwd)/../lammps/src/lmp
+      lmp=$(pwd)/../lammps/src/lmp_serial
       CP2K_COMMAND=../cp2k-7.1-Linux-x86_64.sopt
       pytest -vv --durations=0 --cov=../flare/
     - coverage xml
