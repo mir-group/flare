@@ -64,7 +64,7 @@ protected:
 
   BondEnv() {
     // Create arbitrary structure.
-    cell << 1.3, 0.5, 0.8, -1.2, 1, 0.73, -0.8, 0.1, 0.9;
+    cell << 13, 0.5, 0.8, -1.2, 10, 0.73, -0.8, 0.1, 9;
 
     positions_1 << 1.2, 0.7, 2.3, 3.1, 2.5, 8.9, -1.8, -5.8, 3.0, 0.2, 1.1, 2.1,
         3.2, 1.1, 3.3;
@@ -277,17 +277,20 @@ TEST_F(BondEnv, StressTest) {
 
 TEST_F(BondEnv, StrucTest) {
 
-  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc, stress_dervs_struc;
+  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc, stress_dervs_struc,
+    neighbor_coordinates;
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
 
   auto start = std::chrono::steady_clock::now();
   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
-                        stress_dervs_struc, neighbor_count,
-                        cumulative_neighbor_count, descriptor_indices,
-                        compact_struc);
+                        stress_dervs_struc, neighbor_coordinates,
+                        neighbor_count, cumulative_neighbor_count,
+                        descriptor_indices, compact_struc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << elapsed_seconds.count() << "s\n";
+
+  std::cout << force_dervs_struc.rows() << std::endl;
 
   single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
                       basis_function, cutoff_function, env1, 0, N, lmax,
@@ -297,19 +300,6 @@ TEST_F(BondEnv, StrucTest) {
   double tolerance = 1e-16;
   for (int i = 0; i < single_bond_vals.size(); i++) {
     EXPECT_EQ(single_bond_vals_struc(0, i), single_bond_vals(i));
-  }
-
-  // Check that the force values match.
-  for (int i = 0; i < neighbor_count(0); i++) {
-    int atom_index = descriptor_indices(i);
-    if (atom_index != 0) {
-      for (int j = 0; j < 3; j++) {
-        for (int k = 0; k < single_bond_vals.size(); k++) {
-          EXPECT_EQ(force_dervs_struc(i * 3 + j, k),
-                    force_dervs(atom_index * 3 + j, k));
-        }
-      }
-    }
   }
 
   // Check that the stress values match.
@@ -345,14 +335,15 @@ TEST_F(BondEnv, BigStruc) {
   compact_struc =
       CompactStructure(cell, species, positions, compact_cut, &descriptor);
 
-  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc, stress_dervs_struc;
+  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
+    stress_dervs_struc, neighbor_coordinates;
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
 
   auto start = std::chrono::steady_clock::now();
   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
-                        stress_dervs_struc, neighbor_count,
-                        cumulative_neighbor_count, descriptor_indices,
-                        compact_struc);
+                        stress_dervs_struc, neighbor_coordinates,
+                        neighbor_count, cumulative_neighbor_count,
+                        descriptor_indices, compact_struc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << elapsed_seconds.count() << "s\n";

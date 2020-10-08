@@ -45,7 +45,7 @@ public:
 
   // Store descriptors and gradients by species.
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
-      descriptor_stress_dervs;
+      descriptor_stress_dervs, neighbor_coordinates;
   std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots,
       descriptor_stress_dots;
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,

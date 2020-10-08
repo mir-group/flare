@@ -123,9 +123,10 @@ void single_bond_sum_env(
 void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
                            Eigen::MatrixXd &force_dervs,
                            Eigen::MatrixXd &stress_dervs,
-                           Eigen::VectorXi &unique_neighbor_count,
+                           Eigen::MatrixXd &neighbor_coordinates,
+                           Eigen::VectorXi &neighbor_count,
                            Eigen::VectorXi &cumulative_neighbor_count,
-                           Eigen::VectorXi &descriptor_indices,
+                           Eigen::VectorXi &neighbor_indices,
                            const CompactStructure &structure) {
 
   // Retrieve radial and cutoff information.
@@ -145,40 +146,21 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
       cutoff_function = structure.descriptor_calculator->cutoff_pointer;
 
   // Count atoms inside the descriptor cutoff.
-  unique_neighbor_count = Eigen::VectorXi::Zero(n_atoms);
-  Eigen::VectorXi neighbor_count = Eigen::VectorXi::Zero(n_atoms);
-  Eigen::VectorXi store_unique_neighbors = Eigen::VectorXi::Zero(n_neighbors);
-  Eigen::VectorXi store_unique_indices = Eigen::VectorXi::Zero(n_neighbors);
+  neighbor_count = Eigen::VectorXi::Zero(n_atoms);
+  Eigen::VectorXi store_neighbors = Eigen::VectorXi::Zero(n_neighbors);
 #pragma omp parallel for
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
-      int current_count = unique_neighbor_count(i);
+      int current_count = neighbor_count(i);
       int neigh_index = rel_index + j;
       double r = structure.relative_positions(neigh_index, 0);
       // Check that atom is within descriptor cutoff.
       if (r <= rcut) {
-        // Check if the atom has already been counted.
         int struc_index = structure.structure_indices(neigh_index);
-        int counted = 0;
-        int unique_index;
-        for (int k = 0; k < current_count; k++) {
-          if (store_unique_neighbors(rel_index + k) == struc_index) {
-            counted = 1;
-            unique_index = k;
-          }
-        }
-
-        // If not, update unique neighbor list.
-        if (counted == 0) {
-          unique_index = current_count;
-          store_unique_neighbors(rel_index + current_count) = struc_index;
-          unique_neighbor_count(i)++;
-        }
-
-        // Store unique neighbor list index.
-        store_unique_indices(rel_index + neighbor_count(i)) = unique_index;
+        // Update neighbor list.
+        store_neighbors(rel_index + current_count) = struc_index;
         neighbor_count(i)++;
       }
     }
@@ -188,19 +170,19 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
   cumulative_neighbor_count = Eigen::VectorXi::Zero(n_atoms + 1);
   for (int i = 1; i < n_atoms + 1; i++) {
     cumulative_neighbor_count(i) +=
-        cumulative_neighbor_count(i - 1) + unique_neighbor_count(i - 1);
+        cumulative_neighbor_count(i - 1) + neighbor_count(i - 1);
   }
 
-  // Record descriptor indices.
+  // Record neighbor indices.
   int bond_neighbors = cumulative_neighbor_count(n_atoms);
-  descriptor_indices = Eigen::VectorXi::Zero(bond_neighbors);
+  neighbor_indices = Eigen::VectorXi::Zero(bond_neighbors);
 #pragma omp parallel for
   for (int i = 0; i < n_atoms; i++) {
-    int i_neighbors = unique_neighbor_count(i);
+    int i_neighbors = neighbor_count(i);
     int ind1 = cumulative_neighbor_count(i);
     int ind2 = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
-      descriptor_indices(ind1 + j) = store_unique_neighbors(ind2 + j);
+      neighbor_indices(ind1 + j) = store_neighbors(ind2 + j);
     }
   }
 
@@ -215,12 +197,13 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
   single_bond_vals = Eigen::MatrixXd::Zero(n_atoms, single_bond_size);
   force_dervs = Eigen::MatrixXd::Zero(bond_neighbors * 3, single_bond_size);
   stress_dervs = Eigen::MatrixXd::Zero(n_atoms * 6, single_bond_size);
+  neighbor_coordinates = Eigen::MatrixXd::Zero(bond_neighbors, 3);
 
 #pragma omp parallel for
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
-    int bond_index = rel_index;
+    int neighbor_index = cumulative_neighbor_count(i);
 
     // Initialize radial and spherical harmonic vectors.
     std::vector<double> g = std::vector<double>(N, 0);
@@ -245,8 +228,11 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
       y = structure.relative_positions(neigh_index, 2);
       z = structure.relative_positions(neigh_index, 3);
       s = structure.neighbor_species(neigh_index);
-      unique_ind =
-          cumulative_neighbor_count(i) + store_unique_indices(bond_index);
+
+      // Store neighbor coordinates.
+      neighbor_coordinates(neighbor_index, 0) = x;
+      neighbor_coordinates(neighbor_index, 1) = y;
+      neighbor_coordinates(neighbor_index, 2) = z;
 
       // Compute radial basis values and spherical harmonics.
       calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
@@ -278,9 +264,9 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
           // Update single bond arrays.
           single_bond_vals(i, descriptor_counter) += bond;
 
-          force_dervs(unique_ind * 3, descriptor_counter) += bond_x;
-          force_dervs(unique_ind * 3 + 1, descriptor_counter) += bond_y;
-          force_dervs(unique_ind * 3 + 2, descriptor_counter) += bond_z;
+          force_dervs(neighbor_index * 3, descriptor_counter) += bond_x;
+          force_dervs(neighbor_index * 3 + 1, descriptor_counter) += bond_y;
+          force_dervs(neighbor_index * 3 + 2, descriptor_counter) += bond_z;
 
           stress_dervs(i * 6, descriptor_counter) += bond_x * x;
           stress_dervs(i * 6 + 1, descriptor_counter) += bond_x * y;
@@ -292,7 +278,7 @@ void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
           descriptor_counter++;
         }
       }
-      bond_index++;
+      neighbor_index++;
     }
   }
 }
