@@ -17,7 +17,6 @@ def update_positions(dt, noa, structure):
     # Update previous and current positions.
     structure.prev_positions = np.copy(structure.positions)
     structure.positions = new_pos
-    structure.positions[:] = structure.wrap_positions()
 
 
 def calculate_temperature(structure, dt, noa):
