@@ -277,6 +277,7 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
 
   // Initialize arrays.
   int n_d = B2_vals.cols();
+  structure.n_descriptors = n_d;
   structure.species_indices = Eigen::VectorXi::Zero(noa);
   for (int s = 0; s < nos; s++) {
     int n_s = species_count(s);

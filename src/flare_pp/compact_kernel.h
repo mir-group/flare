@@ -22,6 +22,9 @@ public:
                              const CompactStructure &struc);
 
   Eigen::VectorXd self_kernel_struc(const CompactStructure &struc);
+
+  Eigen::MatrixXd struc_struc(const CompactStructure &struc1,
+                              const CompactStructure & struc2);
 };
 
 #endif

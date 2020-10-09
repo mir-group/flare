@@ -37,7 +37,7 @@ public:
 
 class CompactStructure : public Structure {
 public:
-  int n_species;
+  int n_species, n_descriptors;
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
       neighbor_species, species_indices;
   std::vector<int> n_atoms_by_species, n_neighbors_by_species;
