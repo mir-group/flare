@@ -291,6 +291,7 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
         Eigen::MatrixXd::Zero(n_neigh * 3, n_d));
     structure.descriptor_stress_dervs.push_back(
         Eigen::MatrixXd::Zero(n_s * 6, n_d));
+    structure.neighbor_coordinates.push_back(Eigen::MatrixXd::Zero(n_neigh, 3));
 
     structure.descriptor_norms.push_back(Eigen::VectorXd::Zero(n_s));
     structure.descriptor_force_dots.push_back(
@@ -316,15 +317,17 @@ void B2_Calculator ::compute_struc(CompactStructure &structure) {
     structure.descriptors[s].row(s_count) = B2_vals.row(i);
     structure.descriptor_force_dervs[s].block(n_count * 3, 0, n_neigh * 3,
                                               n_d) =
-        B2_force_dervs.block(cum_neigh * 3, 0, n_neigh * 3, n_d);
+      B2_force_dervs.block(cum_neigh * 3, 0, n_neigh * 3, n_d);
     structure.descriptor_stress_dervs[s].block(s_count * 6, 0, 6, n_d) =
-        B2_stress_dervs.block(i * 6, 0, 6, n_d);
+      B2_stress_dervs.block(i * 6, 0, 6, n_d);
+    structure.neighbor_coordinates[s].block(n_count, 0, n_neigh, 3) =
+      neighbor_coordinates.block(cum_neigh, 0, n_neigh, 3);
 
     structure.descriptor_norms[s](s_count) = B2_norms(i);
     structure.descriptor_force_dots[s].segment(n_count * 3, n_neigh * 3) =
-        B2_force_dots.segment(cum_neigh * 3, n_neigh * 3);
+      B2_force_dots.segment(cum_neigh * 3, n_neigh * 3);
     structure.descriptor_stress_dots[s].segment(s_count * 6, 6) =
-        B2_stress_dots.segment(i * 6, 6);
+      B2_stress_dots.segment(i * 6, 6);
 
     structure.neighbor_counts[s](s_count) = n_neigh;
     structure.cumulative_neighbor_counts[s](s_count) = n_count;
