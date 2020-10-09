@@ -74,11 +74,8 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
       envs.descriptors[s] * struc.descriptors[s].transpose();
     Eigen::MatrixXd force_dot =
       envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
-    Eigen::MatrixXd stress_dot =
-      envs.descriptors[s] * struc.descriptor_stress_dervs[s].transpose();
-    
+
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
-    Eigen::VectorXd struc_stress_dot = struc.descriptor_stress_dots[s];
 
     // Compute kernels. Can parallelize over environments.
     int n_sparse = envs.n_atoms[s];
@@ -115,32 +112,30 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
 
           for (int k = 0; k < n_neigh; k++){
               int neighbor_index = struc.neighbor_indices[s](c_neigh + k);
+              int stress_counter = 0;
 
               for (int comp = 0; comp < 3; comp++){
-                int force_index = 3 * (c_neigh + k) + comp;
+                int ind = c_neigh + k;
+                int force_index = 3 * ind + comp;
                 double f1 = force_dot(i, force_index) / norm_ij;
                 double f2 =
                   dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
                 double f3 = f1 - f2;
-                double kern_val = dval * f3;
+                double force_kern_val = sig2 * dval * f3;
 
                 kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
-                  sig2 * kern_val;
+                  force_kern_val;
                 kern_mat(sparse_index, 1 + 3 * atom_index + comp) +=
-                  sig2 * kern_val;
+                  force_kern_val;
+                
+                // double coord1 = struc.neighbor_coordinates[s](ind, comp);
+                for (int comp2 = comp; comp2 < 3; comp2++){
+                  double coord = struc.neighbor_coordinates[s](ind, comp2);
+                  kern_mat(sparse_index, 1 + 3 * struc.noa + stress_counter) -=
+                    force_kern_val * coord * vol_inv;
+                  stress_counter ++;
+                }
               }
-          }
-
-          // Stress kernel.
-          for (int comp = 0; comp < 6; comp++){
-              int stress_index = j * 6 + comp;
-              double s1 = stress_dot(i, stress_index) / norm_ij;
-              double s2 =
-                dot_vals(i, j) * struc_stress_dot(stress_index) / norm_ij3;
-              double s3 = s1 - s2;
-              double kern_val = dval * s3;
-              kern_mat(sparse_index, 1 + 3 * struc.noa + comp) +=
-                -sig2 * kern_val * vol_inv;
           }
       }
     }
@@ -155,8 +150,10 @@ Eigen::VectorXd CompactKernel ::self_kernel_struc(
   int n_elements = 1 + 3 * struc.noa + 6;
   Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(n_elements);
 
+  // TODO: Change to n_types to allow for bond/triplet descriptors.
   int n_species = struc.n_species;
   double vol_inv = 1 / struc.volume;
+  double vol_inv_sq = vol_inv * vol_inv;
   double empty_thresh = 1e-8;
 
   for (int s = 0; s < n_species; s++){
@@ -166,18 +163,11 @@ Eigen::VectorXd CompactKernel ::self_kernel_struc(
     Eigen::MatrixXd force_dot =
       struc.descriptor_force_dervs[s] *
       struc.descriptors[s].transpose();
-    Eigen::MatrixXd stress_dot =
-      struc.descriptor_stress_dervs[s] *
-      struc.descriptors[s].transpose();
     Eigen::MatrixXd force_force =
       struc.descriptor_force_dervs[s] *
       struc.descriptor_force_dervs[s].transpose();
-    Eigen::MatrixXd stress_stress =
-      struc.descriptor_stress_dervs[s] *
-      struc.descriptor_stress_dervs[s].transpose();
 
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
-    Eigen::VectorXd struc_stress_dot = struc.descriptor_stress_dots[s];
 
     // Compute kernels.
     int n_struc = struc.n_atoms_by_species[s];
@@ -232,15 +222,7 @@ Eigen::VectorXd CompactKernel ::self_kernel_struc(
                 int ind2 = c_neigh_2 + l;
                 int n_ind_2 = struc.neighbor_indices[s](ind2);
 
-                // Check if any pairs of atoms match.
-                int match_check = 0;
-                if ((c_ind_1 == c_ind_2) || (c_ind_1 == n_ind_2) ||
-                    (n_ind_1 == c_ind_2) || (n_ind_1 == n_ind_2))
-                  match_check = 1;
-
-                if (match_check == 0)
-                  continue;
-
+                int stress_counter = 0;
                 for (int m = 0; m < 3; m++){
                     int f_ind_1 = 3 * ind1 + m;
                     int f_ind_2 = 3 * ind2 + m;
@@ -255,7 +237,7 @@ Eigen::VectorXd CompactKernel ::self_kernel_struc(
                       force_dot(f_ind_1, j) / (norm_i * norm_j3);
                     double v6 = struc_force_dot(f_ind_1) *
                       struc_force_dot(f_ind_2) * norm_dot / (norm_i2 * norm_j2);
-                    
+
                     double kern_val =
                       sig2 * mult_fac *
                       (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
@@ -268,32 +250,17 @@ Eigen::VectorXd CompactKernel ::self_kernel_struc(
                       kernel_vector(1 + n_ind_1 * 3 + m) -= kern_val;
                     if (n_ind_1 == n_ind_2)
                       kernel_vector(1 + n_ind_1 * 3 + m) += kern_val;
+
+                    // Stress kernel.
+                    for (int n = m; n < 3; n++){
+                        double coord1 = struc.neighbor_coordinates[s](ind1, n);
+                        double coord2 = struc.neighbor_coordinates[s](ind2, n);
+                        kernel_vector(1 + 3 * struc.noa + stress_counter) +=
+                          kern_val * coord1 * coord2 * vol_inv_sq;
+                        stress_counter ++;
+                    }
                 }
             }
-          }
-
-          // Stress kernel.
-          for (int comp = 0; comp < 6; comp++){
-            int s_ind_1 = i * 6 + comp;
-            int s_ind_2 = j * 6 + comp;
-
-            double v1 = stress_dot(s_ind_1, j) / norm_ij - 
-              norm_dot * struc_stress_dot(s_ind_1) / norm_i2;
-            double v2 = stress_dot(s_ind_2, i) / norm_ij -
-              norm_dot * struc_stress_dot(s_ind_2) / norm_j2;
-            double v3 = stress_stress(s_ind_1, s_ind_2) / norm_ij;
-            double v4 = struc_stress_dot(s_ind_1) *
-              stress_dot(s_ind_2, i) /  (norm_i3 * norm_j);
-            double v5 = struc_stress_dot(s_ind_2) *
-              stress_dot(s_ind_1, j) / (norm_i * norm_j3);
-            double v6 = struc_stress_dot(s_ind_1) *
-              struc_stress_dot(s_ind_2) * norm_dot / (norm_i2 * norm_j2);
-            
-            double kern_val = sig2 * mult_fac *
-              (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
-
-            kernel_vector(1 + 3 * struc.noa + comp) +=
-              kern_val * vol_inv * vol_inv;
           }
       }
     }
