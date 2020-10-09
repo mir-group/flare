@@ -120,6 +120,35 @@ TEST_F(CompactStructureTest, TestKernel){
     }
 }
 
+TEST_F(CompactStructureTest, TestStrucStruc){
+  Eigen::MatrixXd kernel_matrix =
+    kernel.struc_struc(test_struc, test_struc);
+
+  CompactEnvironments envs;
+  std::vector<int> env_inds;
+  for (int i = 0; i < test_struc.noa; i++){
+    env_inds.push_back(i);
+  }
+  envs.add_environments(test_struc, env_inds);
+  Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc);
+
+  Eigen::VectorXd kern_sum = Eigen::VectorXd::Zero(kern_mat.cols());
+  for (int i = 0; i < kern_mat.cols(); i++){
+      for (int j = 0; j < kern_mat.rows(); j++){
+        kern_sum(i) += kern_mat(j, i);
+      }
+  }
+  
+  Eigen::VectorXd self_kern = kernel.self_kernel_struc(test_struc);
+
+  std::cout << kernel_matrix.diagonal() << std::endl;
+  std::cout << self_kern << std::endl;
+//   std::cout << kern_sum << std::endl;
+
+//   std::cout << kernel_matrix.col(0) << std::endl;
+//   std::cout << kernel_matrix.row(0) << std::endl;
+}
+
 TEST_F(CompactStructureTest, TestStrucs) {
   CompactStructures test_strucs;
   test_strucs.add_structure(test_struc);
