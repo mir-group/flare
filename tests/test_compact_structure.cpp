@@ -209,9 +209,81 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
     }
   }
 
-  // TODO: Check energy/stress.
+  // Check energy/stress.
+  int stress_ind_1 = 0;
+  for (int m = 0; m < 3; m++) {
+    for (int n = m; n < 3; n++) {
+      cell_3 = cell_4 = cell_2;
+      positions_3 = positions_4 = positions_2;
 
-  // TODO: Check stress/energy.
+      // Perform strain.
+      cell_3(0, m) += cell_2(0, n) * delta;
+      cell_3(1, m) += cell_2(1, n) * delta;
+      cell_3(2, m) += cell_2(2, n) * delta;
+    
+      cell_4(0, m) -= cell_2(0, n) * delta;
+      cell_4(1, m) -= cell_2(1, n) * delta;
+      cell_4(2, m) -= cell_2(2, n) * delta;
+
+      for (int k = 0; k < test_struc.noa; k++) {
+        positions_3(k, m) += positions_2(k, n) * delta;
+        positions_4(k, m) -= positions_2(k, n) * delta;
+      }
+
+      test_struc_3 = CompactStructure(cell_3, species_2, positions_3,
+                                      cutoff, &desc1);
+      test_struc_4 = CompactStructure(cell_4, species_2, positions_4,
+                                      cutoff, &desc1);
+      
+      kern_pert = kernel.struc_struc(test_struc, test_struc_3);
+      kern_pert_2 = kernel.struc_struc(test_struc, test_struc_4);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
+      exact_val = kernel_matrix(0, 1 + 3 * test_struc_2.noa + stress_ind_1) *
+        test_struc_2.volume;
+
+      EXPECT_NEAR(fin_val, exact_val, thresh);
+
+      stress_ind_1 ++;
+    }
+  }
+
+  // Check stress/energy.
+  stress_ind_1 = 0;
+  for (int m = 0; m < 3; m++) {
+    for (int n = m; n < 3; n++) {
+      cell_3 = cell_4 = cell;
+      positions_3 = positions_4 = positions;
+
+      // Perform strain.
+      cell_3(0, m) += cell(0, n) * delta;
+      cell_3(1, m) += cell(1, n) * delta;
+      cell_3(2, m) += cell(2, n) * delta;
+    
+      cell_4(0, m) -= cell(0, n) * delta;
+      cell_4(1, m) -= cell(1, n) * delta;
+      cell_4(2, m) -= cell(2, n) * delta;
+
+      for (int k = 0; k < test_struc.noa; k++) {
+        positions_3(k, m) += positions(k, n) * delta;
+        positions_4(k, m) -= positions(k, n) * delta;
+      }
+
+      test_struc_3 = CompactStructure(cell_3, species, positions_3,
+                                      cutoff, &desc1);
+      test_struc_4 = CompactStructure(cell_4, species, positions_4,
+                                      cutoff, &desc1);
+      
+      kern_pert = kernel.struc_struc(test_struc_2, test_struc_3);
+      kern_pert_2 = kernel.struc_struc(test_struc_2, test_struc_4);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
+      exact_val = kernel_matrix(1 + 3 * test_struc.noa + stress_ind_1, 0) *
+        test_struc.volume;
+
+      EXPECT_NEAR(fin_val, exact_val, thresh);
+
+      stress_ind_1 ++;
+    }
+  }
 
   // Check force/force kernel.
   for (int m = 0; m < test_struc.noa; m++) {
@@ -371,7 +443,7 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
   }
 
   // Check stress/stress kernel.
-  int stress_ind_1 = 0;
+  stress_ind_1 = 0;
   for (int m = 0; m < 3; m++) {
     for (int n = m; n < 3; n++) {
       cell_3 = cell_4 = cell;
