@@ -9,8 +9,8 @@ void CompactEnvironments ::add_environments(const CompactStructure &structure,
 
   // If first time adding environments, initialize attributes.
   if (n_envs == 0) {
-    n_species = structure.descriptors.size();
-    n_descriptors = structure.descriptors[0].cols();
+    n_species = structure.n_species;
+    n_descriptors = structure.n_descriptors;
 
     Eigen::MatrixXd empty_mat;
     std::vector<double> empty_vec;

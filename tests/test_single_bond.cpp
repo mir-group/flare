@@ -277,14 +277,13 @@ TEST_F(BondEnv, StressTest) {
 
 TEST_F(BondEnv, StrucTest) {
 
-  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc, stress_dervs_struc,
+  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
     neighbor_coordinates;
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
 
   auto start = std::chrono::steady_clock::now();
   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
-                        stress_dervs_struc, neighbor_coordinates,
-                        neighbor_count, cumulative_neighbor_count,
+                        neighbor_coordinates, neighbor_count, cumulative_neighbor_count,
                         descriptor_indices, compact_struc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
@@ -300,13 +299,6 @@ TEST_F(BondEnv, StrucTest) {
   double tolerance = 1e-16;
   for (int i = 0; i < single_bond_vals.size(); i++) {
     EXPECT_EQ(single_bond_vals_struc(0, i), single_bond_vals(i));
-  }
-
-  // Check that the stress values match.
-  for (int i = 0; i < 6; i++) {
-    for (int j = 0; j < single_bond_vals.size(); j++) {
-      EXPECT_EQ(stress_dervs_struc(i, j), stress_dervs(i, j));
-    }
   }
 }
 

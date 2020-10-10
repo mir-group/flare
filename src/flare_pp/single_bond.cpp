@@ -122,7 +122,7 @@ void single_bond_sum_env(
 
 void single_bond_sum_struc(
     Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
-    Eigen::MatrixXd &stress_dervs, Eigen::MatrixXd &neighbor_coordinates,
+    Eigen::MatrixXd &neighbor_coordinates,
     Eigen::VectorXi &neighbor_count, Eigen::VectorXi &cumulative_neighbor_count,
     Eigen::VectorXi &neighbor_indices, const CompactStructure &structure) {
 
@@ -193,7 +193,6 @@ void single_bond_sum_struc(
 
   single_bond_vals = Eigen::MatrixXd::Zero(n_atoms, single_bond_size);
   force_dervs = Eigen::MatrixXd::Zero(bond_neighbors * 3, single_bond_size);
-  stress_dervs = Eigen::MatrixXd::Zero(n_atoms * 6, single_bond_size);
   neighbor_coordinates = Eigen::MatrixXd::Zero(bond_neighbors, 3);
 
 #pragma omp parallel for
@@ -264,13 +263,6 @@ void single_bond_sum_struc(
           force_dervs(neighbor_index * 3, descriptor_counter) += bond_x;
           force_dervs(neighbor_index * 3 + 1, descriptor_counter) += bond_y;
           force_dervs(neighbor_index * 3 + 2, descriptor_counter) += bond_z;
-
-          stress_dervs(i * 6, descriptor_counter) += bond_x * x;
-          stress_dervs(i * 6 + 1, descriptor_counter) += bond_x * y;
-          stress_dervs(i * 6 + 2, descriptor_counter) += bond_x * z;
-          stress_dervs(i * 6 + 3, descriptor_counter) += bond_y * y;
-          stress_dervs(i * 6 + 4, descriptor_counter) += bond_y * z;
-          stress_dervs(i * 6 + 5, descriptor_counter) += bond_z * z;
 
           descriptor_counter++;
         }

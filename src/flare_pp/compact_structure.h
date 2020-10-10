@@ -5,6 +5,37 @@
 #include "structure.h"
 #include <vector>
 
+class CompactStructure : public Structure {
+public:
+  int n_species, n_descriptors;
+  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
+      neighbor_species;
+  Eigen::MatrixXd relative_positions;
+  double cutoff;
+  int sweep, n_neighbors;
+
+  // Store descriptor information.
+  // TODO: Store these attributes inside descriptor class.
+  Eigen::VectorXi species_indices;
+  std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
+    neighbor_coordinates;
+  std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots;
+  std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
+      atom_indices, neighbor_indices;
+  std::vector<int> n_atoms_by_species, n_neighbors_by_species;
+  DescriptorCalculator *descriptor_calculator;
+
+  CompactStructure();
+
+  CompactStructure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
+                   const Eigen::MatrixXd &positions, double cutoff,
+                   DescriptorCalculator *descriptor_calculator);
+
+  void compute_neighbors();
+  void compute_descriptors();
+};
+
+
 // Note: This class may not be needed; might be roughly as efficient to work
 // with individual structures.
 class CompactStructures {
@@ -14,8 +45,7 @@ public:
   // Descriptor matrices. Stacked to accelerate kernel calculations.
   int n_descriptors, n_species;
   int n_strucs = 0;
-  std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
-      descriptor_stress_dervs;
+  std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs;
 
   // Atoms in each structure.
   std::vector<int> n_atoms, c_atoms;
@@ -27,41 +57,11 @@ public:
       neighbor_counts, cumulative_neighbor_counts;
 
   // 1st index: structure; 2nd index: species; 3rd index: atom
-  std::vector<std::vector<Eigen::VectorXd>> descriptor_norms, force_dots,
-      stress_dots;
+  std::vector<std::vector<Eigen::VectorXd>> descriptor_norms, force_dots;
   std::vector<std::vector<Eigen::VectorXi>> local_neighbor_counts,
       cumulative_local_neighbor_counts, atom_indices, neighbor_indices;
 
   void add_structure(const CompactStructure &structure);
-};
-
-class CompactStructure : public Structure {
-public:
-  int n_species, n_descriptors;
-  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
-      neighbor_species, species_indices;
-  std::vector<int> n_atoms_by_species, n_neighbors_by_species;
-  Eigen::MatrixXd relative_positions;
-
-  // Store descriptors and gradients by species.
-  std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
-      descriptor_stress_dervs, neighbor_coordinates;
-  std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots,
-      descriptor_stress_dots;
-  std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
-      atom_indices, neighbor_indices;
-  DescriptorCalculator *descriptor_calculator;
-  double cutoff;
-  int sweep, n_neighbors;
-
-  CompactStructure();
-
-  CompactStructure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
-                   const Eigen::MatrixXd &positions, double cutoff,
-                   DescriptorCalculator *descriptor_calculator);
-
-  void compute_neighbors();
-  void compute_descriptors();
 };
 
 #endif

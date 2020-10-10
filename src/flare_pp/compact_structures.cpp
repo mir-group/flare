@@ -10,7 +10,6 @@ void CompactStructures ::add_structure(const CompactStructure &structure) {
     for (int i = 0; i < n_species; i++) {
       descriptors.push_back(structure.descriptors[i]);
       descriptor_force_dervs.push_back(structure.descriptor_force_dervs[i]);
-      descriptor_stress_dervs.push_back(structure.descriptor_stress_dervs[i]);
     }
   } else {
     // Update descriptor matrices.
@@ -18,31 +17,24 @@ void CompactStructures ::add_structure(const CompactStructure &structure) {
       // Resize.
       int e_rows = descriptors[i].rows();
       int f_rows = descriptor_force_dervs[i].rows();
-      int s_rows = descriptor_stress_dervs[i].rows();
 
       int e_rows_struc = structure.descriptors[i].rows();
       int f_rows_struc = structure.descriptor_force_dervs[i].rows();
-      int s_rows_struc = structure.descriptor_stress_dervs[i].rows();
 
       descriptors[i].conservativeResize(e_rows + e_rows_struc, n_descriptors);
       descriptor_force_dervs[i].conservativeResize(f_rows + f_rows_struc,
                                                    n_descriptors);
-      descriptor_stress_dervs[i].conservativeResize(s_rows + s_rows_struc,
-                                                    n_descriptors);
 
       // Update.
       descriptors[i].block(e_rows, 0, e_rows_struc, n_descriptors) =
           structure.descriptors[i];
       descriptor_force_dervs[i].block(f_rows, 0, f_rows_struc, n_descriptors) =
           structure.descriptor_force_dervs[i];
-      descriptor_stress_dervs[i].block(s_rows, 0, s_rows_struc, n_descriptors) =
-          structure.descriptor_stress_dervs[i];
     }
   }
 
   descriptor_norms.push_back(structure.descriptor_norms);
   force_dots.push_back(structure.descriptor_force_dots);
-  stress_dots.push_back(structure.descriptor_stress_dots);
 
   local_neighbor_counts.push_back(structure.neighbor_counts);
   cumulative_local_neighbor_counts.push_back(
