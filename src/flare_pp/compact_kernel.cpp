@@ -297,7 +297,6 @@ Eigen::MatrixXd CompactKernel ::struc_struc(
 
                 for (int m = 0; m < 3; m++){
                     int f_ind_1 = 3 * ind1 + m;
-                    int sc1 = 0;
                     for (int n = 0; n < 3; n++){
                       int f_ind_2 = 3 * ind2 + n;
                       double v1 = force_dot_1(f_ind_1, j) / norm_ij - 
@@ -333,7 +332,11 @@ Eigen::MatrixXd CompactKernel ::struc_struc(
                             struc1.neighbor_coordinates[s](ind1, p);
                           kernel_matrix(
                             1 + 3 * struc1.noa + stress_ind_1,
-                            1 + c_ind_2 * 3 + n) +=
+                            1 + c_ind_2 * 3 + n) -=
+                            kern_val * coord * vol_inv_1;
+                          kernel_matrix(
+                            1 + 3 * struc1.noa + stress_ind_1,
+                            1 + n_ind_2 * 3 + n) +=
                             kern_val * coord * vol_inv_1;
                           stress_ind_1 ++;
                       }
@@ -345,6 +348,10 @@ Eigen::MatrixXd CompactKernel ::struc_struc(
                             struc2.neighbor_coordinates[s](ind2, p);
                           kernel_matrix(
                               1 + c_ind_1 * 3 + m,
+                              1 + 3 * struc2.noa + stress_ind_2) -=
+                              kern_val * coord * vol_inv_2;
+                          kernel_matrix(
+                              1 + n_ind_1 * 3 + m,
                               1 + 3 * struc2.noa + stress_ind_2) +=
                               kern_val * coord * vol_inv_2;
                           stress_ind_2 ++;
