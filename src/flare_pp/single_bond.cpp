@@ -120,14 +120,11 @@ void single_bond_sum_env(
   }
 }
 
-void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
-                           Eigen::MatrixXd &force_dervs,
-                           Eigen::MatrixXd &stress_dervs,
-                           Eigen::MatrixXd &neighbor_coordinates,
-                           Eigen::VectorXi &neighbor_count,
-                           Eigen::VectorXi &cumulative_neighbor_count,
-                           Eigen::VectorXi &neighbor_indices,
-                           const CompactStructure &structure) {
+void single_bond_sum_struc(
+    Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
+    Eigen::MatrixXd &stress_dervs, Eigen::MatrixXd &neighbor_coordinates,
+    Eigen::VectorXi &neighbor_count, Eigen::VectorXi &cumulative_neighbor_count,
+    Eigen::VectorXi &neighbor_indices, const CompactStructure &structure) {
 
   // Retrieve radial and cutoff information.
   int n_atoms = structure.noa;

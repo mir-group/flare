@@ -443,8 +443,6 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       stress_ind_1 ++;
     }
   }
-
-
 }
 
 TEST_F(CompactStructureTest, TestStrucs) {

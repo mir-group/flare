@@ -9,14 +9,11 @@ class LocalEnvironment;
 class CompactStructure;
 
 // Single bond basis functions.
-void single_bond_sum_struc(Eigen::MatrixXd &single_bond_vals,
-                           Eigen::MatrixXd &force_dervs,
-                           Eigen::MatrixXd &stress_dervs,
-                           Eigen::MatrixXd &neighbor_coordinates,
-                           Eigen::VectorXi &neighbor_count,
-                           Eigen::VectorXi &cumulative_neighbor_count,
-                           Eigen::VectorXi &neighbor_indices,
-                           const CompactStructure &structure);
+void single_bond_sum_struc(
+    Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
+    Eigen::MatrixXd &stress_dervs, Eigen::MatrixXd &neighbor_coordinates,
+    Eigen::VectorXi &neighbor_count, Eigen::VectorXi &cumulative_neighbor_count,
+    Eigen::VectorXi &neighbor_indices, const CompactStructure &structure);
 
 void single_bond_update_env(
     Eigen::VectorXd &single_bond_vals, Eigen::MatrixXd &force_dervs,

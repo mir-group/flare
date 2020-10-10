@@ -7,7 +7,7 @@
 class CompactStructure;
 class CompactEnvironments;
 
-class CompactKernel{
+class CompactKernel {
 public:
   double sigma, sig2, power;
 
@@ -24,7 +24,7 @@ public:
   Eigen::VectorXd self_kernel_struc(const CompactStructure &struc);
 
   Eigen::MatrixXd struc_struc(const CompactStructure &struc1,
-                              const CompactStructure & struc2);
+                              const CompactStructure &struc2);
 };
 
 #endif
