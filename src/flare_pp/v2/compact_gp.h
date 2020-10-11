@@ -1,7 +1,7 @@
 #ifndef COMPACT_GP_H
 #define COMPACT_GP_H
 
-#include "compact_structure.h"
+#include "compact_structures.h"
 #include "kernels.h"
 #include <Eigen/Dense>
 #include <vector>

@@ -1,12 +1,12 @@
-#include "compact_structure.h"
+#include "compact_structures.h"
 
 CompactStructures ::CompactStructures() {}
 
 void CompactStructures ::add_structure(const CompactStructure &structure) {
   // If this is the first structure added, initialize descriptor matrices.
   if (n_strucs == 0) {
-    n_species = structure.descriptors.size();
-    n_descriptors = structure.descriptors[0].cols();
+    n_species = structure.n_species;
+    n_descriptors = structure.n_descriptors;
     for (int i = 0; i < n_species; i++) {
       descriptors.push_back(structure.descriptors[i]);
       descriptor_force_dervs.push_back(structure.descriptor_force_dervs[i]);

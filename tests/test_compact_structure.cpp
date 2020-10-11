@@ -1,4 +1,5 @@
 #include "compact_structure.h"
+#include "compact_structures.h"
 #include "compact_environments.h"
 #include "compact_kernel.h"
 #include "dot_product_kernel.h"
