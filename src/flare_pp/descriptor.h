@@ -1,7 +1,6 @@
 #ifndef DESCRIPTOR_H
 #define DESCRIPTOR_H
 
-#define EIGEN_USE_LAPACKE
 #include <Eigen/Dense>
 #include <vector>
 

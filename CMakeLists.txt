@@ -115,17 +115,18 @@ set(FLARE_SOURCES
     src/flare_pp/dot_product_kernel.cpp
     src/flare_pp/sparse_gp.cpp
     src/flare_pp/sparse_gp_dtc.cpp
-    src/flare_pp/compact_structure.cpp
-    src/flare_pp/compact_structures.cpp
-    src/flare_pp/compact_gp.cpp
-    src/flare_pp/compact_kernel.cpp
-    src/flare_pp/compact_environments.cpp)
+    src/flare_pp/v2/compact_structure.cpp
+    src/flare_pp/v2/compact_structures.cpp
+    src/flare_pp/v2/compact_gp.cpp
+    src/flare_pp/v2/compact_kernel.cpp
+    src/flare_pp/v2/compact_environments.cpp
+    src/flare_pp/v2/compact_descriptor.cpp)
 
 set(PYBIND_SOURCES
     src/ace_binding.cpp)
 
 # Include sources.
-include_directories(src/flare_pp)
+include_directories(src/flare_pp src/flare_pp/v2)
 
 # Create flare library.
 add_library(flare SHARED ${FLARE_SOURCES})
