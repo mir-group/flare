@@ -34,7 +34,6 @@ public:
                        int descriptor_index);
 
   virtual void compute(const LocalEnvironment &env) = 0;
-  virtual void compute_struc(CompactStructure &structure) = 0;
 
   void destroy_matrices();
 
@@ -48,15 +47,6 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
                    const Eigen::MatrixXd &single_bond_stress_dervs,
                    const LocalEnvironment &env, int nos, int N, int lmax);
 
-void B2_descriptor_struc(
-    Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
-    Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,
-    const Eigen::MatrixXd &single_bond_vals,
-    const Eigen::MatrixXd &single_bond_force_dervs,
-    const Eigen::VectorXi &unique_neighbor_count,
-    const Eigen::VectorXi &cumulative_neighbor_count,
-    const Eigen::VectorXi &descriptor_indices, int nos, int N, int lmax);
-
 class B1_Calculator : public DescriptorCalculator {
 public:
   B1_Calculator();
@@ -69,7 +59,6 @@ public:
                 int descriptor_index);
 
   void compute(const LocalEnvironment &env);
-  void compute_struc(CompactStructure &structure);
 };
 
 class B2_Calculator : public DescriptorCalculator {
@@ -84,7 +73,6 @@ public:
                 int descriptor_index);
 
   void compute(const LocalEnvironment &env);
-  void compute_struc(CompactStructure &structure);
 };
 
 #endif

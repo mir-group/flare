@@ -8,11 +8,11 @@ CompactStructure ::CompactStructure(const Eigen::MatrixXd &cell,
                                     const std::vector<int> &species,
                                     const Eigen::MatrixXd &positions,
                                     double cutoff,
-                                    DescriptorCalculator *descriptor_calculator)
+                                    CompactDescriptor *descriptor)
     : Structure(cell, species, positions) {
 
   this->cutoff = cutoff;
-  this->descriptor_calculator = descriptor_calculator;
+  this->descriptor = descriptor;
   sweep = ceil(cutoff / single_sweep_cutoff);
 
   // Initialize neighbor count.
@@ -20,8 +20,7 @@ CompactStructure ::CompactStructure(const Eigen::MatrixXd &cell,
   cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
 
   compute_neighbors();
-  this->descriptor_calculator->compute_struc(*this);
-  n_species = descriptors.size();
+  description = descriptor->compute_struc(*this);
 }
 
 void CompactStructure ::compute_neighbors() {

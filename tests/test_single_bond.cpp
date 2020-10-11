@@ -1,6 +1,7 @@
 #include "compact_structure.h"
 #include "cutoffs.h"
 #include "descriptor.h"
+#include "power_spectrum.h"
 #include "local_environment.h"
 #include "radial.h"
 #include "single_bond.h"
@@ -57,8 +58,7 @@ protected:
   std::string cutoff_string = "cosine";
   std::vector<int> descriptor_settings{nos, N, lmax};
   int descriptor_index = 0;
-  B2_Calculator descriptor;
-  std::vector<DescriptorCalculator *> descriptors;
+  PowerSpectrum descriptor;
 
   CompactStructure compact_struc;
 
@@ -80,9 +80,8 @@ protected:
 
     // Create descriptor calculator.
     descriptor =
-        B2_Calculator(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
-                      descriptor_settings, descriptor_index);
-    descriptors.push_back(&descriptor);
+        PowerSpectrum(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+                      descriptor_settings);
 
     // Create compact structure.
     double compact_cut = 5.0;
@@ -275,32 +274,32 @@ TEST_F(BondEnv, StressTest) {
   }
 }
 
-TEST_F(BondEnv, StrucTest) {
+// TEST_F(BondEnv, StrucTest) {
 
-  Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
-    neighbor_coordinates;
-  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
+//   Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
+//     neighbor_coordinates;
+//   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
 
-  auto start = std::chrono::steady_clock::now();
-  single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
-                        neighbor_coordinates, neighbor_count, cumulative_neighbor_count,
-                        descriptor_indices, compact_struc);
-  auto end = std::chrono::steady_clock::now();
-  std::chrono::duration<double> elapsed_seconds = end - start;
-  std::cout << elapsed_seconds.count() << "s\n";
+//   auto start = std::chrono::steady_clock::now();
+//   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
+//                         neighbor_coordinates, neighbor_count, cumulative_neighbor_count,
+//                         descriptor_indices, compact_struc);
+//   auto end = std::chrono::steady_clock::now();
+//   std::chrono::duration<double> elapsed_seconds = end - start;
+//   std::cout << elapsed_seconds.count() << "s\n";
 
-  std::cout << force_dervs_struc.rows() << std::endl;
+//   std::cout << force_dervs_struc.rows() << std::endl;
 
-  single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
-                      basis_function, cutoff_function, env1, 0, N, lmax,
-                      radial_hyps, cutoff_hyps);
+//   single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
+//                       basis_function, cutoff_function, env1, 0, N, lmax,
+//                       radial_hyps, cutoff_hyps);
 
-  // Check that the single bond values match.
-  double tolerance = 1e-16;
-  for (int i = 0; i < single_bond_vals.size(); i++) {
-    EXPECT_EQ(single_bond_vals_struc(0, i), single_bond_vals(i));
-  }
-}
+//   // Check that the single bond values match.
+//   double tolerance = 1e-16;
+//   for (int i = 0; i < single_bond_vals.size(); i++) {
+//     EXPECT_EQ(single_bond_vals_struc(0, i), single_bond_vals(i));
+//   }
+// }
 
 // TEST_F(BondEnv, BigStruc) {
 //   int n_atoms = 400;

@@ -6,23 +6,30 @@
 
 class LocalEnvironment;
 class CompactStructure;
+class DescriptorValues;
 
 // Descriptor calculator.
 class CompactDescriptor {
 public:
+  CompactDescriptor();
+
+  virtual DescriptorValues compute_struc(CompactStructure &structure) = 0;
+};
+
+class DescriptorValues {
+public:
+  DescriptorValues();
+
   // Descriptor attributes.
-  Eigen::VectorXi species_indices;
+  int n_descriptors, n_types, n_atoms;
+  double volume;
+  Eigen::VectorXi type_indices;
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
     neighbor_coordinates;
   std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots;
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
       atom_indices, neighbor_indices;
-  std::vector<int> n_atoms_by_species, n_neighbors_by_species;
-
-  CompactDescriptor();
-
-  virtual void compute_struc(CompactStructure &structure) = 0;
+  std::vector<int> n_atoms_by_type, n_neighbors_by_type;
 };
-
 
 #endif

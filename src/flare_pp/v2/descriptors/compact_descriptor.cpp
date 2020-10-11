@@ -8,3 +8,5 @@
 #include <iostream>
 
 CompactDescriptor::CompactDescriptor() {}
+
+DescriptorValues::DescriptorValues() {}

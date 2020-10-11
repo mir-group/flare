@@ -1,6 +1,7 @@
 #include "compact_kernel.h"
 #include "compact_environments.h"
 #include "compact_structure.h"
+#include "compact_descriptor.h"
 #include <assert.h>
 #include <cmath>
 #include <iostream>
@@ -14,148 +15,148 @@ CompactKernel ::CompactKernel(double sigma, double power) {
   this->power = power;
 }
 
-Eigen::MatrixXd CompactKernel ::envs_envs(const CompactEnvironments &envs1,
-                                          const CompactEnvironments &envs2) {
+// Eigen::MatrixXd CompactKernel ::envs_envs(const CompactEnvironments &envs1,
+//                                           const CompactEnvironments &envs2) {
 
-  Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(envs1.n_envs, envs2.n_envs);
-  int n_species = envs1.n_species;
-  double empty_thresh = 1e-8;
+//   Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(envs1.n_envs, envs2.n_envs);
+//   int n_types = envs1.n_types;
+//   double empty_thresh = 1e-8;
 
-  for (int s = 0; s < n_species; s++) {
-    // Compute dot products. (Should be done in parallel with MKL.)
-    Eigen::MatrixXd dot_vals =
-        envs1.descriptors[s] * envs2.descriptors[s].transpose();
+//   for (int s = 0; s < n_types; s++) {
+//     // Compute dot products. (Should be done in parallel with MKL.)
+//     Eigen::MatrixXd dot_vals =
+//         envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
-    // Compute kernels.
-    int n_sparse_1 = envs1.n_atoms[s];
-    int c_sparse_1 = envs1.c_atoms[s];
-    int n_sparse_2 = envs2.n_atoms[s];
-    int c_sparse_2 = envs2.c_atoms[s];
+//     // Compute kernels.
+//     int n_sparse_1 = envs1.n_atoms[s];
+//     int c_sparse_1 = envs1.c_atoms[s];
+//     int n_sparse_2 = envs2.n_atoms[s];
+//     int c_sparse_2 = envs2.c_atoms[s];
 
-#pragma omp parallel for
-    for (int i = 0; i < n_sparse_1; i++) {
-      double norm_i = envs1.descriptor_norms[s][i];
+// #pragma omp parallel for
+//     for (int i = 0; i < n_sparse_1; i++) {
+//       double norm_i = envs1.descriptor_norms[s][i];
 
-      // Continue if sparse environment i has no neighbors.
-      if (norm_i < empty_thresh)
-        continue;
-      int ind1 = c_sparse_1 + i;
+//       // Continue if sparse environment i has no neighbors.
+//       if (norm_i < empty_thresh)
+//         continue;
+//       int ind1 = c_sparse_1 + i;
 
-      for (int j = 0; j < n_sparse_2; j++) {
-        double norm_j = envs2.descriptor_norms[s][j];
-        double norm_ij = norm_i * norm_j;
+//       for (int j = 0; j < n_sparse_2; j++) {
+//         double norm_j = envs2.descriptor_norms[s][j];
+//         double norm_ij = norm_i * norm_j;
 
-        // Continue if atom j has no neighbors.
-        if (norm_j < empty_thresh)
-          continue;
-        int ind2 = c_sparse_2 + j;
+//         // Continue if atom j has no neighbors.
+//         if (norm_j < empty_thresh)
+//           continue;
+//         int ind2 = c_sparse_2 + j;
 
-        // Energy kernel.
-        double norm_dot = dot_vals(i, j) / norm_ij;
-        double dval = power * pow(norm_dot, power - 1);
-        kern_mat(ind1, ind2) += sig2 * pow(norm_dot, power);
-      }
-    }
-  }
-  return kern_mat;
-}
+//         // Energy kernel.
+//         double norm_dot = dot_vals(i, j) / norm_ij;
+//         double dval = power * pow(norm_dot, power - 1);
+//         kern_mat(ind1, ind2) += sig2 * pow(norm_dot, power);
+//       }
+//     }
+//   }
+//   return kern_mat;
+// }
 
-Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
-                                           const CompactStructure &struc) {
+// Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
+//                                            const CompactStructure &struc) {
 
-  Eigen::MatrixXd kern_mat =
-      Eigen::MatrixXd::Zero(envs.n_envs, 1 + struc.noa * 3 + 6);
-  int n_species = envs.n_species;
-  double vol_inv = 1 / struc.volume;
-  double empty_thresh = 1e-8;
+//   Eigen::MatrixXd kern_mat =
+//       Eigen::MatrixXd::Zero(envs.n_envs, 1 + struc.noa * 3 + 6);
+//   int n_types = envs.n_types;
+//   double vol_inv = 1 / struc.volume;
+//   double empty_thresh = 1e-8;
 
-  for (int s = 0; s < n_species; s++) {
-    // Compute dot products. (Should be done in parallel with MKL.)
-    Eigen::MatrixXd dot_vals =
-        envs.descriptors[s] * struc.descriptors[s].transpose();
-    Eigen::MatrixXd force_dot =
-        envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
+//   for (int s = 0; s < n_types; s++) {
+//     // Compute dot products. (Should be done in parallel with MKL.)
+//     Eigen::MatrixXd dot_vals =
+//         envs.descriptors[s] * struc.descriptors[s].transpose();
+//     Eigen::MatrixXd force_dot =
+//         envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
 
-    Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
+//     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
-    // Compute kernels. Can parallelize over environments.
-    int n_sparse = envs.n_atoms[s];
-    int n_struc = struc.n_atoms_by_species[s];
-    int c_sparse = envs.c_atoms[s];
+//     // Compute kernels. Can parallelize over environments.
+//     int n_sparse = envs.n_atoms[s];
+//     int n_struc = struc.n_atoms_by_species[s];
+//     int c_sparse = envs.c_atoms[s];
 
-#pragma omp parallel for
-    for (int i = 0; i < n_sparse; i++) {
-      double norm_i = envs.descriptor_norms[s][i];
+// #pragma omp parallel for
+//     for (int i = 0; i < n_sparse; i++) {
+//       double norm_i = envs.descriptor_norms[s][i];
 
-      // Continue if sparse environment i has no neighbors.
-      if (norm_i < empty_thresh)
-        continue;
-      int sparse_index = c_sparse + i;
+//       // Continue if sparse environment i has no neighbors.
+//       if (norm_i < empty_thresh)
+//         continue;
+//       int sparse_index = c_sparse + i;
 
-      for (int j = 0; j < n_struc; j++) {
-        double norm_j = struc.descriptor_norms[s](j);
-        double norm_ij = norm_i * norm_j;
-        double norm_ij3 = norm_ij * norm_j * norm_j;
+//       for (int j = 0; j < n_struc; j++) {
+//         double norm_j = struc.descriptor_norms[s](j);
+//         double norm_ij = norm_i * norm_j;
+//         double norm_ij3 = norm_ij * norm_j * norm_j;
 
-        // Continue if atom j has no neighbors.
-        if (norm_j < empty_thresh)
-          continue;
+//         // Continue if atom j has no neighbors.
+//         if (norm_j < empty_thresh)
+//           continue;
 
-        // Energy kernel.
-        double norm_dot = dot_vals(i, j) / norm_ij;
-        double dval = power * pow(norm_dot, power - 1);
-        kern_mat(sparse_index, 0) += sig2 * pow(norm_dot, power);
+//         // Energy kernel.
+//         double norm_dot = dot_vals(i, j) / norm_ij;
+//         double dval = power * pow(norm_dot, power - 1);
+//         kern_mat(sparse_index, 0) += sig2 * pow(norm_dot, power);
 
-        // Force kernel.
-        int n_neigh = struc.neighbor_counts[s](j);
-        int c_neigh = struc.cumulative_neighbor_counts[s](j);
-        int atom_index = struc.atom_indices[s](j);
+//         // Force kernel.
+//         int n_neigh = struc.neighbor_counts[s](j);
+//         int c_neigh = struc.cumulative_neighbor_counts[s](j);
+//         int atom_index = struc.atom_indices[s](j);
 
-        for (int k = 0; k < n_neigh; k++) {
-          int neighbor_index = struc.neighbor_indices[s](c_neigh + k);
-          int stress_counter = 0;
+//         for (int k = 0; k < n_neigh; k++) {
+//           int neighbor_index = struc.neighbor_indices[s](c_neigh + k);
+//           int stress_counter = 0;
 
-          for (int comp = 0; comp < 3; comp++) {
-            int ind = c_neigh + k;
-            int force_index = 3 * ind + comp;
-            double f1 = force_dot(i, force_index) / norm_ij;
-            double f2 =
-                dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
-            double f3 = f1 - f2;
-            double force_kern_val = sig2 * dval * f3;
+//           for (int comp = 0; comp < 3; comp++) {
+//             int ind = c_neigh + k;
+//             int force_index = 3 * ind + comp;
+//             double f1 = force_dot(i, force_index) / norm_ij;
+//             double f2 =
+//                 dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
+//             double f3 = f1 - f2;
+//             double force_kern_val = sig2 * dval * f3;
 
-            kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
-                force_kern_val;
-            kern_mat(sparse_index, 1 + 3 * atom_index + comp) += force_kern_val;
+//             kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
+//                 force_kern_val;
+//             kern_mat(sparse_index, 1 + 3 * atom_index + comp) += force_kern_val;
 
-            for (int comp2 = comp; comp2 < 3; comp2++) {
-              double coord = struc.neighbor_coordinates[s](ind, comp2);
-              kern_mat(sparse_index, 1 + 3 * struc.noa + stress_counter) -=
-                  force_kern_val * coord * vol_inv;
-              stress_counter++;
-            }
-          }
-        }
-      }
-    }
-  }
+//             for (int comp2 = comp; comp2 < 3; comp2++) {
+//               double coord = struc.neighbor_coordinates[s](ind, comp2);
+//               kern_mat(sparse_index, 1 + 3 * struc.noa + stress_counter) -=
+//                   force_kern_val * coord * vol_inv;
+//               stress_counter++;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
 
-  return kern_mat;
-}
+//   return kern_mat;
+// }
 
-Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
-                                            const CompactStructure &struc2) {
+Eigen::MatrixXd CompactKernel ::struc_struc(DescriptorValues struc1,
+                                            DescriptorValues struc2) {
 
-  int n_elements_1 = 1 + 3 * struc1.noa + 6;
-  int n_elements_2 = 1 + 3 * struc2.noa + 6;
+  int n_elements_1 = 1 + 3 * struc1.n_atoms + 6;
+  int n_elements_2 = 1 + 3 * struc2.n_atoms + 6;
   Eigen::MatrixXd kernel_matrix =
       Eigen::MatrixXd::Zero(n_elements_1, n_elements_2);
 
-  // Check species.
-  int n_species_1 = struc1.n_species;
-  int n_species_2 = struc2.n_species;
-  bool species_check = (n_species_1 == n_species_2);
-  assert(("Species don't match.", species_check));
+  // Check types.
+  int n_types_1 = struc1.n_types;
+  int n_types_2 = struc2.n_types;
+  bool type_check = (n_types_1 == n_types_2);
+  assert(("Types don't match.", type_check));
 
   // Check descriptor size.
   int n_descriptors_1 = struc1.n_descriptors;
@@ -169,7 +170,7 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
   double empty_thresh = 1e-8;
   std::vector<int> stress_inds{0, 3, 5};
 
-  for (int s = 0; s < n_species_1; s++) {
+  for (int s = 0; s < n_types_1; s++) {
     // Compute dot products.
     Eigen::MatrixXd dot_vals =
         struc1.descriptors[s] * struc2.descriptors[s].transpose();
@@ -184,8 +185,8 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
     Eigen::VectorXd struc_force_dot_2 = struc2.descriptor_force_dots[s];
 
     // Compute kernels.
-    int n_struc1 = struc1.n_atoms_by_species[s];
-    int n_struc2 = struc2.n_atoms_by_species[s];
+    int n_struc1 = struc1.n_atoms_by_type[s];
+    int n_struc2 = struc2.n_atoms_by_type[s];
 
     for (int i = 0; i < n_struc1; i++) {
       double norm_i = struc1.descriptor_norms[s](i);
@@ -243,7 +244,7 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
             // Energy/stress.
             for (int comp2 = comp; comp2 < 3; comp2++) {
               double coord = struc2.neighbor_coordinates[s](ind, comp2);
-              kernel_matrix(0, 1 + 3 * struc2.noa + stress_counter) -=
+              kernel_matrix(0, 1 + 3 * struc2.n_atoms + stress_counter) -=
                   force_kern_val * coord * vol_inv_2;
               stress_counter++;
             }
@@ -271,7 +272,7 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
             // Stress/energy.
             for (int comp2 = comp; comp2 < 3; comp2++) {
               double coord = struc1.neighbor_coordinates[s](ind, comp2);
-              kernel_matrix(1 + 3 * struc1.noa + stress_counter, 0) -=
+              kernel_matrix(1 + 3 * struc1.n_atoms + stress_counter, 0) -=
                   force_kern_val * coord * vol_inv_1;
               stress_counter++;
             }
@@ -321,10 +322,10 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
                 int stress_ind_1 = stress_inds[m];
                 for (int p = m; p < 3; p++) {
                   double coord = struc1.neighbor_coordinates[s](ind1, p);
-                  kernel_matrix(1 + 3 * struc1.noa + stress_ind_1,
+                  kernel_matrix(1 + 3 * struc1.n_atoms + stress_ind_1,
                                 1 + c_ind_2 * 3 + n) -=
                       kern_val * coord * vol_inv_1;
-                  kernel_matrix(1 + 3 * struc1.noa + stress_ind_1,
+                  kernel_matrix(1 + 3 * struc1.n_atoms + stress_ind_1,
                                 1 + n_ind_2 * 3 + n) +=
                       kern_val * coord * vol_inv_1;
                   stress_ind_1++;
@@ -335,10 +336,10 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
                 for (int p = n; p < 3; p++) {
                   double coord = struc2.neighbor_coordinates[s](ind2, p);
                   kernel_matrix(1 + c_ind_1 * 3 + m,
-                                1 + 3 * struc2.noa + stress_ind_2) -=
+                                1 + 3 * struc2.n_atoms + stress_ind_2) -=
                       kern_val * coord * vol_inv_2;
                   kernel_matrix(1 + n_ind_1 * 3 + m,
-                                1 + 3 * struc2.noa + stress_ind_2) +=
+                                1 + 3 * struc2.n_atoms + stress_ind_2) +=
                       kern_val * coord * vol_inv_2;
                   stress_ind_2++;
                 }
@@ -350,8 +351,8 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
                   stress_ind_2 = stress_inds[n];
                   for (int q = n; q < 3; q++) {
                     double coord2 = struc2.neighbor_coordinates[s](ind2, q);
-                    kernel_matrix(1 + 3 * struc1.noa + stress_ind_1,
-                                  1 + 3 * struc2.noa + stress_ind_2) +=
+                    kernel_matrix(1 + 3 * struc1.n_atoms + stress_ind_1,
+                                  1 + 3 * struc2.n_atoms + stress_ind_2) +=
                         kern_val * coord1 * coord2 * vol_inv_1 * vol_inv_2;
                     stress_ind_2++;
                   }
@@ -369,18 +370,17 @@ Eigen::MatrixXd CompactKernel ::struc_struc(const CompactStructure &struc1,
 }
 
 Eigen::VectorXd
-CompactKernel ::self_kernel_struc(const CompactStructure &struc) {
+CompactKernel ::self_kernel_struc(DescriptorValues struc) {
 
-  int n_elements = 1 + 3 * struc.noa + 6;
+  int n_elements = 1 + 3 * struc.n_atoms + 6;
   Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(n_elements);
 
-  // TODO: Change to n_types to allow for bond/triplet descriptors.
-  int n_species = struc.n_species;
+  int n_types = struc.n_types;
   double vol_inv = 1 / struc.volume;
   double vol_inv_sq = vol_inv * vol_inv;
   double empty_thresh = 1e-8;
 
-  for (int s = 0; s < n_species; s++) {
+  for (int s = 0; s < n_types; s++) {
     // Compute dot products. (Should be done in parallel with MKL.)
     Eigen::MatrixXd dot_vals =
         struc.descriptors[s] * struc.descriptors[s].transpose();
@@ -392,7 +392,7 @@ CompactKernel ::self_kernel_struc(const CompactStructure &struc) {
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
     // Compute kernels.
-    int n_struc = struc.n_atoms_by_species[s];
+    int n_struc = struc.n_atoms_by_type[s];
 
     for (int i = 0; i < n_struc; i++) {
       double norm_i = struc.descriptor_norms[s](i);
@@ -476,7 +476,7 @@ CompactKernel ::self_kernel_struc(const CompactStructure &struc) {
               for (int n = m; n < 3; n++) {
                 double coord1 = struc.neighbor_coordinates[s](ind1, n);
                 double coord2 = struc.neighbor_coordinates[s](ind2, n);
-                kernel_vector(1 + 3 * struc.noa + stress_counter) +=
+                kernel_vector(1 + 3 * struc.n_atoms + stress_counter) +=
                     kern_val * coord1 * coord2 * vol_inv_sq;
                 stress_counter++;
               }
