@@ -119,7 +119,8 @@ set(FLARE_SOURCES
     src/flare_pp/v2/bffs/compact_gp.cpp
     src/flare_pp/v2/kernels/compact_kernel.cpp
     src/flare_pp/v2/descriptors/compact_descriptor.cpp
-    src/flare_pp/v2/descriptors/power_spectrum.cpp)
+    src/flare_pp/v2/descriptors/power_spectrum.cpp
+    src/flare_pp/v2/descriptors/two_body.cpp)
 
 set(PYBIND_SOURCES
     src/ace_binding.cpp)
