@@ -13,9 +13,12 @@ public:
   double cutoff;
   int sweep, n_neighbors;
 
-  // TODO: Allow for multiple descriptors.
   std::vector<CompactDescriptor *> descriptor_calculators;
   std::vector<DescriptorValues> descriptors;
+
+  // Make structure labels empty by default.
+  Eigen::VectorXd energy, forces, stresses, mean_efs, variance_efs;
+  std::vector<Eigen::VectorXd> mean_contributions;
 
   CompactStructure();
 
