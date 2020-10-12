@@ -1,8 +1,8 @@
 #include "compact_structure.h"
 #include "cutoffs.h"
 #include "descriptor.h"
-#include "power_spectrum.h"
 #include "local_environment.h"
+#include "power_spectrum.h"
 #include "radial.h"
 #include "single_bond.h"
 #include "structure.h"
@@ -86,7 +86,8 @@ protected:
     // // Create compact structure.
     // double compact_cut = 5.0;
     // compact_struc =
-    //     CompactStructure(cell, species, positions_1, compact_cut, &descriptor);
+    //     CompactStructure(cell, species, positions_1, compact_cut,
+    //     &descriptor);
   }
 };
 
@@ -278,12 +279,14 @@ TEST_F(BondEnv, StressTest) {
 
 //   Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
 //     neighbor_coordinates;
-//   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
+//   Eigen::VectorXi neighbor_count, cumulative_neighbor_count,
+//   descriptor_indices;
 
 //   auto start = std::chrono::steady_clock::now();
 //   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,
-//                         neighbor_coordinates, neighbor_count, cumulative_neighbor_count,
-//                         descriptor_indices, compact_struc);
+//                         neighbor_coordinates, neighbor_count,
+//                         cumulative_neighbor_count, descriptor_indices,
+//                         compact_struc);
 //   auto end = std::chrono::steady_clock::now();
 //   std::chrono::duration<double> elapsed_seconds = end - start;
 //   std::cout << elapsed_seconds.count() << "s\n";
@@ -328,7 +331,8 @@ TEST_F(BondEnv, StressTest) {
 
 //   Eigen::MatrixXd single_bond_vals_struc, force_dervs_struc,
 //     stress_dervs_struc, neighbor_coordinates;
-//   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, descriptor_indices;
+//   Eigen::VectorXi neighbor_count, cumulative_neighbor_count,
+//   descriptor_indices;
 
 //   auto start = std::chrono::steady_clock::now();
 //   single_bond_sum_struc(single_bond_vals_struc, force_dervs_struc,

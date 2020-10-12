@@ -1,8 +1,8 @@
 #ifndef COMPACT_STRUCTURES_H
 #define COMPACT_STRUCTURES_H
 
-#include "descriptor.h"
 #include "compact_structure.h"
+#include "descriptor.h"
 #include "structure.h"
 #include <vector>
 
