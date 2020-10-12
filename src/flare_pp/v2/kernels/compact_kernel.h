@@ -7,6 +7,7 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
+// TODO: Rename to DotProductKernel.
 class CompactKernel {
 public:
   double sigma, sig2, power;
@@ -18,8 +19,8 @@ public:
   Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
                             const ClusterDescriptor &envs2);
 
-//   Eigen::MatrixXd envs_struc(const CompactEnvironments &envs,
-//                              const CompactStructure &struc);
+  Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
+                             const DescriptorValues &struc);
 
   Eigen::VectorXd self_kernel_struc(DescriptorValues struc);
 

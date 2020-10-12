@@ -27,6 +27,7 @@ public:
   std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc, test_struc_2;
   StructureDescriptor struc2;
+  DescriptorValues struc_desc;
 
   double cell_size = 10;
   double cutoff = cell_size / 2;
@@ -70,6 +71,8 @@ public:
     test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
     struc2 = StructureDescriptor(cell, species, positions, cutoff,
                                  many_body_cutoffs, descriptor_calculators);
+    
+    struc_desc = test_struc.descriptors[0];
 
     kernel = CompactKernel(sigma, power);
     kernel_2 = DotProductKernel(sigma, power, 0);
@@ -97,13 +100,13 @@ TEST_F(CompactStructureTest, TestDescriptor) {
 
 TEST_F(CompactStructureTest, TestEnvironments){
     ClusterDescriptor envs;
-    envs.add_cluster(test_struc.descriptors[0]);
+    envs.add_cluster(struc_desc);
 }
 
 TEST_F(CompactStructureTest, TimeSelfKernel) {
   auto start = std::chrono::steady_clock::now();
   Eigen::VectorXd self_kern =
-      kernel.self_kernel_struc(test_struc.descriptors[0]);
+      kernel.self_kernel_struc(struc_desc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "Compact self kernel: " << elapsed_seconds.count() << "s\n";
@@ -121,10 +124,10 @@ TEST_F(CompactStructureTest, TimeSelfKernel) {
 
 TEST_F(CompactStructureTest, TestEnvsEnvs){
   Eigen::MatrixXd kernel_matrix =
-    kernel.struc_struc(test_struc.descriptors[0], test_struc.descriptors[0]);
+    kernel.struc_struc(struc_desc, struc_desc);
 
   ClusterDescriptor envs;
-  envs.add_cluster(test_struc.descriptors[0]);
+  envs.add_cluster(struc_desc);
   Eigen::MatrixXd kern_mat = kernel.envs_envs(envs, envs);
 
   double kern_sum = 0;
@@ -137,35 +140,30 @@ TEST_F(CompactStructureTest, TestEnvsEnvs){
   EXPECT_NEAR(kern_sum, kernel_matrix(0, 0), 1e-8);
 }
 
-// TEST_F(CompactStructureTest, TestEnvsStruc){
-//   Eigen::MatrixXd kernel_matrix =
-//     kernel.struc_struc(test_struc.descriptors[0], test_struc.descriptors[0]);
+TEST_F(CompactStructureTest, TestEnvsStruc){
+  Eigen::MatrixXd kernel_matrix =
+    kernel.struc_struc(struc_desc, struc_desc);
 
-//   ClusterDescriptor envs;
-//   envs.add_cluster(test_struc.descriptors[0]);
-//   Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc.descriptors[0]);
+  ClusterDescriptor envs;
+  envs.add_cluster(struc_desc);
+  Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, struc_desc);
 
-//   Eigen::VectorXd kern_sum = Eigen::VectorXd::Zero(kern_mat.cols());
-//   for (int i = 0; i < kern_mat.cols(); i++){
-//       for (int j = 0; j < kern_mat.rows(); j++){
-//         kern_sum(i) += kern_mat(j, i);
-//       }
-//   }
-
-//   Eigen::VectorXd self_kern = kernel.self_kernel_struc(test_struc);
-
-//   std::cout << kernel_matrix.diagonal() << std::endl;
-//   std::cout << self_kern << std::endl;
-//   std::cout << kern_sum << std::endl;
-
-//   std::cout << kernel_matrix.col(0) << std::endl;
-//   std::cout << kernel_matrix.row(0) << std::endl;
-// }
+  Eigen::VectorXd kern_sum = Eigen::VectorXd::Zero(kern_mat.cols());
+  for (int i = 0; i < kern_mat.cols(); i++){
+      for (int j = 0; j < kern_mat.rows(); j++){
+        kern_sum(i) += kern_mat(j, i);
+      }
+  }
+  
+  for (int i = 0; i < kern_sum.size(); i++){
+      EXPECT_NEAR(kern_sum(i), kernel_matrix.row(0)(i), 1e-8);
+  }
+}
 
 TEST_F(CompactStructureTest, StrucStrucFull) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
-      test_struc.descriptors[0], test_struc_2.descriptors[0]);
+      struc_desc, test_struc_2.descriptors[0]);
 
   double delta = 1e-5;
   double thresh = 2e-4;
@@ -186,9 +184,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       test_struc_4 =
           CompactStructure(cell_2, species_2, positions_4, cutoff, dc);
 
-      kern_pert = kernel.struc_struc(test_struc.descriptors[0],
+      kern_pert = kernel.struc_struc(struc_desc,
                                      test_struc_3.descriptors[0]);
-      kern_pert_2 = kernel.struc_struc(test_struc.descriptors[0],
+      kern_pert_2 = kernel.struc_struc(struc_desc,
                                        test_struc_4.descriptors[0]);
       fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(0, 1 + 3 * p + m);
@@ -244,9 +242,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       test_struc_4 =
           CompactStructure(cell_4, species_2, positions_4, cutoff, dc);
 
-      kern_pert = kernel.struc_struc(test_struc.descriptors[0],
+      kern_pert = kernel.struc_struc(struc_desc,
                                      test_struc_3.descriptors[0]);
-      kern_pert_2 = kernel.struc_struc(test_struc.descriptors[0],
+      kern_pert_2 = kernel.struc_struc(struc_desc,
                                        test_struc_4.descriptors[0]);
       fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(0, 1 + 3 * test_struc_2.noa + stress_ind_1) *
