@@ -15,51 +15,64 @@ CompactKernel ::CompactKernel(double sigma, double power) {
   this->power = power;
 }
 
-// Eigen::MatrixXd CompactKernel ::envs_envs(const CompactEnvironments &envs1,
-//                                           const CompactEnvironments &envs2) {
+Eigen::MatrixXd CompactKernel ::envs_envs(const ClusterDescriptor &envs1,
+                                          const ClusterDescriptor &envs2) {
 
-//   Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(envs1.n_envs, envs2.n_envs);
-//   int n_types = envs1.n_types;
-//   double empty_thresh = 1e-8;
+  // Check types.
+  int n_types_1 = envs1.n_types;
+  int n_types_2 = envs2.n_types;
+  bool type_check = (n_types_1 == n_types_2);
+  assert(("Types don't match.", type_check));
 
-//   for (int s = 0; s < n_types; s++) {
-//     // Compute dot products. (Should be done in parallel with MKL.)
-//     Eigen::MatrixXd dot_vals =
-//         envs1.descriptors[s] * envs2.descriptors[s].transpose();
+  // Check descriptor size.
+  int n_descriptors_1 = envs1.n_descriptors;
+  int n_descriptors_2 = envs2.n_descriptors;
+  bool descriptor_check = (n_descriptors_1 == n_descriptors_2);
+  assert(("Descriptors don't match.", descriptor_check));
 
-//     // Compute kernels.
-//     int n_sparse_1 = envs1.n_atoms[s];
-//     int c_sparse_1 = envs1.c_atoms[s];
-//     int n_sparse_2 = envs2.n_atoms[s];
-//     int c_sparse_2 = envs2.c_atoms[s];
+  Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(
+    envs1.n_clusters, envs2.n_clusters);
+  int n_types = n_types_1;
+  double empty_thresh = 1e-8;
 
-// #pragma omp parallel for
-//     for (int i = 0; i < n_sparse_1; i++) {
-//       double norm_i = envs1.descriptor_norms[s][i];
+  for (int s = 0; s < n_types; s++) {
+    // Compute dot products. (Should be done in parallel with MKL.)
+    Eigen::MatrixXd dot_vals =
+        envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
-//       // Continue if sparse environment i has no neighbors.
-//       if (norm_i < empty_thresh)
-//         continue;
-//       int ind1 = c_sparse_1 + i;
+    // Compute kernels.
+    int n_sparse_1 = envs1.type_count[s];
+    int c_sparse_1 = envs1.cumulative_type_count[s];
+    int n_sparse_2 = envs2.type_count[s];
+    int c_sparse_2 = envs2.cumulative_type_count[s];
 
-//       for (int j = 0; j < n_sparse_2; j++) {
-//         double norm_j = envs2.descriptor_norms[s][j];
-//         double norm_ij = norm_i * norm_j;
+#pragma omp parallel for
+    for (int i = 0; i < n_sparse_1; i++) {
+      double norm_i = envs1.descriptor_norms[s](i);
 
-//         // Continue if atom j has no neighbors.
-//         if (norm_j < empty_thresh)
-//           continue;
-//         int ind2 = c_sparse_2 + j;
+      // Continue if sparse environment i has no neighbors.
+      if (norm_i < empty_thresh)
+        continue;
+      int ind1 = c_sparse_1 + i;
 
-//         // Energy kernel.
-//         double norm_dot = dot_vals(i, j) / norm_ij;
-//         double dval = power * pow(norm_dot, power - 1);
-//         kern_mat(ind1, ind2) += sig2 * pow(norm_dot, power);
-//       }
-//     }
-//   }
-//   return kern_mat;
-// }
+      for (int j = 0; j < n_sparse_2; j++) {
+        double norm_j = envs2.descriptor_norms[s](j);
+        double norm_ij = norm_i * norm_j;
+
+        // Continue if atom j has no neighbors.
+        if (norm_j < empty_thresh)
+          continue;
+        int ind2 = c_sparse_2 + j;
+
+        // Energy kernel.
+        double norm_dot = dot_vals(i, j) / norm_ij;
+        double dval = power * pow(norm_dot, power - 1);
+        kern_mat(ind1, ind2) += sig2 * pow(norm_dot, power);
+      }
+    }
+  }
+  return kern_mat;
+}
 
 // Eigen::MatrixXd CompactKernel ::envs_struc(const CompactEnvironments &envs,
 //                                            const CompactStructure &struc) {

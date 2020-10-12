@@ -95,14 +95,10 @@ TEST_F(CompactStructureTest, TestDescriptor) {
             << "s\n";
 }
 
-// TEST_F(CompactStructureTest, TestEnvironments){
-//     CompactEnvironments envs;
-//     std::vector<int> env_inds_1 {0, 1, 3};
-//     envs.add_environments(test_struc, env_inds_1);
-
-//     std::vector<int> env_inds_2 {2, 4};
-//     envs.add_environments(test_struc, env_inds_2);
-// }
+TEST_F(CompactStructureTest, TestEnvironments){
+    ClusterDescriptor envs;
+    envs.add_cluster(test_struc.descriptors[0]);
+}
 
 TEST_F(CompactStructureTest, TimeSelfKernel) {
   auto start = std::chrono::steady_clock::now();
@@ -123,17 +119,31 @@ TEST_F(CompactStructureTest, TimeSelfKernel) {
   }
 }
 
-// TEST_F(CompactStructureTest, TestStrucStruc){
-//   Eigen::MatrixXd kernel_matrix =
-//     kernel.struc_struc(test_struc, test_struc);
+TEST_F(CompactStructureTest, TestEnvsEnvs){
+  Eigen::MatrixXd kernel_matrix =
+    kernel.struc_struc(test_struc.descriptors[0], test_struc.descriptors[0]);
 
-//   CompactEnvironments envs;
-//   std::vector<int> env_inds;
-//   for (int i = 0; i < test_struc.noa; i++){
-//     env_inds.push_back(i);
-//   }
-//   envs.add_environments(test_struc, env_inds);
-//   Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc);
+  ClusterDescriptor envs;
+  envs.add_cluster(test_struc.descriptors[0]);
+  Eigen::MatrixXd kern_mat = kernel.envs_envs(envs, envs);
+
+  double kern_sum = 0;
+  for (int i = 0; i < envs.n_clusters; i++){
+    for (int j = 0; j < envs.n_clusters; j++){
+      kern_sum += kern_mat(i, j);
+    }
+  }
+
+  EXPECT_NEAR(kern_sum, kernel_matrix(0, 0), 1e-8);
+}
+
+// TEST_F(CompactStructureTest, TestEnvsStruc){
+//   Eigen::MatrixXd kernel_matrix =
+//     kernel.struc_struc(test_struc.descriptors[0], test_struc.descriptors[0]);
+
+//   ClusterDescriptor envs;
+//   envs.add_cluster(test_struc.descriptors[0]);
+//   Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc.descriptors[0]);
 
 //   Eigen::VectorXd kern_sum = Eigen::VectorXd::Zero(kern_mat.cols());
 //   for (int i = 0; i < kern_mat.cols(); i++){
@@ -146,10 +156,10 @@ TEST_F(CompactStructureTest, TimeSelfKernel) {
 
 //   std::cout << kernel_matrix.diagonal() << std::endl;
 //   std::cout << self_kern << std::endl;
-// //   std::cout << kern_sum << std::endl;
+//   std::cout << kern_sum << std::endl;
 
-// //   std::cout << kernel_matrix.col(0) << std::endl;
-// //   std::cout << kernel_matrix.row(0) << std::endl;
+//   std::cout << kernel_matrix.col(0) << std::endl;
+//   std::cout << kernel_matrix.row(0) << std::endl;
 // }
 
 TEST_F(CompactStructureTest, StrucStrucFull) {

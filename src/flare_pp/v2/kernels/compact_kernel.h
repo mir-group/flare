@@ -4,10 +4,8 @@
 #include <Eigen/Dense>
 #include <vector>
 
-class CompactStructure;
-class CompactDescriptor;
 class DescriptorValues;
-class CompactEnvironments;
+class ClusterDescriptor;
 
 class CompactKernel {
 public:
@@ -17,8 +15,8 @@ public:
 
   CompactKernel(double sigma, double power);
 
-//   Eigen::MatrixXd envs_envs(const CompactEnvironments &envs1,
-//                             const CompactEnvironments &envs2);
+  Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
+                            const ClusterDescriptor &envs2);
 
 //   Eigen::MatrixXd envs_struc(const CompactEnvironments &envs,
 //                              const CompactStructure &struc);
