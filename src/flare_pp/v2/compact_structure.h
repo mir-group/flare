@@ -14,14 +14,14 @@ public:
   int sweep, n_neighbors;
 
   // TODO: Allow for multiple descriptors.
-  CompactDescriptor *descriptor;
-  DescriptorValues description;
+  std::vector<CompactDescriptor *> descriptor_calculators;
+  std::vector<DescriptorValues> descriptors;
 
   CompactStructure();
 
   CompactStructure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
                    const Eigen::MatrixXd &positions, double cutoff,
-                   CompactDescriptor *descriptor);
+                   std::vector<CompactDescriptor *> descriptor_calculators);
 
   void compute_neighbors();
   void compute_descriptors();

@@ -24,6 +24,7 @@ public:
   B2_Calculator desc1;
   PowerSpectrum ps;
   std::vector<DescriptorCalculator *> descriptor_calculators;
+  std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc, test_struc_2;
   StructureDescriptor struc2;
 
@@ -63,10 +64,10 @@ public:
                        cutoff_hyps, descriptor_settings);
 
     descriptor_calculators.push_back(&desc1);
+    dc.push_back(&ps);
 
-    test_struc = CompactStructure(cell, species, positions, cutoff, &ps);
-    test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff,
-                                    &ps);
+    test_struc = CompactStructure(cell, species, positions, cutoff, dc);
+    test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
     struc2 = StructureDescriptor(cell, species, positions, cutoff,
                                  many_body_cutoffs, descriptor_calculators);
 
@@ -78,7 +79,7 @@ public:
 TEST_F(CompactStructureTest, TestDescriptor) {
   auto start = std::chrono::steady_clock::now();
   CompactStructure struc1 =
-      CompactStructure(cell, species, positions, cutoff, &ps);
+      CompactStructure(cell, species, positions, cutoff, dc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "Compact structure construction: " << elapsed_seconds.count()
@@ -103,42 +104,26 @@ TEST_F(CompactStructureTest, TestDescriptor) {
 //     envs.add_environments(test_struc, env_inds_2);
 // }
 
-// TEST_F(CompactStructureTest, TestKernel){
-//     CompactEnvironments envs;
-//     std::vector<int> env_inds_1 {0, 1, 3};
-//     envs.add_environments(test_struc, env_inds_1);
-//     Eigen::MatrixXd kern_mat = kernel.envs_struc(envs, test_struc);
-//     Eigen::MatrixXd env_kern_mat = kernel.envs_envs(envs, envs);
+TEST_F(CompactStructureTest, TimeSelfKernel){
+    auto start = std::chrono::steady_clock::now();
+    Eigen::VectorXd self_kern = kernel.self_kernel_struc(
+      test_struc.descriptors[0]);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "Compact self kernel: " << elapsed_seconds.count()
+            << "s\n";
 
-//     Eigen::VectorXd kern_vec = kernel_2.env_struc(
-//         struc2.local_environments[0], struc2);
-//     double kern_val = kernel_2.env_env(
-//         struc2.local_environments[0], struc2.local_environments[1]);
+    start = std::chrono::steady_clock::now();
+    Eigen::VectorXd prev_self = kernel_2.self_kernel_struc(struc2);
+    end = std::chrono::steady_clock::now();
+    elapsed_seconds = end - start;
+    std::cout << "Non-compact self kernel: " << elapsed_seconds.count()
+            << "s\n";
 
-//     auto start = std::chrono::steady_clock::now();
-//     Eigen::VectorXd self_kern = kernel.self_kernel_struc(test_struc);
-//     auto end = std::chrono::steady_clock::now();
-//     std::chrono::duration<double> elapsed_seconds = end - start;
-//     std::cout << "Compact self kernel: " << elapsed_seconds.count()
-//             << "s\n";
-
-//     start = std::chrono::steady_clock::now();
-//     Eigen::VectorXd prev_self = kernel_2.self_kernel_struc(struc2);
-//     end = std::chrono::steady_clock::now();
-//     elapsed_seconds = end - start;
-//     std::cout << "Non-compact self kernel: " << elapsed_seconds.count()
-//             << "s\n";
-
-//     // for (int i = 0; i < self_kern.size(); i++){
-//     //     EXPECT_NEAR(self_kern(i), prev_self(i), 1e-8);
-//     // }
-
-//     // EXPECT_NEAR(env_kern_mat(0, 1), kern_val, 1e-8);
-
-//     // for (int i = 0; i < kern_vec.size(); i++){
-//     //     EXPECT_NEAR(kern_mat(0, i), kern_vec(i), 1e-8);
-//     // }
-// }
+    for (int i = 0; i < self_kern.size(); i++){
+        EXPECT_NEAR(self_kern(i), prev_self(i), 1e-8);
+    }
+}
 
 // TEST_F(CompactStructureTest, TestStrucStruc){
 //   Eigen::MatrixXd kernel_matrix =
@@ -172,7 +157,7 @@ TEST_F(CompactStructureTest, TestDescriptor) {
 TEST_F(CompactStructureTest, StrucStrucFull) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
-    test_struc.description, test_struc_2.description);
+    test_struc.descriptors[0], test_struc_2.descriptors[0]);
 
   double delta = 1e-5;
   double thresh = 2e-4;
@@ -185,15 +170,20 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
   double fin_val, exact_val, abs_diff;
   for (int p = 0; p < test_struc_2.noa; p++) {
     for (int m = 0; m < 3; m++) {
-      positions_3 = positions_2;
+      positions_3 = positions_4 = positions_2;
       positions_3(p, m) += delta;
+      positions_4(p, m) -= delta;
 
       test_struc_3 = CompactStructure(cell_2, species_2, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
+      test_struc_4 = CompactStructure(cell_2, species_2, positions_4,
+                                      cutoff, dc);
 
       kern_pert = kernel.struc_struc(
-        test_struc.description, test_struc_3.description);
-      fin_val = -(kern_pert(0, 0) - kernel_matrix(0, 0)) / delta;
+        test_struc.descriptors[0], test_struc_3.descriptors[0]);
+      kern_pert_2 = kernel.struc_struc(
+        test_struc.descriptors[0], test_struc_4.descriptors[0]);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(0, 1 + 3 * p + m);
 
       EXPECT_NEAR(fin_val, exact_val, thresh);
@@ -203,15 +193,18 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
   // Check force/energy kernel.
   for (int p = 0; p < test_struc.noa; p++) {
     for (int m = 0; m < 3; m++) {
-      positions_3 = positions;
+      positions_3 = positions_4 = positions;
       positions_3(p, m) += delta;
+      positions_4(p, m) -= delta;
 
-      test_struc_3 = CompactStructure(cell, species, positions_3,
-                                      cutoff, &ps);
+      test_struc_3 = CompactStructure(cell, species, positions_3, cutoff, dc);
+      test_struc_4 = CompactStructure(cell, species, positions_4, cutoff, dc);
 
       kern_pert = kernel.struc_struc(
-        test_struc_2.description, test_struc_3.description);
-      fin_val = -(kern_pert(0, 0) - kernel_matrix(0, 0)) / delta;
+        test_struc_2.descriptors[0], test_struc_3.descriptors[0]);
+      kern_pert_2 = kernel.struc_struc(
+        test_struc_2.descriptors[0], test_struc_4.descriptors[0]);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(1 + 3 * p + m, 0);
 
       EXPECT_NEAR(fin_val, exact_val, thresh);
@@ -240,14 +233,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       }
 
       test_struc_3 = CompactStructure(cell_3, species_2, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       test_struc_4 = CompactStructure(cell_4, species_2, positions_4,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       
       kern_pert = kernel.struc_struc(
-        test_struc.description, test_struc_3.description);
+        test_struc.descriptors[0], test_struc_3.descriptors[0]);
       kern_pert_2 = kernel.struc_struc(
-        test_struc.description, test_struc_4.description);
+        test_struc.descriptors[0], test_struc_4.descriptors[0]);
       fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(0, 1 + 3 * test_struc_2.noa + stress_ind_1) *
         test_struc_2.volume;
@@ -280,14 +273,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       }
 
       test_struc_3 = CompactStructure(cell_3, species, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       test_struc_4 = CompactStructure(cell_4, species, positions_4,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       
       kern_pert = kernel.struc_struc(
-        test_struc_2.description, test_struc_3.description);
+        test_struc_2.descriptors[0], test_struc_3.descriptors[0]);
       kern_pert_2 = kernel.struc_struc(
-        test_struc_2.description, test_struc_4.description);
+        test_struc_2.descriptors[0], test_struc_4.descriptors[0]);
       fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(1 + 3 * test_struc.noa + stress_ind_1, 0) *
         test_struc.volume;
@@ -307,9 +300,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       positions_4(m, n) -= delta;
 
       test_struc_3 = CompactStructure(cell, species, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       test_struc_4 = CompactStructure(cell, species, positions_4,
-                                      cutoff, &ps);
+                                      cutoff, dc);
 
       for (int p = 0; p < test_struc_2.noa; p++) {
         for (int q = 0; q < 3; q++) {
@@ -319,14 +312,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
           positions_6(p, q) -= delta;
 
           test_struc_5 = CompactStructure(cell_2, species_2, positions_5,
-                                          cutoff, &ps);
+                                          cutoff, dc);
           test_struc_6 = CompactStructure(cell_2, species_2, positions_6,
-                                          cutoff, &ps);
+                                          cutoff, dc);
 
-          kern_pert = kernel.struc_struc(test_struc_3.description, test_struc_5.description);
-          kern_pert_2 = kernel.struc_struc(test_struc_4.description, test_struc_6.description);
-          kern_pert_3 = kernel.struc_struc(test_struc_3.description, test_struc_6.description);
-          kern_pert_4 = kernel.struc_struc(test_struc_4.description, test_struc_5.description);
+          kern_pert = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_5.descriptors[0]);
+          kern_pert_2 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_3 = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_4 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_5.descriptors[0]);
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) -
                      kern_pert_3(0, 0) - kern_pert_4(0, 0)) /
@@ -348,9 +341,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       positions_4(m, n) -= delta;
 
       test_struc_3 = CompactStructure(cell, species, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       test_struc_4 = CompactStructure(cell, species, positions_4,
-                                      cutoff, &ps);
+                                      cutoff, dc);
 
       int stress_count = 0;
       for (int p = 0; p < 3; p++) {
@@ -373,14 +366,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
           }
 
           test_struc_5 = CompactStructure(cell_3, species_2, positions_5,
-                                          cutoff, &ps);
+                                          cutoff, dc);
           test_struc_6 = CompactStructure(cell_4, species_2, positions_6,
-                                          cutoff, &ps);
+                                          cutoff, dc);
 
-          kern_pert = kernel.struc_struc(test_struc_3.description, test_struc_5.description);
-          kern_pert_2 = kernel.struc_struc(test_struc_4.description, test_struc_6.description);
-          kern_pert_3 = kernel.struc_struc(test_struc_3.description, test_struc_6.description);
-          kern_pert_4 = kernel.struc_struc(test_struc_4.description, test_struc_5.description);
+          kern_pert = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_5.descriptors[0]);
+          kern_pert_2 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_3 = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_4 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_5.descriptors[0]);
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) -
                      kern_pert_3(0, 0) - kern_pert_4(0, 0)) /
@@ -406,9 +399,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       positions_4(m, n) -= delta;
 
       test_struc_3 = CompactStructure(cell_2, species_2, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       test_struc_4 = CompactStructure(cell_2, species_2, positions_4,
-                                      cutoff, &ps);
+                                      cutoff, dc);
 
       int stress_count = 0;
       for (int p = 0; p < 3; p++) {
@@ -431,14 +424,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
           }
 
           test_struc_5 = CompactStructure(cell_3, species, positions_5,
-                                          cutoff, &ps);
+                                          cutoff, dc);
           test_struc_6 = CompactStructure(cell_4, species, positions_6,
-                                          cutoff, &ps);
+                                          cutoff, dc);
 
-          kern_pert = kernel.struc_struc(test_struc_3.description, test_struc_5.description);
-          kern_pert_2 = kernel.struc_struc(test_struc_4.description, test_struc_6.description);
-          kern_pert_3 = kernel.struc_struc(test_struc_3.description, test_struc_6.description);
-          kern_pert_4 = kernel.struc_struc(test_struc_4.description, test_struc_5.description);
+          kern_pert = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_5.descriptors[0]);
+          kern_pert_2 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_3 = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_4 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_5.descriptors[0]);
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) -
                      kern_pert_3(0, 0) - kern_pert_4(0, 0)) /
@@ -477,9 +470,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       }
 
       test_struc_3 = CompactStructure(cell_3, species, positions_3,
-                                      cutoff, &ps);
+                                      cutoff, dc);
       test_struc_4 = CompactStructure(cell_4, species, positions_4,
-                                      cutoff, &ps);
+                                      cutoff, dc);
 
       int stress_ind_2 = 0;
       for (int p = 0; p < 3; p++) {
@@ -502,14 +495,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
           }
 
           test_struc_5 = CompactStructure(cell_5, species_2, positions_5,
-                                          cutoff, &ps);
+                                          cutoff, dc);
           test_struc_6 = CompactStructure(cell_6, species_2, positions_6,
-                                          cutoff, &ps);
+                                          cutoff, dc);
 
-          kern_pert = kernel.struc_struc(test_struc_3.description, test_struc_5.description);
-          kern_pert_2 = kernel.struc_struc(test_struc_4.description, test_struc_6.description);
-          kern_pert_3 = kernel.struc_struc(test_struc_3.description, test_struc_6.description);
-          kern_pert_4 = kernel.struc_struc(test_struc_4.description, test_struc_5.description);
+          kern_pert = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_5.descriptors[0]);
+          kern_pert_2 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_3 = kernel.struc_struc(test_struc_3.descriptors[0], test_struc_6.descriptors[0]);
+          kern_pert_4 = kernel.struc_struc(test_struc_4.descriptors[0], test_struc_5.descriptors[0]);
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) -
                      kern_pert_3(0, 0) - kern_pert_4(0, 0)) /

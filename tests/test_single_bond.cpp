@@ -78,15 +78,15 @@ protected:
     force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
     stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
 
-    // Create descriptor calculator.
-    descriptor =
-        PowerSpectrum(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
-                      descriptor_settings);
+    // // Create descriptor calculator.
+    // descriptor =
+    //     PowerSpectrum(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+    //                   descriptor_settings);
 
-    // Create compact structure.
-    double compact_cut = 5.0;
-    compact_struc =
-        CompactStructure(cell, species, positions_1, compact_cut, &descriptor);
+    // // Create compact structure.
+    // double compact_cut = 5.0;
+    // compact_struc =
+    //     CompactStructure(cell, species, positions_1, compact_cut, &descriptor);
   }
 };
 
