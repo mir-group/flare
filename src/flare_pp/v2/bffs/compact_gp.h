@@ -11,7 +11,8 @@ class CompactGP {
   Eigen::VectorXd hyperparameters;
 
   // Kernel attributes.
-  // TODO: Make a separate class for this. May need to store more information
+  // TODO: Make a separate class for this. For certain kernels, e.g. the
+  // squared exponential kernel, it may be necessary to store more information
   // to facilitate hyperparameter optimization.
   std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_energy, Kuf_force, Kuf_stress;
   Eigen::MatrixXd Kuu, Kuf;
@@ -37,6 +38,7 @@ class CompactGP {
   CompactGP(std::vector<Kernel *> kernels, double energy_noise,
             double force_noise, double stress_noise);
 
+  // TODO: Add sparse environments above an energy uncertainty threshold.
   void add_sparse_environments(const CompactStructure &structure);
   void add_training_structure(const CompactStructure &structure);
 

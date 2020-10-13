@@ -222,7 +222,6 @@ void compute_single_bond(
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps, const CompactStructure &structure){
 
-  // Retrieve radial and cutoff information.
   int n_atoms = structure.noa;
   int n_neighbors = structure.n_neighbors;
 

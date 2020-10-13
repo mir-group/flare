@@ -8,6 +8,7 @@ class DescriptorValues;
 class ClusterDescriptor;
 
 // TODO: Rename to DotProductKernel.
+// TODO: Make this an abstract class.
 class CompactKernel {
 public:
   double sigma, sig2, power;
