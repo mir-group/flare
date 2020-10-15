@@ -197,8 +197,8 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Reset FLARE calculator.
-        self.flare_calc.reset()
         if self.dft_step:
+            self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
         # Take MD step.
@@ -246,6 +246,10 @@ class ASE_OTF(OTF):
                     dft_stress[2],
                 ]
             )
+
+        if self.force_only:
+            dft_energy = None
+            flare_stress = None
 
         # update gp model
         self.gp.update_db(
