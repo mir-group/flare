@@ -115,7 +115,7 @@ def flare_calc():
 
         # set up GP hyperparameters
         kernels = ["twobody", "threebody"]  # use 2+3 body kernel
-        parameters = {"cutoff_twobody": 5.0, "cutoff_threebody": 3.5}
+        parameters = {"cutoff_twobody": 10.0, "cutoff_threebody": 6.0}
         pm = ParameterHelper(kernels=kernels, random=True, parameters=parameters)
 
         hm = pm.as_dict()
@@ -125,7 +125,7 @@ def flare_calc():
 
         gp_model = GaussianProcess(
             kernels=kernels,
-            component="sc",  # single-component. For multi-comp, use 'mc'
+            component="mc",  # multi-component. For single-comp, use 'sc'
             hyps=hyps,
             cutoffs=cut,
             hyp_labels=["sig2", "ls2", "sig3", "ls3", "noise"],
@@ -159,10 +159,12 @@ def qe_calc():
     from ase.calculators.lj import LennardJones
 
     dft_calculator = LennardJones()
-
-    yield dft_calculator
-    del dft_calculator
-
+    dft_calculator.parameters.sigma = 3.0
+    dft_calculator.parameters.rc = 3 * dft_calculator.parameters.sigma
+                                   
+    yield dft_calculator           
+    del dft_calculator             
+                                   
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
@@ -173,7 +175,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     otf_params = {
         "init_atoms": [0, 1, 2, 3],
         "output_name": md_engine,
-        "std_tolerance_factor": 2,
+        "std_tolerance_factor": 1.0,
         "max_atoms_added": len(super_cell.positions),
         "freeze_hyps": 10,
         "write_model": 1,
