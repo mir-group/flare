@@ -15,7 +15,7 @@ def get_2_body_arrays(
     species,
     sweep,
     nspecie,
-    specie_mask,
+    species_mask,
     twobody_mask,
 ):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
@@ -35,7 +35,7 @@ def get_2_body_arrays(
     :type species: np.ndarray
     :param nspecie: number of atom types to define bonds
     :type: int
-    :param specie_mask: mapping from atomic number to atom types
+    :param species_mask: mapping from atomic number to atom types
     :type: np.ndarray
     :param twobody_mask: mapping from the types of end atoms to bond types
     :type: np.ndarray
@@ -72,15 +72,15 @@ def get_2_body_arrays(
     bcn = 0
     if nspecie > 1 and cutoff_2 is not None:
         sepcut = True
-        bc = specie_mask[species[atom]]
+        bc = species_mask[species[atom]]
         bcn = nspecie * bc
 
     # record distances and positions of images
     for n in range(noa):
         diff_curr = positions[n] - pos_atom
         im_count = 0
-        if sepcut and (specie_mask is not None) and (cutoff_2 is not None):
-            bn = specie_mask[species[n]]
+        if sepcut and (species_mask is not None) and (cutoff_2 is not None):
+            bn = species_mask[species[n]]
             r_cut = cutoff_2[twobody_mask[bn + bcn]]
 
         for s1 in sweep:
@@ -103,8 +103,8 @@ def get_2_body_arrays(
 
     for m in range(noa):
         spec_curr = species[m]
-        if sepcut and (specie_mask is not None) and (cutoff_2 is not None):
-            bm = specie_mask[species[m]]
+        if sepcut and (species_mask is not None) and (cutoff_2 is not None):
+            bm = species_mask[species[m]]
             r_cut = cutoff_2[twobody_mask[bm + bcn]]
         for im_count in range(super_count):
             dist_curr = dists[m, im_count]
@@ -136,7 +136,7 @@ def get_3_body_arrays(
     r_cut,
     cutoff_3,
     nspecie,
-    specie_mask,
+    species_mask,
     cut3b_mask,
 ):
     """Returns distances and coordinates of triplets of atoms in the
@@ -153,7 +153,7 @@ def get_3_body_arrays(
     :type cutoff_3: np.ndarray
     :param nspecie: number of atom types to define bonds
     :type: int
-    :param specie_mask: mapping from atomic number to atom types
+    :param species_mask: mapping from atomic number to atom types
     :type: np.ndarray
     :param cut3b_mask: mapping from the types of end atoms to bond types
     :type: np.ndarray
@@ -182,7 +182,7 @@ def get_3_body_arrays(
 
     sepcut = False
     if nspecie > 1 and cutoff_3 is not None:
-        bc = specie_mask[ctype]
+        bc = species_mask[ctype]
         bcn = nspecie * bc
         r_cut = np.max(cutoff_3)
         sepcut = True
@@ -212,12 +212,12 @@ def get_3_body_arrays(
 
         if (
             sepcut
-            and (specie_mask is not None)
+            and (species_mask is not None)
             and (cut3b_mask is not None)
             and (cutoff_3 is not None)
         ):
             # choose bond dependent bond
-            bm = specie_mask[etypes[m]]
+            bm = species_mask[etypes[m]]
             btype_m = cut3b_mask[bm + bcn]  # (m, c)
             cut_m = cutoff_3[btype_m]
             bmn = nspecie * bm  # for cross_dist usage
@@ -226,11 +226,11 @@ def get_3_body_arrays(
 
             if (
                 sepcut
-                and (specie_mask is not None)
+                and (species_mask is not None)
                 and (cut3b_mask is not None)
                 and (cutoff_3 is not None)
             ):
-                bn = specie_mask[etypes[n]]
+                bn = species_mask[etypes[n]]
                 btype_n = cut3b_mask[bn + bcn]  # (n, c)
                 cut_n = cutoff_3[btype_n]
 

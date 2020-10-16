@@ -831,18 +831,18 @@ class ParameterHelper:
         if group_type == "specie":
 
             self.nspecie = nspecie
-            self.specie_mask = np.ones(118, dtype=np.int) * (nspecie - 1)
+            self.species_mask = np.ones(118, dtype=np.int) * (nspecie - 1)
 
             # mark the species_mask with atom type
             # default is nspecie-1
             for idt in range(self.nspecie):
                 for ele in self.groups["specie"][idt]:
                     atom_n = element_to_Z(ele)
-                    if atom_n >= len(self.specie_mask):
+                    if atom_n >= len(self.species_mask):
                         new_mask = np.ones(atom_n, dtype=np.int) * (nspecie - 1)
-                        new_mask[: len(self.specie_mask)] = self.specie_mask
+                        new_mask[: len(self.species_mask)] = self.species_mask
                         self.species_mask = new_mask
-                    self.specie_mask[atom_n] = idt
+                    self.species_mask[atom_n] = idt
                     self.logger.debug(
                         f"elemtn {ele} is defined as type {idt} with name {aeg[idt]}"
                     )
@@ -1023,7 +1023,7 @@ class ParameterHelper:
 
         hyps_mask["nspecie"] = self.n["specie"]
         if self.n["specie"] > 1:
-            hyps_mask["specie_mask"] = self.specie_mask
+            hyps_mask["species_mask"] = self.species_mask
 
         hyps = []
         hyp_labels = []
@@ -1122,10 +1122,10 @@ class ParameterHelper:
 
         nspecie = hyps_mask["nspecie"]
         if nspecie > 1:
-            max_species = np.max(hyps_mask["specie_mask"])
-            specie_mask = hyps_mask["specie_mask"]
+            max_species = np.max(hyps_mask["species_mask"])
+            species_mask = hyps_mask["species_mask"]
             for i in range(max_species + 1):
-                elelist = np.where(specie_mask == i)[0]
+                elelist = np.where(species_mask == i)[0]
                 if len(elelist) > 0:
                     for ele in elelist:
                         if ele != 0:

@@ -175,7 +175,7 @@ def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
         cutoff_3b,
         cutoff_mb,
         nspecie,
-        np.array(hyps_mask["specie_mask"]),
+        np.array(hyps_mask["species_mask"]),
         n2b,
         twobody_mask,
         n3b,
