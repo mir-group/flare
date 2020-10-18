@@ -2,7 +2,7 @@
 #include "cutoffs.h"
 #include "descriptor.h"
 #include "local_environment.h"
-#include "power_spectrum.h"
+#include "b2.h"
 #include "radial.h"
 #include "single_bond.h"
 #include "structure.h"
@@ -58,7 +58,7 @@ protected:
   std::string cutoff_string = "cosine";
   std::vector<int> descriptor_settings{nos, N, lmax};
   int descriptor_index = 0;
-  PowerSpectrum descriptor;
+  B2 descriptor;
 
   CompactStructure compact_struc;
 

@@ -1,5 +1,5 @@
-#ifndef POWER_SPECTRUM_H
-#define POWER_SPECTRUM_H
+#ifndef B2_H
+#define B2_H
 
 #include <vector>
 #include <string>
@@ -7,7 +7,7 @@
 
 class CompactStructure;
 
-class PowerSpectrum : public CompactDescriptor {
+class B2 : public CompactDescriptor {
 public:
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>
@@ -19,9 +19,9 @@ public:
   std::vector<double> radial_hyps, cutoff_hyps;
   std::vector<int> descriptor_settings;
 
-  PowerSpectrum();
+  B2();
 
-  PowerSpectrum(const std::string &radial_basis,
+  B2(const std::string &radial_basis,
                 const std::string &cutoff_function,
                 const std::vector<double> &radial_hyps,
                 const std::vector<double> &cutoff_hyps,
@@ -30,7 +30,7 @@ public:
   DescriptorValues compute_struc(CompactStructure &structure);
 };
 
-void compute_power_spectrum(
+void compute_b2(
     Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
     Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,
     const Eigen::MatrixXd &single_bond_vals,

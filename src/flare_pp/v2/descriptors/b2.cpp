@@ -1,4 +1,4 @@
-#include "power_spectrum.h"
+#include "b2.h"
 #include "compact_descriptor.h"
 #include "compact_structure.h"
 #include "cutoffs.h"
@@ -7,9 +7,9 @@
 #include "single_bond.h"
 #include <iostream>
 
-PowerSpectrum ::PowerSpectrum() {}
+B2 ::B2() {}
 
-PowerSpectrum ::PowerSpectrum(const std::string &radial_basis,
+B2 ::B2(const std::string &radial_basis,
                               const std::string &cutoff_function,
                               const std::vector<double> &radial_hyps,
                               const std::vector<double> &cutoff_hyps,
@@ -44,7 +44,7 @@ PowerSpectrum ::PowerSpectrum(const std::string &radial_basis,
   }
 }
 
-DescriptorValues PowerSpectrum ::compute_struc(CompactStructure &structure) {
+DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();
@@ -68,7 +68,7 @@ DescriptorValues PowerSpectrum ::compute_struc(CompactStructure &structure) {
   Eigen::MatrixXd B2_vals, B2_force_dervs;
   Eigen::VectorXd B2_norms, B2_force_dots;
 
-  compute_power_spectrum(
+  compute_b2(
     B2_vals, B2_force_dervs, B2_norms, B2_force_dots, single_bond_vals,
     force_dervs, unique_neighbor_count, cumulative_neighbor_count,
     descriptor_indices, nos, N, lmax);
@@ -147,7 +147,7 @@ DescriptorValues PowerSpectrum ::compute_struc(CompactStructure &structure) {
   return desc;
 }
 
-void compute_power_spectrum(
+void compute_b2(
     Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
     Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,
     const Eigen::MatrixXd &single_bond_vals,

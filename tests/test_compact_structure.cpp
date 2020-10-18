@@ -5,7 +5,7 @@
 #include "descriptor.h"
 #include "dot_product_kernel.h"
 #include "local_environment.h"
-#include "power_spectrum.h"
+#include "b2.h"
 #include "structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
@@ -22,7 +22,7 @@ public:
   std::vector<int> species, species_2;
   Eigen::MatrixXd positions, positions_2;
   B2_Calculator desc1;
-  PowerSpectrum ps;
+  B2 ps;
   std::vector<DescriptorCalculator *> descriptor_calculators;
   std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc, test_struc_2;
@@ -61,8 +61,8 @@ public:
 
     desc1 = B2_Calculator(radial_string, cutoff_string, radial_hyps,
                           cutoff_hyps, descriptor_settings, descriptor_index);
-    ps = PowerSpectrum(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
-                       descriptor_settings);
+    ps = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+            descriptor_settings);
 
     descriptor_calculators.push_back(&desc1);
     dc.push_back(&ps);
