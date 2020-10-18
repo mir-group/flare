@@ -25,7 +25,11 @@ public:
   // Descriptor attributes.
   int n_descriptors, n_types, n_atoms;
   double volume;
+
+  // TODO: Consider removing type_indices attribute. Doesn't generalize to
+  // all descriptors.
   Eigen::VectorXi type_indices;
+
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
     neighbor_coordinates;
   std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots;
