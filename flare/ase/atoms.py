@@ -48,6 +48,7 @@ class FLARE_Atoms(Atoms):
             "info",
             "velocities",
         ]
+        
         # The keywords are either the attr of atoms, or in dict atoms.arrays
         kwargs = {}
         for key in kw:
@@ -55,9 +56,14 @@ class FLARE_Atoms(Atoms):
                 kwargs[key] = getattr(atoms, key)
             except:
                 if key in atoms.arrays:
-                    kwargs[key] = atoms.arrays[key]
+                    kwargs[key] = atoms.get_array(key)
         kwargs["calculator"] = atoms.calc
-        return FLARE_Atoms(**kwargs)
+        new_atoms = FLARE_Atoms(**kwargs)
+
+        for key in atoms.arrays:
+            new_atoms.set_array(key, atoms.get_array(key))
+        
+        return new_atoms
 
     @property
     def nat(self):
