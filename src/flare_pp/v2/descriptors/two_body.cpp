@@ -1,11 +1,27 @@
 #include "two_body.h"
+#include "cutoffs.h"
 #include <iostream>
 
 TwoBody ::TwoBody() {}
 
-TwoBody ::TwoBody(double cutoff, int n_species){
+TwoBody ::TwoBody(double cutoff, int n_species,
+                  const std::string &cutoff_name,
+                  const std::vector<double> &cutoff_hyps){
+
     this->cutoff = cutoff;
     this->n_species = n_species;
+
+    this->cutoff_name = cutoff_name;
+    this->cutoff_hyps = cutoff_hyps;
+
+    // Set the cutoff function.
+    if (cutoff_name == "quadratic") {
+      this->cutoff_function = quadratic_cutoff;
+    } else if (cutoff_name == "hard") {
+      this->cutoff_function = hard_cutoff;
+    } else if (cutoff_name == "cosine") {
+      this->cutoff_function = cos_cutoff;
+    }
 }
 
 DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
@@ -53,7 +69,7 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
     int n_s = type_count(s);
 
     // Record species and neighbor count.
-    // For the 2-body descriptor, there is 1 neighbor.
+    // (For the 2-body descriptor, there is 1 neighbor.)
     desc.n_atoms_by_type.push_back(n_s);
     desc.n_neighbors_by_type.push_back(n_s);
 

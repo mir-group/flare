@@ -16,6 +16,9 @@ public:
   std::vector<int> species;
   Eigen::MatrixXd positions;
 
+  std::string cutoff_name = "cosine";
+  std::vector<double> cutoff_hyps;
+
   TwoBody desc;
   std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc;
@@ -35,7 +38,7 @@ public:
       species.push_back(rand() % n_species);
     }
 
-    desc = TwoBody(cutoff, n_species);
+    desc = TwoBody(cutoff, n_species, cutoff_name, cutoff_hyps);
     dc.push_back(&desc);
 
     test_struc = CompactStructure(cell, species, positions, cutoff, dc);

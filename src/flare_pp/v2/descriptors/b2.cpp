@@ -90,7 +90,6 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
   desc.n_types = nos;
   desc.n_atoms = noa;
   desc.volume = structure.volume;
-  desc.type_indices = Eigen::VectorXi::Zero(noa);
   for (int s = 0; s < nos; s++) {
     int n_s = species_count(s);
     int n_neigh = neighbor_count(s);
@@ -138,7 +137,6 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
     desc.atom_indices[s](s_count) = i;
     desc.neighbor_indices[s].segment(n_count, n_neigh) =
         descriptor_indices.segment(cum_neigh, n_neigh);
-    desc.type_indices(i) = s_count;
 
     species_counter(s)++;
     neighbor_counter(s) += n_neigh;
