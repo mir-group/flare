@@ -1,5 +1,5 @@
-#ifndef COMPACT_KERNEL_H
-#define COMPACT_KERNEL_H
+#ifndef NORMALIZED_DOT_PRODUCT_H
+#define NORMALIZED_DOT_PRODUCT_H
 
 #include <Eigen/Dense>
 #include <vector>
@@ -7,15 +7,14 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
-// TODO: Rename to DotProductKernel.
 // TODO: Make this an abstract class.
-class CompactKernel {
+class NormalizedDotProduct {
 public:
   double sigma, sig2, power;
 
-  CompactKernel();
+  NormalizedDotProduct();
 
-  CompactKernel(double sigma, double power);
+  NormalizedDotProduct(double sigma, double power);
 
   Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
                             const ClusterDescriptor &envs2);

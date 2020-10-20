@@ -1,4 +1,4 @@
-#include "compact_kernel.h"
+#include "normalized_dot_product.h"
 #include "compact_environments.h"
 #include "compact_structure.h"
 #include "compact_descriptor.h"
@@ -6,17 +6,17 @@
 #include <cmath>
 #include <iostream>
 
-CompactKernel ::CompactKernel(){};
+NormalizedDotProduct ::NormalizedDotProduct(){};
 
-CompactKernel ::CompactKernel(double sigma, double power) {
+NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
 
   this->sigma = sigma;
   sig2 = sigma * sigma;
   this->power = power;
 }
 
-Eigen::MatrixXd CompactKernel ::envs_envs(const ClusterDescriptor &envs1,
-                                          const ClusterDescriptor &envs2) {
+Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
+  const ClusterDescriptor &envs1, const ClusterDescriptor &envs2) {
 
   // Check types.
   int n_types_1 = envs1.n_types;
@@ -74,8 +74,8 @@ Eigen::MatrixXd CompactKernel ::envs_envs(const ClusterDescriptor &envs1,
   return kern_mat;
 }
 
-Eigen::MatrixXd CompactKernel ::envs_struc(const ClusterDescriptor &envs,
-                                           const DescriptorValues &struc) {
+Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
+  const ClusterDescriptor &envs, const DescriptorValues &struc) {
 
   // Check types.
   int n_types_1 = envs.n_types;
@@ -169,8 +169,8 @@ Eigen::MatrixXd CompactKernel ::envs_struc(const ClusterDescriptor &envs,
   return kern_mat;
 }
 
-Eigen::MatrixXd CompactKernel ::struc_struc(DescriptorValues struc1,
-                                            DescriptorValues struc2) {
+Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
+  DescriptorValues struc1, DescriptorValues struc2) {
 
   int n_elements_1 = 1 + 3 * struc1.n_atoms + 6;
   int n_elements_2 = 1 + 3 * struc2.n_atoms + 6;
@@ -395,7 +395,7 @@ Eigen::MatrixXd CompactKernel ::struc_struc(DescriptorValues struc1,
 }
 
 Eigen::VectorXd
-CompactKernel ::self_kernel_struc(DescriptorValues struc) {
+NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
 
   int n_elements = 1 + 3 * struc.n_atoms + 6;
   Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(n_elements);

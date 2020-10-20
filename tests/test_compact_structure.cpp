@@ -1,5 +1,5 @@
 #include "compact_environments.h"
-#include "compact_kernel.h"
+#include "normalized_dot_product.h"
 #include "compact_structure.h"
 #include "compact_structures.h"
 #include "descriptor.h"
@@ -43,7 +43,7 @@ public:
 
   double sigma = 2.0;
   int power = 2;
-  CompactKernel kernel;
+  NormalizedDotProduct kernel;
   DotProductKernel kernel_2;
 
   CompactStructureTest() {
@@ -74,7 +74,7 @@ public:
     
     struc_desc = test_struc.descriptors[0];
 
-    kernel = CompactKernel(sigma, power);
+    kernel = NormalizedDotProduct(sigma, power);
     kernel_2 = DotProductKernel(sigma, power, 0);
   }
 };
