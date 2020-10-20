@@ -80,6 +80,8 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
 
     desc.descriptor_norms.push_back(Eigen::VectorXd::Zero(n_s));
     desc.descriptor_force_dots.push_back(Eigen::VectorXd::Zero(n_s * 3));
+    desc.cutoff_values.push_back(Eigen::VectorXd::Zero(n_s));
+    desc.cutoff_dervs.push_back(Eigen::VectorXd::Zero(n_s * 3));
 
     desc.neighbor_counts.push_back(Eigen::VectorXi::Zero(n_s));
     desc.cumulative_neighbor_counts.push_back(Eigen::VectorXi::Zero(n_s));
@@ -89,6 +91,7 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
 
   // Store descriptors.
   Eigen::VectorXi type_counter = Eigen::VectorXi::Zero(desc.n_types);
+  std::vector<double> cutoff_values(2, 0);
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
     int i_neighbors = structure.neighbor_count(i);
@@ -110,11 +113,19 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
           int count = type_counter(current_type);
           desc.descriptors[current_type](count, 0) = r;
 
+          // Compute cutoff values.
+          cutoff_function(cutoff_values, r, cutoff, cutoff_hyps);
+          desc.cutoff_values[current_type](count) = cutoff_values[0];
+
           for (int k = 0; k < 3; k++){
-            desc.descriptor_force_dervs[current_type](count * 3 + k, 0) =
-              structure.relative_positions(neigh_index, k) / r;
-            desc.neighbor_coordinates[current_type](count, k) =
+            double neighbor_coordinate =
               structure.relative_positions(neigh_index, k);
+            desc.descriptor_force_dervs[current_type](count * 3 + k, 0) =
+              neighbor_coordinate / r;
+            desc.neighbor_coordinates[current_type](count, k) =
+              neighbor_coordinate;
+            desc.cutoff_dervs[current_type](count * 3 + k) =
+              cutoff_values[1] * neighbor_coordinate / r;
           }
 
           desc.descriptor_norms[current_type](count) = r;
