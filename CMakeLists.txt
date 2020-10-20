@@ -120,7 +120,8 @@ set(FLARE_SOURCES
     src/flare_pp/v2/kernels/normalized_dot_product.cpp
     src/flare_pp/v2/descriptors/compact_descriptor.cpp
     src/flare_pp/v2/descriptors/b2.cpp
-    src/flare_pp/v2/descriptors/two_body.cpp)
+    src/flare_pp/v2/descriptors/two_body.cpp
+    src/flare_pp/v2/kernels/kernel.cpp)
 
 set(PYBIND_SOURCES
     src/ace_binding.cpp)
