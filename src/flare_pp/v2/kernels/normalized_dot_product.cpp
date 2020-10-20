@@ -13,6 +13,11 @@ NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
   this->sigma = sigma;
   sig2 = sigma * sigma;
   this->power = power;
+
+  // Set kernel hyperparameters.
+  Eigen::VectorXd hyps(1);
+  hyps << sigma;
+  kernel_hyperparameters = hyps;
 }
 
 Eigen::MatrixXd NormalizedDotProduct ::envs_envs(

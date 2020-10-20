@@ -1,6 +1,7 @@
 #ifndef NORMALIZED_DOT_PRODUCT_H
 #define NORMALIZED_DOT_PRODUCT_H
 
+#include "kernel.h"
 #include <Eigen/Dense>
 #include <vector>
 
@@ -8,7 +9,7 @@ class DescriptorValues;
 class ClusterDescriptor;
 
 // TODO: Make this an abstract class.
-class NormalizedDotProduct {
+class NormalizedDotProduct : public CompactKernel {
 public:
   double sigma, sig2, power;
 
