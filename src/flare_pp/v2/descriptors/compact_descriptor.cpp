@@ -25,6 +25,7 @@ void ClusterDescriptor ::add_cluster(const DescriptorValues &structure){
     for (int s = 0; s < n_types; s++) {
       descriptors.push_back(empty_mat);
       descriptor_norms.push_back(empty_vec);
+      cutoff_values.push_back(empty_vec);
       type_count.push_back(0);
       cumulative_type_count.push_back(0);
     }
@@ -36,6 +37,8 @@ void ClusterDescriptor ::add_cluster(const DescriptorValues &structure){
       type_count[s] + structure.n_atoms_by_type[s], n_descriptors);
     descriptor_norms[s].conservativeResize(
       type_count[s] + structure.n_atoms_by_type[s]);
+    cutoff_values[s].conservativeResize(
+        type_count[s] + structure.n_atoms_by_type[s]);
   }
 
   // Update descriptors.
@@ -43,6 +46,7 @@ void ClusterDescriptor ::add_cluster(const DescriptorValues &structure){
     for (int i = 0; i < structure.n_atoms_by_type[s]; i++){
       descriptors[s].row(type_count[s] + i) = structure.descriptors[s].row(i);
       descriptor_norms[s](type_count[s] + i) = structure.descriptor_norms[s](i);
+      cutoff_values[s](type_count[s] + i) = structure.cutoff_values[s](i);
     }
   }
 

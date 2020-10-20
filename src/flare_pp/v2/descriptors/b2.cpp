@@ -103,6 +103,8 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
       Eigen::MatrixXd::Zero(n_neigh * 3, n_d));
     desc.neighbor_coordinates.push_back(Eigen::MatrixXd::Zero(n_neigh, 3));
 
+    desc.cutoff_values.push_back(Eigen::VectorXd::Ones(n_s));
+    desc.cutoff_dervs.push_back(Eigen::VectorXd::Zero(n_neigh * 3));
     desc.descriptor_norms.push_back(Eigen::VectorXd::Zero(n_s));
     desc.descriptor_force_dots.push_back(Eigen::VectorXd::Zero(n_neigh * 3));
 

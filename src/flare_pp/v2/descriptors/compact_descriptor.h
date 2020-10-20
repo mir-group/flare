@@ -42,7 +42,7 @@ public:
   ClusterDescriptor();
 
   std::vector<Eigen::MatrixXd> descriptors;
-  std::vector<Eigen::VectorXd> descriptor_norms;
+  std::vector<Eigen::VectorXd> descriptor_norms, cutoff_values;
   std::vector<int> type_count, cumulative_type_count;
   int n_descriptors, n_types;
   int n_clusters = 0;

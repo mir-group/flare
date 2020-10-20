@@ -8,10 +8,9 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
-// TODO: Make this an abstract class.
 class SquaredExponential : public CompactKernel {
 public:
-  double sigma, ls;
+  double sigma, ls, sig2, ls2;
 
   SquaredExponential();
 
