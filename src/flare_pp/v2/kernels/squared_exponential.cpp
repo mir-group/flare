@@ -41,7 +41,7 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(
   int n_types = n_types_1;
 
   for (int s = 0; s < n_types; s++) {
-    // Compute dot products. (Should be done in parallel with MKL.)
+    // Compute dot products.
     Eigen::MatrixXd dot_vals =
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
@@ -61,7 +61,7 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(
       for (int j = 0; j < n_sparse_2; j++) {
         double norm_j = envs2.descriptor_norms[s](j);
         double norm_j2 = norm_j * norm_j;
-        double cut_j = envs2.cutoff_values[s](i);
+        double cut_j = envs2.cutoff_values[s](j);
         int ind2 = c_sparse_2 + j;
 
         // Energy kernel.
@@ -92,6 +92,76 @@ Eigen::MatrixXd SquaredExponential ::envs_struc(
 
   Eigen::MatrixXd kern_mat =
       Eigen::MatrixXd::Zero(envs.n_clusters, 1 + struc.n_atoms * 3 + 6);
+
+  int n_types = envs.n_types;
+  double vol_inv = 1 / struc.volume;
+
+  for (int s = 0; s < n_types; s++) {
+    // Compute dot products.
+    Eigen::MatrixXd dot_vals =
+        envs.descriptors[s] * struc.descriptors[s].transpose();
+    Eigen::MatrixXd force_dot =
+        envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
+
+    Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
+
+    // Compute kernels, parallelizing over environments.
+    int n_sparse = envs.type_count[s];
+    int n_struc = struc.n_atoms_by_type[s];
+    int c_sparse = envs.cumulative_type_count[s];
+
+#pragma omp parallel for
+    for (int i = 0; i < n_sparse; i++) {
+      double norm_i = envs.descriptor_norms[s](i);
+      double norm_i2 = norm_i * norm_i;
+      double cut_i = envs.cutoff_values[s](i);
+      int sparse_index = c_sparse + i;
+
+      for (int j = 0; j < n_struc; j++) {
+        double norm_j = struc.descriptor_norms[s](j);
+        double norm_j2 = norm_j * norm_j;
+        double cut_j = struc.cutoff_values[s](j);
+
+        // Energy kernel.
+        double exp_arg = (norm_i2 + norm_j2 - 2 * dot_vals(i, j)) / (2 * ls2);
+        double exp_val = exp(-exp_arg);
+        double en_kern = sig2 * exp_val * cut_i * cut_j;
+        kern_mat(sparse_index, 0) += en_kern;
+
+        // Force kernel.
+        int n_neigh = struc.neighbor_counts[s](j);
+        int c_neigh = struc.cumulative_neighbor_counts[s](j);
+        int atom_index = struc.atom_indices[s](j);
+
+        for (int k = 0; k < n_neigh; k++) {
+          int neighbor_index = struc.neighbor_indices[s](c_neigh + k);
+          int stress_counter = 0;
+          int ind = c_neigh + k;
+
+          for (int comp = 0; comp < 3; comp++) {
+            int force_index = 3 * ind + comp;
+            double cut_derv = struc.cutoff_dervs[s](force_index);
+            double f1 = force_dot(i, force_index);
+            double f2 = struc_force_dot(force_index);
+            double f3 = (f1 - f2) / ls2;
+            double force_kern_val = sig2 * exp_val * cut_i *
+              (f3 * cut_j + cut_derv);
+
+            kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
+                force_kern_val;
+            kern_mat(sparse_index, 1 + 3 * atom_index + comp) += force_kern_val;
+
+            for (int comp2 = comp; comp2 < 3; comp2++) {
+              double coord = struc.neighbor_coordinates[s](ind, comp2);
+              kern_mat(sparse_index, 1 + 3 * struc.n_atoms + stress_counter) -=
+                  force_kern_val * coord * vol_inv;
+              stress_counter++;
+            }
+          }
+        }
+      }
+    }
+  }
 
   return kern_mat;
 }
