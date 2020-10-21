@@ -59,6 +59,7 @@ public:
 TEST_F(TwoBodyTest, TwoBodyTest) {
   Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc);
   Eigen::MatrixXd envs_struc = kernel.envs_struc(cluster_desc, struc_desc);
+  Eigen::MatrixXd struc_struc = kernel.struc_struc(struc_desc, struc_desc);
 
 //   std::cout << kern_mat << std::endl;
 //   std::cout << envs_struc << std::endl;

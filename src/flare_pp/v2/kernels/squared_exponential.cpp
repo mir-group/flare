@@ -385,8 +385,11 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(
 Eigen::VectorXd
 SquaredExponential ::self_kernel_struc(DescriptorValues struc) {
 
+  // Note: This can be made slightly faster by ignoring off-diagonal
+  // kernel values (see normalized dot product implementation))
   int n_elements = 1 + 3 * struc.n_atoms + 6;
-  Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(n_elements);
+  Eigen::MatrixXd kernel_matrix = struc_struc(struc, struc);
+  Eigen::VectorXd kernel_vector = kernel_matrix.diagonal();
 
   return kernel_vector;
 }
