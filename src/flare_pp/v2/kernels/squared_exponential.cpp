@@ -174,6 +174,211 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(
   Eigen::MatrixXd kernel_matrix =
       Eigen::MatrixXd::Zero(n_elements_1, n_elements_2);
 
+  // Check types.
+  int n_types_1 = struc1.n_types;
+  int n_types_2 = struc2.n_types;
+  bool type_check = (n_types_1 == n_types_2);
+  assert(("Types don't match.", type_check));
+
+  // Check descriptor size.
+  int n_descriptors_1 = struc1.n_descriptors;
+  int n_descriptors_2 = struc2.n_descriptors;
+  bool descriptor_check = (n_descriptors_1 == n_descriptors_2);
+  assert(("Descriptors don't match.", descriptor_check));
+
+  double vol_inv_1 = 1 / struc1.volume;
+  double vol_inv_2 = 1 / struc2.volume;
+
+  std::vector<int> stress_inds{0, 3, 5};
+
+  for (int s = 0; s < n_types_1; s++) {
+    // Compute dot products.
+    Eigen::MatrixXd dot_vals =
+        struc1.descriptors[s] * struc2.descriptors[s].transpose();
+    Eigen::MatrixXd force_dot_1 =
+        struc1.descriptor_force_dervs[s] * struc2.descriptors[s].transpose();
+    Eigen::MatrixXd force_dot_2 =
+        struc2.descriptor_force_dervs[s] * struc1.descriptors[s].transpose();
+    Eigen::MatrixXd force_force = struc1.descriptor_force_dervs[s] *
+                                  struc2.descriptor_force_dervs[s].transpose();
+
+    Eigen::VectorXd struc_force_dot_1 = struc1.descriptor_force_dots[s];
+    Eigen::VectorXd struc_force_dot_2 = struc2.descriptor_force_dots[s];
+
+    // Compute kernels.
+    int n_struc1 = struc1.n_atoms_by_type[s];
+    int n_struc2 = struc2.n_atoms_by_type[s];
+
+    for (int i = 0; i < n_struc1; i++) {
+      double norm_i = struc1.descriptor_norms[s](i);
+      double norm_i2 = norm_i * norm_i;
+      double cut_i = struc1.cutoff_values[s](i);
+
+      for (int j = 0; j < n_struc2; j++) {
+        double norm_j = struc2.descriptor_norms[s](j);
+        double norm_j2 = norm_j * norm_j;
+        double cut_j = struc2.cutoff_values[s](j);
+
+        // Energy kernel.
+        double exp_arg = (norm_i2 + norm_j2 - 2 * dot_vals(i, j)) / (2 * ls2);
+        double exp_val = exp(-exp_arg);
+        double en_kern = sig2 * exp_val * cut_i * cut_j;
+        kernel_matrix(0, 0) += en_kern;
+
+        int n_neigh_1 = struc1.neighbor_counts[s](i);
+        int c_neigh_1 = struc1.cumulative_neighbor_counts[s](i);
+        int c_ind_1 = struc1.atom_indices[s](i);
+
+        int n_neigh_2 = struc2.neighbor_counts[s](j);
+        int c_neigh_2 = struc2.cumulative_neighbor_counts[s](j);
+        int c_ind_2 = struc2.atom_indices[s](j);
+
+        // Energy/force and energy/stress kernels.
+        for (int k = 0; k < n_neigh_2; k++) {
+          int ind = c_neigh_2 + k;
+          int neighbor_index = struc2.neighbor_indices[s](ind);
+          int stress_counter = 0;
+
+          for (int comp = 0; comp < 3; comp++) {
+            int force_index = 3 * ind + comp;
+            double cut_derv_2 = struc2.cutoff_dervs[s](force_index);
+            double f1 = force_dot_2(force_index, i);
+            double f2 = struc_force_dot_2(force_index);
+            double f3 = (f1 - f2) / ls2;
+            double force_kern_val = sig2 * exp_val * cut_i *
+              (f3 * cut_j + cut_derv_2);
+
+            // Energy/force.
+            kernel_matrix(0, 1 + 3 * neighbor_index + comp) -= force_kern_val;
+            kernel_matrix(0, 1 + 3 * c_ind_2 + comp) += force_kern_val;
+
+            // Energy/stress.
+            for (int comp2 = comp; comp2 < 3; comp2++) {
+              double coord = struc2.neighbor_coordinates[s](ind, comp2);
+              kernel_matrix(0, 1 + 3 * struc2.n_atoms + stress_counter) -=
+                  force_kern_val * coord * vol_inv_2;
+              stress_counter++;
+            }
+          }
+        }
+
+        // Force/energy and stress/energy kernels.
+        for (int k = 0; k < n_neigh_1; k++) {
+          int ind = c_neigh_1 + k;
+          int neighbor_index = struc1.neighbor_indices[s](ind);
+          int stress_counter = 0;
+
+          for (int comp = 0; comp < 3; comp++) {
+            int force_index = 3 * ind + comp;
+            double cut_derv_1 = struc1.cutoff_dervs[s](force_index);
+            double f1 = force_dot_1(force_index, j);
+            double f2 = struc_force_dot_1(force_index);
+            double f3 = (f1 - f2) / ls2;
+            double force_kern_val = sig2 * exp_val * cut_j *
+              (f3 * cut_i + cut_derv_1);
+
+            // Force/energy.
+            kernel_matrix(1 + 3 * neighbor_index + comp, 0) -= force_kern_val;
+            kernel_matrix(1 + 3 * c_ind_1 + comp, 0) += force_kern_val;
+
+            // Stress/energy.
+            for (int comp2 = comp; comp2 < 3; comp2++) {
+              double coord = struc1.neighbor_coordinates[s](ind, comp2);
+              kernel_matrix(1 + 3 * struc1.n_atoms + stress_counter, 0) -=
+                  force_kern_val * coord * vol_inv_1;
+              stress_counter++;
+            }
+          }
+        }
+
+        // Force/force, force/stress, stress/force, and stress/stress kernels.
+        for (int k = 0; k < n_neigh_1; k++) {
+          int ind1 = c_neigh_1 + k;
+          int n_ind_1 = struc1.neighbor_indices[s](ind1);
+
+          for (int l = 0; l < n_neigh_2; l++) {
+            int ind2 = c_neigh_2 + l;
+            int n_ind_2 = struc2.neighbor_indices[s](ind2);
+
+            for (int m = 0; m < 3; m++) {
+              int f_ind_1 = 3 * ind1 + m;
+              double cut_derv_1 = struc1.cutoff_dervs[s](f_ind_1);
+              for (int n = 0; n < 3; n++) {
+                int f_ind_2 = 3 * ind2 + n;
+                double cut_derv_2 = struc2.cutoff_dervs[s](f_ind_2);
+
+                double v1 = (force_dot_1(f_ind_1, j) -
+                  struc_force_dot_1(f_ind_1)) / ls2;
+                double v2 = (force_dot_2(f_ind_2, i) -
+                  struc_force_dot_2(f_ind_2)) / ls2;
+                double v3 = force_force(f_ind_1, f_ind_2) / ls2;
+
+                double v4 = cut_i * cut_derv_2 * v1;
+                double v5 = cut_derv_1 * cut_j * v2;
+                double v6 = cut_i * cut_j * v1 * v2;
+                double v7 = cut_i * cut_j * v3;
+                double v8 = cut_derv_1 * cut_derv_2;
+
+                double kern_val = sig2 * exp_val * (v4 + v5 + v6 + v7 + v8);
+
+                // Force/force.
+                kernel_matrix(1 + c_ind_1 * 3 + m, 1 + c_ind_2 * 3 + n) +=
+                    kern_val;
+                kernel_matrix(1 + c_ind_1 * 3 + m, 1 + n_ind_2 * 3 + n) -=
+                    kern_val;
+                kernel_matrix(1 + n_ind_1 * 3 + m, 1 + c_ind_2 * 3 + n) -=
+                    kern_val;
+                kernel_matrix(1 + n_ind_1 * 3 + m, 1 + n_ind_2 * 3 + n) +=
+                    kern_val;
+
+                // Stress/force.
+                int stress_ind_1 = stress_inds[m];
+                for (int p = m; p < 3; p++) {
+                  double coord = struc1.neighbor_coordinates[s](ind1, p);
+                  kernel_matrix(1 + 3 * struc1.n_atoms + stress_ind_1,
+                                1 + c_ind_2 * 3 + n) -=
+                      kern_val * coord * vol_inv_1;
+                  kernel_matrix(1 + 3 * struc1.n_atoms + stress_ind_1,
+                                1 + n_ind_2 * 3 + n) +=
+                      kern_val * coord * vol_inv_1;
+                  stress_ind_1++;
+                }
+
+                // Force/stress.
+                int stress_ind_2 = stress_inds[n];
+                for (int p = n; p < 3; p++) {
+                  double coord = struc2.neighbor_coordinates[s](ind2, p);
+                  kernel_matrix(1 + c_ind_1 * 3 + m,
+                                1 + 3 * struc2.n_atoms + stress_ind_2) -=
+                      kern_val * coord * vol_inv_2;
+                  kernel_matrix(1 + n_ind_1 * 3 + m,
+                                1 + 3 * struc2.n_atoms + stress_ind_2) +=
+                      kern_val * coord * vol_inv_2;
+                  stress_ind_2++;
+                }
+
+                // Stress/stress.
+                stress_ind_1 = stress_inds[m];
+                for (int p = m; p < 3; p++) {
+                  double coord1 = struc1.neighbor_coordinates[s](ind1, p);
+                  stress_ind_2 = stress_inds[n];
+                  for (int q = n; q < 3; q++) {
+                    double coord2 = struc2.neighbor_coordinates[s](ind2, q);
+                    kernel_matrix(1 + 3 * struc1.n_atoms + stress_ind_1,
+                                  1 + 3 * struc2.n_atoms + stress_ind_2) +=
+                        kern_val * coord1 * coord2 * vol_inv_1 * vol_inv_2;
+                    stress_ind_2++;
+                  }
+                  stress_ind_1++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   return kernel_matrix;
 }
 
