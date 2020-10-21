@@ -1,5 +1,6 @@
 #include "compact_structure.h"
 #include "two_body.h"
+#include "squared_exponential.h"
 #include "compact_descriptor.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
@@ -16,13 +17,18 @@ public:
   std::vector<int> species;
   Eigen::MatrixXd positions;
 
-  std::string cutoff_name = "cosine";
+  std::string cutoff_name = "quadratic";
   std::vector<double> cutoff_hyps;
 
   TwoBody desc;
   std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc;
   DescriptorValues struc_desc;
+  ClusterDescriptor cluster_desc;
+
+  double sigma = 2.0;
+  double ls = 1.0;
+  SquaredExponential kernel;
 
   double cell_size = 10;
   double cutoff = cell_size / 2;
@@ -32,6 +38,7 @@ public:
     cell = Eigen::MatrixXd::Identity(3, 3) * cell_size;
     // positions = Eigen::MatrixXd::Random(n_atoms, 3) * cell_size / 2;
     positions = Eigen::MatrixXd::Random(n_atoms, 3);
+    // positions << 0, 0, 0, 0, 0, 1;
 
     // Make random species.
     for (int i = 0; i < n_atoms; i++) {
@@ -43,11 +50,14 @@ public:
 
     test_struc = CompactStructure(cell, species, positions, cutoff, dc);
     struc_desc = test_struc.descriptors[0];
+    cluster_desc.add_cluster(struc_desc);
 
-    std::cout << test_struc.n_neighbors << std::endl;
+    kernel = SquaredExponential(sigma, ls);
   }
 };
 
 TEST_F(TwoBodyTest, TwoBodyTest) {
+  Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc);
 
+  std::cout << kern_mat << std::endl;
 }

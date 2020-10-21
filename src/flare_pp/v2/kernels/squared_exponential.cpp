@@ -66,7 +66,7 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(
 
         // Energy kernel.
         double exp_arg =
-          (norm_i2 + norm_j2 - 2 * dot_vals(i, j)) / (2 * ls * ls);
+          (norm_i2 + norm_j2 - 2 * dot_vals(i, j)) / (2 * ls2);
         kern_mat(ind1, ind2) += sig2 * cut_i * cut_j * exp(-exp_arg);
       }
     }
