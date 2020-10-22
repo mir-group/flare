@@ -2,8 +2,9 @@
 :class:`MappedGaussianProcess` uses splines to build up interpolation\
 function of the low-dimensional decomposition of Gaussian Process, \
 with little loss of accuracy. Refer to \
+`Xie et al. <https://arxiv.org/abs/2008.11796>`_, \
 `Vandermause et al. <https://www.nature.com/articles/s41524-020-0283-z>`_, \
-`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
+`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_.
 """
 import time, os, math, inspect, subprocess, json, warnings, pickle
 import numpy as np
@@ -33,10 +34,10 @@ class MappedGaussianProcess:
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
-        var_map (str): if None: only build mapping for mean (force). If 'pca', then 
+        var_map (str): if None: only build mapping for mean (force). If 'pca', then
             use PCA to map the variance, based on `grid_params['xxbody']['svd_rank']`.
-            If 'simple', then only map the diagonal of covariance, and predict the 
-            upper bound of variance. The 'pca' mode is much heavier in terms of 
+            If 'simple', then only map the diagonal of covariance, and predict the
+            upper bound of variance. The 'pca' mode is much heavier in terms of
             memory, but its prediction is much closer to GP variance.
         container_only (bool): if True: only build splines container
             (with no coefficients); if False: Attempt to build map immediately
@@ -348,3 +349,6 @@ class MappedGaussianProcess:
                 return pickle.load(f)
         else:
             raise NotImplementedError
+
+    def __len__(self):
+        return self.training_statistics["N"]

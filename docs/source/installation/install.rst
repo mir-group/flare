@@ -1,5 +1,5 @@
-Installation
-============
+Installation of FLARE
+=====================
 
 ************
 Requirements
@@ -92,15 +92,15 @@ Third, set the number of threads for MKL before running your python script.
 
 .. code-block:: bash
 
-    export OMP_NUM_THREAD=2
+    export OMP_NUM_THREADS=2
     python training.py
 
 .. note::
-   The "n_cpus" and OMP_NUM_THREAD should be equal or less than the number of CPUs available in the computer.
+   The "n_cpus" and OMP_NUM_THREADS should be equal or less than the number of CPUs available in the computer.
    If these numbers are larger than the actual CPUs number, it can lead to an overload of the machine.
 
 .. note::
-   If gp_model.per_atom_par=True and NUM_OMP_THREAD>1, it is equivalent to run with NUM_OMP_THREAD*otf.n_cpus threads
+   If gp_model.per_atom_par=True and OMP_NUM_THREADS>1, it is equivalent to run with OMP_NUM_THREADS * otf.n_cpus threads
    because the MKL calls are nested in the multiprocessing code. 
 
 The current version of FLARE can only support parallel calculations within one compute node.

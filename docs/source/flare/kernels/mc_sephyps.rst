@@ -1,5 +1,5 @@
 Multi-element Kernels (Separate Parameters)
-=====================
+===========================================
 
 .. automodule:: flare.kernels.mc_sephyps
     :members:

@@ -35,12 +35,12 @@ class ASE_OTF(OTF):
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
-        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run, 
+        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run,
             with calculator set as FLARE_Calculator.
         timestep: the timestep in MD. Please use ASE units, e.g. if the
             timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
-        dft_calc (ASE Calculator): any ASE calculator is supported, 
+        dft_calc (ASE Calculator): any ASE calculator is supported,
             e.g. Espresso, VASP etc.
         md_engine (str): the name of MD thermostat, only `VelocityVerlet`,
             `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin`, `NoseHoover`
@@ -197,8 +197,8 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Reset FLARE calculator.
-        self.flare_calc.reset()
         if self.dft_step:
+            self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
         # Take MD step.
@@ -207,9 +207,12 @@ class ASE_OTF(OTF):
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
 
-    def update_positions(self, new_pos):
+    def write_gp(self):
+        self.flare_calc.write_model(self.flare_name)
+
+    def rescale_temperature(self, new_pos):
         # call OTF method
-        super().update_positions(new_pos)
+        super().rescale_temperature(new_pos)
 
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
@@ -243,6 +246,10 @@ class ASE_OTF(OTF):
                     dft_stress[2],
                 ]
             )
+
+        if self.force_only:
+            dft_energy = None
+            flare_stress = None
 
         # update gp model
         self.gp.update_db(

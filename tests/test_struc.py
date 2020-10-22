@@ -69,8 +69,8 @@ def test_raw_to_relative():
 
 
 def test_wrapped_coordinates():
-    """ Check that wrapped coordinates are equivalent to Cartesian coordinates
-    up to lattice translations. """
+    """Check that wrapped coordinates are equivalent to Cartesian coordinates
+    up to lattice translations."""
 
     cell = np.random.rand(3, 3)
     positions = np.random.rand(10, 3)
@@ -176,9 +176,7 @@ def test_struc_to_ase():
     assert np.all(new_atoms.get_stress() == uc.stress)
 
 
-@pytest.mark.skipif(
-    not _test_pmg, reason="Pymatgen not present in available " "packages."
-)
+@pytest.mark.skipif(not _test_pmg, reason="Pymatgen not present in available packages.")
 def test_from_pmg_structure():
 
     pmg_struc = pmgstruc.Structure(
@@ -222,9 +220,7 @@ def test_from_pmg_structure():
     assert np.equal(new_struc.forces, np.array([1.0, 1.0, 1.0])).all()
 
 
-@pytest.mark.skipif(
-    not _test_pmg, reason="Pymatgen not present in available " "packages."
-)
+@pytest.mark.skipif(not _test_pmg, reason="Pymatgen not present in available packages.")
 def test_to_pmg_structure(varied_test_struc):
 
     new_struc = Structure.to_pmg_structure(varied_test_struc)

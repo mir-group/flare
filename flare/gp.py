@@ -163,15 +163,21 @@ class GaussianProcess:
 
         self.training_data = []  # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
-        self.training_labels_np = np.empty(0,)
+        self.training_labels_np = np.empty(
+            0,
+        )
         self.n_envs_prev = len(self.training_data)
 
         # Attributes to accomodate energy labels:
         self.training_structures = []  # Environments of each structure
         self.energy_labels = []  # Energies of training structures
-        self.energy_labels_np = np.empty(0,)
+        self.energy_labels_np = np.empty(
+            0,
+        )
         self.energy_noise = energy_noise
-        self.all_labels = np.empty(0,)
+        self.all_labels = np.empty(
+            0,
+        )
 
         # Parameters set during training
         self.ky_mat = None
@@ -382,6 +388,12 @@ class GaussianProcess:
             self.training_structures.append(structure_list)
             self.energy_labels_np = np.array(self.energy_labels)
 
+        if forces is None and energy is None and stress is None:
+            logger = logging.getLogger(self.logger_name)
+            logger.warn(
+                "Update DB method called with data but no labels!"
+                "The GP has not been updated with data!"
+            )
         # update list of all labels
         self.all_labels = np.concatenate(
             (self.training_labels_np, self.energy_labels_np)
@@ -606,7 +618,8 @@ class GaussianProcess:
             (float, float): Mean and epistemic variance of the prediction.
         """
 
-        assert d in [1, 2, 3], "d should be 1, 2, or 3"
+        if d not in [1, 2, 3]:
+            raise ValueError("d should be 1, 2, or 3")
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
@@ -643,6 +656,20 @@ class GaussianProcess:
         pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
         return pred_mean, pred_var
+
+    def predict_force_xyz(self, x_t: AtomicEnvironment) -> ("np.ndarray", "np.ndarray"):
+        """
+        Simple wrapper to predict all three components of a force in one go.
+        :param x_t:
+        :return:
+        """
+        forces = []
+        stds = []
+        for d in (1, 2, 3):
+            force, std = self.predict(x_t, d)
+            forces.append(force)
+            stds.append(std)
+        return np.array(forces), np.array(stds)
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the local energy of a local environment.
@@ -1254,6 +1281,9 @@ class GaussianProcess:
         gp_model.check_instantiation()
         return gp_model
 
+    def __len__(self):
+        return len(self.training_data)
+
     @property
     def training_statistics(self) -> dict:
         """
@@ -1346,11 +1376,15 @@ class GaussianProcess:
             # Environments of each structure
             dictionary["training_structures"] = []
             dictionary["energy_labels"] = []  # Energies of training structures
-            dictionary["energy_labels_np"] = np.empty(0,)
+            dictionary["energy_labels_np"] = np.empty(
+                0,
+            )
 
         if "training_labels" not in dictionary:
             dictionary["training_labels"] = []
-            dictionary["training_labels_np"] = np.empty(0,)
+            dictionary["training_labels_np"] = np.empty(
+                0,
+            )
 
         if "energy_noise" not in dictionary:
             dictionary["energy_noise"] = 0.01

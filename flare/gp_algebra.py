@@ -366,6 +366,106 @@ def multiple_array_construction(
 # --------------------------------------------------------------------------
 
 
+def get_distance_mat_pack(
+    hyps: np.ndarray,
+    name: str,
+    s1: int,
+    e1: int,
+    s2: int,
+    e2: int,
+    same: bool,
+    kernel,
+    cutoffs,
+    hyps_mask,
+):
+    """Compute covariance matrix element between set1 and set2
+    :param hyps: list of hyper-parameters
+    :param name: name of the gp instance.
+    :param same: whether the row and column are the same
+    :param kernel: function object of the kernel
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+    :return: covariance matrix
+    """
+
+    # initialize matrices
+    training_data = _global_training_data[name]
+    size1 = e1 - s1
+    size2 = e2 - s2
+    dist_mat = np.zeros([size1, size2])
+
+    # calculate elements
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+
+    for m_index in range(size1):
+        x_1 = training_data[m_index + s1]
+        if same:
+            lowbound = m_index
+        else:
+            lowbound = 0
+        for n_index in range(lowbound, size2):
+            x_2 = training_data[n_index + s2]
+            kern_curr = kernel(x_1, x_2, *args)
+            # store kernel value
+            dist_mat[m_index, n_index] = kern_curr
+            if same:
+                dist_mat[n_index, m_index] = kern_curr
+
+    return dist_mat
+
+
+def kernel_distance_mat(
+    hyps: np.ndarray,
+    name: str,
+    kernel,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+):
+    """parallel version of get_ky_mat
+    :param hyps: list of hyper-parameters
+    :param name: name of the gp instance.
+    :param kernel: function object of the kernel
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+    :return: covariance matrix
+    """
+
+    training_data = _global_training_data[name]
+    size = len(training_data)
+
+    if n_cpus is None:
+        n_cpus = mp.cpu_count()
+    if n_cpus == 1:
+        k_mat = get_distance_mat_pack(
+            hyps, name, 0, size, 0, size, True, kernel, cutoffs, hyps_mask
+        )
+    else:
+        # initialize matrices
+        block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
+        mult = 1
+
+        k_mat = parallel_matrix_construction(
+            get_distance_mat_pack,
+            hyps,
+            name,
+            kernel,
+            cutoffs,
+            hyps_mask,
+            block_id,
+            nbatch,
+            size,
+            size,
+            mult,
+            mult,
+        )
+
+    return k_mat
+
+
 def get_force_block_pack(
     hyps: np.ndarray,
     name: str,
@@ -378,7 +478,7 @@ def get_force_block_pack(
     cutoffs,
     hyps_mask,
 ):
-    """ Compute covariance matrix element between set1 and set2
+    """Compute covariance matrix element between set1 and set2
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
     :param same: whether the row and column are the same
@@ -518,7 +618,7 @@ def get_force_block(
     n_cpus=1,
     n_sample=100,
 ):
-    """ parallel version of get_ky_mat
+    """parallel version of get_ky_mat
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
     :param kernel: function object of the kernel
@@ -1013,7 +1113,9 @@ def energy_energy_vector_unit(
     training_structures = _global_training_structures[name]
 
     size = e - s
-    energy_energy_unit = np.zeros(size,)
+    energy_energy_unit = np.zeros(
+        size,
+    )
 
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -1039,7 +1141,9 @@ def energy_force_vector_unit(
 
     ds = [1, 2, 3]
     size = (e - s) * 3
-    k_v = np.zeros(size,)
+    k_v = np.zeros(
+        size,
+    )
 
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -1060,7 +1164,9 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask, d_
 
     size = e - s
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-    force_energy_unit = np.zeros(size,)
+    force_energy_unit = np.zeros(
+        size,
+    )
 
     for m_index in range(size):
         training_structure = training_structures[m_index + s]
@@ -1692,7 +1798,7 @@ def get_ky_and_hyp(
 
 
 def get_like_from_mats(ky_mat, l_mat, alpha, name):
-    """ compute the likelihood from the covariance matrix
+    """compute the likelihood from the covariance matrix
 
     :param ky_mat: the covariance matrix
 
@@ -1712,6 +1818,70 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
     return like
 
+
+def get_neg_like(
+    hyps: np.ndarray,
+    name: str,
+    force_kernel,
+    logger_name=None,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+):
+    """compute the log likelihood and its gradients
+    :param hyps: list of hyper-parameters
+    :type hyps: np.ndarray
+    :param name: name of the gp instance.
+    :param kernel_grad: function object of the kernel gradient
+    :param output: Output object for dumping every hyper-parameter
+                   sets computed
+    :type output: logger_name
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+    :param n_cpus: number of cpus to use.
+    :param n_sample: the size of block for matrix to compute
+    :return: float, np.array
+    """
+
+    time0 = time.time()
+
+    ky_mat = get_force_block(
+        hyps,
+        name,
+        force_kernel,
+        cutoffs=cutoffs,
+        hyps_mask=hyps_mask,
+        n_cpus=n_cpus,
+        n_sample=n_sample,
+    )
+
+    logger = logging.getLogger(logger_name)
+    logger.debug(f"{name} get_ky_and_hyp {time.time()-time0}")
+
+    time0 = time.time()
+
+    # catch linear algebra errors
+    try:
+        ky_mat_inv = np.linalg.inv(ky_mat)
+        l_mat = np.linalg.cholesky(ky_mat)
+    except np.linalg.LinAlgError:
+        number_of_hyps = len(hyps)
+        return -1e8, np.zeros(number_of_hyps)
+
+    labels = _global_training_labels[name]
+
+    alpha = np.matmul(ky_mat_inv, labels)
+
+    like = get_like_from_mats(ky_mat,l_mat,alpha,name)
+
+    logger.debug(f"get_like_from_mats {time.time()-time0}")
+
+    logger.debug(f"{name} Hyperparameters: {list(hyps)}")
+    logger.debug(f"{name} Likelihood: {like}")
+
+    return -like
 
 def get_neg_like_grad(
     hyps: np.ndarray,

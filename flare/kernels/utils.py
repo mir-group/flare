@@ -103,7 +103,7 @@ def str_to_kernel_set(
 
 
 def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
-    """ Return the tuple of arguments needed for kernel function.
+    """Return the tuple of arguments needed for kernel function.
     The order of the tuple has to be exactly the same as the one taken by
         the kernel function.
 

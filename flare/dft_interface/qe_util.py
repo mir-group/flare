@@ -106,7 +106,7 @@ def run_dft_en_npool(qe_input, structure, dft_loc, npool):
 
 
 def parse_dft_input(dft_input: str):
-    """ parse the input to get information of atomic configuration
+    """parse the input to get information of atomic configuration
 
     :param dft_input: input file name
     :return: positions, species, cell, masses
@@ -174,7 +174,7 @@ def parse_dft_input(dft_input: str):
 
 
 def dft_input_to_structure(dft_input: str):
-    """ Parses a qe input and returns the atoms in the
+    """Parses a qe input and returns the atoms in the
     file as a Structure object
 
     :param dft_input: QE Input file to parse
@@ -286,10 +286,9 @@ def parse_dft_forces(outfile: str):
                     temp_forces.append(float(x))
                 forces.append(np.array(list(temp_forces)))
 
-    assert total_energy != np.nan, (
-        "Quantum ESPRESSO parser failed to read "
-        "the file {}. Run failed.".format(outfile)
-    )
+    assert (
+        total_energy != np.nan
+    ), "Quantum ESPRESSO parser failed to read the file {}. Run failed.".format(outfile)
 
     # Convert from ry/au to ev/angstrom
     conversion_factor = 25.71104309541616
@@ -325,10 +324,9 @@ def parse_dft_forces_and_energy(outfile: str):
                     temp_forces.append(float(x))
                 forces.append(np.array(list(temp_forces)))
 
-    assert total_energy != np.nan, (
-        "Quantum ESPRESSO parser failed to read "
-        "the file {}. Run failed.".format(outfile)
-    )
+    assert (
+        total_energy != np.nan
+    ), "Quantum ESPRESSO parser failed to read the file {}. Run failed.".format(outfile)
 
     # Convert from ry/au to ev/angstrom
     conversion_factor = 25.71104309541616

@@ -623,6 +623,277 @@ def two_plus_three_efs_self(
 
 
 # -----------------------------------------------------------------------------
+#                     two plus many body kernels
+# -----------------------------------------------------------------------------
+
+
+def two_plus_many_body_mc(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    d1: int,
+    d2: int,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+many body kernel.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2b, ls2b,
+            sigmb, lsmb, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and many-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sigm = hyps[2]
+    lsm = hyps[3]
+
+    r_cut_2 = cutoffs[0]
+
+    two_term = two_body_mc_jit(
+        env1.bond_array_2,
+        env1.ctype,
+        env1.etypes,
+        env2.bond_array_2,
+        env2.ctype,
+        env2.etypes,
+        d1,
+        d2,
+        sig2,
+        ls2,
+        r_cut_2,
+        cutoff_func,
+    )
+
+    many_term = many_body_mc_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.q_neigh_array,
+        env2.q_neigh_array,
+        env1.q_neigh_grads,
+        env2.q_neigh_grads,
+        env1.ctype,
+        env2.ctype,
+        env1.etypes_mb,
+        env2.etypes_mb,
+        env1.unique_species,
+        env2.unique_species,
+        d1,
+        d2,
+        sigm,
+        lsm,
+    )
+
+    return two_term + many_term
+
+
+def two_plus_many_body_mc_grad(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    d1: int,
+    d2: int,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+many-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sigm = hyps[2]
+    lsm = hyps[3]
+
+    r_cut_2 = cutoffs[0]
+
+    kern2, grad2 = two_body_mc_grad_jit(
+        env1.bond_array_2,
+        env1.ctype,
+        env1.etypes,
+        env2.bond_array_2,
+        env2.ctype,
+        env2.etypes,
+        d1,
+        d2,
+        sig2,
+        ls2,
+        r_cut_2,
+        cutoff_func,
+    )
+
+    kern_many, gradm = many_body_mc_grad_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.q_neigh_array,
+        env2.q_neigh_array,
+        env1.q_neigh_grads,
+        env2.q_neigh_grads,
+        env1.ctype,
+        env2.ctype,
+        env1.etypes_mb,
+        env2.etypes_mb,
+        env1.unique_species,
+        env2.unique_species,
+        d1,
+        d2,
+        sigm,
+        lsm,
+    )
+
+    return kern2 + kern_many, np.hstack([grad2, gradm])
+
+
+def two_plus_many_body_mc_force_en(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    d1: int,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+many-body multi-element kernel between two force and energy
+        components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sigm = hyps[2]
+    lsm = hyps[3]
+
+    r_cut_2 = cutoffs[0]
+
+    two_term = (
+        two_body_mc_force_en_jit(
+            env1.bond_array_2,
+            env1.ctype,
+            env1.etypes,
+            env2.bond_array_2,
+            env2.ctype,
+            env2.etypes,
+            d1,
+            sig2,
+            ls2,
+            r_cut_2,
+            cutoff_func,
+        )
+        / 2
+    )
+
+    many_term = many_body_mc_force_en_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.q_neigh_array,
+        env1.q_neigh_grads,
+        env1.ctype,
+        env2.ctype,
+        env1.etypes_mb,
+        env1.unique_species,
+        env2.unique_species,
+        d1,
+        sigm,
+        lsm,
+    )
+
+    return two_term + many_term
+
+
+def two_plus_many_body_mc_en(
+    env1: AtomicEnvironment,
+    env2: AtomicEnvironment,
+    hyps,
+    cutoffs,
+    cutoff_func=cf.quadratic_cutoff,
+):
+    """2+3+many-body single-element energy kernel.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2b ls2b,
+            sigmb, lsmb, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sigm = hyps[2]
+    lsm = hyps[3]
+
+    r_cut_2 = cutoffs[0]
+
+    two_term = (
+        two_body_mc_en_jit(
+            env1.bond_array_2,
+            env1.ctype,
+            env1.etypes,
+            env2.bond_array_2,
+            env2.ctype,
+            env2.etypes,
+            sig2,
+            ls2,
+            r_cut_2,
+            cutoff_func,
+        )
+        / 4
+    )
+
+    many_term = many_body_mc_en_jit(
+        env1.q_array,
+        env2.q_array,
+        env1.ctype,
+        env2.ctype,
+        env1.unique_species,
+        env2.unique_species,
+        sigm,
+        lsm,
+    )
+
+    return two_term + many_term
+
+
+# -----------------------------------------------------------------------------
 #                     two plus three plus many body kernels
 # -----------------------------------------------------------------------------
 
@@ -662,7 +933,6 @@ def two_plus_three_plus_many_body_mc(
 
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[2]
 
     two_term = two_body_mc_jit(
         env1.bond_array_2,
@@ -757,7 +1027,6 @@ def two_plus_three_plus_many_body_mc_grad(
 
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[2]
 
     kern2, grad2 = two_body_mc_grad_jit(
         env1.bond_array_2,
@@ -3598,7 +3867,7 @@ def two_body_mc_stress_en_jit(
     r_cut,
     cutoff_func,
 ):
-    """2-body multi-element kernel between a partial stress component and a 
+    """2-body multi-element kernel between a partial stress component and a
     local energy accelerated with Numba.
 
     Args:
@@ -4068,7 +4337,6 @@ def many_body_mc_jit(
         d2 (int): Force component of the second environment.
         sig (float): many-body signal variance hyperparameter.
         ls (float): many-body length scale hyperparameter.
-        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -4208,8 +4476,6 @@ def many_body_mc_grad_jit(
     useful_species = np.array(
         list(set(species1).intersection(set(species2))), dtype=np.int8
     )
-
-    print(species1, species2)
 
     for s in useful_species:
         s1 = np.where(species1 == s)[0][0]
@@ -4453,4 +4719,18 @@ _str_to_kernel = {
     "2+3+many_efs_energy": "not implemented",
     "2+3+many_efs_force": "not implemented",
     "2+3+many_efs_self": "not implemented",
+    "two_plus_many_body": two_plus_many_body_mc,
+    "two_plus_many_body_grad": two_plus_many_body_mc_grad,
+    "two_plus_many_body_en": two_plus_many_body_mc_en,
+    "two_plus_many_body_force_en": two_plus_many_body_mc_force_en,
+    "two_plus_many_body_efs_self": "not implemented",
+    "two_plus_many_body_efs_force": "not implemented",
+    "two_plus_many_body_efs_energy": "not implemented",
+    "2+many": two_plus_many_body_mc,
+    "2+many_grad": two_plus_many_body_mc_grad,
+    "2+many_en": two_plus_many_body_mc_en,
+    "2+many_force_en": two_plus_many_body_mc_force_en,
+    "2+many_efs_self": "not implemented",
+    "2+many_efs_force": "not implemented",
+    "2+many_efs_energy": "not implemented",
 }

@@ -21,7 +21,7 @@ from flare.predict import (
 )
 from flare.utils.element_coder import NumpyEncoder
 
-from ase.calculators.calculator import Calculator
+from ase.calculators.calculator import Calculator, all_changes
 
 
 def get_rebuild_from_err(err_msg, rebuild_dict, newbound_dict):
@@ -58,6 +58,8 @@ class FLARE_Calculator(Calculator):
             by default.
     """
 
+    implemented_properties = ['energy', 'forces', 'stress', 'stds']
+
     def __init__(
         self, gp_model, mgp_model=None, par=False, use_mapping=False, **kwargs
     ):
@@ -68,26 +70,11 @@ class FLARE_Calculator(Calculator):
         self.par = par
         self.results = {}
 
-    def get_property(self, name, atoms=None, allow_calculation=True):
-        if name not in self.results.keys():
-            if not allow_calculation:
-                return None
-            self.calculate(atoms)
-        return self.results[name]
-
-    def get_potential_energy(self, atoms=None, force_consistent=False):
-        return self.get_property("energy", atoms)
-
-    def get_forces(self, atoms):
-        return self.get_property("forces", atoms)
-
-    def get_stress(self, atoms):
-        return self.get_property("stress", atoms)
-
     def get_uncertainties(self, atoms):
         return self.get_property("stds", atoms)
 
-    def calculate(self, atoms):
+    def calculate(self, atoms=None, properties=None,
+                  system_changes=all_changes):
         """
         Calculate properties including: energy, local energies, forces,
             stress, uncertainties.
@@ -95,6 +82,9 @@ class FLARE_Calculator(Calculator):
         Args:
             atoms (FLARE_Atoms): FLARE_Atoms object
         """
+
+        if properties is None:
+            properties = self.implemented_properties
 
         if self.use_mapping:
             self.calculate_mgp(atoms)
@@ -106,6 +96,9 @@ class FLARE_Calculator(Calculator):
         total_stress = np.sum(self.results["partial_stresses"], axis=0)
         self.results["stress"] = total_stress / volume
         self.results["energy"] = np.sum(self.results["local_energies"])
+
+    def set_atoms(self, atoms):
+        self.atoms = atoms
 
     def calculate_gp(self, atoms):
         # Compute energy, forces, and stresses and their uncertainties
@@ -192,10 +185,6 @@ class FLARE_Calculator(Calculator):
     def calculation_required(self, atoms, quantities):
         return True
 
-    def reset(self):
-        """Clear the results attribute of the calculator."""
-
-        self.results = {}
 
     def as_dict(self):
         outdict = {}

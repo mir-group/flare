@@ -29,10 +29,12 @@ curr_path = os.getcwd()
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
-    reason="lmp not found "
-    "in environment: Please install LAMMPS "
-    "and set the $lmp env. "
-    "variable to point to the executatble.",
+    reason=(
+        "lmp not found "
+        "in environment: Please install LAMMPS "
+        "and set the $lmp env. "
+        "variable to point to the executatble."
+    ),
 )
 @pytest.fixture(scope="module")
 def all_gp():
@@ -304,10 +306,8 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     map_str = "energy"
     gp_pred_var = gp_pred_envar
     print("mgp_en, gp_en", mgp_pred[3], gp_pred_en)
-    assert (
-        np.allclose(mgp_pred[3], gp_pred_en, rtol=2e-3),
-        f"{bodies} body {map_str} mapping is wrong",
-    )
+    assert  np.allclose(mgp_pred[3], gp_pred_en, rtol=2e-3), f"{bodies} body" \
+                                                             f" {map_str} mapping is wrong"
 
     #    if multihyps and ('3' in bodies):
     #        pytest.skip()
@@ -337,10 +337,12 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
-    reason="lmp not found "
-    "in environment: Please install LAMMPS "
-    "and set the $lmp env. "
-    "variable to point to the executatble.",
+    reason=(
+        "lmp not found "
+        "in environment: Please install LAMMPS "
+        "and set the $lmp env. "
+        "variable to point to the executatble."
+    ),
 )
 @pytest.mark.parametrize("bodies", body_list)
 @pytest.mark.parametrize("multihyps", multi_list)
