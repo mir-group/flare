@@ -37,7 +37,6 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
 
   // Count types.
   Eigen::VectorXi type_count = Eigen::VectorXi::Zero(desc.n_types);
-  Eigen::VectorXi store_neighbors = Eigen::VectorXi::Zero(n_neighbors);
 #pragma omp parallel for
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
