@@ -154,7 +154,7 @@ class FLARE_Calculator(Calculator):
                 f, v, vir, e = self.mgp_model.predict(chemenv)
                 self.results["forces"][n] = f
                 self.results["partial_stresses"][n] = vir
-                self.results["stds"][n] = np.sqrt(np.absolute(v))
+                self.results["stds"][n][0] = np.sqrt(np.absolute(v))
                 self.results["local_energies"][n] = e
 
             except ValueError as err_msg:  # if lower_bound error is raised
@@ -179,7 +179,7 @@ class FLARE_Calculator(Calculator):
                 f, v, vir, e = self.mgp_model.predict(chemenv)
                 self.results["forces"][n] = f
                 self.results["partial_stresses"][n] = vir
-                self.results["stds"][n] = np.sqrt(np.absolute(v))
+                self.results["stds"][n][0] = np.sqrt(np.absolute(v))
                 self.results["local_energies"][n] = e
 
     def calculation_required(self, atoms, quantities):

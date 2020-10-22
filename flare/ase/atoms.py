@@ -31,33 +31,10 @@ class FLARE_Atoms(Atoms):
         Args:
             atoms (ASE Atoms): the ase atoms to build from
         """
-        kw = [
-            "symbols",  # use either "symbols" or "number"
-            "positions",
-            "tags",
-            "momenta",
-            "masses",
-            "magmoms",
-            "charges",
-            "scaled_positions",
-            "cell",
-            "pbc",
-            "celldisp",
-            "constraint",
-            "calculator",
-            "info",
-            "velocities",
-        ]
-        # The keywords are either the attr of atoms, or in dict atoms.arrays
-        kwargs = {}
-        for key in kw:
-            try:
-                kwargs[key] = getattr(atoms, key)
-            except:
-                if key in atoms.arrays:
-                    kwargs[key] = atoms.arrays[key]
-        kwargs["calculator"] = atoms.calc
-        return FLARE_Atoms(**kwargs)
+        new_atoms = deepcopy(atoms)
+        new_atoms.__class__ = FLARE_Atoms
+        new_atoms.prev_positions = np.zeros_like(new_atoms.positions)
+        return new_atoms
 
     @property
     def nat(self):

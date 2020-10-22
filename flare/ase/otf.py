@@ -230,7 +230,8 @@ class ASE_OTF(OTF):
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
     def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
-        self.output.add_atom_info(train_atoms, self.structure.stds)
+        stds = self.flare_calc.results.get("stds", np.zeros_like(dft_frcs))
+        self.output.add_atom_info(train_atoms, stds)
 
         # Convert ASE stress (xx, yy, zz, yz, xz, xy) to FLARE stress
         # (xx, xy, xz, yy, yz, zz).

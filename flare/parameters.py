@@ -44,7 +44,7 @@ class Parameters:
             "nthreebody": 0,
             "ncut3b": 0,
             "nmanybody": 0,
-            "specie_mask": None,
+            "species_mask": None,
             "twobody_mask": None,
             "threebody_mask": None,
             "cut3b_mask": None,
@@ -162,9 +162,9 @@ class Parameters:
         nspecie = param_dict["nspecie"]
         if nspecie > 1:
             assert (
-                "specie_mask" in param_dict
-            ), "specie_mask key missing in param_dict dictionary"
-            param_dict["specie_mask"] = nparray(param_dict["specie_mask"], dtype=np.int)
+                "species_mask" in param_dict
+            ), "species_mask key missing in param_dict dictionary"
+            param_dict["species_mask"] = nparray(param_dict["species_mask"], dtype=np.int)
 
         # for each kernel, check whether it is defined
         # and the length of corresponding hyper-parameters
@@ -343,7 +343,7 @@ class Parameters:
 
             name_list = [
                 "nspecie",
-                "specie_mask",
+                "species_mask",
                 "n" + kernel_name,
                 kernel_name + "_mask",
                 kernel_name + "_cutoff_list",
@@ -410,13 +410,14 @@ class Parameters:
 
         if f"{kernel_name}_cutoff_list" in param_dict:
 
-            specie_mask = param_dict["species_mask"]
+            species_mask = param_dict["species_mask"]
             cutoff_list = param_dict[f"{kernel_name}_cutoff_list"]
+            nspecie = param_dict["nspecie"]
 
             if kernel_name not in Parameters.cutoff_types_values:
                 mask_id = 0
-                for ele in coded_specie:
-                    mask_id += specie_mask[ele]
+                for ele in coded_species:
+                    mask_id += species_mask[ele]
                     mask_id *= nspecie
                 mask_id = mask_id // nspecie
                 mask_id = param_dict[kernel_name + "_mask"][mask_id]
@@ -497,7 +498,7 @@ class Parameters:
         if dict1 is None:
             return True
 
-        list_of_names = ["nspecie", "specie_mask", "map", "original_hyps"]
+        list_of_names = ["nspecie", "species_mask", "map", "original_hyps"]
         for k in Parameters.all_kernel_types:
             list_of_names += ["n" + k]
             list_of_names += [k + "_mask"]
