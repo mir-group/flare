@@ -36,7 +36,7 @@ class NoseHoover(MolecularDynamics):
         nvt_dyn = NoseHoover(
             atoms=atoms,
             timestep=0.5 * units.fs,
-            temperature=300. * units.kB,,
+            temperature=300. * units.kB,
             nvt_q=334.
         )
 
