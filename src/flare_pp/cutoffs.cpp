@@ -19,8 +19,7 @@ void quadratic_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
 void cos_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                 std::vector<double> cutoff_hyps) {
 
-  // Calculate the cosine cutoff function and its gradient. If r > rcut, the
-  // array is returned unchanged.
+  // Calculate the cosine cutoff function and its gradient.
   if (r > rcut) {
     rcut_vals[0] = 0;
     rcut_vals[1] = 0;

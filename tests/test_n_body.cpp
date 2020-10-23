@@ -1,5 +1,6 @@
 #include "compact_structure.h"
 #include "two_body.h"
+#include "three_body.h"
 #include "squared_exponential.h"
 #include "compact_descriptor.h"
 #include "gtest/gtest.h"
@@ -9,7 +10,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-class TwoBodyTest : public ::testing::Test {
+class NBodyTest : public ::testing::Test {
 public:
   int n_atoms = 5;
   int n_species = 3;
@@ -17,10 +18,11 @@ public:
   std::vector<int> species;
   Eigen::MatrixXd positions;
 
-  std::string cutoff_name = "quadratic";
+  std::string cutoff_name = "cosine";
   std::vector<double> cutoff_hyps;
 
   TwoBody desc;
+  ThreeBody three_body_desc;
   std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc;
   DescriptorValues struc_desc;
@@ -33,7 +35,7 @@ public:
   double cell_size = 10;
   double cutoff = cell_size / 2;
 
-  TwoBodyTest() {
+  NBodyTest() {
     // Make positions.
     cell = Eigen::MatrixXd::Identity(3, 3) * cell_size;
     // positions = Eigen::MatrixXd::Random(n_atoms, 3) * cell_size / 2;
@@ -46,17 +48,35 @@ public:
     }
 
     desc = TwoBody(cutoff, n_species, cutoff_name, cutoff_hyps);
-    dc.push_back(&desc);
-
-    test_struc = CompactStructure(cell, species, positions, cutoff, dc);
-    struc_desc = test_struc.descriptors[0];
-    cluster_desc.add_cluster(struc_desc);
+    three_body_desc = ThreeBody(cutoff, n_species, cutoff_name, cutoff_hyps);
 
     kernel = SquaredExponential(sigma, ls);
   }
 };
 
-TEST_F(TwoBodyTest, TwoBodyTest) {
+TEST_F(NBodyTest, TwoBodyTest) {
+  dc.push_back(&desc);
+  test_struc = CompactStructure(cell, species, positions, cutoff, dc);
+  struc_desc = test_struc.descriptors[0];
+  cluster_desc.add_cluster(struc_desc);
+
+  Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc);
+  Eigen::MatrixXd envs_struc = kernel.envs_struc(cluster_desc, struc_desc);
+  Eigen::MatrixXd struc_struc = kernel.struc_struc(struc_desc, struc_desc);
+
+//   std::cout << kern_mat << std::endl;
+//   std::cout << envs_struc << std::endl;
+}
+
+TEST_F(NBodyTest, ThreeBodyTest){
+  dc.push_back(&three_body_desc);
+  test_struc = CompactStructure(cell, species, positions, cutoff, dc);
+  struc_desc = test_struc.descriptors[0];
+  cluster_desc.add_cluster(struc_desc);
+
+  std::cout << test_struc.descriptors[0].n_types << std::endl;
+  std::cout << test_struc.descriptors[0].n_atoms_by_type[0] << std::endl;
+
   Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc);
   Eigen::MatrixXd envs_struc = kernel.envs_struc(cluster_desc, struc_desc);
   Eigen::MatrixXd struc_struc = kernel.struc_struc(struc_desc, struc_desc);

@@ -33,25 +33,23 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
   desc.n_types = n_species * (n_species + 1) / 2;
   desc.n_atoms = structure.noa;
   desc.volume = structure.volume;
-  int n_neighbors = structure.n_neighbors;
 
   // Count types.
   Eigen::VectorXi type_count = Eigen::VectorXi::Zero(desc.n_types);
-#pragma omp parallel for
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
-      int j_species = structure.species[j];
       int neigh_index = rel_index + j;
+      int j_species = structure.neighbor_species(neigh_index);
       int struc_index = structure.structure_indices(neigh_index);
       // Avoid counting the same pair twice.
       if ((j_species > i_species) ||
           ((j_species == i_species) && (struc_index >= i))){
         int species_diff = j_species - i_species;
-        int current_type =
-          i_species * n_species - (i_species * (i_species - 1)) / 2 +
+        int current_type = desc.n_types -
+          (n_species - i_species) * (n_species - i_species + 1) / 2 +
           species_diff;
         double r = structure.relative_positions(neigh_index, 0);
         // Check that atom is within descriptor cutoff.
@@ -96,15 +94,15 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
-      int j_species = structure.species[j];
       int neigh_index = rel_index + j;
+      int j_species = structure.neighbor_species(neigh_index);
       int struc_index = structure.structure_indices(neigh_index);
       // Avoid counting the same pair twice.
       if ((j_species > i_species) ||
           ((j_species == i_species) && (struc_index >= i))){
         int species_diff = j_species - i_species;
-        int current_type =
-          i_species * n_species - (i_species * (i_species - 1)) / 2 +
+        int current_type = desc.n_types -
+          (n_species - i_species) * (n_species - i_species + 1) / 2 +
           species_diff;
         double r = structure.relative_positions(neigh_index, 0);
         // Check that atom is within descriptor cutoff.
@@ -118,7 +116,7 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
 
           for (int k = 0; k < 3; k++){
             double neighbor_coordinate =
-              structure.relative_positions(neigh_index, k);
+              structure.relative_positions(neigh_index, k + 1);
             desc.descriptor_force_dervs[current_type](count * 3 + k, 0) =
               neighbor_coordinate / r;
             desc.neighbor_coordinates[current_type](count, k) =
@@ -131,7 +129,7 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
           desc.neighbor_counts[current_type](count) = 1;
           desc.cumulative_neighbor_counts[current_type](count) = count;
           desc.atom_indices[current_type](count) = i;
-          desc.neighbor_indices[current_type](count)  = struc_index;
+          desc.neighbor_indices[current_type](count) = struc_index;
 
           type_counter(current_type)++;
         }
@@ -141,8 +139,13 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
 
   // Compute force dots.
   for (int i = 0; i < desc.n_types; i ++){
-      desc.descriptor_force_dots[i] =
-        desc.descriptor_force_dervs[i] * desc.descriptors[i].transpose();
+    int n_s = type_count(i);
+    for (int j = 0; j < n_s; j++){
+      for (int k = 0; k < 3; k++){
+        desc.descriptor_force_dots[i](j * 3 + k) =
+          desc.descriptor_force_dervs[i](j * 3 + k) * desc.descriptors[i](j);
+      }
+    }
   }
 
   return desc;

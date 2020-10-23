@@ -3,6 +3,8 @@
 #include "compact_structure.h"
 #include "compact_structures.h"
 #include "descriptor.h"
+#include "three_body.h"
+#include "two_body.h"
 #include "dot_product_kernel.h"
 #include "squared_exponential.h"
 #include "local_environment.h"
@@ -45,9 +47,9 @@ public:
   double sigma = 2.0;
   double ls = 0.9;
   int power = 2;
-  SquaredExponential kernel;
-  DotProductKernel kernel_2;
   NormalizedDotProduct kernel_3;
+  DotProductKernel kernel_2;
+  SquaredExponential kernel;
 
   CompactStructureTest() {
     // Make positions.
@@ -77,9 +79,9 @@ public:
     
     struc_desc = test_struc.descriptors[0];
 
-    kernel = SquaredExponential(sigma, power);
+    kernel = SquaredExponential(sigma, ls);
     kernel_2 = DotProductKernel(sigma, power, 0);
-    kernel_3 = NormalizedDotProduct(sigma, ls);
+    kernel_3 = NormalizedDotProduct(sigma, power);
   }
 };
 
@@ -165,6 +167,19 @@ TEST_F(CompactStructureTest, TestEnvsStruc){
 }
 
 TEST_F(CompactStructureTest, StrucStrucFull) {
+
+//   ThreeBody three_body_desc =
+//     ThreeBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+//   dc[0] = &three_body_desc;
+
+  TwoBody two_body_desc =
+    TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+  dc[0] = &two_body_desc;
+
+  test_struc = CompactStructure(cell, species, positions, cutoff, dc);
+  test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
+  struc_desc = test_struc.descriptors[0];
+
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0]);
