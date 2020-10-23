@@ -46,11 +46,11 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
-      int j_species = structure.species[j];
+      int neigh_index_1 = rel_index + j;
+      int j_species = structure.neighbor_species(neigh_index_1);
       if (j_species < i_species) continue;
       int t2 = (n_species - i_species) * (n_species - i_species + 1) / 2 -
         (n_species - j_species) * (n_species - j_species + 1) / 2;
-      int neigh_index_1 = rel_index + j;
       double r1 = structure.relative_positions(neigh_index_1, 0);
       if (r1 > cutoff) continue;
       double x1 = structure.relative_positions(neigh_index_1, 1);
@@ -58,10 +58,10 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
       double z1 = structure.relative_positions(neigh_index_1, 3);
       for (int k = 0; k < i_neighbors; k++){
         if (j == k) continue;
-        int k_species = structure.species[k];
+        int neigh_index_2 = rel_index + k;
+        int k_species = structure.neighbor_species(neigh_index_2);
         if (k_species < j_species) continue;
         int t3 = k_species - j_species;
-        int neigh_index_2 = rel_index + k;
         double r2 = structure.relative_positions(neigh_index_2, 0);
         if (r2 > cutoff) continue;
         double x2 = structure.relative_positions(neigh_index_2, 1);
@@ -114,11 +114,11 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
-      int j_species = structure.species[j];
+      int neigh_index_1 = rel_index + j;
+      int j_species = structure.neighbor_species(neigh_index_1);
       if (j_species < i_species) continue;
       int t2 = (n_species - i_species) * (n_species - i_species + 1) / 2 -
         (n_species - j_species) * (n_species - j_species + 1) / 2;
-      int neigh_index_1 = rel_index + j;
       int struc_index_1 = structure.structure_indices(neigh_index_1);
       double r1 = structure.relative_positions(neigh_index_1, 0);
       if (r1 > cutoff) continue;
@@ -127,10 +127,10 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
       double z1 = structure.relative_positions(neigh_index_1, 3);
       for (int k = 0; k < i_neighbors; k++){
         if (j == k) continue;
-        int k_species = structure.species[k];
+        int neigh_index_2 = rel_index + k;
+        int k_species = structure.neighbor_species(neigh_index_2);
         if (k_species < j_species) continue;
         int t3 = k_species - j_species;
-        int neigh_index_2 = rel_index + k;
         int struc_index_2 = structure.structure_indices(neigh_index_2);
         double r2 = structure.relative_positions(neigh_index_2, 0);
         if (r2 > cutoff) continue;
@@ -154,9 +154,9 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
 
         for (int k = 0; k < 3; k++){
           double neigh_coord_1 =
-            structure.relative_positions(neigh_index_1, k);
+            structure.relative_positions(neigh_index_1, k + 1);
           double neigh_coord_2 =
-            structure.relative_positions(neigh_index_2, k);
+            structure.relative_positions(neigh_index_2, k + 1);
           double coord_diff = neigh_coord_2 - neigh_coord_1;
 
           // First neighbor.
@@ -171,16 +171,27 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
             cut1[1] * cut2[0] * cut3[0] * neigh_coord_1 / r1 -
             cut1[0] * cut2[0] * cut3[1] * coord_diff / r3;
 
+          // TODO: Combine force dot calculations.
+          desc.descriptor_force_dots[current_type](count * 2 * 3 + k) =
+            desc.descriptor_force_dervs[current_type]
+              .row(count * 2 * 3 + k).dot(
+            desc.descriptors[current_type].row(count));
+
           // Second neighbor.
           desc.descriptor_force_dervs[current_type](count * 2 * 3 + 3 + k, 1) =
             neigh_coord_2 / r2;
           desc.descriptor_force_dervs[current_type](count * 2 * 3 + 3 + k, 2) =
             coord_diff / r3;
 
+          desc.descriptor_force_dots[current_type](count * 2 * 3 + 3 + k) =
+            desc.descriptor_force_dervs[current_type]
+              .row(count * 2 * 3 + 3 + k).dot(
+            desc.descriptors[current_type].row(count));
+
           desc.neighbor_coordinates[current_type](count * 2 + 1, k) =
             neigh_coord_2;
           desc.cutoff_dervs[current_type](count * 2 * 3 + 3 + k) =
-            cut1[0] * cut2[1] * cut3[0] * neigh_coord_2 / r2 -
+            cut1[0] * cut2[1] * cut3[0] * neigh_coord_2 / r2 +
             cut1[0] * cut2[0] * cut3[1] * coord_diff / r3;
         }
 
@@ -195,12 +206,6 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
         type_counter(current_type)++;
       }
     }
-  }
-
-  // Compute force dots.
-  for (int i = 0; i < desc.n_types; i ++){
-      desc.descriptor_force_dots[i] =
-        desc.descriptor_force_dervs[i] * desc.descriptors[i].transpose();
   }
 
   return desc;
