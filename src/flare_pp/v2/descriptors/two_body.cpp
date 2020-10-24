@@ -123,6 +123,9 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
               neighbor_coordinate;
             desc.cutoff_dervs[current_type](count * 3 + k) =
               cutoff_values[1] * neighbor_coordinate / r;
+            desc.descriptor_force_dots[current_type](count * 3 + k) =
+              desc.descriptor_force_dervs[current_type](count * 3 + k, 0) *
+              desc.descriptors[current_type](count);
           }
 
           desc.descriptor_norms[current_type](count) = r;
@@ -133,17 +136,6 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
 
           type_counter(current_type)++;
         }
-      }
-    }
-  }
-
-  // Compute force dots.
-  for (int i = 0; i < desc.n_types; i ++){
-    int n_s = type_count(i);
-    for (int j = 0; j < n_s; j++){
-      for (int k = 0; k < 3; k++){
-        desc.descriptor_force_dots[i](j * 3 + k) =
-          desc.descriptor_force_dervs[i](j * 3 + k) * desc.descriptors[i](j);
       }
     }
   }

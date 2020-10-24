@@ -171,7 +171,6 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
             cut1[1] * cut2[0] * cut3[0] * neigh_coord_1 / r1 -
             cut1[0] * cut2[0] * cut3[1] * coord_diff / r3;
 
-          // TODO: Combine force dot calculations.
           desc.descriptor_force_dots[current_type](count * 2 * 3 + k) =
             desc.descriptor_force_dervs[current_type]
               .row(count * 2 * 3 + k).dot(
