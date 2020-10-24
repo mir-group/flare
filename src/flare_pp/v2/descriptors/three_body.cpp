@@ -37,7 +37,7 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
 
   // Count types.
   Eigen::VectorXi type_count = Eigen::VectorXi::Zero(desc.n_types);
-#pragma omp parallel for
+  // TODO: Consider parallelizing.
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
     int t1 = desc.n_types -
@@ -105,7 +105,6 @@ DescriptorValues ThreeBody ::compute_struc(CompactStructure &structure){
   // Store descriptors.
   Eigen::VectorXi type_counter = Eigen::VectorXi::Zero(desc.n_types);
   std::vector<double> cut1(2, 0), cut2(2, 0), cut3(3, 0);
-#pragma omp parallel for
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
     int t1 = desc.n_types -
