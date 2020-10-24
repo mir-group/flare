@@ -4,6 +4,7 @@
 #include "compact_structures.h"
 #include "descriptor.h"
 #include "three_body.h"
+#include "three_body_wide.h"
 #include "two_body.h"
 #include "dot_product_kernel.h"
 #include "squared_exponential.h"
@@ -172,9 +173,14 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
 //     ThreeBody(cutoff, n_species, cutoff_string, cutoff_hyps);
 //   dc[0] = &three_body_desc;
 
-  TwoBody two_body_desc =
-    TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
-  dc[0] = &two_body_desc;
+  ThreeBodyWide three_body_desc =
+    ThreeBodyWide(cutoff, n_species, cutoff_string, cutoff_hyps);
+  dc[0] = &three_body_desc;
+
+
+//   TwoBody two_body_desc =
+//     TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+//   dc[0] = &two_body_desc;
 
   test_struc = CompactStructure(cell, species, positions, cutoff, dc);
   test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
