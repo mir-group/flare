@@ -122,6 +122,7 @@ set(FLARE_SOURCES
     src/flare_pp/v2/descriptors/two_body.cpp
     src/flare_pp/v2/descriptors/three_body.cpp
     src/flare_pp/v2/descriptors/three_body_wide.cpp
+    src/flare_pp/v2/descriptors/four_body.cpp
     src/flare_pp/v2/kernels/kernel.cpp
     src/flare_pp/v2/kernels/normalized_dot_product.cpp
     src/flare_pp/v2/kernels/squared_exponential.cpp)
