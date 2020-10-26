@@ -3,6 +3,7 @@
 #include "compact_structure.h"
 #include "compact_structures.h"
 #include "descriptor.h"
+#include "four_body.h"
 #include "three_body.h"
 #include "three_body_wide.h"
 #include "two_body.h"
@@ -20,7 +21,7 @@
 
 class CompactStructureTest : public ::testing::Test {
 public:
-  int n_atoms = 5;
+  int n_atoms = 10;
   int n_species = 3;
   Eigen::MatrixXd cell, cell_2;
   std::vector<int> species, species_2;
@@ -173,10 +174,13 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
 //     ThreeBody(cutoff, n_species, cutoff_string, cutoff_hyps);
 //   dc[0] = &three_body_desc;
 
-  ThreeBodyWide three_body_desc =
-    ThreeBodyWide(cutoff, n_species, cutoff_string, cutoff_hyps);
-  dc[0] = &three_body_desc;
+//   ThreeBodyWide three_body_desc =
+//     ThreeBodyWide(cutoff, n_species, cutoff_string, cutoff_hyps);
+//   dc[0] = &three_body_desc;
 
+  FourBody four_body_desc =
+    FourBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+  dc[0] = &four_body_desc;
 
 //   TwoBody two_body_desc =
 //     TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
