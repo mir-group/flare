@@ -549,13 +549,27 @@ class SingleMapXbody:
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
 
-        if self.var_map == "pca" and self.svd_rank == "auto":
-            self.var = PCASplines(
-                self.bounds[0],
-                self.bounds[1],
-                orders=self.grid_num,
-                svd_rank=np.min(y_var.shape),
-            )
+        if self.var_map == "pca":
+            G = np.prod(y_var.shape[:-1])
+            full_rank = np.min((G, y_var.shape[-1]))
+
+            if self.svd_rank == "auto":
+                self.var = PCASplines(
+                    self.bounds[0],
+                    self.bounds[1],
+                    orders=self.grid_num,
+                    svd_rank=full_rank,
+                )
+            else:
+                assert isinstance(self.svd_rank, int), "Please set svd_rank to int or 'auto'"
+                assert self.svd_rank <= full_rank, f"svd_rank={self.svd_rank} exceeds full_rank={full_rank}"
+                self.var = PCASplines(
+                    self.bounds[0],
+                    self.bounds[1],
+                    orders=self.grid_num,
+                    svd_rank=self.svd_rank,
+                )
+
 
         if self.var_map is not None:
             self.var.set_values(y_var)
