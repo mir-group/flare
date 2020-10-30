@@ -24,6 +24,7 @@
 #include "neigh_list.h"
 #include "neigh_request.h"
 #include "neighbor.h"
+#include "potential_file_reader.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -574,7 +575,7 @@ void PairMGP::read_file(char *filename) {
   FILE *fptr;
   char line[MAXLINE];
 
-  fptr = force->open_potential(filename);
+  fptr = potential_file_reader->open_potential(filename);
   if (fptr == NULL) {
     char str[128];
     snprintf(str, 128, "Cannot open MMF potential file %s", filename);
