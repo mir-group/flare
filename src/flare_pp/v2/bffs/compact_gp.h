@@ -8,6 +8,7 @@
 #include <vector>
 
 class CompactGP {
+public:
   Eigen::VectorXd hyperparameters;
 
   // Kernel attributes.

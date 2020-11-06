@@ -49,6 +49,7 @@ public:
   int n_clusters = 0;
 
   // Add all clusters in a structure.
+  void initialize_cluster(int n_types, int n_descriptors);
   void add_cluster(const DescriptorValues &structure);
 
   // TODO: Allow specific clusters to be added.

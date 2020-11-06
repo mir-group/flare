@@ -1,4 +1,5 @@
 #include "compact_gp.h"
+#include <iostream>
 
 CompactGP ::CompactGP() {}
 
@@ -59,6 +60,13 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
       ClusterDescriptor cluster_descriptor =
         ClusterDescriptor(structure.descriptors[i]);
       cluster_descriptors.push_back(cluster_descriptor);
+
+      if (sparse_descriptors.size() == 0){
+        ClusterDescriptor empty_descriptor;
+        empty_descriptor.initialize_cluster(
+          cluster_descriptor.n_types, cluster_descriptor.n_descriptors);
+        sparse_descriptors.push_back(empty_descriptor);
+      }
   }
 
   // Update Kuu matrices.
@@ -133,6 +141,17 @@ void CompactGP ::add_training_structure(const CompactStructure &structure){
   int n_labels = n_energy + n_force + n_stress;
   int n_atoms = structure.noa;
   int n_kernels = kernels.size();
+
+  // Initialize sparse descriptors.
+  if (sparse_descriptors.size() == 0){
+    for (int i = 0; i < structure.descriptors.size(); i++){
+      ClusterDescriptor empty_descriptor;
+      empty_descriptor.initialize_cluster(
+        structure.descriptors[i].n_types,
+        structure.descriptors[i].n_descriptors);
+      sparse_descriptors.push_back(empty_descriptor);
+    }
+  }
 
   // Update Kuf kernels.
   Eigen::MatrixXd envs_struc_kernels;

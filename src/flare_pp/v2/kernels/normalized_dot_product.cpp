@@ -1,6 +1,7 @@
 #include "normalized_dot_product.h"
 #include "compact_structure.h"
 #include "compact_descriptor.h"
+#undef NDEBUG
 #include <assert.h>
 #include <cmath>
 #include <iostream>
@@ -25,14 +26,12 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
   // Check types.
   int n_types_1 = envs1.n_types;
   int n_types_2 = envs2.n_types;
-  bool type_check = (n_types_1 == n_types_2);
-  assert(("Types don't match.", type_check));
+  assert(n_types_1 == n_types_2);
 
   // Check descriptor size.
   int n_descriptors_1 = envs1.n_descriptors;
   int n_descriptors_2 = envs2.n_descriptors;
-  bool descriptor_check = (n_descriptors_1 == n_descriptors_2);
-  assert(("Descriptors don't match.", descriptor_check));
+  assert(n_descriptors_1 == n_descriptors_2);
 
   Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(
     envs1.n_clusters, envs2.n_clusters);
@@ -84,14 +83,12 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
   // Check types.
   int n_types_1 = envs.n_types;
   int n_types_2 = struc.n_types;
-  bool type_check = (n_types_1 == n_types_2);
-  assert(("Types don't match.", type_check));
+  assert(n_types_1 == n_types_2);
 
   // Check descriptor size.
   int n_descriptors_1 = envs.n_descriptors;
   int n_descriptors_2 = struc.n_descriptors;
-  bool descriptor_check = (n_descriptors_1 == n_descriptors_2);
-  assert(("Descriptors don't match.", descriptor_check));
+  assert(n_descriptors_1 == n_descriptors_2);
 
   Eigen::MatrixXd kern_mat =
       Eigen::MatrixXd::Zero(envs.n_clusters, 1 + struc.n_atoms * 3 + 6);
@@ -185,13 +182,12 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
   int n_types_1 = struc1.n_types;
   int n_types_2 = struc2.n_types;
   bool type_check = (n_types_1 == n_types_2);
-  assert(("Types don't match.", type_check));
+  assert(n_types_1 == n_types_2);
 
   // Check descriptor size.
   int n_descriptors_1 = struc1.n_descriptors;
   int n_descriptors_2 = struc2.n_descriptors;
-  bool descriptor_check = (n_descriptors_1 == n_descriptors_2);
-  assert(("Descriptors don't match.", descriptor_check));
+  assert(n_descriptors_1 == n_descriptors_2);
 
   double vol_inv_1 = 1 / struc1.volume;
   double vol_inv_2 = 1 / struc2.volume;
