@@ -22,7 +22,7 @@
 class CompactStructureTest : public ::testing::Test {
 public:
   int n_atoms = 10;
-  int n_species = 3;
+  int n_species = 2;
   Eigen::MatrixXd cell, cell_2;
   std::vector<int> species, species_2;
   Eigen::MatrixXd positions, positions_2;
@@ -42,7 +42,7 @@ public:
   std::string cutoff_string = "cosine";
   std::vector<double> radial_hyps{0, cutoff};
   std::vector<double> cutoff_hyps;
-  std::vector<int> descriptor_settings{5, N, L};
+  std::vector<int> descriptor_settings{n_species, N, L};
   int descriptor_index = 0;
   std::vector<double> many_body_cutoffs{cutoff};
 
@@ -178,9 +178,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
 //     ThreeBodyWide(cutoff, n_species, cutoff_string, cutoff_hyps);
 //   dc[0] = &three_body_desc;
 
-  FourBody four_body_desc =
-    FourBody(cutoff, n_species, cutoff_string, cutoff_hyps);
-  dc[0] = &four_body_desc;
+//   FourBody four_body_desc =
+//     FourBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+//   dc[0] = &four_body_desc;
 
 //   TwoBody two_body_desc =
 //     TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
@@ -194,8 +194,8 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0]);
 
-  double delta = 1e-5;
-  double thresh = 2e-4;
+  double delta = 1e-4;
+  double thresh = 1e-4;
 
   // Check energy/force kernel.
   Eigen::MatrixXd positions_3, positions_4, positions_5, positions_6, cell_3,
