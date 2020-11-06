@@ -13,6 +13,10 @@ DescriptorValues::DescriptorValues() {}
 
 ClusterDescriptor::ClusterDescriptor() {}
 
+ClusterDescriptor::ClusterDescriptor(const DescriptorValues &structure){
+    add_cluster(structure);
+}
+
 void ClusterDescriptor ::add_cluster(const DescriptorValues &structure){
 
   // If this is the first time adding a cluster, initialize attributes.
