@@ -1,5 +1,4 @@
 #include "normalized_dot_product.h"
-#include "compact_environments.h"
 #include "compact_structure.h"
 #include "compact_descriptor.h"
 #include <assert.h>

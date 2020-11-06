@@ -1,7 +1,5 @@
-#include "compact_environments.h"
 #include "normalized_dot_product.h"
 #include "compact_structure.h"
-#include "compact_structures.h"
 #include "descriptor.h"
 #include "four_body.h"
 #include "three_body.h"
@@ -563,9 +561,3 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
     }
   }
 }
-
-// TEST_F(CompactStructureTest, TestStrucs) {
-//   CompactStructures test_strucs;
-//   test_strucs.add_structure(test_struc);
-//   test_strucs.add_structure(test_struc);
-// }
