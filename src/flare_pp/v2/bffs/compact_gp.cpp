@@ -121,4 +121,73 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
   for (int i = 0; i < n_kernels; i++) {
     sparse_descriptors[i].add_cluster(structure.descriptors[i]);
   }
+
+  // TODO: Update Kuu and Kuf matrices. Consider writing a method for this.
+}
+
+void CompactGP ::add_training_structure(const CompactStructure &structure){
+
+  int n_energy = structure.energy.size();
+  int n_force = structure.forces.size();
+  int n_stress = structure.stresses.size();
+  int n_labels = n_energy + n_force + n_stress;
+  int n_atoms = structure.noa;
+  int n_kernels = kernels.size();
+
+  // Update Kuf kernels.
+  Eigen::MatrixXd envs_struc_kernels;
+  for (int i = 0; i < n_kernels; i++) {
+    int n_sparse = sparse_descriptors[i].n_clusters;
+
+    envs_struc_kernels = 
+      kernels[i]->envs_struc(sparse_descriptors[i], structure.descriptors[i]);
+
+    Kuf_energy[i].conservativeResize(n_sparse, n_energy_labels + n_energy);
+    Kuf_force[i].conservativeResize(n_sparse, n_force_labels + n_force);
+    Kuf_stress[i].conservativeResize(n_sparse, n_stress_labels + n_stress);
+
+    Kuf_energy[i].block(0, n_energy_labels, n_sparse, n_energy) =
+      envs_struc_kernels.block(0, 0, n_sparse, n_energy);
+    Kuf_force[i].block(0, n_force_labels, n_sparse, n_force) =
+      envs_struc_kernels.block(0, 1, n_sparse, n_force);
+    Kuf_stress[i].block(0, n_stress_labels, n_sparse, n_stress) =
+      envs_struc_kernels.block(0, 1 + n_atoms * 3, n_sparse, n_stress);
+  }
+
+  // Update label count.
+  n_energy_labels += n_energy;
+  n_force_labels += n_force;
+  n_stress_labels += n_stress;
+  n_labels += n_energy + n_force + n_stress;
+
+  // Store training structure.
+  training_structures.push_back(structure);
+
+  // Update labels.
+  energy_labels.conservativeResize(n_energy_labels);
+  force_labels.conservativeResize(n_force_labels);
+  stress_labels.conservativeResize(n_stress_labels);
+
+  energy_labels.tail(n_energy) = structure.energy;
+  force_labels.tail(n_force) = structure.forces;
+  stress_labels.tail(n_stress) = structure.stresses;
+
+  y.conservativeResize(n_energy_labels + n_force_labels + n_stress_labels);
+  y.segment(0, n_energy_labels) = energy_labels;
+  y.segment(n_energy_labels, n_force_labels) = force_labels;
+  y.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+      stress_labels;
+
+  // Update noise.
+  noise_vector.conservativeResize(n_energy_labels + n_force_labels +
+                                  n_stress_labels);
+  noise_vector.segment(0, n_energy_labels) =
+      Eigen::VectorXd::Constant(n_energy_labels,
+        1 / (energy_noise * energy_noise));
+  noise_vector.segment(n_energy_labels, n_force_labels) =
+      Eigen::VectorXd::Constant(n_force_labels,
+        1 / (force_noise * force_noise));
+  noise_vector.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+      Eigen::VectorXd::Constant(n_stress_labels,
+        1 / (stress_noise * stress_noise));
 }
