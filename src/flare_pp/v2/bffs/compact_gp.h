@@ -3,7 +3,7 @@
 
 #include "compact_structure.h"
 #include "compact_descriptor.h"
-#include "kernels.h"
+#include "kernel.h"
 #include <Eigen/Dense>
 #include <vector>
 
@@ -11,11 +11,10 @@ class CompactGP {
   Eigen::VectorXd hyperparameters;
 
   // Kernel attributes.
-  // TODO: Make a separate class for this. For certain kernels, e.g. the
-  // squared exponential kernel, it may be necessary to store more information
-  // to facilitate hyperparameter optimization.
+  std::vector<CompactKernel *> kernels;
   std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_energy, Kuf_force, Kuf_stress;
   Eigen::MatrixXd Kuu, Kuf;
+  double Kuu_jitter;
 
   // Solution attributes.
   Eigen::MatrixXd Sigma, Kuu_inverse;
@@ -28,14 +27,16 @@ class CompactGP {
   // Label attributes.
   Eigen::VectorXd noise_vector, y, energy_labels, force_labels, stress_labels;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0, n_labels;
+  double energy_noise, force_noise, stress_noise;
 
   // Likelihood attributes.
   double log_marginal_likelihood, data_fit, complexity_penalty, trace_term,
       constant_term;
   Eigen::VectorXd likelihood_gradient;
 
+  // Constructors.
   CompactGP();
-  CompactGP(std::vector<Kernel *> kernels, double energy_noise,
+  CompactGP(std::vector<CompactKernel *> kernels, double energy_noise,
             double force_noise, double stress_noise);
 
   // TODO: Add sparse environments above an energy uncertainty threshold.
