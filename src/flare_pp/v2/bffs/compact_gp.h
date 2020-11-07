@@ -43,6 +43,8 @@ public:
   // TODO: Add sparse environments above an energy uncertainty threshold.
   void add_sparse_environments(const CompactStructure &structure);
   void add_training_structure(const CompactStructure &structure);
+  void update_Kuu();
+  void update_Kuf();
 
   void update_matrices_QR();
   void predict_on_structure(CompactStructure &structure);

@@ -130,7 +130,9 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
     sparse_descriptors[i].add_cluster(structure.descriptors[i]);
   }
 
-  // TODO: Update Kuu and Kuf matrices. Consider writing a method for this.
+  // Update Kuu and Kuf.
+  update_Kuu();
+  update_Kuf();
 }
 
 void CompactGP ::add_training_structure(const CompactStructure &structure){
@@ -198,15 +200,56 @@ void CompactGP ::add_training_structure(const CompactStructure &structure){
       stress_labels;
 
   // Update noise.
+  double total_energy_noise = energy_noise * structure.noa;
   noise_vector.conservativeResize(n_energy_labels + n_force_labels +
                                   n_stress_labels);
   noise_vector.segment(0, n_energy_labels) =
       Eigen::VectorXd::Constant(n_energy_labels,
-        1 / (energy_noise * energy_noise));
+        1 / (total_energy_noise * total_energy_noise));
   noise_vector.segment(n_energy_labels, n_force_labels) =
       Eigen::VectorXd::Constant(n_force_labels,
         1 / (force_noise * force_noise));
   noise_vector.segment(n_energy_labels + n_force_labels, n_stress_labels) =
       Eigen::VectorXd::Constant(n_stress_labels,
         1 / (stress_noise * stress_noise));
+
+  // Update Kuf.
+  update_Kuf();
+}
+
+void CompactGP ::update_Kuu(){
+  // Count sparse points.
+  int sparse_count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++){
+    sparse_count += Kuu_kernels[i].rows();
+  }
+
+  // Update Kuu.
+  Kuu = Eigen::MatrixXd::Zero(sparse_count, sparse_count);
+  int count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++){
+      int size = Kuu_kernels[i].rows();
+      Kuu.block(count, count, size, size) = Kuu_kernels[i];
+      count += size;
+  }
+}
+
+void CompactGP ::update_Kuf(){
+  // Count sparse points.
+  int sparse_count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++){
+    sparse_count += Kuu_kernels[i].rows();
+  }
+
+  // Update Kuf.
+  Kuf = Eigen::MatrixXd::Zero(sparse_count, n_labels);
+  int count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++){
+      int size = Kuu_kernels[i].rows();
+      Kuf.block(count, 0, size, n_energy_labels) = Kuf_energy[i];
+      Kuf.block(count, n_energy_labels, size, n_force_labels) = Kuf_force[i];
+      Kuf.block(count, n_energy_labels + n_force_labels, size,
+        n_stress_labels) = Kuf_stress[i];
+      count += size;
+  }
 }
