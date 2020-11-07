@@ -84,6 +84,9 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
     Kuu_kernels[i].block(n_sparse, 0, n_envs, n_sparse) =
         prev_block.transpose();
     Kuu_kernels[i].block(n_sparse, n_sparse, n_envs, n_envs) = self_block;
+
+    // Update sparse count.
+    this->n_sparse += n_envs;
   }
 
   // Compute kernels between new sparse environments and training structures.
@@ -218,14 +221,8 @@ void CompactGP ::add_training_structure(const CompactStructure &structure){
 }
 
 void CompactGP ::update_Kuu(){
-  // Count sparse points.
-  int sparse_count = 0;
-  for (int i = 0; i < Kuu_kernels.size(); i++){
-    sparse_count += Kuu_kernels[i].rows();
-  }
-
   // Update Kuu.
-  Kuu = Eigen::MatrixXd::Zero(sparse_count, sparse_count);
+  Kuu = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
   int count = 0;
   for (int i = 0; i < Kuu_kernels.size(); i++){
       int size = Kuu_kernels[i].rows();
@@ -235,14 +232,8 @@ void CompactGP ::update_Kuu(){
 }
 
 void CompactGP ::update_Kuf(){
-  // Count sparse points.
-  int sparse_count = 0;
-  for (int i = 0; i < Kuu_kernels.size(); i++){
-    sparse_count += Kuu_kernels[i].rows();
-  }
-
   // Update Kuf.
-  Kuf = Eigen::MatrixXd::Zero(sparse_count, n_labels);
+  Kuf = Eigen::MatrixXd::Zero(n_sparse, n_labels);
   int count = 0;
   for (int i = 0; i < Kuu_kernels.size(); i++){
       int size = Kuu_kernels[i].rows();
@@ -290,4 +281,35 @@ void CompactGP ::update_matrices_QR() {
                               .solve(Kuu_eye);
   alpha = R_inv * Q_b;
   Sigma = R_inv * R_inv.transpose();
+}
+
+void CompactGP ::predict_on_structure(CompactStructure &test_structure) {
+
+  int n_atoms = test_structure.noa;
+  int n_out = 1 + 3 * n_atoms + 6;
+  int n_kernels = kernels.size();
+
+  Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
+  int count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++){
+      int size = Kuu_kernels[i].rows();
+      kernel_mat.block(count, 0, size, n_out) =
+        kernels[i]->envs_struc(sparse_descriptors[i],
+                               test_structure.descriptors[i]);
+      count += size;
+  }
+
+  test_structure.mean_efs = kernel_mat.transpose() * alpha;
+
+  // Compute variances.
+  Eigen::VectorXd V_SOR, Q_self, K_self = Eigen::VectorXd::Zero(n_out);
+
+  for (int i = 0; i < n_kernels; i++) {
+    K_self += kernels[i]->self_kernel_struc(test_structure.descriptors[i]);
+  }
+
+  Q_self = (kernel_mat.transpose() * Kuu_inverse * kernel_mat).diagonal();
+  V_SOR = (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
+
+  test_structure.variance_efs = K_self - Q_self + V_SOR;
 }
