@@ -14,13 +14,14 @@ TEST_F(CompactStructureTest, SparseTest) {
   sparse_gp.add_training_structure(test_struc);
   sparse_gp.add_sparse_environments(test_struc);
 
-//   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
-//   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
+  EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
+  EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
 
-//   sparse_gp.update_matrices();
+  sparse_gp.update_matrices_QR();
 
-//   EXPECT_EQ(sparse_gp.sparse_environments.size(), sparse_gp.Sigma.rows());
-//   EXPECT_EQ(sparse_gp.sparse_environments.size(), sparse_gp.Kuu_inverse.rows());
+  EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters, sparse_gp.Sigma.rows());
+  EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters,
+            sparse_gp.Kuu_inverse.rows());
 
 //   sparse_gp.predict_on_structure(test_struc);
 

@@ -253,3 +253,41 @@ void CompactGP ::update_Kuf(){
       count += size;
   }
 }
+
+void CompactGP ::update_matrices_QR() {
+  // Store square root of noise vector.
+  Eigen::VectorXd noise_vector_sqrt = Eigen::VectorXd::Zero(n_labels);
+  for (int i = 0; i < noise_vector_sqrt.size(); i++) {
+    noise_vector_sqrt(i) = sqrt(noise_vector(i));
+  }
+
+  // Cholesky decompose Kuu.
+  Eigen::LLT<Eigen::MatrixXd> chol(
+      Kuu + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()));
+
+  // Get the inverse from Cholesky decomposition.
+  // TODO: Check if this is actually faster than explicit inversion.
+  Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
+  Kuu_inverse = chol.solve(Kuu_eye);
+
+  // Form A matrix.
+  Eigen::MatrixXd A =
+      Eigen::MatrixXd::Zero(Kuf.cols() + Kuu.cols(), Kuu.cols());
+  A.block(0, 0, Kuf.cols(), Kuu.cols()) =
+      noise_vector_sqrt.asDiagonal() * Kuf.transpose();
+  A.block(Kuf.cols(), 0, Kuu.cols(), Kuu.cols()) = chol.matrixL().transpose();
+
+  // Form b vector.
+  Eigen::VectorXd b = Eigen::VectorXd::Zero(Kuf.cols() + Kuu.cols());
+  b.segment(0, Kuf.cols()) = noise_vector_sqrt.asDiagonal() * y;
+
+  // QR decompose A.
+  Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
+  Eigen::VectorXd Q_b = qr.householderQ().transpose() * b;
+  Eigen::MatrixXd R_inv = qr.matrixQR()
+                              .block(0, 0, Kuu.cols(), Kuu.cols())
+                              .triangularView<Eigen::Upper>()
+                              .solve(Kuu_eye);
+  alpha = R_inv * Q_b;
+  Sigma = R_inv * R_inv.transpose();
+}
