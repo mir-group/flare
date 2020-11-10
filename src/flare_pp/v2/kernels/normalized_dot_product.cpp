@@ -514,3 +514,14 @@ NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
 
   return kernel_vector;
 }
+
+Eigen::MatrixXd
+NormalizedDotProduct ::envs_envs_grad(const ClusterDescriptor &envs1,
+                                      const ClusterDescriptor &envs2,
+                                      const Eigen::MatrixXd &Kuu){
+
+}
+
+void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps){
+
+}

@@ -19,6 +19,10 @@ public:
   Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
                             const ClusterDescriptor &envs2);
 
+  Eigen::MatrixXd envs_envs_grad(const ClusterDescriptor &envs1,
+                                 const ClusterDescriptor &envs2,
+                                 const Eigen::MatrixXd &Kuu);
+
   Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
                              const DescriptorValues &struc);
 
@@ -26,6 +30,8 @@ public:
 
   Eigen::MatrixXd struc_struc(DescriptorValues struc1,
                               DescriptorValues struc2);
+
+  void set_hyperparameters(Eigen::VectorXd new_hyps);
 };
 
 #endif
