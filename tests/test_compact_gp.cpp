@@ -11,6 +11,13 @@ TEST_F(CompactStructureTest, SparseTest) {
   kernels.push_back(&kernel);
   CompactGP sparse_gp = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
 
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+//   test_struc.forces = forces;
+//   test_struc.stresses = stresses;
+
   sparse_gp.add_training_structure(test_struc);
   sparse_gp.add_sparse_environments(test_struc);
 
@@ -18,7 +25,6 @@ TEST_F(CompactStructureTest, SparseTest) {
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
 
   sparse_gp.update_matrices_QR();
-
   EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters, sparse_gp.Sigma.rows());
   EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters,
             sparse_gp.Kuu_inverse.rows());
@@ -31,12 +37,13 @@ TEST_F(CompactStructureTest, SparseTest) {
     EXPECT_GE(test_struc.variance_efs[i], 0);
   }
 
-//   // Compute the marginal likelihood.
-//   sparse_gp.compute_likelihood();
-//   EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
-//                 sparse_gp.constant_term,
-//             sparse_gp.log_marginal_likelihood);
-//   double like1 = sparse_gp.log_marginal_likelihood;
+  // Compute the marginal likelihood.
+  sparse_gp.compute_likelihood();
+
+  EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
+                sparse_gp.constant_term,
+            sparse_gp.log_marginal_likelihood);
+  double like1 = sparse_gp.log_marginal_likelihood;
 
 //   // Check the likelihood function.
 //   Eigen::VectorXd hyps = sparse_gp.hyperparameters;

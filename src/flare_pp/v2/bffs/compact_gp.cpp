@@ -106,7 +106,8 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
     for (int j = 0; j < n_strucs; j++){
       int n_atoms = training_structures[j].noa;
       envs_struc_kernels = 
-        kernels[i]->envs_struc(sparse_descriptors[i], structure.descriptors[i]);
+        kernels[i]->envs_struc(cluster_descriptors[i],
+                               structure.descriptors[i]);
 
       if (training_structures[j].energy.size() != 0) {
           Kuf_energy[i].block(n_sparse, e_count, n_envs, 1) =
@@ -182,7 +183,7 @@ void CompactGP ::add_training_structure(const CompactStructure &structure){
   n_energy_labels += n_energy;
   n_force_labels += n_force;
   n_stress_labels += n_stress;
-  n_labels += n_energy + n_force + n_stress;
+  this->n_labels += n_energy + n_force + n_stress;
 
   // Store training structure.
   training_structures.push_back(structure);
@@ -203,12 +204,11 @@ void CompactGP ::add_training_structure(const CompactStructure &structure){
       stress_labels;
 
   // Update noise.
-  double total_energy_noise = energy_noise * structure.noa;
   noise_vector.conservativeResize(n_energy_labels + n_force_labels +
                                   n_stress_labels);
   noise_vector.segment(0, n_energy_labels) =
       Eigen::VectorXd::Constant(n_energy_labels,
-        1 / (total_energy_noise * total_energy_noise));
+        1 / (energy_noise * energy_noise));
   noise_vector.segment(n_energy_labels, n_force_labels) =
       Eigen::VectorXd::Constant(n_force_labels,
         1 / (force_noise * force_noise));
@@ -312,4 +312,41 @@ void CompactGP ::predict_on_structure(CompactStructure &test_structure) {
   V_SOR = (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
 
   test_structure.variance_efs = K_self - Q_self + V_SOR;
+}
+
+void CompactGP ::compute_likelihood() {
+  if (n_labels == 0){
+    std::cout << "Warning: The likelihood is being computed withouot any labels in the training set. The result won't be meaningful." << std::endl;
+    return;
+  }
+
+  // Construct noise vector.
+  Eigen::VectorXd noise = Eigen::VectorXd::Zero(n_labels);
+  noise.segment(0, n_energy_labels) =
+      Eigen::VectorXd::Constant(n_energy_labels, energy_noise * energy_noise);
+  noise.segment(n_energy_labels, n_force_labels) =
+      Eigen::VectorXd::Constant(n_force_labels, force_noise * force_noise);
+  noise.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+      Eigen::VectorXd::Constant(n_stress_labels, stress_noise * stress_noise);
+
+  Eigen::MatrixXd Qff_plus_lambda =
+      Kuf.transpose() * Kuu_inverse * Kuf +
+      noise.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
+
+  // Decompose the matrix. Use QR decomposition instead of LLT/LDLT becaues Qff
+  // becomes nonpositive when the training set is large.
+  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(Qff_plus_lambda);
+  Eigen::VectorXd Q_inv_y = qr.solve(y);
+  Eigen::MatrixXd qr_mat = qr.matrixQR();
+  // Compute the complexity penalty.
+  complexity_penalty = 0;
+  for (int i = 0; i < qr_mat.rows(); i++) {
+    complexity_penalty += -log(abs(qr_mat(i, i)));
+  }
+  complexity_penalty /= 2;
+
+  double half = 1.0 / 2.0;
+  data_fit = -half * y.transpose() * Q_inv_y;
+  constant_term = -half * n_labels * log(2 * M_PI);
+  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }

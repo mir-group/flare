@@ -28,7 +28,7 @@ public:
   // Label attributes.
   Eigen::VectorXd noise_vector, y, energy_labels, force_labels, stress_labels;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
-    n_sparse = 0, n_labels;
+    n_sparse = 0, n_labels = 0;
   double energy_noise, force_noise, stress_noise;
 
   // Likelihood attributes.
