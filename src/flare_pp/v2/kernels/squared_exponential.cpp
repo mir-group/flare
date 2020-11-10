@@ -395,17 +395,24 @@ std::vector<Eigen::MatrixXd>
     const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
 
   std::vector<Eigen::MatrixXd> kernel_gradients;
+  double sig_new = new_hyps(0);
+  double sig2_new = sig_new * sig_new;
+  double ls_new = new_hyps(1);
+  double ls2_new = ls_new * ls_new;
+  double ls3_new = ls2_new * ls_new;
+
+  Eigen::MatrixXd bare_kernels = Kuu;
+  bare_kernels /= sig2;
+  bare_kernels = log(bare_kernels.array()) * ls2;
 
   // Signal variance gradient.
-  Eigen::MatrixXd sigma_gradient = Kuu;
-  sigma_gradient /= sig2;
-  sigma_gradient *= 2 * new_hyps(0);
-  kernel_gradients.push_back(sigma_gradient);
+  Eigen::MatrixXd sig_grad = 2 * sig_new * exp(bare_kernels.array() / ls2_new);
+  kernel_gradients.push_back(sig_grad);
 
   // Length scale gradient.
-  Eigen::MatrixXd ls_gradient = Kuu;
-  ls_gradient /= sig2;
-  ls_gradient = Kuu.array() * log(ls_gradient.array()) * (-2 / (ls * ls2));
+  Eigen::MatrixXd ls_gradient =
+    sig2_new * exp(bare_kernels.array() / ls2_new) *
+    bare_kernels.array() * (-2 / ls3_new);
   kernel_gradients.push_back(ls_gradient);
 
   return kernel_gradients;
