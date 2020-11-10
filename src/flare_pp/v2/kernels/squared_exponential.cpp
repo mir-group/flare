@@ -389,10 +389,10 @@ SquaredExponential ::self_kernel_struc(DescriptorValues struc) {
   return kernel_vector;
 }
 
-Eigen::MatrixXd
-SquaredExponential ::envs_envs_grad(const ClusterDescriptor &envs1,
-                                    const ClusterDescriptor &envs2,
-                                    const Eigen::MatrixXd &Kuu){
+std::vector<Eigen::MatrixXd>
+  SquaredExponential ::envs_envs_grad(
+    const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+    const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
 
 }
 

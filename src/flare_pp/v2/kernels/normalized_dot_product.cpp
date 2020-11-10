@@ -515,11 +515,18 @@ NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
   return kernel_vector;
 }
 
-Eigen::MatrixXd
-NormalizedDotProduct ::envs_envs_grad(const ClusterDescriptor &envs1,
-                                      const ClusterDescriptor &envs2,
-                                      const Eigen::MatrixXd &Kuu){
+std::vector<Eigen::MatrixXd>
+  NormalizedDotProduct ::envs_envs_grad(
+    const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+    const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
 
+  std::vector<Eigen::MatrixXd> kernel_gradients;
+  Eigen::MatrixXd sigma_gradient = Kuu;
+  sigma_gradient /= sig2;
+  sigma_gradient *= 2 * new_hyps(0);
+  kernel_gradients.push_back(sigma_gradient);
+
+  return kernel_gradients;
 }
 
 void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps){

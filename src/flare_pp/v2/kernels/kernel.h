@@ -20,9 +20,9 @@ public:
   virtual Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
                                     const ClusterDescriptor &envs2) = 0;
 
-  virtual Eigen::MatrixXd envs_envs_grad(const ClusterDescriptor &envs1,
-                                         const ClusterDescriptor &envs2,
-                                         const Eigen::MatrixXd &Kuu) = 0;
+  virtual std::vector<Eigen::MatrixXd> envs_envs_grad(
+    const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+    const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps) = 0;
 
   virtual Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
                                      const DescriptorValues &struc) = 0;
