@@ -550,6 +550,7 @@ std::vector<Eigen::MatrixXd>
   Eigen::MatrixXd Kuf_new = Kuf;
   Kuf_new /= sig2;
   Kuf_new *= new_hyps(0) * new_hyps(0);
+  kernel_gradients.push_back(Kuf_new);
 
   // Compute sigma gradient.
   Eigen::MatrixXd sigma_gradient = Kuf;

@@ -103,6 +103,7 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
     int f_count = 0;
     int s_count = 0;
 
+    // TODO: Parellelize this loop.
     for (int j = 0; j < n_strucs; j++){
       int n_atoms = training_structures[j].noa;
       envs_struc_kernels = 

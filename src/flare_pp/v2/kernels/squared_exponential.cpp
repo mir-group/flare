@@ -591,15 +591,83 @@ std::vector<Eigen::MatrixXd>
     const ClusterDescriptor &envs,
     const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
 
+  std::vector<Eigen::MatrixXd> Kuu_grad = envs_envs_grad(envs, envs, new_hyps);
+
+  return Kuu_grad;
 }
 
+// Note: This is a fairly general implementation -- should work for any kernel
+// with an envs_struc_grad method.
 std::vector<Eigen::MatrixXd>
   SquaredExponential ::Kuf_grad(
     const ClusterDescriptor &envs,
     const std::vector<CompactStructure> &strucs, int kernel_index,
     const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps){
 
+  int n_sparse = Kuf.rows();
+  int n_labels = Kuf.cols();
+  int n_hyps = new_hyps.size();
 
+  Eigen::MatrixXd Kuf_new = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+  Eigen::MatrixXd sigma_grad = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+  Eigen::MatrixXd ls_grad = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+  std::vector<Eigen::MatrixXd> Kuf_grad;
+
+  // Initialize gradient matrices.
+  for (int i = 0; i < n_hyps + 1; i ++){
+    Kuf_grad.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
+  }
+
+  // Record energy, force, and stress indices.
+  int n_strucs = strucs.size();
+  Eigen::VectorXd e_counts = Eigen::VectorXd::Constant(n_strucs, -1);
+  Eigen::VectorXd f_counts = Eigen::VectorXd::Constant(n_strucs, -1);
+  Eigen::VectorXd s_counts = Eigen::VectorXd::Constant(n_strucs, -1);
+  int e_count = 0;
+  int f_count = 0;
+  int s_count = 0;
+  for (int i = 0; i < strucs.size(); i++){
+    if (strucs[i].energy.size() != 0){
+      e_counts(i) = e_count;
+      e_count += 1;
+    }
+
+    if (strucs[i].forces.size() != 0){
+        f_counts(i) += f_count;
+        f_count += strucs[i].forces.size();
+    }
+
+    if (strucs[i].stresses.size() != 0){
+        s_counts(i) += s_count;
+        s_count += strucs[i].stresses.size();
+    }
+  }
+
+#pragma omp parallel for
+  for (int i = 0; i < strucs.size(); i++){
+    std::vector<Eigen::MatrixXd> envs_struc = envs_struc_grad(
+      envs, strucs[i].descriptors[kernel_index], new_hyps);
+    int n_atoms = strucs[i].noa;
+
+    for (int j = 0; j < n_hyps + 1; j++){
+      if (e_counts(i) != -1){
+        Kuf_grad[j].block(0, e_counts(i), n_sparse, 0) =
+          envs_struc[j].block(0, 0, n_sparse, 0);
+      }
+
+      if (f_counts(i) != -1){
+        Kuf_grad[j].block(0, e_count + f_counts(i), n_sparse, n_atoms * 3) =
+          envs_struc[j].block(0, 1, n_sparse, n_atoms * 3);
+      }
+
+      if (s_counts(i) != -1){
+        Kuf_grad[j].block(0, e_count + f_count + s_counts(i), n_sparse, 6) =
+          envs_struc[j].block(0, 1 + n_atoms * 3, n_sparse, 6);
+      }
+    }
+  }
+
+  return Kuf_grad;
 }
 
 void SquaredExponential ::set_hyperparameters(Eigen::VectorXd new_hyps){
