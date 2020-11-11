@@ -74,6 +74,77 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(
   return kern_mat;
 }
 
+std::vector<Eigen::MatrixXd> envs_envs_grad(
+  const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+  const Eigen::VectorXd &new_hyps){
+
+  // Set hyperparameters.
+  double sig_new = new_hyps(0);
+  double sig2_new = sig_new * sig_new;
+  double ls_new = new_hyps(1);
+  double ls2_new = ls_new * ls_new;
+
+  // Check types.
+  int n_types_1 = envs1.n_types;
+  int n_types_2 = envs2.n_types;
+  assert(n_types_1 == n_types_2);
+
+  // Check descriptor size.
+  int n_descriptors_1 = envs1.n_descriptors;
+  int n_descriptors_2 = envs2.n_descriptors;
+  assert(n_descriptors_1 == n_descriptors_2);
+
+  Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(
+    envs1.n_clusters, envs2.n_clusters);
+  int n_types = n_types_1;
+  Eigen::MatrixXd sig_mat = Eigen::MatrixXd::Zero(
+    envs1.n_clusters, envs2.n_clusters);
+  Eigen::MatrixXd ls_mat = Eigen::MatrixXd::Zero(
+    envs1.n_clusters, envs2.n_clusters);
+
+  for (int s = 0; s < n_types; s++) {
+    // Compute dot products.
+    Eigen::MatrixXd dot_vals =
+        envs1.descriptors[s] * envs2.descriptors[s].transpose();
+
+    // Compute kernels.
+    int n_sparse_1 = envs1.type_count[s];
+    int c_sparse_1 = envs1.cumulative_type_count[s];
+    int n_sparse_2 = envs2.type_count[s];
+    int c_sparse_2 = envs2.cumulative_type_count[s];
+
+#pragma omp parallel for
+    for (int i = 0; i < n_sparse_1; i++) {
+      double norm_i = envs1.descriptor_norms[s](i);
+      double norm_i2 = norm_i * norm_i;
+      double cut_i = envs1.cutoff_values[s](i);
+      int ind1 = c_sparse_1 + i;
+
+      for (int j = 0; j < n_sparse_2; j++) {
+        double norm_j = envs2.descriptor_norms[s](j);
+        double norm_j2 = norm_j * norm_j;
+        double cut_j = envs2.cutoff_values[s](j);
+        int ind2 = c_sparse_2 + j;
+
+        // Energy kernel.
+        double val1 = norm_i2 + norm_j2 - 2 * dot_vals(i, j);
+        double exp_arg = val1 / (2 * ls2_new);
+        double val2 = exp(-exp_arg) * cut_i * cut_j;
+        double en_kern = sig2_new * val2;
+        kern_mat(ind1, ind2) += en_kern;
+        sig_mat(ind1, ind2) += 2 * sig_new * val2;
+        ls_mat(ind1, ind2) += 2 * en_kern * exp_arg / ls_new;
+      }
+    }
+  }
+
+  std::vector<Eigen::MatrixXd> kernel_gradients;
+  kernel_gradients.push_back(kern_mat);
+  kernel_gradients.push_back(sig_mat);
+  kernel_gradients.push_back(ls_mat);
+  return kernel_gradients;
+}
+
 Eigen::MatrixXd SquaredExponential ::envs_struc(
   const ClusterDescriptor &envs, const DescriptorValues &struc) {
 
@@ -161,6 +232,126 @@ Eigen::MatrixXd SquaredExponential ::envs_struc(
   }
 
   return kern_mat;
+}
+
+std::vector<Eigen::MatrixXd> SquaredExponential ::envs_struc_grad(
+  const ClusterDescriptor &envs, const DescriptorValues &struc,
+  const Eigen::VectorXd &new_hyps) {
+
+  // Define hyperparameters.
+  double sig_new = new_hyps(0);
+  double sig2_new = sig_new * sig_new;
+  double ls_new = new_hyps(1);
+  double ls2_new = ls_new * ls_new;
+
+  // Check types.
+  int n_types_1 = envs.n_types;
+  int n_types_2 = struc.n_types;
+  assert(n_types_1 == n_types_2);
+
+  // Check descriptor size.
+  int n_descriptors_1 = envs.n_descriptors;
+  int n_descriptors_2 = struc.n_descriptors;
+  assert(n_descriptors_1 == n_descriptors_2);
+
+  Eigen::MatrixXd kern_mat =
+    Eigen::MatrixXd::Zero(envs.n_clusters, 1 + struc.n_atoms * 3 + 6);    
+  Eigen::MatrixXd sig_mat =
+    Eigen::MatrixXd::Zero(envs.n_clusters, 1 + struc.n_atoms * 3 + 6);
+  Eigen::MatrixXd ls_mat =
+    Eigen::MatrixXd::Zero(envs.n_clusters, 1 + struc.n_atoms * 3 + 6);
+
+  int n_types = envs.n_types;
+  double vol_inv = 1 / struc.volume;
+
+  for (int s = 0; s < n_types; s++) {
+    // Compute dot products.
+    Eigen::MatrixXd dot_vals =
+        envs.descriptors[s] * struc.descriptors[s].transpose();
+    Eigen::MatrixXd force_dot =
+        envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
+
+    Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
+
+    // Compute kernels, parallelizing over environments.
+    int n_sparse = envs.type_count[s];
+    int n_struc = struc.n_atoms_by_type[s];
+    int c_sparse = envs.cumulative_type_count[s];
+
+#pragma omp parallel for
+    for (int i = 0; i < n_sparse; i++) {
+      double norm_i = envs.descriptor_norms[s](i);
+      double norm_i2 = norm_i * norm_i;
+      double cut_i = envs.cutoff_values[s](i);
+      int sparse_index = c_sparse + i;
+
+      for (int j = 0; j < n_struc; j++) {
+        double norm_j = struc.descriptor_norms[s](j);
+        double norm_j2 = norm_j * norm_j;
+        double cut_j = struc.cutoff_values[s](j);
+
+        // Energy kernel.
+        double exp_arg =
+          (norm_i2 + norm_j2 - 2 * dot_vals(i, j)) / (2 * ls2_new);
+        double exp_val = exp(-exp_arg);
+        double en_kern = sig2_new * exp_val * cut_i * cut_j;
+        double sig_derv = 2 * en_kern / sig_new;
+        double ls_derv = 2 * en_kern * exp_arg / ls_new;
+        kern_mat(sparse_index, 0) += en_kern;
+        sig_mat(sparse_index, 0) += sig_derv;
+        ls_mat(sparse_index, 0) += ls_derv;
+
+        // Force kernel.
+        int n_neigh = struc.neighbor_counts[s](j);
+        int c_neigh = struc.cumulative_neighbor_counts[s](j);
+        int atom_index = struc.atom_indices[s](j);
+
+        for (int k = 0; k < n_neigh; k++) {
+          int neighbor_index = struc.neighbor_indices[s](c_neigh + k);
+          int stress_counter = 0;
+          int ind = c_neigh + k;
+
+          for (int comp = 0; comp < 3; comp++) {
+            int force_index = 3 * ind + comp;
+            double cut_derv = struc.cutoff_dervs[s](force_index);
+            double f1 = force_dot(i, force_index);
+            double f2 = struc_force_dot(force_index);
+            double f3 = (f1 - f2) / ls2_new;
+
+            double force_kern_val = sig2_new * exp_val * cut_i *
+              (f3 * cut_j + cut_derv);
+            double sig_force_derv = sig_derv * (f3 + cut_derv / cut_j);
+            double ls_force_derv =
+              ls_derv * (f3 + cut_derv / cut_j) - 2 * en_kern * f3 / ls_new;
+
+            kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) +=
+              force_kern_val;
+            sig_mat(sparse_index, 1 + 3 * neighbor_index + comp) +=
+              sig_force_derv;
+            ls_mat(sparse_index, 1 + 3 * atom_index + comp) +=
+              ls_force_derv;
+
+            for (int comp2 = comp; comp2 < 3; comp2++) {
+              double coord = struc.neighbor_coordinates[s](ind, comp2);
+              kern_mat(sparse_index, 1 + 3 * struc.n_atoms + stress_counter) -=
+                  force_kern_val * coord * vol_inv;
+              sig_mat(sparse_index, 1 + 3 * struc.n_atoms + stress_counter) -=
+                  sig_force_derv * coord * vol_inv;
+              ls_mat(sparse_index, 1 + 3 * struc.n_atoms + stress_counter) -=
+                  ls_force_derv * coord * vol_inv;
+              stress_counter++;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  std::vector<Eigen::MatrixXd> kernel_gradients;
+  kernel_gradients.push_back(kern_mat);
+  kernel_gradients.push_back(sig_mat);
+  kernel_gradients.push_back(ls_mat);
+  return kernel_gradients;
 }
 
 Eigen::MatrixXd SquaredExponential ::struc_struc(
@@ -390,32 +581,19 @@ SquaredExponential ::self_kernel_struc(DescriptorValues struc) {
 }
 
 std::vector<Eigen::MatrixXd>
-  SquaredExponential ::envs_envs_grad(
-    const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+  SquaredExponential ::Kuu_grad(
+    const ClusterDescriptor &envs,
     const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
 
-  std::vector<Eigen::MatrixXd> kernel_gradients;
-  double sig_new = new_hyps(0);
-  double sig2_new = sig_new * sig_new;
-  double ls_new = new_hyps(1);
-  double ls2_new = ls_new * ls_new;
-  double ls3_new = ls2_new * ls_new;
+}
 
-  Eigen::MatrixXd bare_kernels = Kuu;
-  bare_kernels /= sig2;
-  bare_kernels = log(bare_kernels.array()) * ls2;
+std::vector<Eigen::MatrixXd>
+  SquaredExponential ::Kuf_grad(
+    const ClusterDescriptor &envs,
+    const std::vector<CompactStructure> &strucs, int kernel_index,
+    const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps){
 
-  // Signal variance gradient.
-  Eigen::MatrixXd sig_grad = 2 * sig_new * exp(bare_kernels.array() / ls2_new);
-  kernel_gradients.push_back(sig_grad);
 
-  // Length scale gradient.
-  Eigen::MatrixXd ls_gradient =
-    sig2_new * exp(bare_kernels.array() / ls2_new) *
-    bare_kernels.array() * (-2 / ls3_new);
-  kernel_gradients.push_back(ls_gradient);
-
-  return kernel_gradients;
 }
 
 void SquaredExponential ::set_hyperparameters(Eigen::VectorXd new_hyps){

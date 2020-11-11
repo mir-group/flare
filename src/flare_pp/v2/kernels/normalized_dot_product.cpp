@@ -516,12 +516,43 @@ NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
 }
 
 std::vector<Eigen::MatrixXd>
-  NormalizedDotProduct ::envs_envs_grad(
-    const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+  NormalizedDotProduct ::Kuu_grad(
+    const ClusterDescriptor &envs,
     const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
 
   std::vector<Eigen::MatrixXd> kernel_gradients;
+  
+  // Compute Kuu.
+  Eigen::MatrixXd Kuu_new = Kuu;
+  Kuu_new /= sig2;
+  Kuu_new *= new_hyps(0) * new_hyps(0);
+
+  // Compute sigma gradient.
   Eigen::MatrixXd sigma_gradient = Kuu;
+  sigma_gradient /= sig2;
+  sigma_gradient *= 2 * new_hyps(0);
+
+  kernel_gradients.push_back(Kuu_new);
+  kernel_gradients.push_back(sigma_gradient);
+
+  return kernel_gradients;
+}
+
+std::vector<Eigen::MatrixXd>
+  NormalizedDotProduct ::Kuf_grad(
+    const ClusterDescriptor &envs,
+    const std::vector<CompactStructure> &strucs, int kernel_index, 
+    const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps){
+
+  std::vector<Eigen::MatrixXd> kernel_gradients;
+
+  // Compute Kuf.
+  Eigen::MatrixXd Kuf_new = Kuf;
+  Kuf_new /= sig2;
+  Kuf_new *= new_hyps(0) * new_hyps(0);
+
+  // Compute sigma gradient.
+  Eigen::MatrixXd sigma_gradient = Kuf;
   sigma_gradient /= sig2;
   sigma_gradient *= 2 * new_hyps(0);
   kernel_gradients.push_back(sigma_gradient);
