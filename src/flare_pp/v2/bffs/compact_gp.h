@@ -13,7 +13,8 @@ public:
 
   // Kernel attributes.
   std::vector<CompactKernel *> kernels;
-  std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_energy, Kuf_force, Kuf_stress;
+  std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels, Kuf_energy,
+    Kuf_force, Kuf_stress;
   Eigen::MatrixXd Kuu, Kuf;
   double Kuu_jitter;
 

@@ -608,12 +608,8 @@ std::vector<Eigen::MatrixXd>
   int n_labels = Kuf.cols();
   int n_hyps = new_hyps.size();
 
-  Eigen::MatrixXd Kuf_new = Eigen::MatrixXd::Zero(n_sparse, n_labels);
-  Eigen::MatrixXd sigma_grad = Eigen::MatrixXd::Zero(n_sparse, n_labels);
-  Eigen::MatrixXd ls_grad = Eigen::MatrixXd::Zero(n_sparse, n_labels);
-  std::vector<Eigen::MatrixXd> Kuf_grad;
-
   // Initialize gradient matrices.
+  std::vector<Eigen::MatrixXd> Kuf_grad;
   for (int i = 0; i < n_hyps + 1; i ++){
     Kuf_grad.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
   }
@@ -633,12 +629,12 @@ std::vector<Eigen::MatrixXd>
     }
 
     if (strucs[i].forces.size() != 0){
-        f_counts(i) += f_count;
+        f_counts(i) = f_count;
         f_count += strucs[i].forces.size();
     }
 
     if (strucs[i].stresses.size() != 0){
-        s_counts(i) += s_count;
+        s_counts(i) = s_count;
         s_count += strucs[i].stresses.size();
     }
   }
@@ -651,8 +647,8 @@ std::vector<Eigen::MatrixXd>
 
     for (int j = 0; j < n_hyps + 1; j++){
       if (e_counts(i) != -1){
-        Kuf_grad[j].block(0, e_counts(i), n_sparse, 0) =
-          envs_struc[j].block(0, 0, n_sparse, 0);
+        Kuf_grad[j].block(0, e_counts(i), n_sparse, 1) =
+          envs_struc[j].block(0, 0, n_sparse, 1);
       }
 
       if (f_counts(i) != -1){

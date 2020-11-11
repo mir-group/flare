@@ -82,6 +82,9 @@ TEST_F(CompactStructureTest, TestEnvsStruc){
 }
 
 TEST_F(CompactStructureTest, SqExpGrad){
+  // Test envs_envs_grad and envs_struc_grad methods of squared exponential
+  // kernel.
+
   // Define cluster.
   ClusterDescriptor envs;
   envs.add_cluster(struc_desc);

@@ -51,3 +51,40 @@ TEST_F(CompactStructureTest, SparseTest) {
 
 //   EXPECT_EQ(like1, like2);
 }
+
+
+TEST_F(CompactStructureTest, SqExpKuf){
+  // Test K_uf grad method of squared exponential kernel.
+
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  std::vector<CompactKernel*> kernels;
+  kernels.push_back(&kernel);
+  CompactGP sparse_gp = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+//   test_struc.forces = forces;
+  test_struc.stresses = stresses;
+
+  sparse_gp.add_training_structure(test_struc);
+  sparse_gp.add_sparse_environments(test_struc);
+
+//   std::cout << sparse_gp.Kuf << std::endl;
+
+  int kernel_index = 0;
+  Eigen::VectorXd new_hyps(2);
+  new_hyps << 2.0, 0.9;
+  std::cout << new_hyps << std::endl;
+
+  std::vector<Eigen::MatrixXd> Kuf_grad =
+    kernel.Kuf_grad(sparse_gp.sparse_descriptors[0],
+      sparse_gp.training_structures, kernel_index,
+      sparse_gp.Kuf, new_hyps);
+
+//   std::cout << Kuf_grad[2] << std::endl;
+}

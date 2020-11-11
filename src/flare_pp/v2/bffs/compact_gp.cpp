@@ -233,15 +233,21 @@ void CompactGP ::update_Kuu(){
 }
 
 void CompactGP ::update_Kuf(){
-  // Update Kuf.
+  // Update Kuf kernels.
+  std::vector<Eigen::MatrixXd> empty_matrices;
+  Kuf_kernels = empty_matrices;
   Kuf = Eigen::MatrixXd::Zero(n_sparse, n_labels);
   int count = 0;
   for (int i = 0; i < Kuu_kernels.size(); i++){
       int size = Kuu_kernels[i].rows();
-      Kuf.block(count, 0, size, n_energy_labels) = Kuf_energy[i];
-      Kuf.block(count, n_energy_labels, size, n_force_labels) = Kuf_force[i];
-      Kuf.block(count, n_energy_labels + n_force_labels, size,
+      Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(size, n_labels);
+      Kuf_mat.block(0, 0, size, n_energy_labels) = Kuf_energy[i];
+      Kuf_mat.block(0, n_energy_labels, size, n_force_labels) = Kuf_force[i];
+      Kuf_mat.block(0, n_energy_labels + n_force_labels, size,
         n_stress_labels) = Kuf_stress[i];
+    
+      Kuf.block(count, 0, size, n_labels) = Kuf_mat;
+      Kuf_kernels.push_back(Kuf_mat);
       count += size;
   }
 }
