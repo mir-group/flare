@@ -81,6 +81,60 @@ TEST_F(CompactStructureTest, TestEnvsStruc){
   }
 }
 
+TEST_F(CompactStructureTest, SqExpGrad){
+  // Define cluster.
+  ClusterDescriptor envs;
+  envs.add_cluster(struc_desc);
+
+  // Define hyperparameters.
+  double delta = 1e-4;
+  double thresh = 1e-6;
+  Eigen::VectorXd hyps = kernel.kernel_hyperparameters;
+  Eigen::VectorXd sig_hyps_up = hyps;
+  Eigen::VectorXd sig_hyps_down = hyps;
+  sig_hyps_up(0) += delta;
+  sig_hyps_down(0) -= delta;
+  Eigen::VectorXd ls_hyps_up = hyps;
+  Eigen::VectorXd ls_hyps_down = hyps;
+  ls_hyps_up(1) += delta;
+  ls_hyps_down(1) -= delta; 
+
+  // Check env/env gradient.
+  std::vector<Eigen::MatrixXd> env_grad_1 =
+    kernel.envs_envs_grad(envs, envs, kernel.kernel_hyperparameters);
+  std::vector<Eigen::MatrixXd> env_grad_2 =
+    kernel.envs_envs_grad(envs, envs, ls_hyps_up);
+  std::vector<Eigen::MatrixXd> env_grad_3 =
+    kernel.envs_envs_grad(envs, envs, ls_hyps_down);
+
+  double exact_val = env_grad_1[2](0, 1);
+  double fin_val = (env_grad_2[0](0, 1) - env_grad_3[0](0, 1)) / (2 * delta);
+  EXPECT_NEAR(exact_val, fin_val, thresh);
+
+  // Check env/struc gradient.
+  std::vector<Eigen::MatrixXd> struc_grad_1 =
+    kernel.envs_struc_grad(envs, struc_desc, kernel.kernel_hyperparameters);
+
+  for (int g = 0; g < 2; g++){
+    Eigen::VectorXd hyps_up = hyps;
+    Eigen::VectorXd hyps_down = hyps;
+    hyps_up(g) += delta;
+    hyps_down(g) -= delta;
+    std::vector<Eigen::MatrixXd> struc_grad_2 =
+      kernel.envs_struc_grad(envs, struc_desc, hyps_up);
+    std::vector<Eigen::MatrixXd> struc_grad_3 =
+      kernel.envs_struc_grad(envs, struc_desc, hyps_down);
+
+    for (int i = 0; i < envs.n_clusters; i++){
+      for (int j = 0; j < test_struc.noa * 3 + 7; j++){
+        exact_val = struc_grad_1[g+1](i, j);
+        fin_val = (struc_grad_2[0](i, j) - struc_grad_3[0](i, j)) / (2 * delta);
+        EXPECT_NEAR(exact_val, fin_val, thresh);
+      }
+    }
+  }
+}
+
 TEST_F(CompactStructureTest, StrucStrucFull) {
 
 //   ThreeBody three_body_desc =

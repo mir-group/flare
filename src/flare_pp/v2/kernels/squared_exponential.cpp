@@ -74,7 +74,7 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(
   return kern_mat;
 }
 
-std::vector<Eigen::MatrixXd> envs_envs_grad(
+std::vector<Eigen::MatrixXd> SquaredExponential ::envs_envs_grad(
   const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
   const Eigen::VectorXd &new_hyps){
 
@@ -324,10 +324,16 @@ std::vector<Eigen::MatrixXd> SquaredExponential ::envs_struc_grad(
             double ls_force_derv =
               ls_derv * (f3 + cut_derv / cut_j) - 2 * en_kern * f3 / ls_new;
 
-            kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) +=
+            kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
               force_kern_val;
-            sig_mat(sparse_index, 1 + 3 * neighbor_index + comp) +=
+            kern_mat(sparse_index, 1 + 3 * atom_index + comp) += force_kern_val;
+
+            sig_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
               sig_force_derv;
+            sig_mat(sparse_index, 1 + 3 * atom_index + comp) += sig_force_derv;
+
+            ls_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
+              ls_force_derv;
             ls_mat(sparse_index, 1 + 3 * atom_index + comp) +=
               ls_force_derv;
 
