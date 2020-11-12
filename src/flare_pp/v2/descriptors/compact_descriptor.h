@@ -27,9 +27,9 @@ public:
   double volume;
 
   std::vector<Eigen::MatrixXd> descriptors, descriptor_force_dervs,
-    neighbor_coordinates;
+      neighbor_coordinates;
   std::vector<Eigen::VectorXd> descriptor_norms, descriptor_force_dots,
-    cutoff_values, cutoff_dervs;
+      cutoff_values, cutoff_dervs;
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
       atom_indices, neighbor_indices;
 
@@ -37,7 +37,7 @@ public:
   std::vector<int> n_atoms_by_type, n_neighbors_by_type;
 };
 
-class ClusterDescriptor{
+class ClusterDescriptor {
 public:
   ClusterDescriptor();
   ClusterDescriptor(const DescriptorValues &structure);

@@ -5,26 +5,26 @@
 ThreeBodyWide ::ThreeBodyWide() {}
 
 ThreeBodyWide ::ThreeBodyWide(double cutoff, int n_species,
-                          const std::string &cutoff_name,
-                          const std::vector<double> &cutoff_hyps){
+                              const std::string &cutoff_name,
+                              const std::vector<double> &cutoff_hyps) {
 
-    this->cutoff = cutoff;
-    this->n_species = n_species;
+  this->cutoff = cutoff;
+  this->n_species = n_species;
 
-    this->cutoff_name = cutoff_name;
-    this->cutoff_hyps = cutoff_hyps;
+  this->cutoff_name = cutoff_name;
+  this->cutoff_hyps = cutoff_hyps;
 
-    // Set the cutoff function.
-    if (cutoff_name == "quadratic") {
-      this->cutoff_function = quadratic_cutoff;
-    } else if (cutoff_name == "hard") {
-      this->cutoff_function = hard_cutoff;
-    } else if (cutoff_name == "cosine") {
-      this->cutoff_function = cos_cutoff;
-    }
+  // Set the cutoff function.
+  if (cutoff_name == "quadratic") {
+    this->cutoff_function = quadratic_cutoff;
+  } else if (cutoff_name == "hard") {
+    this->cutoff_function = hard_cutoff;
+  } else if (cutoff_name == "cosine") {
+    this->cutoff_function = cos_cutoff;
+  }
 }
 
-DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure){
+DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();
@@ -40,30 +40,35 @@ DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure){
   // TODO: Consider parallelizing.
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
-    int t1 = desc.n_types -
-      (n_species - i_species) * (n_species - i_species + 1) *
-      (n_species - i_species + 2) / 6;
+    int t1 = desc.n_types - (n_species - i_species) *
+                                (n_species - i_species + 1) *
+                                (n_species - i_species + 2) / 6;
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
       int neigh_index_1 = rel_index + j;
       int j_species = structure.neighbor_species(neigh_index_1);
-      if (j_species < i_species) continue;
+      if (j_species < i_species)
+        continue;
       int t2 = (n_species - i_species) * (n_species - i_species + 1) / 2 -
-        (n_species - j_species) * (n_species - j_species + 1) / 2;
+               (n_species - j_species) * (n_species - j_species + 1) / 2;
       double r1 = structure.relative_positions(neigh_index_1, 0);
-      if (r1 > cutoff) continue;
+      if (r1 > cutoff)
+        continue;
       double x1 = structure.relative_positions(neigh_index_1, 1);
       double y1 = structure.relative_positions(neigh_index_1, 2);
       double z1 = structure.relative_positions(neigh_index_1, 3);
-      for (int k = 0; k < i_neighbors; k++){
-        if (j == k) continue;
+      for (int k = 0; k < i_neighbors; k++) {
+        if (j == k)
+          continue;
         int neigh_index_2 = rel_index + k;
         int k_species = structure.neighbor_species(neigh_index_2);
-        if (k_species < j_species) continue;
+        if (k_species < j_species)
+          continue;
         int t3 = k_species - j_species;
         double r2 = structure.relative_positions(neigh_index_2, 0);
-        if (r2 > cutoff) continue;
+        if (r2 > cutoff)
+          continue;
         double x2 = structure.relative_positions(neigh_index_2, 1);
         double y2 = structure.relative_positions(neigh_index_2, 2);
         double z2 = structure.relative_positions(neigh_index_2, 3);
@@ -87,7 +92,7 @@ DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure){
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, n_d));
     desc.descriptor_force_dervs.push_back(
-      Eigen::MatrixXd::Zero(n_neigh * 3, n_d));
+        Eigen::MatrixXd::Zero(n_neigh * 3, n_d));
     desc.neighbor_coordinates.push_back(Eigen::MatrixXd::Zero(n_neigh, 3));
 
     desc.descriptor_norms.push_back(Eigen::VectorXd::Zero(n_s));
@@ -106,32 +111,37 @@ DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure){
   std::vector<double> cut1(2, 0), cut2(2, 0), cut3(3, 0);
   for (int i = 0; i < desc.n_atoms; i++) {
     int i_species = structure.species[i];
-    int t1 = desc.n_types -
-      (n_species - i_species) * (n_species - i_species + 1) *
-      (n_species - i_species + 2) / 6;
+    int t1 = desc.n_types - (n_species - i_species) *
+                                (n_species - i_species + 1) *
+                                (n_species - i_species + 2) / 6;
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     for (int j = 0; j < i_neighbors; j++) {
       int neigh_index_1 = rel_index + j;
       int j_species = structure.neighbor_species(neigh_index_1);
-      if (j_species < i_species) continue;
+      if (j_species < i_species)
+        continue;
       int t2 = (n_species - i_species) * (n_species - i_species + 1) / 2 -
-        (n_species - j_species) * (n_species - j_species + 1) / 2;
+               (n_species - j_species) * (n_species - j_species + 1) / 2;
       int struc_index_1 = structure.structure_indices(neigh_index_1);
       double r1 = structure.relative_positions(neigh_index_1, 0);
-      if (r1 > cutoff) continue;
+      if (r1 > cutoff)
+        continue;
       double x1 = structure.relative_positions(neigh_index_1, 1);
       double y1 = structure.relative_positions(neigh_index_1, 2);
       double z1 = structure.relative_positions(neigh_index_1, 3);
-      for (int k = 0; k < i_neighbors; k++){
-        if (j == k) continue;
+      for (int k = 0; k < i_neighbors; k++) {
+        if (j == k)
+          continue;
         int neigh_index_2 = rel_index + k;
         int k_species = structure.neighbor_species(neigh_index_2);
-        if (k_species < j_species) continue;
+        if (k_species < j_species)
+          continue;
         int t3 = k_species - j_species;
         int struc_index_2 = structure.structure_indices(neigh_index_2);
         double r2 = structure.relative_positions(neigh_index_2, 0);
-        if (r2 > cutoff) continue;
+        if (r2 > cutoff)
+          continue;
         double x2 = structure.relative_positions(neigh_index_2, 1);
         double y2 = structure.relative_positions(neigh_index_2, 2);
         double z2 = structure.relative_positions(neigh_index_2, 3);
@@ -148,48 +158,47 @@ DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure){
         cutoff_function(cut2, r2, cutoff, cutoff_hyps);
         desc.cutoff_values[current_type](count) = cut1[0] * cut2[0];
 
-        for (int k = 0; k < 3; k++){
+        for (int k = 0; k < 3; k++) {
           double neigh_coord_1 =
-            structure.relative_positions(neigh_index_1, k + 1);
+              structure.relative_positions(neigh_index_1, k + 1);
           double neigh_coord_2 =
-            structure.relative_positions(neigh_index_2, k + 1);
+              structure.relative_positions(neigh_index_2, k + 1);
           double coord_diff = neigh_coord_2 - neigh_coord_1;
 
           // First neighbor.
           desc.descriptor_force_dervs[current_type](count * 2 * 3 + k, 0) =
-            neigh_coord_1 / r1;
+              neigh_coord_1 / r1;
           desc.descriptor_force_dervs[current_type](count * 2 * 3 + k, 2) =
-            -coord_diff / r3;
+              -coord_diff / r3;
 
-          desc.neighbor_coordinates[current_type](count * 2, k) =
-            neigh_coord_1;
+          desc.neighbor_coordinates[current_type](count * 2, k) = neigh_coord_1;
           desc.cutoff_dervs[current_type](count * 2 * 3 + k) =
-            cut1[1] * cut2[0] * neigh_coord_1 / r1;
+              cut1[1] * cut2[0] * neigh_coord_1 / r1;
 
           desc.descriptor_force_dots[current_type](count * 2 * 3 + k) =
-            desc.descriptor_force_dervs[current_type]
-              .row(count * 2 * 3 + k).dot(
-            desc.descriptors[current_type].row(count));
+              desc.descriptor_force_dervs[current_type]
+                  .row(count * 2 * 3 + k)
+                  .dot(desc.descriptors[current_type].row(count));
 
           // Second neighbor.
           desc.descriptor_force_dervs[current_type](count * 2 * 3 + 3 + k, 1) =
-            neigh_coord_2 / r2;
+              neigh_coord_2 / r2;
           desc.descriptor_force_dervs[current_type](count * 2 * 3 + 3 + k, 2) =
-            coord_diff / r3;
+              coord_diff / r3;
 
           desc.descriptor_force_dots[current_type](count * 2 * 3 + 3 + k) =
-            desc.descriptor_force_dervs[current_type]
-              .row(count * 2 * 3 + 3 + k).dot(
-            desc.descriptors[current_type].row(count));
+              desc.descriptor_force_dervs[current_type]
+                  .row(count * 2 * 3 + 3 + k)
+                  .dot(desc.descriptors[current_type].row(count));
 
           desc.neighbor_coordinates[current_type](count * 2 + 1, k) =
-            neigh_coord_2;
+              neigh_coord_2;
           desc.cutoff_dervs[current_type](count * 2 * 3 + 3 + k) =
-            cut1[0] * cut2[1] * neigh_coord_2 / r2;
+              cut1[0] * cut2[1] * neigh_coord_2 / r2;
         }
 
         desc.descriptor_norms[current_type](count) =
-          sqrt(r1 * r1 + r2 * r2 + r3 * r3);
+            sqrt(r1 * r1 + r2 * r2 + r3 * r3);
         desc.neighbor_counts[current_type](count) = 2;
         desc.cumulative_neighbor_counts[current_type](count) = count * 2;
         desc.atom_indices[current_type](count) = i;

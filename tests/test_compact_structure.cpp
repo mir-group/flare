@@ -19,9 +19,9 @@ TEST_F(CompactStructureTest, TestDescriptor) {
             << "s\n";
 }
 
-TEST_F(CompactStructureTest, TestEnvironments){
-    ClusterDescriptor envs;
-    envs.add_cluster(struc_desc);
+TEST_F(CompactStructureTest, TestEnvironments) {
+  ClusterDescriptor envs;
+  envs.add_cluster(struc_desc);
 }
 
 TEST_F(CompactStructureTest, TimeSelfKernel) {
@@ -38,23 +38,23 @@ TEST_F(CompactStructureTest, TimeSelfKernel) {
   elapsed_seconds = end - start;
   std::cout << "Non-compact self kernel: " << elapsed_seconds.count() << "s\n";
 
-//   for (int i = 0; i < self_kern.size(); i++) {
-//     EXPECT_NEAR(self_kern(i), prev_self(i), 1e-8);
-//   }
+  //   for (int i = 0; i < self_kern.size(); i++) {
+  //     EXPECT_NEAR(self_kern(i), prev_self(i), 1e-8);
+  //   }
 }
 
-TEST_F(CompactStructureTest, TestEnvsEnvs){
+TEST_F(CompactStructureTest, TestEnvsEnvs) {
   Eigen::MatrixXd kernel_matrix =
-    kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
+      kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
 
   ClusterDescriptor envs;
   envs.add_cluster(struc_desc);
   Eigen::MatrixXd kern_mat =
-    kernel.envs_envs(envs, envs, kernel.kernel_hyperparameters);
+      kernel.envs_envs(envs, envs, kernel.kernel_hyperparameters);
 
   double kern_sum = 0;
-  for (int i = 0; i < envs.n_clusters; i++){
-    for (int j = 0; j < envs.n_clusters; j++){
+  for (int i = 0; i < envs.n_clusters; i++) {
+    for (int j = 0; j < envs.n_clusters; j++) {
       kern_sum += kern_mat(i, j);
     }
   }
@@ -62,28 +62,28 @@ TEST_F(CompactStructureTest, TestEnvsEnvs){
   EXPECT_NEAR(kern_sum, kernel_matrix(0, 0), 1e-8);
 }
 
-TEST_F(CompactStructureTest, TestEnvsStruc){
+TEST_F(CompactStructureTest, TestEnvsStruc) {
   Eigen::MatrixXd kernel_matrix =
-    kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
+      kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
 
   ClusterDescriptor envs;
   envs.add_cluster(struc_desc);
   Eigen::MatrixXd kern_mat =
-    kernel.envs_struc(envs, struc_desc, kernel.kernel_hyperparameters);
+      kernel.envs_struc(envs, struc_desc, kernel.kernel_hyperparameters);
 
   Eigen::VectorXd kern_sum = Eigen::VectorXd::Zero(kern_mat.cols());
-  for (int i = 0; i < kern_mat.cols(); i++){
-      for (int j = 0; j < kern_mat.rows(); j++){
-        kern_sum(i) += kern_mat(j, i);
-      }
+  for (int i = 0; i < kern_mat.cols(); i++) {
+    for (int j = 0; j < kern_mat.rows(); j++) {
+      kern_sum(i) += kern_mat(j, i);
+    }
   }
-  
-  for (int i = 0; i < kern_sum.size(); i++){
-      EXPECT_NEAR(kern_sum(i), kernel_matrix.row(0)(i), 1e-8);
+
+  for (int i = 0; i < kern_sum.size(); i++) {
+    EXPECT_NEAR(kern_sum(i), kernel_matrix.row(0)(i), 1e-8);
   }
 }
 
-TEST_F(CompactStructureTest, SqExpGrad){
+TEST_F(CompactStructureTest, SqExpGrad) {
   // Test envs_envs_grad and envs_struc_grad methods of squared exponential
   // kernel.
 
@@ -102,15 +102,15 @@ TEST_F(CompactStructureTest, SqExpGrad){
   Eigen::VectorXd ls_hyps_up = hyps;
   Eigen::VectorXd ls_hyps_down = hyps;
   ls_hyps_up(1) += delta;
-  ls_hyps_down(1) -= delta; 
+  ls_hyps_down(1) -= delta;
 
   // Check env/env gradient.
   std::vector<Eigen::MatrixXd> env_grad_1 =
-    kernel.envs_envs_grad(envs, envs, kernel.kernel_hyperparameters);
+      kernel.envs_envs_grad(envs, envs, kernel.kernel_hyperparameters);
   std::vector<Eigen::MatrixXd> env_grad_2 =
-    kernel.envs_envs_grad(envs, envs, ls_hyps_up);
+      kernel.envs_envs_grad(envs, envs, ls_hyps_up);
   std::vector<Eigen::MatrixXd> env_grad_3 =
-    kernel.envs_envs_grad(envs, envs, ls_hyps_down);
+      kernel.envs_envs_grad(envs, envs, ls_hyps_down);
 
   double exact_val = env_grad_1[2](0, 1);
   double fin_val = (env_grad_2[0](0, 1) - env_grad_3[0](0, 1)) / (2 * delta);
@@ -118,21 +118,21 @@ TEST_F(CompactStructureTest, SqExpGrad){
 
   // Check env/struc gradient.
   std::vector<Eigen::MatrixXd> struc_grad_1 =
-    kernel.envs_struc_grad(envs, struc_desc, kernel.kernel_hyperparameters);
+      kernel.envs_struc_grad(envs, struc_desc, kernel.kernel_hyperparameters);
 
-  for (int g = 0; g < 2; g++){
+  for (int g = 0; g < 2; g++) {
     Eigen::VectorXd hyps_up = hyps;
     Eigen::VectorXd hyps_down = hyps;
     hyps_up(g) += delta;
     hyps_down(g) -= delta;
     std::vector<Eigen::MatrixXd> struc_grad_2 =
-      kernel.envs_struc_grad(envs, struc_desc, hyps_up);
+        kernel.envs_struc_grad(envs, struc_desc, hyps_up);
     std::vector<Eigen::MatrixXd> struc_grad_3 =
-      kernel.envs_struc_grad(envs, struc_desc, hyps_down);
+        kernel.envs_struc_grad(envs, struc_desc, hyps_down);
 
-    for (int i = 0; i < envs.n_clusters; i++){
-      for (int j = 0; j < test_struc.noa * 3 + 7; j++){
-        exact_val = struc_grad_1[g+1](i, j);
+    for (int i = 0; i < envs.n_clusters; i++) {
+      for (int j = 0; j < test_struc.noa * 3 + 7; j++) {
+        exact_val = struc_grad_1[g + 1](i, j);
         fin_val = (struc_grad_2[0](i, j) - struc_grad_3[0](i, j)) / (2 * delta);
         EXPECT_NEAR(exact_val, fin_val, thresh);
       }
@@ -142,21 +142,21 @@ TEST_F(CompactStructureTest, SqExpGrad){
 
 TEST_F(CompactStructureTest, StrucStrucFull) {
 
-//   ThreeBody three_body_desc =
-//     ThreeBody(cutoff, n_species, cutoff_string, cutoff_hyps);
-//   dc[0] = &three_body_desc;
+  //   ThreeBody three_body_desc =
+  //     ThreeBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+  //   dc[0] = &three_body_desc;
 
-//   ThreeBodyWide three_body_desc =
-//     ThreeBodyWide(cutoff, n_species, cutoff_string, cutoff_hyps);
-//   dc[0] = &three_body_desc;
+  //   ThreeBodyWide three_body_desc =
+  //     ThreeBodyWide(cutoff, n_species, cutoff_string, cutoff_hyps);
+  //   dc[0] = &three_body_desc;
 
-//   FourBody four_body_desc =
-//     FourBody(cutoff, n_species, cutoff_string, cutoff_hyps);
-//   dc[0] = &four_body_desc;
+  //   FourBody four_body_desc =
+  //     FourBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+  //   dc[0] = &four_body_desc;
 
-//   TwoBody two_body_desc =
-//     TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
-//   dc[0] = &two_body_desc;
+  //   TwoBody two_body_desc =
+  //     TwoBody(cutoff, n_species, cutoff_string, cutoff_hyps);
+  //   dc[0] = &two_body_desc;
 
   test_struc = CompactStructure(cell, species, positions, cutoff, dc);
   test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
@@ -185,12 +185,10 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       test_struc_4 =
           CompactStructure(cell_2, species_2, positions_4, cutoff, dc);
 
-      kern_pert =
-        kernel.struc_struc(struc_desc, test_struc_3.descriptors[0],
-                           kernel.kernel_hyperparameters);
-      kern_pert_2 = 
-        kernel.struc_struc(struc_desc, test_struc_4.descriptors[0],
-                           kernel.kernel_hyperparameters);
+      kern_pert = kernel.struc_struc(struc_desc, test_struc_3.descriptors[0],
+                                     kernel.kernel_hyperparameters);
+      kern_pert_2 = kernel.struc_struc(struc_desc, test_struc_4.descriptors[0],
+                                       kernel.kernel_hyperparameters);
       fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(0, 1 + 3 * p + m);
 
@@ -247,11 +245,9 @@ TEST_F(CompactStructureTest, StrucStrucFull) {
       test_struc_4 =
           CompactStructure(cell_4, species_2, positions_4, cutoff, dc);
 
-      kern_pert = kernel.struc_struc(struc_desc,
-                                     test_struc_3.descriptors[0],
+      kern_pert = kernel.struc_struc(struc_desc, test_struc_3.descriptors[0],
                                      kernel.kernel_hyperparameters);
-      kern_pert_2 = kernel.struc_struc(struc_desc,
-                                       test_struc_4.descriptors[0],
+      kern_pert_2 = kernel.struc_struc(struc_desc, test_struc_4.descriptors[0],
                                        kernel.kernel_hyperparameters);
       fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
       exact_val = kernel_matrix(0, 1 + 3 * test_struc_2.noa + stress_ind_1) *

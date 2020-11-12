@@ -1,15 +1,15 @@
-#include "normalized_dot_product.h"
+#include "b2.h"
 #include "compact_structure.h"
 #include "descriptor.h"
+#include "dot_product_kernel.h"
 #include "four_body.h"
+#include "local_environment.h"
+#include "normalized_dot_product.h"
+#include "squared_exponential.h"
+#include "structure.h"
 #include "three_body.h"
 #include "three_body_wide.h"
 #include "two_body.h"
-#include "dot_product_kernel.h"
-#include "squared_exponential.h"
-#include "local_environment.h"
-#include "b2.h"
-#include "structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
 #include <chrono>
@@ -76,7 +76,7 @@ public:
     test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
     struc2 = StructureDescriptor(cell, species, positions, cutoff,
                                  many_body_cutoffs, descriptor_calculators);
-    
+
     struc_desc = test_struc.descriptors[0];
 
     kernel = SquaredExponential(sigma, ls);

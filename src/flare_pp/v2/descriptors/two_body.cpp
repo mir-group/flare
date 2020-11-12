@@ -4,27 +4,26 @@
 
 TwoBody ::TwoBody() {}
 
-TwoBody ::TwoBody(double cutoff, int n_species,
-                  const std::string &cutoff_name,
-                  const std::vector<double> &cutoff_hyps){
+TwoBody ::TwoBody(double cutoff, int n_species, const std::string &cutoff_name,
+                  const std::vector<double> &cutoff_hyps) {
 
-    this->cutoff = cutoff;
-    this->n_species = n_species;
+  this->cutoff = cutoff;
+  this->n_species = n_species;
 
-    this->cutoff_name = cutoff_name;
-    this->cutoff_hyps = cutoff_hyps;
+  this->cutoff_name = cutoff_name;
+  this->cutoff_hyps = cutoff_hyps;
 
-    // Set the cutoff function.
-    if (cutoff_name == "quadratic") {
-      this->cutoff_function = quadratic_cutoff;
-    } else if (cutoff_name == "hard") {
-      this->cutoff_function = hard_cutoff;
-    } else if (cutoff_name == "cosine") {
-      this->cutoff_function = cos_cutoff;
-    }
+  // Set the cutoff function.
+  if (cutoff_name == "quadratic") {
+    this->cutoff_function = quadratic_cutoff;
+  } else if (cutoff_name == "hard") {
+    this->cutoff_function = hard_cutoff;
+  } else if (cutoff_name == "cosine") {
+    this->cutoff_function = cos_cutoff;
+  }
 }
 
-DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
+DescriptorValues TwoBody ::compute_struc(CompactStructure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();
@@ -46,11 +45,12 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
       int struc_index = structure.structure_indices(neigh_index);
       // Avoid counting the same pair twice.
       if ((j_species > i_species) ||
-          ((j_species == i_species) && (struc_index >= i))){
+          ((j_species == i_species) && (struc_index >= i))) {
         int species_diff = j_species - i_species;
-        int current_type = desc.n_types -
-          (n_species - i_species) * (n_species - i_species + 1) / 2 +
-          species_diff;
+        int current_type =
+            desc.n_types -
+            (n_species - i_species) * (n_species - i_species + 1) / 2 +
+            species_diff;
         double r = structure.relative_positions(neigh_index, 0);
         // Check that atom is within descriptor cutoff.
         if (r <= cutoff) {
@@ -71,8 +71,7 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
     desc.n_neighbors_by_type.push_back(n_s);
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, 1));
-    desc.descriptor_force_dervs.push_back(
-      Eigen::MatrixXd::Zero(n_s * 3, 1));
+    desc.descriptor_force_dervs.push_back(Eigen::MatrixXd::Zero(n_s * 3, 1));
     desc.neighbor_coordinates.push_back(Eigen::MatrixXd::Zero(n_s, 3));
 
     desc.descriptor_norms.push_back(Eigen::VectorXd::Zero(n_s));
@@ -99,11 +98,12 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
       int struc_index = structure.structure_indices(neigh_index);
       // Avoid counting the same pair twice.
       if ((j_species > i_species) ||
-          ((j_species == i_species) && (struc_index >= i))){
+          ((j_species == i_species) && (struc_index >= i))) {
         int species_diff = j_species - i_species;
-        int current_type = desc.n_types -
-          (n_species - i_species) * (n_species - i_species + 1) / 2 +
-          species_diff;
+        int current_type =
+            desc.n_types -
+            (n_species - i_species) * (n_species - i_species + 1) / 2 +
+            species_diff;
         double r = structure.relative_positions(neigh_index, 0);
         // Check that atom is within descriptor cutoff.
         if (r <= cutoff) {
@@ -114,18 +114,18 @@ DescriptorValues TwoBody ::compute_struc(CompactStructure &structure){
           cutoff_function(cutoff_values, r, cutoff, cutoff_hyps);
           desc.cutoff_values[current_type](count) = cutoff_values[0];
 
-          for (int k = 0; k < 3; k++){
+          for (int k = 0; k < 3; k++) {
             double neighbor_coordinate =
-              structure.relative_positions(neigh_index, k + 1);
+                structure.relative_positions(neigh_index, k + 1);
             desc.descriptor_force_dervs[current_type](count * 3 + k, 0) =
-              neighbor_coordinate / r;
+                neighbor_coordinate / r;
             desc.neighbor_coordinates[current_type](count, k) =
-              neighbor_coordinate;
+                neighbor_coordinate;
             desc.cutoff_dervs[current_type](count * 3 + k) =
-              cutoff_values[1] * neighbor_coordinate / r;
+                cutoff_values[1] * neighbor_coordinate / r;
             desc.descriptor_force_dots[current_type](count * 3 + k) =
-              desc.descriptor_force_dervs[current_type](count * 3 + k, 0) *
-              desc.descriptors[current_type](count);
+                desc.descriptor_force_dervs[current_type](count * 3 + k, 0) *
+                desc.descriptors[current_type](count);
           }
 
           desc.descriptor_norms[current_type](count) = r;

@@ -2,8 +2,8 @@
 #define wigner3j
 #include <Eigen/Dense>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 extern const Eigen::MatrixXd &w1;
 extern const Eigen::MatrixXd &w2;

@@ -1,6 +1,6 @@
 #include "normalized_dot_product.h"
-#include "compact_structure.h"
 #include "compact_descriptor.h"
+#include "compact_structure.h"
 #undef NDEBUG
 #include <assert.h>
 #include <cmath>
@@ -20,9 +20,9 @@ NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
   kernel_hyperparameters = hyps;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
-  const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
-  const Eigen::VectorXd &hyps) {
+Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
+                                                 const ClusterDescriptor &envs2,
+                                                 const Eigen::VectorXd &hyps) {
 
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
@@ -37,8 +37,8 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
   int n_descriptors_2 = envs2.n_descriptors;
   assert(n_descriptors_1 == n_descriptors_2);
 
-  Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(
-    envs1.n_clusters, envs2.n_clusters);
+  Eigen::MatrixXd kern_mat =
+      Eigen::MatrixXd::Zero(envs1.n_clusters, envs2.n_clusters);
   int n_types = n_types_1;
   double empty_thresh = 1e-8;
 
@@ -81,9 +81,9 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
   return kern_mat;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
-  const ClusterDescriptor &envs, const DescriptorValues &struc,
-  const Eigen::VectorXd &hyps) {
+Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
+                                                  const DescriptorValues &struc,
+                                                  const Eigen::VectorXd &hyps) {
 
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
@@ -178,9 +178,10 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
   return kern_mat;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
-  const DescriptorValues &struc1, const DescriptorValues &struc2,
-  const Eigen::VectorXd &hyps) {
+Eigen::MatrixXd
+NormalizedDotProduct ::struc_struc(const DescriptorValues &struc1,
+                                   const DescriptorValues &struc2,
+                                   const Eigen::VectorXd &hyps) {
 
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
@@ -407,9 +408,8 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
 }
 
 Eigen::VectorXd
-NormalizedDotProduct ::self_kernel_struc(
-  const DescriptorValues &struc,
-  const Eigen::VectorXd &hyps) {
+NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
+                                         const Eigen::VectorXd &hyps) {
 
   double sig_sq = hyps(0) * hyps(0);
 
@@ -532,12 +532,12 @@ NormalizedDotProduct ::self_kernel_struc(
 }
 
 std::vector<Eigen::MatrixXd>
-  NormalizedDotProduct ::Kuu_grad(
-    const ClusterDescriptor &envs,
-    const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps){
+NormalizedDotProduct ::Kuu_grad(const ClusterDescriptor &envs,
+                                const Eigen::MatrixXd &Kuu,
+                                const Eigen::VectorXd &new_hyps) {
 
   std::vector<Eigen::MatrixXd> kernel_gradients;
-  
+
   // Compute Kuu.
   Eigen::MatrixXd Kuu_new = Kuu;
   Kuu_new /= sig2;
@@ -555,10 +555,10 @@ std::vector<Eigen::MatrixXd>
 }
 
 std::vector<Eigen::MatrixXd>
-  NormalizedDotProduct ::Kuf_grad(
-    const ClusterDescriptor &envs,
-    const std::vector<CompactStructure> &strucs, int kernel_index, 
-    const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps){
+NormalizedDotProduct ::Kuf_grad(const ClusterDescriptor &envs,
+                                const std::vector<CompactStructure> &strucs,
+                                int kernel_index, const Eigen::MatrixXd &Kuf,
+                                const Eigen::VectorXd &new_hyps) {
 
   std::vector<Eigen::MatrixXd> kernel_gradients;
 
@@ -577,6 +577,4 @@ std::vector<Eigen::MatrixXd>
   return kernel_gradients;
 }
 
-void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps){
-
-}
+void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {}

@@ -3,17 +3,16 @@
 #include "compact_structure.h"
 #include "cutoffs.h"
 #include "radial.h"
-#include "y_grad.h"
 #include "single_bond.h"
+#include "y_grad.h"
 #include <iostream>
 
 B2 ::B2() {}
 
-B2 ::B2(const std::string &radial_basis,
-                              const std::string &cutoff_function,
-                              const std::vector<double> &radial_hyps,
-                              const std::vector<double> &cutoff_hyps,
-                              const std::vector<int> &descriptor_settings){
+B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
+        const std::vector<double> &radial_hyps,
+        const std::vector<double> &cutoff_hyps,
+        const std::vector<int> &descriptor_settings) {
 
   this->radial_basis = radial_basis;
   this->cutoff_function = cutoff_function;
@@ -58,20 +57,18 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
   int N = descriptor_settings[1];
   int lmax = descriptor_settings[2];
 
-  compute_single_bond(single_bond_vals, force_dervs,
-                      neighbor_coords, unique_neighbor_count,
-                      cumulative_neighbor_count,
-                      descriptor_indices, radial_pointer, cutoff_pointer,
-                      nos, N, lmax, radial_hyps, cutoff_hyps, structure);
+  compute_single_bond(single_bond_vals, force_dervs, neighbor_coords,
+                      unique_neighbor_count, cumulative_neighbor_count,
+                      descriptor_indices, radial_pointer, cutoff_pointer, nos,
+                      N, lmax, radial_hyps, cutoff_hyps, structure);
 
   // Compute descriptor values.
   Eigen::MatrixXd B2_vals, B2_force_dervs;
   Eigen::VectorXd B2_norms, B2_force_dots;
 
-  compute_b2(
-    B2_vals, B2_force_dervs, B2_norms, B2_force_dots, single_bond_vals,
-    force_dervs, unique_neighbor_count, cumulative_neighbor_count,
-    descriptor_indices, nos, N, lmax);
+  compute_b2(B2_vals, B2_force_dervs, B2_norms, B2_force_dots, single_bond_vals,
+             force_dervs, unique_neighbor_count, cumulative_neighbor_count,
+             descriptor_indices, nos, N, lmax);
 
   // Gather species information.
   int noa = structure.noa;
@@ -100,7 +97,7 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, n_d));
     desc.descriptor_force_dervs.push_back(
-      Eigen::MatrixXd::Zero(n_neigh * 3, n_d));
+        Eigen::MatrixXd::Zero(n_neigh * 3, n_d));
     desc.neighbor_coordinates.push_back(Eigen::MatrixXd::Zero(n_neigh, 3));
 
     desc.cutoff_values.push_back(Eigen::VectorXd::Ones(n_s));
@@ -126,13 +123,13 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
 
     desc.descriptors[s].row(s_count) = B2_vals.row(i);
     desc.descriptor_force_dervs[s].block(n_count * 3, 0, n_neigh * 3, n_d) =
-      B2_force_dervs.block(cum_neigh * 3, 0, n_neigh * 3, n_d);
+        B2_force_dervs.block(cum_neigh * 3, 0, n_neigh * 3, n_d);
     desc.neighbor_coordinates[s].block(n_count, 0, n_neigh, 3) =
-      neighbor_coords.block(cum_neigh, 0, n_neigh, 3);
+        neighbor_coords.block(cum_neigh, 0, n_neigh, 3);
 
     desc.descriptor_norms[s](s_count) = B2_norms(i);
     desc.descriptor_force_dots[s].segment(n_count * 3, n_neigh * 3) =
-      B2_force_dots.segment(cum_neigh * 3, n_neigh * 3);
+        B2_force_dots.segment(cum_neigh * 3, n_neigh * 3);
 
     desc.neighbor_counts[s](s_count) = n_neigh;
     desc.cumulative_neighbor_counts[s](s_count) = n_count;
@@ -147,14 +144,14 @@ DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
   return desc;
 }
 
-void compute_b2(
-    Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
-    Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,
-    const Eigen::MatrixXd &single_bond_vals,
-    const Eigen::MatrixXd &single_bond_force_dervs,
-    const Eigen::VectorXi &unique_neighbor_count,
-    const Eigen::VectorXi &cumulative_neighbor_count,
-    const Eigen::VectorXi &descriptor_indices, int nos, int N, int lmax) {
+void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
+                Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,
+                const Eigen::MatrixXd &single_bond_vals,
+                const Eigen::MatrixXd &single_bond_force_dervs,
+                const Eigen::VectorXi &unique_neighbor_count,
+                const Eigen::VectorXi &cumulative_neighbor_count,
+                const Eigen::VectorXi &descriptor_indices, int nos, int N,
+                int lmax) {
 
   int n_atoms = single_bond_vals.rows();
   int n_neighbors = cumulative_neighbor_count(n_atoms);
@@ -210,8 +207,8 @@ void compute_b2(
 
 void compute_single_bond(
     Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
-    Eigen::MatrixXd &neighbor_coordinates,
-    Eigen::VectorXi &neighbor_count, Eigen::VectorXi &cumulative_neighbor_count,
+    Eigen::MatrixXd &neighbor_coordinates, Eigen::VectorXi &neighbor_count,
+    Eigen::VectorXi &cumulative_neighbor_count,
     Eigen::VectorXi &neighbor_indices,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
                        int, std::vector<double>)>
@@ -220,7 +217,7 @@ void compute_single_bond(
                        std::vector<double>)>
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const CompactStructure &structure){
+    const std::vector<double> &cutoff_hyps, const CompactStructure &structure) {
 
   int n_atoms = structure.noa;
   int n_neighbors = structure.n_neighbors;

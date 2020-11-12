@@ -1,8 +1,8 @@
-#include "compact_structure.h"
-#include "two_body.h"
-#include "three_body.h"
-#include "squared_exponential.h"
 #include "compact_descriptor.h"
+#include "compact_structure.h"
+#include "squared_exponential.h"
+#include "three_body.h"
+#include "two_body.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
 #include <chrono>
@@ -61,17 +61,17 @@ TEST_F(NBodyTest, TwoBodyTest) {
   cluster_desc.add_cluster(struc_desc);
 
   Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc,
-    kernel.kernel_hyperparameters);
+                                              kernel.kernel_hyperparameters);
   Eigen::MatrixXd envs_struc = kernel.envs_struc(cluster_desc, struc_desc,
-    kernel.kernel_hyperparameters);
-  Eigen::MatrixXd struc_struc = kernel.struc_struc(struc_desc, struc_desc,
-    kernel.kernel_hyperparameters);
+                                                 kernel.kernel_hyperparameters);
+  Eigen::MatrixXd struc_struc =
+      kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
 
-//   std::cout << kern_mat << std::endl;
-//   std::cout << envs_struc << std::endl;
+  //   std::cout << kern_mat << std::endl;
+  //   std::cout << envs_struc << std::endl;
 }
 
-TEST_F(NBodyTest, ThreeBodyTest){
+TEST_F(NBodyTest, ThreeBodyTest) {
   dc.push_back(&three_body_desc);
   test_struc = CompactStructure(cell, species, positions, cutoff, dc);
   struc_desc = test_struc.descriptors[0];
@@ -81,12 +81,12 @@ TEST_F(NBodyTest, ThreeBodyTest){
   std::cout << test_struc.descriptors[0].n_atoms_by_type[0] << std::endl;
 
   Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc,
-    kernel.kernel_hyperparameters);
+                                              kernel.kernel_hyperparameters);
   Eigen::MatrixXd envs_struc = kernel.envs_struc(cluster_desc, struc_desc,
-    kernel.kernel_hyperparameters);
-  Eigen::MatrixXd struc_struc = kernel.struc_struc(struc_desc, struc_desc,
-    kernel.kernel_hyperparameters);
+                                                 kernel.kernel_hyperparameters);
+  Eigen::MatrixXd struc_struc =
+      kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
 
-//   std::cout << kern_mat << std::endl;
-//   std::cout << envs_struc << std::endl;
+  //   std::cout << kern_mat << std::endl;
+  //   std::cout << envs_struc << std::endl;
 }
