@@ -34,19 +34,19 @@ public:
 
   virtual std::vector<Eigen::MatrixXd>
   Kuu_grad(const ClusterDescriptor &envs, const Eigen::MatrixXd &Kuu,
-           const Eigen::VectorXd &new_hyps) = 0;
+           const Eigen::VectorXd &hyps) = 0;
 
   virtual std::vector<Eigen::MatrixXd>
   Kuf_grad(const ClusterDescriptor &envs,
            const std::vector<CompactStructure> &strucs, int kernel_index,
-           const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps) = 0;
+           const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &hyps) = 0;
 
   std::vector<Eigen::MatrixXd>
   kernel_transform(const ClusterDescriptor &sparse_descriptors,
                    const std::vector<CompactStructure> &training_structures,
-                   int kernel_index, Eigen::VectorXd new_hyps);
+                   int kernel_index, Eigen::VectorXd hyps);
 
-  virtual void set_hyperparameters(Eigen::VectorXd new_hyps) = 0;
+  virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;
 
   virtual ~CompactKernel() = default;
 };

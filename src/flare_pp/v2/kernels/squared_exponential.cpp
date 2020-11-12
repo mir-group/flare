@@ -80,12 +80,12 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(const ClusterDescriptor &envs1,
 std::vector<Eigen::MatrixXd>
 SquaredExponential ::envs_envs_grad(const ClusterDescriptor &envs1,
                                     const ClusterDescriptor &envs2,
-                                    const Eigen::VectorXd &new_hyps) {
+                                    const Eigen::VectorXd &hyps) {
 
   // Set hyperparameters.
-  double sig_new = new_hyps(0);
+  double sig_new = hyps(0);
   double sig2_new = sig_new * sig_new;
-  double ls_new = new_hyps(1);
+  double ls_new = hyps(1);
   double ls2_new = ls_new * ls_new;
 
   // Check types.
@@ -245,12 +245,12 @@ Eigen::MatrixXd SquaredExponential ::envs_struc(const ClusterDescriptor &envs,
 std::vector<Eigen::MatrixXd>
 SquaredExponential ::envs_struc_grad(const ClusterDescriptor &envs,
                                      const DescriptorValues &struc,
-                                     const Eigen::VectorXd &new_hyps) {
+                                     const Eigen::VectorXd &hyps) {
 
   // Define hyperparameters.
-  double sig_new = new_hyps(0);
+  double sig_new = hyps(0);
   double sig2_new = sig_new * sig_new;
-  double ls_new = new_hyps(1);
+  double ls_new = hyps(1);
   double ls2_new = ls_new * ls_new;
 
   // Check types.
@@ -604,9 +604,9 @@ SquaredExponential ::self_kernel_struc(const DescriptorValues &struc,
 std::vector<Eigen::MatrixXd>
 SquaredExponential ::Kuu_grad(const ClusterDescriptor &envs,
                               const Eigen::MatrixXd &Kuu,
-                              const Eigen::VectorXd &new_hyps) {
+                              const Eigen::VectorXd &hyps) {
 
-  std::vector<Eigen::MatrixXd> Kuu_grad = envs_envs_grad(envs, envs, new_hyps);
+  std::vector<Eigen::MatrixXd> Kuu_grad = envs_envs_grad(envs, envs, hyps);
 
   return Kuu_grad;
 }
@@ -617,11 +617,11 @@ std::vector<Eigen::MatrixXd>
 SquaredExponential ::Kuf_grad(const ClusterDescriptor &envs,
                               const std::vector<CompactStructure> &strucs,
                               int kernel_index, const Eigen::MatrixXd &Kuf,
-                              const Eigen::VectorXd &new_hyps) {
+                              const Eigen::VectorXd &hyps) {
 
   int n_sparse = Kuf.rows();
   int n_labels = Kuf.cols();
-  int n_hyps = new_hyps.size();
+  int n_hyps = hyps.size();
 
   // Initialize gradient matrices.
   std::vector<Eigen::MatrixXd> Kuf_grad;
@@ -657,7 +657,7 @@ SquaredExponential ::Kuf_grad(const ClusterDescriptor &envs,
 #pragma omp parallel for
   for (int i = 0; i < strucs.size(); i++) {
     std::vector<Eigen::MatrixXd> envs_struc =
-        envs_struc_grad(envs, strucs[i].descriptors[kernel_index], new_hyps);
+        envs_struc_grad(envs, strucs[i].descriptors[kernel_index], hyps);
     int n_atoms = strucs[i].noa;
 
     for (int j = 0; j < n_hyps + 1; j++) {
@@ -681,4 +681,4 @@ SquaredExponential ::Kuf_grad(const ClusterDescriptor &envs,
   return Kuf_grad;
 }
 
-void SquaredExponential ::set_hyperparameters(Eigen::VectorXd new_hyps) {}
+void SquaredExponential ::set_hyperparameters(Eigen::VectorXd hyps) {}
