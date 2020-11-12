@@ -17,20 +17,29 @@ public:
 
   CompactKernel(Eigen::VectorXd kernel_hyperparameters);
 
-  virtual Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
-                                    const ClusterDescriptor &envs2) = 0;
+  virtual Eigen::MatrixXd envs_envs(
+    const ClusterDescriptor &envs1,
+    const ClusterDescriptor &envs2,
+    const Eigen::VectorXd &hyps) = 0;
 
-  virtual Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
-                                     const DescriptorValues &struc) = 0;
+  virtual Eigen::MatrixXd envs_struc(
+    const ClusterDescriptor &envs,
+    const DescriptorValues &struc,
+    const Eigen::VectorXd &hyps) = 0;
 
-  virtual Eigen::VectorXd self_kernel_struc(DescriptorValues struc) = 0;
+  virtual Eigen::VectorXd self_kernel_struc(
+    const DescriptorValues &struc,
+    const Eigen::VectorXd &hyps) = 0;
 
-  virtual Eigen::MatrixXd struc_struc(DescriptorValues struc1,
-                                      DescriptorValues struc2) = 0;
+  virtual Eigen::MatrixXd struc_struc(
+    const DescriptorValues &struc1,
+    const DescriptorValues &struc2,
+    const Eigen::VectorXd &hyps) = 0;
 
   virtual std::vector<Eigen::MatrixXd> Kuu_grad(
     const ClusterDescriptor &envs,
-    const Eigen::MatrixXd &Kuu, const Eigen::VectorXd &new_hyps) = 0;
+    const Eigen::MatrixXd &Kuu,
+    const Eigen::VectorXd &new_hyps) = 0;
 
   virtual std::vector<Eigen::MatrixXd> Kuf_grad(
     const ClusterDescriptor &envs,

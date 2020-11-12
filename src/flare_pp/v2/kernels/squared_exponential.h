@@ -17,14 +17,16 @@ public:
   SquaredExponential(double sigma, double ls);
 
   Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
-                            const ClusterDescriptor &envs2);
+                            const ClusterDescriptor &envs2,
+                            const Eigen::VectorXd &hyps);
 
   std::vector<Eigen::MatrixXd> envs_envs_grad(
     const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
     const Eigen::VectorXd &new_hyps);
 
   Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
-                             const DescriptorValues &struc);
+                             const DescriptorValues &struc,
+                             const Eigen::VectorXd &hyps);
 
   std::vector<Eigen::MatrixXd> envs_struc_grad(
       const ClusterDescriptor &envs, const DescriptorValues &struc,
@@ -40,10 +42,13 @@ public:
     int kernel_index, 
     const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps);
 
-  Eigen::VectorXd self_kernel_struc(DescriptorValues struc);
+  Eigen::VectorXd self_kernel_struc(
+    const DescriptorValues &struc, const Eigen::VectorXd &hyps);
 
-  Eigen::MatrixXd struc_struc(DescriptorValues struc1,
-                              DescriptorValues struc2);
+  Eigen::MatrixXd struc_struc(
+    const DescriptorValues &struc1,
+    const DescriptorValues &struc2,
+    const Eigen::VectorXd &hyps);
 
   void set_hyperparameters(Eigen::VectorXd new_hyps);
 };

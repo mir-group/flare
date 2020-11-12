@@ -72,9 +72,11 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
   // Update Kuu matrices.
   for (int i = 0; i < n_kernels; i++) {
     Eigen::MatrixXd prev_block = kernels[i]->envs_envs(
-      sparse_descriptors[i], cluster_descriptors[i]);
+      sparse_descriptors[i], cluster_descriptors[i],
+      kernels[i]->kernel_hyperparameters);
     Eigen::MatrixXd self_block = kernels[i]->envs_envs(
-      cluster_descriptors[i], cluster_descriptors[i]);
+      cluster_descriptors[i], cluster_descriptors[i],
+      kernels[i]->kernel_hyperparameters);
 
     int n_sparse = sparse_descriptors[i].n_clusters;
     int n_envs = cluster_descriptors[i].n_clusters;
@@ -108,7 +110,8 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
       int n_atoms = training_structures[j].noa;
       envs_struc_kernels = 
         kernels[i]->envs_struc(cluster_descriptors[i],
-                               structure.descriptors[i]);
+                               structure.descriptors[i],
+                               kernels[i]->kernel_hyperparameters);
 
       if (training_structures[j].energy.size() != 0) {
           Kuf_energy[i].block(n_sparse, e_count, n_envs, 1) =
@@ -166,7 +169,8 @@ void CompactGP ::add_training_structure(const CompactStructure &structure){
     int n_sparse = sparse_descriptors[i].n_clusters;
 
     envs_struc_kernels = 
-      kernels[i]->envs_struc(sparse_descriptors[i], structure.descriptors[i]);
+      kernels[i]->envs_struc(sparse_descriptors[i], structure.descriptors[i],
+                             kernels[i]->kernel_hyperparameters);
 
     Kuf_energy[i].conservativeResize(n_sparse, n_energy_labels + n_energy);
     Kuf_force[i].conservativeResize(n_sparse, n_force_labels + n_force);
@@ -302,7 +306,8 @@ void CompactGP ::predict_on_structure(CompactStructure &test_structure) {
       int size = Kuu_kernels[i].rows();
       kernel_mat.block(count, 0, size, n_out) =
         kernels[i]->envs_struc(sparse_descriptors[i],
-                               test_structure.descriptors[i]);
+                               test_structure.descriptors[i],
+                               kernels[i]->kernel_hyperparameters);
       count += size;
   }
 
@@ -312,7 +317,9 @@ void CompactGP ::predict_on_structure(CompactStructure &test_structure) {
   Eigen::VectorXd V_SOR, Q_self, K_self = Eigen::VectorXd::Zero(n_out);
 
   for (int i = 0; i < n_kernels; i++) {
-    K_self += kernels[i]->self_kernel_struc(test_structure.descriptors[i]);
+    K_self += 
+      kernels[i]->self_kernel_struc(test_structure.descriptors[i],
+                                    kernels[i]->kernel_hyperparameters);
   }
 
   Q_self = (kernel_mat.transpose() * Kuu_inverse * kernel_mat).diagonal();

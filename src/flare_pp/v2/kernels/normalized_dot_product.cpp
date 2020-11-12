@@ -21,7 +21,11 @@ NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
 }
 
 Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
-  const ClusterDescriptor &envs1, const ClusterDescriptor &envs2) {
+  const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
+  const Eigen::VectorXd &hyps) {
+
+  // Set square of the signal variance.
+  double sig_sq = hyps(0) * hyps(0);
 
   // Check types.
   int n_types_1 = envs1.n_types;
@@ -70,7 +74,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
         double dval = power * pow(norm_dot, power - 1);
-        kern_mat(ind1, ind2) += sig2 * pow(norm_dot, power);
+        kern_mat(ind1, ind2) += sig_sq * pow(norm_dot, power);
       }
     }
   }
@@ -78,7 +82,11 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(
 }
 
 Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
-  const ClusterDescriptor &envs, const DescriptorValues &struc) {
+  const ClusterDescriptor &envs, const DescriptorValues &struc,
+  const Eigen::VectorXd &hyps) {
+
+  // Set square of the signal variance.
+  double sig_sq = hyps(0) * hyps(0);
 
   // Check types.
   int n_types_1 = envs.n_types;
@@ -131,7 +139,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
         double dval = power * pow(norm_dot, power - 1);
-        kern_mat(sparse_index, 0) += sig2 * pow(norm_dot, power);
+        kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power);
 
         // Force kernel.
         int n_neigh = struc.neighbor_counts[s](j);
@@ -149,7 +157,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
             double f2 =
                 dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
             double f3 = f1 - f2;
-            double force_kern_val = sig2 * dval * f3;
+            double force_kern_val = sig_sq * dval * f3;
 
             kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
                 force_kern_val;
@@ -171,7 +179,11 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(
 }
 
 Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
-  DescriptorValues struc1, DescriptorValues struc2) {
+  const DescriptorValues &struc1, const DescriptorValues &struc2,
+  const Eigen::VectorXd &hyps) {
+
+  // Set square of the signal variance.
+  double sig_sq = hyps(0) * hyps(0);
 
   int n_elements_1 = 1 + 3 * struc1.n_atoms + 6;
   int n_elements_2 = 1 + 3 * struc2.n_atoms + 6;
@@ -238,7 +250,7 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
         double norm_dot = dot_vals(i, j) / norm_ij;
         double c1 = (power - 1) * power * pow(norm_dot, power - 2);
         double c2 = power * pow(norm_dot, power - 1);
-        kernel_matrix(0, 0) += sig2 * pow(norm_dot, power);
+        kernel_matrix(0, 0) += sig_sq * pow(norm_dot, power);
 
         int n_neigh_1 = struc1.neighbor_counts[s](i);
         int c_neigh_1 = struc1.cumulative_neighbor_counts[s](i);
@@ -260,7 +272,7 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
             double f2 = dot_vals(i, j) * struc_force_dot_2(force_index) /
                         (norm_i * norm_j3);
             double f3 = f1 - f2;
-            double force_kern_val = sig2 * c2 * f3;
+            double force_kern_val = sig_sq * c2 * f3;
 
             // Energy/force.
             kernel_matrix(0, 1 + 3 * neighbor_index + comp) -= force_kern_val;
@@ -288,7 +300,7 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
             double f2 = dot_vals(i, j) * struc_force_dot_1(force_index) /
                         (norm_j * norm_i3);
             double f3 = f1 - f2;
-            double force_kern_val = sig2 * c2 * f3;
+            double force_kern_val = sig_sq * c2 * f3;
 
             // Force/energy.
             kernel_matrix(1 + 3 * neighbor_index + comp, 0) -= force_kern_val;
@@ -331,7 +343,7 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
                             (norm_i2 * norm_j2);
 
                 double kern_val =
-                    sig2 * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
+                    sig_sq * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
 
                 // Force/force.
                 kernel_matrix(1 + c_ind_1 * 3 + m, 1 + c_ind_2 * 3 + n) +=
@@ -395,7 +407,11 @@ Eigen::MatrixXd NormalizedDotProduct ::struc_struc(
 }
 
 Eigen::VectorXd
-NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
+NormalizedDotProduct ::self_kernel_struc(
+  const DescriptorValues &struc,
+  const Eigen::VectorXd &hyps) {
+
+  double sig_sq = hyps(0) * hyps(0);
 
   int n_elements = 1 + 3 * struc.n_atoms + 6;
   Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(n_elements);
@@ -450,7 +466,7 @@ NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
         double norm_dot = dot_vals(i, j) / norm_ij;
         double c1 = (power - 1) * power * pow(norm_dot, power - 2);
         double c2 = power * pow(norm_dot, power - 1);
-        kernel_vector(0) += sig2 * mult_fac * pow(norm_dot, power);
+        kernel_vector(0) += sig_sq * mult_fac * pow(norm_dot, power);
 
         // Force kernel.
         int n_neigh_1 = struc.neighbor_counts[s](i);
@@ -486,7 +502,7 @@ NormalizedDotProduct ::self_kernel_struc(DescriptorValues struc) {
                           norm_dot / (norm_i2 * norm_j2);
 
               double kern_val =
-                  sig2 * mult_fac * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
+                  sig_sq * mult_fac * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
 
               if (c_ind_1 == c_ind_2)
                 kernel_vector(1 + c_ind_1 * 3 + m) += kern_val;

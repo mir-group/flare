@@ -23,7 +23,12 @@ SquaredExponential ::SquaredExponential(double sigma, double ls) {
 }
 
 Eigen::MatrixXd SquaredExponential ::envs_envs(
-  const ClusterDescriptor &envs1, const ClusterDescriptor &envs2) {
+  const ClusterDescriptor &envs1,
+  const ClusterDescriptor &envs2,
+  const Eigen::VectorXd &hyps) {
+
+  double sig2 = hyps(0) * hyps(0);
+  double ls2 = hyps(1) * hyps(1);
 
   // Check types.
   int n_types_1 = envs1.n_types;
@@ -146,7 +151,11 @@ std::vector<Eigen::MatrixXd> SquaredExponential ::envs_envs_grad(
 }
 
 Eigen::MatrixXd SquaredExponential ::envs_struc(
-  const ClusterDescriptor &envs, const DescriptorValues &struc) {
+  const ClusterDescriptor &envs, const DescriptorValues &struc,
+  const Eigen::VectorXd &hyps) {
+
+  double sig2 = hyps(0) * hyps(0);
+  double ls2 = hyps(1) * hyps(1);
 
   // Check types.
   int n_types_1 = envs.n_types;
@@ -361,7 +370,11 @@ std::vector<Eigen::MatrixXd> SquaredExponential ::envs_struc_grad(
 }
 
 Eigen::MatrixXd SquaredExponential ::struc_struc(
-  DescriptorValues struc1, DescriptorValues struc2) {
+  const DescriptorValues &struc1, const DescriptorValues &struc2,
+  const Eigen::VectorXd &hyps) {
+
+  double sig2 = hyps(0) * hyps(0);
+  double ls2 = hyps(1) * hyps(1);
 
   int n_elements_1 = 1 + 3 * struc1.n_atoms + 6;
   int n_elements_2 = 1 + 3 * struc2.n_atoms + 6;
@@ -575,12 +588,13 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(
 }
 
 Eigen::VectorXd
-SquaredExponential ::self_kernel_struc(DescriptorValues struc) {
+SquaredExponential ::self_kernel_struc(
+  const DescriptorValues &struc, const Eigen::VectorXd &hyps) {
 
   // Note: This can be made slightly faster by ignoring off-diagonal
   // kernel values (see normalized dot product implementation))
   int n_elements = 1 + 3 * struc.n_atoms + 6;
-  Eigen::MatrixXd kernel_matrix = struc_struc(struc, struc);
+  Eigen::MatrixXd kernel_matrix = struc_struc(struc, struc, hyps);
   Eigen::VectorXd kernel_vector = kernel_matrix.diagonal();
 
   return kernel_vector;
