@@ -21,9 +21,18 @@ public:
                                     const ClusterDescriptor &envs2,
                                     const Eigen::VectorXd &hyps) = 0;
 
+  virtual std::vector<Eigen::MatrixXd>
+  envs_envs_grad(const ClusterDescriptor &envs1,
+                 const ClusterDescriptor &envs2,
+                 const Eigen::VectorXd &hyps) = 0;
+
   virtual Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
                                      const DescriptorValues &struc,
                                      const Eigen::VectorXd &hyps) = 0;
+
+  virtual std::vector<Eigen::MatrixXd>
+  envs_struc_grad(const ClusterDescriptor &envs, const DescriptorValues &struc,
+                  const Eigen::VectorXd &hyps) = 0;
 
   virtual Eigen::VectorXd self_kernel_struc(const DescriptorValues &struc,
                                             const Eigen::VectorXd &hyps) = 0;

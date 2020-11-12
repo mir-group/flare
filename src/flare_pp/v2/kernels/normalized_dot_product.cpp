@@ -81,6 +81,32 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
   return kern_mat;
 }
 
+std::vector<Eigen::MatrixXd>
+NormalizedDotProduct ::envs_envs_grad(const ClusterDescriptor &envs1,
+                                      const ClusterDescriptor &envs2,
+                                      const Eigen::VectorXd &hyps) {
+
+  std::vector<Eigen::MatrixXd> grad_mats;
+  Eigen::MatrixXd kern = envs_envs(envs1, envs2, hyps);
+  Eigen::MatrixXd grad = 2 * kern / hyps(0);
+  grad_mats.push_back(kern);
+  grad_mats.push_back(grad);
+  return grad_mats;
+}
+
+std::vector<Eigen::MatrixXd>
+NormalizedDotProduct ::envs_struc_grad(const ClusterDescriptor &envs,
+                                       const DescriptorValues &struc,
+                                       const Eigen::VectorXd &hyps) {
+
+  std::vector<Eigen::MatrixXd> grad_mats;
+  Eigen::MatrixXd kern = envs_struc(envs, struc, hyps);
+  Eigen::MatrixXd grad = 2 * kern / hyps(0);
+  grad_mats.push_back(kern);
+  grad_mats.push_back(grad);
+  return grad_mats;
+}
+
 Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
                                                   const DescriptorValues &struc,
                                                   const Eigen::VectorXd &hyps) {
