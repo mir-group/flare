@@ -67,11 +67,13 @@ TEST_F(CompactStructureTest, SqExpKuf) {
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
   Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
   test_struc.energy = energy;
-  //   test_struc.forces = forces;
+//   test_struc.forces = forces;
   test_struc.stresses = stresses;
+  test_struc_2.energy = energy;
 
   sparse_gp.add_training_structure(test_struc);
   sparse_gp.add_sparse_environments(test_struc);
+  sparse_gp.add_training_structure(test_struc_2);
 
   int kernel_index = 0;
   Eigen::VectorXd new_hyps(2);

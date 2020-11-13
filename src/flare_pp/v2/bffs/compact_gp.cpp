@@ -8,6 +8,7 @@ CompactGP ::CompactGP(std::vector<CompactKernel *> kernels, double energy_noise,
 
   this->kernels = kernels;
   Kuu_jitter = 1e-8; // default value
+  label_count = Eigen::VectorXd::Zero(1);
 
   // Count hyperparameters.
   int n_hyps = 0;
@@ -40,10 +41,8 @@ CompactGP ::CompactGP(std::vector<CompactKernel *> kernels, double energy_noise,
   // Initialize kernel lists.
   Eigen::MatrixXd empty_matrix;
   for (int i = 0; i < kernels.size(); i++) {
-    Kuf_energy.push_back(empty_matrix);
-    Kuf_force.push_back(empty_matrix);
-    Kuf_stress.push_back(empty_matrix);
     Kuu_kernels.push_back(empty_matrix);
+    Kuf_kernels.push_back(empty_matrix);
   }
 }
 
@@ -96,37 +95,33 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
     int n_sparse = sparse_descriptors[i].n_clusters;
     int n_envs = cluster_descriptors[i].n_clusters;
 
-    Kuf_energy[i].conservativeResize(n_sparse + n_envs, n_energy_labels);
-    Kuf_force[i].conservativeResize(n_sparse + n_envs, n_force_labels);
-    Kuf_stress[i].conservativeResize(n_sparse + n_envs, n_stress_labels);
+    Kuf_kernels[i].conservativeResize(n_sparse + n_envs, n_labels);
 
-    int e_count = 0;
-    int f_count = 0;
-    int s_count = 0;
-
-    // TODO: Parellelize this loop.
+#pragma omp parallel for
     for (int j = 0; j < n_strucs; j++) {
       int n_atoms = training_structures[j].noa;
       envs_struc_kernels = kernels[i]->envs_struc(
           cluster_descriptors[i], structure.descriptors[i],
           kernels[i]->kernel_hyperparameters);
 
+      int current_count = 0;
       if (training_structures[j].energy.size() != 0) {
-        Kuf_energy[i].block(n_sparse, e_count, n_envs, 1) =
+        Kuf_kernels[i].block(n_sparse, label_count(j), n_envs, 1) =
             envs_struc_kernels.block(0, 0, n_envs, 1);
-        e_count += 1;
+        current_count += 1;
       }
 
       if (training_structures[j].forces.size() != 0) {
-        Kuf_force[i].block(n_sparse, f_count, n_envs, n_atoms * 3) =
+        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count,
+                             n_envs, n_atoms * 3) =
             envs_struc_kernels.block(0, 1, n_envs, n_atoms * 3);
-        f_count += n_atoms * 3;
+        current_count += n_atoms * 3;
       }
 
       if (training_structures[j].stresses.size() != 0) {
-        Kuf_stress[i].block(n_sparse, s_count, n_envs, 6) =
+        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count,
+                             n_envs, 6) =
             envs_struc_kernels.block(0, 1 + n_atoms * 3, n_envs, 6);
-        s_count += 6;
       }
     }
   }
@@ -146,7 +141,7 @@ void CompactGP ::add_training_structure(const CompactStructure &structure) {
   int n_energy = structure.energy.size();
   int n_force = structure.forces.size();
   int n_stress = structure.stresses.size();
-  int n_labels = n_energy + n_force + n_stress;
+  int n_struc_labels = n_energy + n_force + n_stress;
   int n_atoms = structure.noa;
   int n_kernels = kernels.size();
 
@@ -170,52 +165,41 @@ void CompactGP ::add_training_structure(const CompactStructure &structure) {
         kernels[i]->envs_struc(sparse_descriptors[i], structure.descriptors[i],
                                kernels[i]->kernel_hyperparameters);
 
-    Kuf_energy[i].conservativeResize(n_sparse, n_energy_labels + n_energy);
-    Kuf_force[i].conservativeResize(n_sparse, n_force_labels + n_force);
-    Kuf_stress[i].conservativeResize(n_sparse, n_stress_labels + n_stress);
-
-    Kuf_energy[i].block(0, n_energy_labels, n_sparse, n_energy) =
-        envs_struc_kernels.block(0, 0, n_sparse, n_energy);
-    Kuf_force[i].block(0, n_force_labels, n_sparse, n_force) =
-        envs_struc_kernels.block(0, 1, n_sparse, n_force);
-    Kuf_stress[i].block(0, n_stress_labels, n_sparse, n_stress) =
-        envs_struc_kernels.block(0, 1 + n_atoms * 3, n_sparse, n_stress);
+    Kuf_kernels[i].conservativeResize(n_sparse, n_labels + n_struc_labels);
+    Kuf_kernels[i].block(0, n_labels, n_sparse, n_energy) =
+      envs_struc_kernels.block(0, 0, n_sparse, n_energy);
+    Kuf_kernels[i].block(0, n_labels + n_energy, n_sparse, n_force) =
+      envs_struc_kernels.block(0, 1, n_sparse, n_force);
+    Kuf_kernels[i].block(0, n_labels + n_energy + n_force, n_sparse,
+                         n_stress) =
+      envs_struc_kernels.block(0, 1 + n_atoms * 3, n_sparse, n_sparse);
   }
+
+  // Update labels.
+  label_count.conservativeResize(training_structures.size() + 2);
+  label_count(training_structures.size() + 1) = n_labels + n_struc_labels;
+  y.conservativeResize(n_labels + n_struc_labels);
+  y.segment(n_labels, n_energy) = structure.energy;
+  y.segment(n_labels + n_energy, n_force) = structure.forces;
+  y.segment(n_labels + n_energy + n_force, n_stress) = structure.stresses;
+
+  // Update noise.
+  noise_vector.conservativeResize(n_labels + n_struc_labels);
+  noise_vector.segment(n_labels, n_energy) = Eigen::VectorXd::Constant(
+      n_energy, 1 / (energy_noise * energy_noise));
+  noise_vector.segment(n_labels + n_energy, n_force) =
+    Eigen::VectorXd::Constant(n_force, 1 / (force_noise * force_noise));
+  noise_vector.segment(n_labels + n_energy + n_force, n_stress) =
+    Eigen::VectorXd::Constant(n_stress, 1 / (stress_noise * stress_noise));
 
   // Update label count.
   n_energy_labels += n_energy;
   n_force_labels += n_force;
   n_stress_labels += n_stress;
-  this->n_labels += n_energy + n_force + n_stress;
+  n_labels += n_struc_labels;
 
   // Store training structure.
   training_structures.push_back(structure);
-
-  // Update labels.
-  energy_labels.conservativeResize(n_energy_labels);
-  force_labels.conservativeResize(n_force_labels);
-  stress_labels.conservativeResize(n_stress_labels);
-
-  energy_labels.tail(n_energy) = structure.energy;
-  force_labels.tail(n_force) = structure.forces;
-  stress_labels.tail(n_stress) = structure.stresses;
-
-  y.conservativeResize(n_energy_labels + n_force_labels + n_stress_labels);
-  y.segment(0, n_energy_labels) = energy_labels;
-  y.segment(n_energy_labels, n_force_labels) = force_labels;
-  y.segment(n_energy_labels + n_force_labels, n_stress_labels) = stress_labels;
-
-  // Update noise.
-  noise_vector.conservativeResize(n_energy_labels + n_force_labels +
-                                  n_stress_labels);
-  noise_vector.segment(0, n_energy_labels) = Eigen::VectorXd::Constant(
-      n_energy_labels, 1 / (energy_noise * energy_noise));
-  noise_vector.segment(n_energy_labels, n_force_labels) =
-      Eigen::VectorXd::Constant(n_force_labels,
-                                1 / (force_noise * force_noise));
-  noise_vector.segment(n_energy_labels + n_force_labels, n_stress_labels) =
-      Eigen::VectorXd::Constant(n_stress_labels,
-                                1 / (stress_noise * stress_noise));
 
   // Update Kuf.
   update_Kuf();
@@ -234,30 +218,18 @@ void CompactGP ::update_Kuu() {
 
 void CompactGP ::update_Kuf() {
   // Update Kuf kernels.
-  std::vector<Eigen::MatrixXd> empty_matrices;
-  Kuf_kernels = empty_matrices;
   Kuf = Eigen::MatrixXd::Zero(n_sparse, n_labels);
   int count = 0;
   for (int i = 0; i < Kuu_kernels.size(); i++) {
     int size = Kuu_kernels[i].rows();
-    Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(size, n_labels);
-    Kuf_mat.block(0, 0, size, n_energy_labels) = Kuf_energy[i];
-    Kuf_mat.block(0, n_energy_labels, size, n_force_labels) = Kuf_force[i];
-    Kuf_mat.block(0, n_energy_labels + n_force_labels, size, n_stress_labels) =
-        Kuf_stress[i];
-
-    Kuf.block(count, 0, size, n_labels) = Kuf_mat;
-    Kuf_kernels.push_back(Kuf_mat);
+    Kuf.block(count, 0, size, n_labels) = Kuf_kernels[i];
     count += size;
   }
 }
 
 void CompactGP ::update_matrices_QR() {
   // Store square root of noise vector.
-  Eigen::VectorXd noise_vector_sqrt = Eigen::VectorXd::Zero(n_labels);
-  for (int i = 0; i < noise_vector_sqrt.size(); i++) {
-    noise_vector_sqrt(i) = sqrt(noise_vector(i));
-  }
+  Eigen::VectorXd noise_vector_sqrt = sqrt(noise_vector.array());
 
   // Cholesky decompose Kuu.
   Eigen::LLT<Eigen::MatrixXd> chol(
@@ -331,13 +303,7 @@ void CompactGP ::compute_likelihood() {
   }
 
   // Construct noise vector.
-  Eigen::VectorXd noise = Eigen::VectorXd::Zero(n_labels);
-  noise.segment(0, n_energy_labels) =
-      Eigen::VectorXd::Constant(n_energy_labels, energy_noise * energy_noise);
-  noise.segment(n_energy_labels, n_force_labels) =
-      Eigen::VectorXd::Constant(n_force_labels, force_noise * force_noise);
-  noise.segment(n_energy_labels + n_force_labels, n_stress_labels) =
-      Eigen::VectorXd::Constant(n_stress_labels, stress_noise * stress_noise);
+  Eigen::VectorXd noise = 1 / noise_vector.array();
 
   Eigen::MatrixXd Qff_plus_lambda =
       Kuf.transpose() * Kuu_inverse * Kuf +

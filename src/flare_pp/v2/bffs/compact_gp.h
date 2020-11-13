@@ -13,8 +13,7 @@ public:
 
   // Kernel attributes.
   std::vector<CompactKernel *> kernels;
-  std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels, Kuf_energy, Kuf_force,
-      Kuf_stress;
+  std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels;
   Eigen::MatrixXd Kuu, Kuf;
   double Kuu_jitter;
 
@@ -27,7 +26,7 @@ public:
   std::vector<CompactStructure> training_structures;
 
   // Label attributes.
-  Eigen::VectorXd noise_vector, y, energy_labels, force_labels, stress_labels;
+  Eigen::VectorXd noise_vector, y, label_count;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
       n_sparse = 0, n_labels = 0;
   double energy_noise, force_noise, stress_noise;
@@ -52,6 +51,8 @@ public:
   void predict_on_structure(CompactStructure &structure);
 
   void compute_likelihood();
+
+  // TODO: Implement.
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
   void set_hyperparameters(Eigen::VectorXd hyperparameters);
 };
