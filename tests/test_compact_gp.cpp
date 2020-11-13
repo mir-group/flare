@@ -45,11 +45,11 @@ TEST_F(CompactStructureTest, SparseTest) {
             sparse_gp.log_marginal_likelihood);
   double like1 = sparse_gp.log_marginal_likelihood;
 
-  //   // Check the likelihood function.
-  //   Eigen::VectorXd hyps = sparse_gp.hyperparameters;
-  //   double like2 = sparse_gp.compute_likelihood_gradient(hyps);
+    // Check the likelihood function.
+    Eigen::VectorXd hyps = sparse_gp.hyperparameters;
+    double like2 = sparse_gp.compute_likelihood_gradient(hyps);
 
-  //   EXPECT_EQ(like1, like2);
+    EXPECT_NEAR(like1, like2, 1e-8);
 }
 
 TEST_F(CompactStructureTest, SqExpKuf) {

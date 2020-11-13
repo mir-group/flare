@@ -112,15 +112,15 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
       }
 
       if (training_structures[j].forces.size() != 0) {
-        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count,
-                             n_envs, n_atoms * 3) =
+        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count, n_envs,
+                             n_atoms * 3) =
             envs_struc_kernels.block(0, 1, n_envs, n_atoms * 3);
         current_count += n_atoms * 3;
       }
 
       if (training_structures[j].stresses.size() != 0) {
-        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count,
-                             n_envs, 6) =
+        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count, n_envs,
+                             6) =
             envs_struc_kernels.block(0, 1 + n_atoms * 3, n_envs, 6);
       }
     }
@@ -167,12 +167,11 @@ void CompactGP ::add_training_structure(const CompactStructure &structure) {
 
     Kuf_kernels[i].conservativeResize(n_sparse, n_labels + n_struc_labels);
     Kuf_kernels[i].block(0, n_labels, n_sparse, n_energy) =
-      envs_struc_kernels.block(0, 0, n_sparse, n_energy);
+        envs_struc_kernels.block(0, 0, n_sparse, n_energy);
     Kuf_kernels[i].block(0, n_labels + n_energy, n_sparse, n_force) =
-      envs_struc_kernels.block(0, 1, n_sparse, n_force);
-    Kuf_kernels[i].block(0, n_labels + n_energy + n_force, n_sparse,
-                         n_stress) =
-      envs_struc_kernels.block(0, 1 + n_atoms * 3, n_sparse, n_sparse);
+        envs_struc_kernels.block(0, 1, n_sparse, n_force);
+    Kuf_kernels[i].block(0, n_labels + n_energy + n_force, n_sparse, n_stress) =
+        envs_struc_kernels.block(0, 1 + n_atoms * 3, n_sparse, n_sparse);
   }
 
   // Update labels.
@@ -185,12 +184,12 @@ void CompactGP ::add_training_structure(const CompactStructure &structure) {
 
   // Update noise.
   noise_vector.conservativeResize(n_labels + n_struc_labels);
-  noise_vector.segment(n_labels, n_energy) = Eigen::VectorXd::Constant(
-      n_energy, 1 / (energy_noise * energy_noise));
+  noise_vector.segment(n_labels, n_energy) =
+      Eigen::VectorXd::Constant(n_energy, 1 / (energy_noise * energy_noise));
   noise_vector.segment(n_labels + n_energy, n_force) =
-    Eigen::VectorXd::Constant(n_force, 1 / (force_noise * force_noise));
+      Eigen::VectorXd::Constant(n_force, 1 / (force_noise * force_noise));
   noise_vector.segment(n_labels + n_energy + n_force, n_stress) =
-    Eigen::VectorXd::Constant(n_stress, 1 / (stress_noise * stress_noise));
+      Eigen::VectorXd::Constant(n_stress, 1 / (stress_noise * stress_noise));
 
   // Update label count.
   n_energy_labels += n_energy;
@@ -325,4 +324,143 @@ void CompactGP ::compute_likelihood() {
   data_fit = -half * y.transpose() * Q_inv_y;
   constant_term = -half * n_labels * log(2 * M_PI);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+}
+
+double CompactGP ::compute_likelihood_gradient(
+    const Eigen::VectorXd &hyperparameters) {
+
+  // Compute Kuu and Kuf matrices and gradients.
+  int n_kernels = kernels.size();
+  int n_hyps_total = hyperparameters.size();
+
+  Eigen::MatrixXd Kuu_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+  Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+
+  std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad, Kuu_grads, Kuf_grads;
+
+  int n_hyps, hyp_index = 0, grad_index = 0;
+  Eigen::VectorXd hyps_curr;
+
+  int count = 0;
+  for (int i = 0; i < n_kernels; i++) {
+    n_hyps = kernels[i]->kernel_hyperparameters.size();
+    hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
+    int size = Kuu_kernels[i].rows();
+
+    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, hyps_curr);
+    Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
+                                    i, Kuf, hyps_curr);
+
+    Kuu_mat.block(count, count, size, size) = Kuu_grad[0];
+    Kuf_mat.block(count, 0, size, n_labels) = Kuf_grad[0];
+
+    for (int j = 0; j < n_hyps; j++) {
+      Kuu_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_sparse));
+      Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
+
+      Kuu_grads[j].block(count, count, size, size) = Kuu_grad[j + 1];
+      Kuf_grads[j].block(count, 0, size, n_labels) = Kuf_grad[j + 1];
+    }
+
+    count += size;
+    hyp_index += n_hyps;
+  }
+
+  Eigen::MatrixXd Kuu_inverse =
+      (Kuu_mat + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()))
+          .inverse();
+
+  // Construct updated noise vector and gradients.
+  Eigen::VectorXd noise_vec = Eigen::VectorXd::Zero(n_labels);
+  Eigen::VectorXd e_noise_grad = Eigen::VectorXd::Zero(n_labels);
+  Eigen::VectorXd f_noise_grad = Eigen::VectorXd::Zero(n_labels);
+  Eigen::VectorXd s_noise_grad = Eigen::VectorXd::Zero(n_labels);
+
+  double sigma_e = hyperparameters(hyp_index);
+  double sigma_f = hyperparameters(hyp_index + 1);
+  double sigma_s = hyperparameters(hyp_index + 2);
+
+  int current_count = 0;
+  for (int i = 0; i < training_structures.size(); i++){
+    int n_atoms = training_structures[i].noa;
+
+    if (training_structures[i].energy.size() != 0) {
+      noise_vec(current_count) = sigma_e * sigma_e;
+      e_noise_grad(current_count) = 2 * sigma_e;
+      current_count += 1;
+    }
+
+    if (training_structures[i].forces.size() != 0) {
+      noise_vec.segment(current_count, n_atoms * 3) =
+        Eigen::VectorXd::Constant(n_atoms * 3, sigma_f * sigma_f);
+      f_noise_grad.segment(current_count, n_atoms * 3) =
+        Eigen::VectorXd::Constant(n_atoms * 3, 2 * sigma_f);
+      current_count += n_atoms * 3;
+    }
+
+    if (training_structures[i].stresses.size() != 0){
+      noise_vec.segment(current_count, 6) =
+        Eigen::VectorXd::Constant(6, sigma_s * sigma_s);
+      s_noise_grad.segment(current_count, 6) = 
+        Eigen::VectorXd::Constant(6, 2 * sigma_s);
+      current_count += 6;
+    }
+  }
+
+  // Compute Qff and Qff grads.
+  Eigen::MatrixXd Qff_plus_lambda =
+      Kuf_mat.transpose() * Kuu_inverse * Kuf_mat +
+      noise_vec.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
+
+  std::vector<Eigen::MatrixXd> Qff_grads;
+  grad_index = 0;
+  for (int i = 0; i < n_kernels; i++) {
+    n_hyps = kernels[i]->kernel_hyperparameters.size();
+    for (int j = 0; j < n_hyps; j++) {
+      Qff_grads.push_back(
+          Kuf_grads[grad_index].transpose() * Kuu_inverse * Kuf_mat -
+          Kuf_mat.transpose() * Kuu_inverse * Kuu_grads[grad_index] *
+              Kuu_inverse * Kuf_mat +
+          Kuf_mat.transpose() * Kuu_inverse * Kuf_grads[grad_index]);
+
+      grad_index++;
+    }
+  }
+
+  Qff_grads.push_back(e_noise_grad.asDiagonal() *
+                      Eigen::MatrixXd::Identity(n_labels, n_labels));
+  Qff_grads.push_back(f_noise_grad.asDiagonal() *
+                      Eigen::MatrixXd::Identity(n_labels, n_labels));
+  Qff_grads.push_back(s_noise_grad.asDiagonal() *
+                      Eigen::MatrixXd::Identity(n_labels, n_labels));
+
+  // Perform LU decomposition inplace and compute the inverse.
+  Eigen::PartialPivLU<Eigen::Ref<Eigen::MatrixXd>> lu(Qff_plus_lambda);
+  Eigen::MatrixXd Qff_inverse = lu.inverse();
+
+  // Compute log determinant from the diagonal of U.
+  double complexity_penalty = 0;
+  for (int i = 0; i < Qff_plus_lambda.rows(); i++) {
+    complexity_penalty += -log(abs(Qff_plus_lambda(i, i)));
+  }
+  complexity_penalty /= 2;
+
+  // Compute log marginal likelihood.
+  Eigen::VectorXd Q_inv_y = Qff_inverse * y;
+  double data_fit = -(1. / 2.) * y.transpose() * Q_inv_y;
+  double constant_term = -n_labels * log(2 * M_PI) / 2;
+  double log_marginal_likelihood =
+      complexity_penalty + data_fit + constant_term;
+
+  // Compute likelihood gradient.
+  likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
+  Eigen::MatrixXd Qff_inv_grad;
+  for (int i = 0; i < n_hyps_total; i++) {
+    Qff_inv_grad = Qff_inverse * Qff_grads[i];
+    likelihood_gradient(i) =
+        -Qff_inv_grad.trace() + y.transpose() * Qff_inv_grad * Q_inv_y;
+    likelihood_gradient(i) /= 2;
+  }
+
+  return log_marginal_likelihood;
 }
