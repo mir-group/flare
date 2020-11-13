@@ -40,6 +40,9 @@ public:
                               const DescriptorValues &struc2,
                               const Eigen::VectorXd &hyps);
 
+  // Because of the simplicity of this kernel, Kuu_grad and Kuf_grad can
+  // be significantly accelerated over the default implementation, which
+  // reconstructs the covariance matrices from scratch.
   std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
                                         const Eigen::MatrixXd &Kuu,
                                         const Eigen::VectorXd &new_hyps);

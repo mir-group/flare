@@ -73,8 +73,6 @@ TEST_F(CompactStructureTest, SqExpKuf) {
   sparse_gp.add_training_structure(test_struc);
   sparse_gp.add_sparse_environments(test_struc);
 
-  //   std::cout << sparse_gp.Kuf << std::endl;
-
   int kernel_index = 0;
   Eigen::VectorXd new_hyps(2);
   new_hyps << 2.0, 0.9;
@@ -84,5 +82,6 @@ TEST_F(CompactStructureTest, SqExpKuf) {
       sparse_gp.sparse_descriptors[0], sparse_gp.training_structures,
       kernel_index, sparse_gp.Kuf, new_hyps);
 
-  //   std::cout << Kuf_grad[2] << std::endl;
+//   std::cout << sparse_gp.Kuf << std::endl;
+//   std::cout << Kuf_grad[0] << std::endl;
 }
