@@ -52,9 +52,8 @@ public:
 
   void compute_likelihood();
 
-  // TODO: Implement.
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
-  void set_hyperparameters(Eigen::VectorXd hyperparameters);
+  void set_hyperparameters(Eigen::VectorXd hyps);
 };
 
 #endif

@@ -464,3 +464,63 @@ double CompactGP ::compute_likelihood_gradient(
 
   return log_marginal_likelihood;
 }
+
+void CompactGP ::set_hyperparameters(Eigen::VectorXd hyps){
+  // Reset Kuu and Kuf matrices.
+  int n_kernels = kernels.size();
+  int n_hyps, hyp_index = 0;
+  Eigen::VectorXd new_hyps;
+
+  int count = 0;
+  std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad;
+  for (int i = 0; i < n_kernels; i++) {
+    n_hyps = kernels[i]->kernel_hyperparameters.size();
+    new_hyps = hyps.segment(hyp_index, n_hyps);
+
+    int size = Kuu_kernels[i].rows();
+
+    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, new_hyps);
+    Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
+                                    i, Kuf, new_hyps);
+
+    Kuu_kernels[i] = Kuu_grad[0];
+    Kuf_kernels[i] = Kuf_grad[0];
+
+    kernels[i]->set_hyperparameters(new_hyps);
+    count += size;
+    hyp_index += n_hyps;
+  }
+
+  update_Kuu();
+  update_Kuf();
+
+  hyperparameters = hyps;
+  energy_noise = hyps(hyp_index);
+  force_noise = hyps(hyp_index + 1);
+  stress_noise = hyps(hyp_index + 2);
+
+  int current_count = 0;
+  for (int i = 0; i < training_structures.size(); i++){
+    int n_atoms = training_structures[i].noa;
+
+    if (training_structures[i].energy.size() != 0) {
+      noise_vector(current_count) = energy_noise * energy_noise;
+      current_count += 1;
+    }
+
+    if (training_structures[i].forces.size() != 0) {
+      noise_vector.segment(current_count, n_atoms * 3) =
+        Eigen::VectorXd::Constant(n_atoms * 3, force_noise * force_noise);
+      current_count += n_atoms * 3;
+    }
+
+    if (training_structures[i].stresses.size() != 0){
+      noise_vector.segment(current_count, 6) =
+        Eigen::VectorXd::Constant(6, stress_noise * stress_noise);
+      current_count += 6;
+    }
+  }
+
+  // Update remaining matrices.
+  update_matrices_QR();
+}
