@@ -87,3 +87,52 @@ TEST_F(CompactStructureTest, SqExpKuf) {
 //   std::cout << sparse_gp.Kuf << std::endl;
 //   std::cout << Kuf_grad[0] << std::endl;
 }
+
+TEST_F(CompactStructureTest, LikeGrad) {
+  // Check that the DTC likelihood gradient is correctly computed.
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  std::vector<CompactKernel *> kernels;
+  kernels.push_back(&kernel);
+  CompactGP sparse_gp = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+  test_struc.forces = forces;
+  test_struc.stresses = stresses;
+
+  sparse_gp.add_training_structure(test_struc);
+  sparse_gp.add_sparse_environments(test_struc);
+
+  EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
+  EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
+
+  sparse_gp.update_matrices_QR();
+
+  // Check the likelihood function.
+  Eigen::VectorXd hyps = sparse_gp.hyperparameters;
+  sparse_gp.compute_likelihood_gradient(hyps);
+  Eigen::VectorXd like_grad = sparse_gp.likelihood_gradient;
+
+  int n_hyps = hyps.size();
+  Eigen::VectorXd hyps_up, hyps_down;
+  double pert = 1e-4, like_up, like_down, fin_diff;
+
+  for (int i = 0; i < n_hyps; i++) {
+    hyps_up = hyps;
+    hyps_down = hyps;
+    hyps_up(i) += pert;
+    hyps_down(i) -= pert;
+
+    like_up = sparse_gp.compute_likelihood_gradient(hyps_up);
+    like_down = sparse_gp.compute_likelihood_gradient(hyps_down);
+
+    fin_diff = (like_up - like_down) / (2 * pert);
+
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
+  }
+}
