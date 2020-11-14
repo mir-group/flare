@@ -186,3 +186,37 @@ TEST_F(CompactStructureTest, Set_Hyps) {
   EXPECT_EQ(sparse_gp_1.log_marginal_likelihood,
             sparse_gp_2.log_marginal_likelihood);
 }
+
+TEST_F(CompactStructureTest, AddOrder) {
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  std::vector<CompactKernel *> kernels;
+  kernels.push_back(&kernel);
+  CompactGP sparse_gp_1 = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+  CompactGP sparse_gp_2 = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+
+  // Add structure first.
+  sparse_gp_1.add_training_structure(test_struc);
+  sparse_gp_1.add_sparse_environments(test_struc);
+  sparse_gp_1.update_matrices_QR();
+
+  // Add environments first.
+  sparse_gp_2.add_sparse_environments(test_struc);
+  sparse_gp_2.add_training_structure(test_struc);
+  sparse_gp_2.update_matrices_QR();
+
+  // Check that matrices match.
+  for (int i = 0; i < sparse_gp_1.Kuf.rows(); i++) {
+    for (int j = 0; j < sparse_gp_1.Kuf.cols(); j++) {
+      EXPECT_EQ(sparse_gp_1.Kuf(i, j), sparse_gp_2.Kuf(i, j));
+    }
+  }
+
+  for (int i = 0; i < sparse_gp_1.Kuu.rows(); i++) {
+    for (int j = 0; j < sparse_gp_1.Kuu.cols(); j++) {
+      EXPECT_EQ(sparse_gp_1.Kuu(i, j), sparse_gp_2.Kuu(i, j));
+    }
+  }
+}
