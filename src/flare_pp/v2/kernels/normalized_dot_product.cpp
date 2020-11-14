@@ -603,4 +603,8 @@ NormalizedDotProduct ::Kuf_grad(const ClusterDescriptor &envs,
   return kernel_gradients;
 }
 
-void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {}
+void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {
+  sigma = new_hyps(0);
+  sig2 = sigma * sigma;
+  kernel_hyperparameters = new_hyps;
+}

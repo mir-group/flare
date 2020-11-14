@@ -219,8 +219,8 @@ void CompactGP ::update_Kuf() {
   // Update Kuf kernels.
   Kuf = Eigen::MatrixXd::Zero(n_sparse, n_labels);
   int count = 0;
-  for (int i = 0; i < Kuu_kernels.size(); i++) {
-    int size = Kuu_kernels[i].rows();
+  for (int i = 0; i < Kuf_kernels.size(); i++) {
+    int size = Kuf_kernels[i].rows();
     Kuf.block(count, 0, size, n_labels) = Kuf_kernels[i];
     count += size;
   }
@@ -295,7 +295,7 @@ void CompactGP ::predict_on_structure(CompactStructure &test_structure) {
 
 void CompactGP ::compute_likelihood() {
   if (n_labels == 0) {
-    std::cout << "Warning: The likelihood is being computed withouot any "
+    std::cout << "Warning: The likelihood is being computed without any "
                  "labels in the training set. The result won't be meaningful."
               << std::endl;
     return;
@@ -471,13 +471,10 @@ void CompactGP ::set_hyperparameters(Eigen::VectorXd hyps){
   int n_hyps, hyp_index = 0;
   Eigen::VectorXd new_hyps;
 
-  int count = 0;
   std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad;
   for (int i = 0; i < n_kernels; i++) {
     n_hyps = kernels[i]->kernel_hyperparameters.size();
     new_hyps = hyps.segment(hyp_index, n_hyps);
-
-    int size = Kuu_kernels[i].rows();
 
     Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, new_hyps);
     Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
@@ -487,7 +484,6 @@ void CompactGP ::set_hyperparameters(Eigen::VectorXd hyps){
     Kuf_kernels[i] = Kuf_grad[0];
 
     kernels[i]->set_hyperparameters(new_hyps);
-    count += size;
     hyp_index += n_hyps;
   }
 
@@ -504,19 +500,19 @@ void CompactGP ::set_hyperparameters(Eigen::VectorXd hyps){
     int n_atoms = training_structures[i].noa;
 
     if (training_structures[i].energy.size() != 0) {
-      noise_vector(current_count) = energy_noise * energy_noise;
+      noise_vector(current_count) = 1 / (energy_noise * energy_noise);
       current_count += 1;
     }
 
     if (training_structures[i].forces.size() != 0) {
       noise_vector.segment(current_count, n_atoms * 3) =
-        Eigen::VectorXd::Constant(n_atoms * 3, force_noise * force_noise);
+        Eigen::VectorXd::Constant(n_atoms * 3, 1 / (force_noise * force_noise));
       current_count += n_atoms * 3;
     }
 
     if (training_structures[i].stresses.size() != 0){
       noise_vector.segment(current_count, 6) =
-        Eigen::VectorXd::Constant(6, stress_noise * stress_noise);
+        Eigen::VectorXd::Constant(6, 1 / (stress_noise * stress_noise));
       current_count += 6;
     }
   }

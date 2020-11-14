@@ -601,4 +601,10 @@ SquaredExponential ::self_kernel_struc(const DescriptorValues &struc,
   return kernel_vector;
 }
 
-void SquaredExponential ::set_hyperparameters(Eigen::VectorXd hyps) {}
+void SquaredExponential ::set_hyperparameters(Eigen::VectorXd hyps) {
+  sigma = hyps(0);
+  ls = hyps(1);
+  sig2 = sigma * sigma;
+  ls2 = ls * ls;
+  kernel_hyperparameters = hyps;
+}
