@@ -50,11 +50,6 @@ public:
            const std::vector<CompactStructure> &strucs, int kernel_index,
            const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &hyps);
 
-  std::vector<Eigen::MatrixXd>
-  kernel_transform(const ClusterDescriptor &sparse_descriptors,
-                   const std::vector<CompactStructure> &training_structures,
-                   int kernel_index, Eigen::VectorXd hyps);
-
   virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;
 
   virtual ~CompactKernel() = default;
