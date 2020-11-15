@@ -1,14 +1,14 @@
 #ifndef TWO_BODY_H
 #define TWO_BODY_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include <string>
 #include <vector>
 
 class CompactStructure;
 
-class TwoBody : public CompactDescriptor {
+class TwoBody : public Descriptor {
 public:
   double cutoff;
   int n_species;

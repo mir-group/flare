@@ -1,11 +1,11 @@
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include "cutoffs.h"
 #include "radial.h"
 #include <cmath>
 #include <iostream>
 
-CompactDescriptor::CompactDescriptor() {}
+Descriptor::Descriptor() {}
 
 DescriptorValues::DescriptorValues() {}
 

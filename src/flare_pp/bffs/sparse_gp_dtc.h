@@ -1,7 +1,7 @@
 #ifndef SPARSE_GP_DTC_H
 #define SPARSE_GP_DTC_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "kernel.h"
 #include "structure.h"
 #include <Eigen/Dense>

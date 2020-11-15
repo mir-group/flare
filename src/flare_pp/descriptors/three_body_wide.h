@@ -1,14 +1,14 @@
 #ifndef THREE_BODY_WIDE_H
 #define THREE_BODY_WIDE_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include <string>
 #include <vector>
 
 class CompactStructure;
 
-class ThreeBodyWide : public CompactDescriptor {
+class ThreeBodyWide : public Descriptor {
 public:
   double cutoff;
   int n_species;

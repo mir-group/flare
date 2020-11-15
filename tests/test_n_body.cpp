@@ -1,4 +1,4 @@
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include "squared_exponential.h"
 #include "three_body.h"
@@ -23,7 +23,7 @@ public:
 
   TwoBody desc;
   ThreeBody three_body_desc;
-  std::vector<CompactDescriptor *> dc;
+  std::vector<Descriptor *> dc;
   Structure test_struc;
   DescriptorValues struc_desc;
   ClusterDescriptor cluster_desc;

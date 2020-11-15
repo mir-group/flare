@@ -1,7 +1,7 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include <vector>
 
 class Structure {
@@ -15,7 +15,7 @@ public:
   std::vector<int> species;
   int noa;
 
-  std::vector<CompactDescriptor *> descriptor_calculators;
+  std::vector<Descriptor *> descriptor_calculators;
   std::vector<DescriptorValues> descriptors;
 
   // Make structure labels empty by default.
@@ -29,7 +29,7 @@ public:
 
   Structure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
             const Eigen::MatrixXd &positions, double cutoff,
-            std::vector<CompactDescriptor *> descriptor_calculators);
+            std::vector<Descriptor *> descriptor_calculators);
 
   Eigen::MatrixXd wrap_positions();
   double get_single_sweep_cutoff();

@@ -1,5 +1,5 @@
-#ifndef COMPACT_DESCRIPTOR_H
-#define COMPACT_DESCRIPTOR_H
+#ifndef DESCRIPTOR_H
+#define DESCRIPTOR_H
 
 #include <Eigen/Dense>
 #include <vector>
@@ -7,16 +7,13 @@
 class Structure;
 class DescriptorValues;
 
-// Descriptor calculator.
-// TODO: Rename to DescriptorCalculator.
-class CompactDescriptor {
+class Descriptor {
 public:
-  CompactDescriptor();
+  Descriptor();
 
   virtual DescriptorValues compute_struc(Structure &structure) = 0;
 };
 
-// TODO: Rename to StructureDescriptor.
 class DescriptorValues {
 public:
   DescriptorValues();

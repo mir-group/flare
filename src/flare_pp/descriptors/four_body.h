@@ -1,14 +1,12 @@
 #ifndef FOUR_BODY_H
 #define FOUR_BODY_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include <string>
 #include <vector>
 
-class CompactStructure;
-
-class FourBody : public CompactDescriptor {
+class FourBody : public Descriptor {
 public:
   double cutoff;
   int n_species;

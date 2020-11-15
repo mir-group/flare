@@ -107,7 +107,7 @@ set(FLARE_SOURCES
     src/flare_pp/cutoffs.cpp
     src/flare_pp/structure.cpp
     src/flare_pp/bffs/sparse_gp_dtc.cpp
-    src/flare_pp/descriptors/compact_descriptor.cpp
+    src/flare_pp/descriptors/descriptor.cpp
     src/flare_pp/descriptors/b2.cpp
     src/flare_pp/descriptors/two_body.cpp
     src/flare_pp/descriptors/three_body.cpp

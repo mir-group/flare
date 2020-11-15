@@ -1,9 +1,8 @@
 #include "b3.h"
-#include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "descriptor.h"
+#include "structure.h"
 #include "cutoffs.h"
 #include "radial.h"
-#include "single_bond.h"
 #include "wigner3j.h"
 #include "y_grad.h"
 #include <iostream>

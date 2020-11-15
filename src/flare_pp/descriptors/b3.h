@@ -1,13 +1,13 @@
 #ifndef B3_H
 #define B3_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include <string>
 #include <vector>
 
 class Structure;
 
-class B3 : public CompactDescriptor {
+class B3 : public Descriptor {
 public:
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>

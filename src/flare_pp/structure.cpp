@@ -27,7 +27,7 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
 Structure ::Structure(
     const Eigen::MatrixXd &cell, const std::vector<int> &species,
     const Eigen::MatrixXd &positions, double cutoff,
-    std::vector<CompactDescriptor *> descriptor_calculators)
+    std::vector<Descriptor *> descriptor_calculators)
     : Structure(cell, species, positions) {
 
   this->cutoff = cutoff;

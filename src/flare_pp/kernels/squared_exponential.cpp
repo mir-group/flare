@@ -1,5 +1,5 @@
 #include "squared_exponential.h"
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include <iostream>
 #include <stdio.h>

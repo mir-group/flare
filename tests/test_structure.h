@@ -22,7 +22,7 @@ public:
   std::vector<int> species, species_2;
   Eigen::MatrixXd positions, positions_2;
   B2 ps;
-  std::vector<CompactDescriptor *> dc;
+  std::vector<Descriptor *> dc;
   Structure test_struc, test_struc_2;
   DescriptorValues struc_desc;
 

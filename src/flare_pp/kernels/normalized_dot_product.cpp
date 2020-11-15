@@ -1,5 +1,5 @@
 #include "normalized_dot_product.h"
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #undef NDEBUG
 #include <assert.h>

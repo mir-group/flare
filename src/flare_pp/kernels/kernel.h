@@ -1,7 +1,7 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#include "compact_descriptor.h"
+#include "descriptor.h"
 #include "structure.h"
 #include <Eigen/Dense>
 #include <vector>
