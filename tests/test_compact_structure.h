@@ -1,9 +1,6 @@
 #include "b2.h"
 #include "compact_structure.h"
-#include "descriptor.h"
-#include "dot_product_kernel.h"
 #include "four_body.h"
-#include "local_environment.h"
 #include "normalized_dot_product.h"
 #include "squared_exponential.h"
 #include "structure.h"
@@ -24,12 +21,9 @@ public:
   Eigen::MatrixXd cell, cell_2;
   std::vector<int> species, species_2;
   Eigen::MatrixXd positions, positions_2;
-  B2_Calculator desc1;
   B2 ps;
-  std::vector<DescriptorCalculator *> descriptor_calculators;
   std::vector<CompactDescriptor *> dc;
   CompactStructure test_struc, test_struc_2;
-  StructureDescriptor struc2;
   DescriptorValues struc_desc;
 
   double cell_size = 10;
@@ -48,7 +42,6 @@ public:
   double ls = 0.9;
   int power = 2;
   NormalizedDotProduct kernel_3;
-  DotProductKernel kernel_2;
   SquaredExponential kernel;
 
   CompactStructureTest() {
@@ -64,23 +57,17 @@ public:
       species_2.push_back(rand() % n_species);
     }
 
-    desc1 = B2_Calculator(radial_string, cutoff_string, radial_hyps,
-                          cutoff_hyps, descriptor_settings, descriptor_index);
     ps = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
             descriptor_settings);
 
-    descriptor_calculators.push_back(&desc1);
     dc.push_back(&ps);
 
     test_struc = CompactStructure(cell, species, positions, cutoff, dc);
     test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
-    struc2 = StructureDescriptor(cell, species, positions, cutoff,
-                                 many_body_cutoffs, descriptor_calculators);
 
     struc_desc = test_struc.descriptors[0];
 
     kernel = SquaredExponential(sigma, ls);
-    kernel_2 = DotProductKernel(sigma, power, 0);
     kernel_3 = NormalizedDotProduct(sigma, power);
   }
 };

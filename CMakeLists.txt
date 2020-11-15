@@ -105,27 +105,18 @@ set(FLARE_SOURCES
     src/flare_pp/y_grad.cpp
     src/flare_pp/radial.cpp
     src/flare_pp/cutoffs.cpp
-    src/flare_pp/single_bond.cpp
-    src/flare_pp/descriptor.cpp
     src/flare_pp/structure.cpp
-    src/flare_pp/local_environment.cpp
-    src/flare_pp/kernels.cpp
-    src/flare_pp/two_body_kernel.cpp
-    src/flare_pp/three_body_kernel.cpp
-    src/flare_pp/dot_product_kernel.cpp
-    src/flare_pp/sparse_gp.cpp
-    src/flare_pp/sparse_gp_dtc.cpp
-    src/flare_pp/v2/compact_structure.cpp
-    src/flare_pp/v2/bffs/compact_gp.cpp
-    src/flare_pp/v2/descriptors/compact_descriptor.cpp
-    src/flare_pp/v2/descriptors/b2.cpp
-    src/flare_pp/v2/descriptors/two_body.cpp
-    src/flare_pp/v2/descriptors/three_body.cpp
-    src/flare_pp/v2/descriptors/three_body_wide.cpp
-    src/flare_pp/v2/descriptors/four_body.cpp
-    src/flare_pp/v2/kernels/kernel.cpp
-    src/flare_pp/v2/kernels/normalized_dot_product.cpp
-    src/flare_pp/v2/kernels/squared_exponential.cpp)
+    src/flare_pp/compact_structure.cpp
+    src/flare_pp/bffs/compact_gp.cpp
+    src/flare_pp/descriptors/compact_descriptor.cpp
+    src/flare_pp/descriptors/b2.cpp
+    src/flare_pp/descriptors/two_body.cpp
+    src/flare_pp/descriptors/three_body.cpp
+    src/flare_pp/descriptors/three_body_wide.cpp
+    src/flare_pp/descriptors/four_body.cpp
+    src/flare_pp/kernels/kernel.cpp
+    src/flare_pp/kernels/normalized_dot_product.cpp
+    src/flare_pp/kernels/squared_exponential.cpp)
 
 set(PYBIND_SOURCES
     src/ace_binding.cpp)
@@ -133,10 +124,9 @@ set(PYBIND_SOURCES
 # Include sources.
 include_directories(
   src/flare_pp
-  src/flare_pp/v2
-  src/flare_pp/v2/descriptors
-  src/flare_pp/v2/kernels
-  src/flare_pp/v2/bffs)
+  src/flare_pp/descriptors
+  src/flare_pp/kernels
+  src/flare_pp/bffs)
 
 # Create flare library.
 add_library(flare SHARED ${FLARE_SOURCES})

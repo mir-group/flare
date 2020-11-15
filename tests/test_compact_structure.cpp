@@ -8,15 +8,6 @@ TEST_F(CompactStructureTest, TestDescriptor) {
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "Compact structure construction: " << elapsed_seconds.count()
             << "s\n";
-
-  start = std::chrono::steady_clock::now();
-  StructureDescriptor struc2 =
-      StructureDescriptor(cell, species, positions, cutoff, many_body_cutoffs,
-                          descriptor_calculators);
-  end = std::chrono::steady_clock::now();
-  elapsed_seconds = end - start;
-  std::cout << "Structure descriptor construction: " << elapsed_seconds.count()
-            << "s\n";
 }
 
 TEST_F(CompactStructureTest, TestEnvironments) {
@@ -31,16 +22,6 @@ TEST_F(CompactStructureTest, TimeSelfKernel) {
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "Compact self kernel: " << elapsed_seconds.count() << "s\n";
-
-  start = std::chrono::steady_clock::now();
-  Eigen::VectorXd prev_self = kernel_2.self_kernel_struc(struc2);
-  end = std::chrono::steady_clock::now();
-  elapsed_seconds = end - start;
-  std::cout << "Non-compact self kernel: " << elapsed_seconds.count() << "s\n";
-
-  //   for (int i = 0; i < self_kern.size(); i++) {
-  //     EXPECT_NEAR(self_kern(i), prev_self(i), 1e-8);
-  //   }
 }
 
 TEST_F(CompactStructureTest, TestEnvsEnvs) {
@@ -141,6 +122,8 @@ TEST_F(CompactStructureTest, SqExpGrad) {
 }
 
 TEST_F(CompactStructureTest, StrucStrucFull) {
+
+  // TODO: Systematically test all implemented descriptors and kernels.
 
   //   ThreeBody three_body_desc =
   //     ThreeBody(cutoff, n_species, cutoff_string, cutoff_hyps);

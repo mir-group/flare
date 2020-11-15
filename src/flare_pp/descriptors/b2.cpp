@@ -3,7 +3,6 @@
 #include "compact_structure.h"
 #include "cutoffs.h"
 #include "radial.h"
-#include "single_bond.h"
 #include "y_grad.h"
 #include <iostream>
 

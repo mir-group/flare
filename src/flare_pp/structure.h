@@ -4,8 +4,6 @@
 #include <Eigen/Dense>
 #include <vector>
 
-#include "descriptor.h"
-
 // Structure class.
 class Structure {
 public:
@@ -23,51 +21,6 @@ public:
   Eigen::MatrixXd wrap_positions();
 
   double get_single_sweep_cutoff();
-};
-
-// Structure descriptor. Stores the atomic environments in a structure.
-class StructureDescriptor : public Structure {
-public:
-  std::vector<DescriptorCalculator *> descriptor_calculators;
-  std::vector<LocalEnvironment> local_environments;
-  double cutoff;
-  std::vector<double> n_body_cutoffs;
-  std::vector<double> many_body_cutoffs;
-
-  // Make structure labels empty by default.
-  Eigen::VectorXd energy, forces, stresses, mean_efs, variance_efs;
-  std::vector<Eigen::VectorXd> mean_contributions;
-
-  StructureDescriptor();
-
-  StructureDescriptor(const Eigen::MatrixXd &cell,
-                      const std::vector<int> &species,
-                      const Eigen::MatrixXd &positions, double cutoff);
-
-  // n-body
-  StructureDescriptor(const Eigen::MatrixXd &cell,
-                      const std::vector<int> &species,
-                      const Eigen::MatrixXd &positions, double cutoff,
-                      std::vector<double> n_body_cutoffs);
-
-  // many-body
-  StructureDescriptor(
-      const Eigen::MatrixXd &cell, const std::vector<int> &species,
-      const Eigen::MatrixXd &positions, double cutoff,
-      std::vector<double> many_body_cutoffs,
-      std::vector<DescriptorCalculator *> descriptor_calculators);
-
-  // n-body + many-body
-  StructureDescriptor(
-      const Eigen::MatrixXd &cell, const std::vector<int> &species,
-      const Eigen::MatrixXd &positions, double cutoff,
-      std::vector<double> n_body_cutoffs, std::vector<double> many_body_cutoffs,
-      std::vector<DescriptorCalculator *> descriptor_calculators);
-
-  void compute_environments();
-  void compute_nested_environments();
-  void compute_descriptors();
-  void nested_descriptors();
 };
 
 #endif
