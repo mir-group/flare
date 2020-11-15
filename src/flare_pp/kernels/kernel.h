@@ -9,13 +9,13 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
-class CompactKernel {
+class Kernel {
 public:
   Eigen::VectorXd kernel_hyperparameters;
 
-  CompactKernel();
+  Kernel();
 
-  CompactKernel(Eigen::VectorXd kernel_hyperparameters);
+  Kernel(Eigen::VectorXd kernel_hyperparameters);
 
   virtual Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
                                     const ClusterDescriptor &envs2,
@@ -52,7 +52,7 @@ public:
 
   virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;
 
-  virtual ~CompactKernel() = default;
+  virtual ~Kernel() = default;
 };
 
 #endif

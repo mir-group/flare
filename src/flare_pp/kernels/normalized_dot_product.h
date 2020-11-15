@@ -9,7 +9,7 @@ class DescriptorValues;
 class ClusterDescriptor;
 
 // TODO: Make this an abstract class.
-class NormalizedDotProduct : public CompactKernel {
+class NormalizedDotProduct : public Kernel {
 public:
   double sigma, sig2, power;
 

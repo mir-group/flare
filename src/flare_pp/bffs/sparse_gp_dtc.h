@@ -12,7 +12,7 @@ public:
   Eigen::VectorXd hyperparameters;
 
   // Kernel attributes.
-  std::vector<CompactKernel *> kernels;
+  std::vector<Kernel *> kernels;
   std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels;
   Eigen::MatrixXd Kuu, Kuf;
   double Kuu_jitter;
@@ -38,7 +38,7 @@ public:
 
   // Constructors.
   SparseGP_DTC();
-  SparseGP_DTC(std::vector<CompactKernel *> kernels, double energy_noise,
+  SparseGP_DTC(std::vector<Kernel *> kernels, double energy_noise,
                double force_noise, double stress_noise);
 
   // TODO: Add sparse environments above an energy uncertainty threshold.

@@ -7,7 +7,7 @@ TEST_F(StructureTest, SparseTest) {
   double sigma_f = 2;
   double sigma_s = 3;
 
-  std::vector<CompactKernel *> kernels;
+  std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
   SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
@@ -59,7 +59,7 @@ TEST_F(StructureTest, SqExpKuf) {
   double sigma_f = 2;
   double sigma_s = 3;
 
-  std::vector<CompactKernel *> kernels;
+  std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
   SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
@@ -94,7 +94,7 @@ TEST_F(StructureTest, LikeGrad) {
   double sigma_f = 2;
   double sigma_s = 3;
 
-  std::vector<CompactKernel *> kernels;
+  std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
   SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
@@ -147,8 +147,8 @@ TEST_F(StructureTest, Set_Hyps) {
   NormalizedDotProduct kernel_1 = NormalizedDotProduct(sig1, power);
   NormalizedDotProduct kernel_2 = NormalizedDotProduct(sig2, power);
 
-  std::vector<CompactKernel *> kernels_1{&kernel_1};
-  std::vector<CompactKernel *> kernels_2{&kernel_2};
+  std::vector<Kernel *> kernels_1{&kernel_1};
+  std::vector<Kernel *> kernels_2{&kernel_2};
 
   SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels_1, sig_e_1, sig_f_1, sig_s_1);
   SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels_2, sig_e_2, sig_f_2, sig_s_2);
@@ -192,7 +192,7 @@ TEST_F(StructureTest, AddOrder) {
   double sigma_f = 2;
   double sigma_s = 3;
 
-  std::vector<CompactKernel *> kernels;
+  std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
   SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
   SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);

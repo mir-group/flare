@@ -3,7 +3,7 @@
 
 SparseGP_DTC ::SparseGP_DTC() {}
 
-SparseGP_DTC ::SparseGP_DTC(std::vector<CompactKernel *> kernels,
+SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels,
                             double energy_noise, double force_noise,
                             double stress_noise) {
 

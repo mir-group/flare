@@ -8,7 +8,7 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
-class SquaredExponential : public CompactKernel {
+class SquaredExponential : public Kernel {
 public:
   double sigma, ls, sig2, ls2;
 

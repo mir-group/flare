@@ -3,13 +3,13 @@
 #include <cmath>
 #include <iostream>
 
-CompactKernel ::CompactKernel(){};
-CompactKernel ::CompactKernel(Eigen::VectorXd kernel_hyperparameters) {
+Kernel ::Kernel(){};
+Kernel ::Kernel(Eigen::VectorXd kernel_hyperparameters) {
   this->kernel_hyperparameters = kernel_hyperparameters;
 };
 
 std::vector<Eigen::MatrixXd>
-CompactKernel ::Kuu_grad(const ClusterDescriptor &envs,
+Kernel ::Kuu_grad(const ClusterDescriptor &envs,
                          const Eigen::MatrixXd &Kuu,
                          const Eigen::VectorXd &hyps) {
 
@@ -19,7 +19,7 @@ CompactKernel ::Kuu_grad(const ClusterDescriptor &envs,
 }
 
 std::vector<Eigen::MatrixXd>
-CompactKernel ::Kuf_grad(const ClusterDescriptor &envs,
+Kernel ::Kuf_grad(const ClusterDescriptor &envs,
                          const std::vector<Structure> &strucs,
                          int kernel_index, const Eigen::MatrixXd &Kuf,
                          const Eigen::VectorXd &hyps) {
