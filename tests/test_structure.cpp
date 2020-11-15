@@ -27,7 +27,7 @@ TEST_F(StructureTest, TestDescriptor) {
       Structure(cell, species, positions, cutoff, dc);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
-  std::cout << "Compact structure construction: " << elapsed_seconds.count()
+  std::cout << "Structure construction: " << elapsed_seconds.count()
             << "s\n";
 }
 
@@ -42,7 +42,7 @@ TEST_F(StructureTest, TimeSelfKernel) {
       kernel.self_kernel_struc(struc_desc, kernel.kernel_hyperparameters);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
-  std::cout << "Compact self kernel: " << elapsed_seconds.count() << "s\n";
+  std::cout << "Self kernel: " << elapsed_seconds.count() << "s\n";
 }
 
 TEST_F(StructureTest, TestEnvsEnvs) {

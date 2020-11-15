@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-class CompactStructure;
-
 class TwoBody : public Descriptor {
 public:
   double cutoff;
