@@ -1,9 +1,9 @@
 #include "b3.h"
 #include "b2.h"
-#include "descriptor.h"
-#include "structure.h"
 #include "cutoffs.h"
+#include "descriptor.h"
 #include "radial.h"
+#include "structure.h"
 #include "wigner3j.h"
 #include "y_grad.h"
 #include <iostream>
@@ -20,6 +20,8 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
   this->radial_hyps = radial_hyps;
   this->cutoff_hyps = cutoff_hyps;
   this->descriptor_settings = descriptor_settings;
+
+  wigner3j_coeffs = compute_coeffs(descriptor_settings[2]);
 
   // Set the radial basis.
   if (radial_basis == "chebyshev") {
@@ -69,7 +71,7 @@ DescriptorValues B3 ::compute_struc(Structure &structure) {
 
   compute_B3(B3_vals, B3_force_dervs, B3_norms, B3_force_dots, single_bond_vals,
              force_dervs, unique_neighbor_count, cumulative_neighbor_count,
-             descriptor_indices, nos, N, lmax);
+             descriptor_indices, nos, N, lmax, wigner3j_coeffs);
 
   // Gather species information.
   int noa = structure.noa;
@@ -152,7 +154,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                 const Eigen::VectorXi &unique_neighbor_count,
                 const Eigen::VectorXi &cumulative_neighbor_count,
                 const Eigen::VectorXi &descriptor_indices, int nos, int N,
-                int lmax) {
+                int lmax, const Eigen::VectorXd &wigner3j_coeffs) {
 
   int n_atoms = single_bond_vals.rows();
   int n_neighbors = cumulative_neighbor_count(n_atoms);
@@ -161,21 +163,6 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   int n_bond = n_radial * n_harmonics;
   int n_d = (n_radial * (n_radial + 1) * (n_radial + 1) / 6) *
             ((lmax + 1) * (lmax + 2) * (lmax + 3) / 6);
-
-  Eigen::MatrixXd wigner;
-  if (lmax == 0) {
-    wigner = w1;
-  } else if (lmax == 1) {
-    wigner = w2;
-//   else if (lmax == 2) {
-//     wigner = w3;
-  } else {
-    std::cout << "ERROR: B3 does not currently support lmax >= 4";
-    return;
-  }
-//   if (lmax == 3) {
-//     wigner = w4;
-//   }
 
   // Initialize arrays.
   B3_vals = Eigen::MatrixXd::Zero(n_atoms, n_d);
@@ -192,9 +179,11 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
     for (int n1 = 0; n1 < n_radial; n1++) {
       for (int n2 = n1; n2 < n_radial; n2++) {
         for (int n3 = n2; n3 < n_radial; n3++) {
+          int w_count = 0;
+          // TODO: Continue when 3j symbol is zero.
           for (int l1 = 0; l1 < (lmax + 1); l1++) {
-            for (int l2 = l1; l2 < (lmax + 1); l2++) {
-              for (int l3 = l2; l3 < (lmax + 1); l3++) {
+            for (int l2 = 0; l2 < (lmax + 1); l2++) {
+              for (int l3 = 0; l3 < (lmax + 1); l3++) {
                 for (int m1 = 0; m1 < (2 * l1 + 1); m1++) {
                   for (int m2 = 0; m2 < (2 * l2 + 1); m2++) {
                     for (int m3 = 0; m3 < (2 * l3 + 1); m3++) {
@@ -202,37 +191,35 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                       n1_l = n1 * n_harmonics + (l1 * l1 + m1);
                       n2_l = n2 * n_harmonics + (l2 * l2 + m2);
                       n3_l = n3 * n_harmonics + (l3 * l3 + m3);
+
+                      // TODO: Check w_m, and compute w_count from w_l and w_m.
                       w_l = l1 * (lmax + 1) * (lmax + 1) + l2 * (lmax + 1) + l3;
-                      // TODO: Check w_m.
                       w_m = m1 * (2 * l1 + 1) * (2 * l2 + 1) +
                             m2 * (2 * l2 + 1) + m3;
-                      B3_vals(atom, counter) +=
-                            single_bond_vals(atom, n1_l) *
-                            single_bond_vals(atom, n2_l) * 
-                            single_bond_vals(atom, n3_l) *
-                            wigner(w_l, w_m);
+                      B3_vals(atom, counter) += single_bond_vals(atom, n1_l) *
+                                                single_bond_vals(atom, n2_l) *
+                                                single_bond_vals(atom, n3_l) *
+                                                wigner3j_coeffs(w_count);
 
                       // Store force derivatives.
                       for (int n = 0; n < n_atom_neighbors; n++) {
                         for (int comp = 0; comp < 3; comp++) {
                           int ind = force_start + n * 3 + comp;
                           B3_force_dervs(ind, counter) +=
+                              wigner3j_coeffs(w_count) *
+                              (single_bond_force_dervs(atom, n1_l) *
+                                   single_bond_vals(atom, n2_l) *
+                                   single_bond_vals(ind, n3_l) +
 
-                              wigner(w_l, w_m) *
-                              (
+                               single_bond_vals(atom, n1_l) *
+                                   single_bond_force_dervs(atom, n2_l) *
+                                   single_bond_vals(ind, n3_l) +
 
-                                  single_bond_force_dervs(atom, n1_l) *
-                                      single_bond_vals(atom, n2_l) *
-                                      single_bond_vals(ind, n3_l) +
-
-                                  single_bond_vals(atom, n1_l) *
-                                      single_bond_force_dervs(atom, n2_l) *
-                                      single_bond_vals(ind, n3_l) +
-
-                                  single_bond_vals(atom, n1_l) *
-                                      single_bond_vals(atom, n2_l) *
-                                      single_bond_force_dervs(ind, n3_l));
+                               single_bond_vals(atom, n1_l) *
+                                   single_bond_vals(atom, n2_l) *
+                                   single_bond_force_dervs(ind, n3_l));
                         }
+                        w_count++;
                       }
                     }
                   }

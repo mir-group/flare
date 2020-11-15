@@ -1,8 +1,8 @@
 #include "b2.h"
-#include "descriptor.h"
-#include "structure.h"
 #include "cutoffs.h"
+#include "descriptor.h"
 #include "radial.h"
+#include "structure.h"
 #include "y_grad.h"
 #include <iostream>
 

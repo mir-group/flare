@@ -18,6 +18,7 @@ public:
   std::string radial_basis, cutoff_function;
   std::vector<double> radial_hyps, cutoff_hyps;
   std::vector<int> descriptor_settings;
+  Eigen::VectorXd wigner3j_coeffs;
 
   B3();
 
@@ -36,6 +37,6 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                 const Eigen::VectorXi &unique_neighbor_count,
                 const Eigen::VectorXi &cumulative_neighbor_count,
                 const Eigen::VectorXi &descriptor_indices, int nos, int N,
-                int lmax);
+                int lmax, const Eigen::VectorXd &wigner3j_coeffs);
 
 #endif

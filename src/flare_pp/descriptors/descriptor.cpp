@@ -1,7 +1,7 @@
 #include "descriptor.h"
-#include "structure.h"
 #include "cutoffs.h"
 #include "radial.h"
+#include "structure.h"
 #include <cmath>
 #include <iostream>
 
