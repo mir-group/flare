@@ -1,8 +1,8 @@
 #include "compact_gp.h"
-#include "test_compact_structure.h"
+#include "test_structure.h"
 #include <chrono>
 
-TEST_F(CompactStructureTest, SparseTest) {
+TEST_F(StructureTest, SparseTest) {
   double sigma_e = 1;
   double sigma_f = 2;
   double sigma_s = 3;
@@ -52,7 +52,7 @@ TEST_F(CompactStructureTest, SparseTest) {
     EXPECT_NEAR(like1, like2, 1e-8);
 }
 
-TEST_F(CompactStructureTest, SqExpKuf) {
+TEST_F(StructureTest, SqExpKuf) {
   // Test K_uf grad method of squared exponential kernel.
 
   double sigma_e = 1;
@@ -88,7 +88,7 @@ TEST_F(CompactStructureTest, SqExpKuf) {
 //   std::cout << Kuf_grad[0] << std::endl;
 }
 
-TEST_F(CompactStructureTest, LikeGrad) {
+TEST_F(StructureTest, LikeGrad) {
   // Check that the DTC likelihood gradient is correctly computed.
   double sigma_e = 1;
   double sigma_f = 2;
@@ -137,7 +137,7 @@ TEST_F(CompactStructureTest, LikeGrad) {
   }
 }
 
-TEST_F(CompactStructureTest, Set_Hyps) {
+TEST_F(StructureTest, Set_Hyps) {
   // Check the reset hyperparameters method.
 
   int power = 2;
@@ -187,7 +187,7 @@ TEST_F(CompactStructureTest, Set_Hyps) {
             sparse_gp_2.log_marginal_likelihood);
 }
 
-TEST_F(CompactStructureTest, AddOrder) {
+TEST_F(StructureTest, AddOrder) {
   double sigma_e = 1;
   double sigma_f = 2;
   double sigma_s = 3;

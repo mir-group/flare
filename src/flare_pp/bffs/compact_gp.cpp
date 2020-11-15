@@ -46,7 +46,7 @@ CompactGP ::CompactGP(std::vector<CompactKernel *> kernels, double energy_noise,
   }
 }
 
-void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
+void CompactGP ::add_sparse_environments(const Structure &structure) {
 
   int n_kernels = kernels.size();
   int n_labels = Kuf.cols();
@@ -136,7 +136,7 @@ void CompactGP ::add_sparse_environments(const CompactStructure &structure) {
   update_Kuf();
 }
 
-void CompactGP ::add_training_structure(const CompactStructure &structure) {
+void CompactGP ::add_training_structure(const Structure &structure) {
 
   int n_energy = structure.energy.size();
   int n_force = structure.forces.size();
@@ -261,7 +261,7 @@ void CompactGP ::update_matrices_QR() {
   Sigma = R_inv * R_inv.transpose();
 }
 
-void CompactGP ::predict_on_structure(CompactStructure &test_structure) {
+void CompactGP ::predict_on_structure(Structure &test_structure) {
 
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;

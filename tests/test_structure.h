@@ -1,5 +1,5 @@
 #include "b2.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include "four_body.h"
 #include "normalized_dot_product.h"
 #include "squared_exponential.h"
@@ -14,7 +14,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-class CompactStructureTest : public ::testing::Test {
+class StructureTest : public ::testing::Test {
 public:
   int n_atoms = 10;
   int n_species = 2;
@@ -23,7 +23,7 @@ public:
   Eigen::MatrixXd positions, positions_2;
   B2 ps;
   std::vector<CompactDescriptor *> dc;
-  CompactStructure test_struc, test_struc_2;
+  Structure test_struc, test_struc_2;
   DescriptorValues struc_desc;
 
   double cell_size = 10;
@@ -44,7 +44,7 @@ public:
   NormalizedDotProduct kernel_3;
   SquaredExponential kernel;
 
-  CompactStructureTest() {
+  StructureTest() {
     // Make positions.
     cell = Eigen::MatrixXd::Identity(3, 3) * cell_size;
     cell_2 = Eigen::MatrixXd::Identity(3, 3) * cell_size;
@@ -62,8 +62,8 @@ public:
 
     dc.push_back(&ps);
 
-    test_struc = CompactStructure(cell, species, positions, cutoff, dc);
-    test_struc_2 = CompactStructure(cell_2, species_2, positions_2, cutoff, dc);
+    test_struc = Structure(cell, species, positions, cutoff, dc);
+    test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
 
     struc_desc = test_struc.descriptors[0];
 

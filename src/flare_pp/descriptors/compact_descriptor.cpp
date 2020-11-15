@@ -1,5 +1,5 @@
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include "cutoffs.h"
 #include "radial.h"
 #include <cmath>

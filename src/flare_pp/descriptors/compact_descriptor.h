@@ -4,8 +4,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-class LocalEnvironment;
-class CompactStructure;
+class Structure;
 class DescriptorValues;
 
 // Descriptor calculator.
@@ -14,7 +13,7 @@ class CompactDescriptor {
 public:
   CompactDescriptor();
 
-  virtual DescriptorValues compute_struc(CompactStructure &structure) = 0;
+  virtual DescriptorValues compute_struc(Structure &structure) = 0;
 };
 
 // TODO: Rename to StructureDescriptor.

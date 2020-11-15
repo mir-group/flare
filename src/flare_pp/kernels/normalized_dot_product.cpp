@@ -1,6 +1,6 @@
 #include "normalized_dot_product.h"
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #undef NDEBUG
 #include <assert.h>
 #include <cmath>
@@ -582,7 +582,7 @@ NormalizedDotProduct ::Kuu_grad(const ClusterDescriptor &envs,
 
 std::vector<Eigen::MatrixXd>
 NormalizedDotProduct ::Kuf_grad(const ClusterDescriptor &envs,
-                                const std::vector<CompactStructure> &strucs,
+                                const std::vector<Structure> &strucs,
                                 int kernel_index, const Eigen::MatrixXd &Kuf,
                                 const Eigen::VectorXd &new_hyps) {
 

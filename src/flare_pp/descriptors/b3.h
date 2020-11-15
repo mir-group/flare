@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-class CompactStructure;
+class Structure;
 
 class B3 : public CompactDescriptor {
 public:
@@ -26,7 +26,7 @@ public:
      const std::vector<double> &cutoff_hyps,
      const std::vector<int> &descriptor_settings);
 
-  DescriptorValues compute_struc(CompactStructure &structure);
+  DescriptorValues compute_struc(Structure &structure);
 };
 
 void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
@@ -50,6 +50,6 @@ void compute_single_bond(
                        std::vector<double>)>
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const CompactStructure &structure);
+    const std::vector<double> &cutoff_hyps, const Structure &structure);
 
 #endif

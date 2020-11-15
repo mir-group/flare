@@ -2,7 +2,7 @@
 #define COMPACT_GP_H
 
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include "kernel.h"
 #include <Eigen/Dense>
 #include <vector>
@@ -23,7 +23,7 @@ public:
 
   // Training and sparse points.
   std::vector<ClusterDescriptor> sparse_descriptors;
-  std::vector<CompactStructure> training_structures;
+  std::vector<Structure> training_structures;
 
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count;
@@ -42,13 +42,13 @@ public:
             double force_noise, double stress_noise);
 
   // TODO: Add sparse environments above an energy uncertainty threshold.
-  void add_sparse_environments(const CompactStructure &structure);
-  void add_training_structure(const CompactStructure &structure);
+  void add_sparse_environments(const Structure &structure);
+  void add_training_structure(const Structure &structure);
   void update_Kuu();
   void update_Kuf();
 
   void update_matrices_QR();
-  void predict_on_structure(CompactStructure &structure);
+  void predict_on_structure(Structure &structure);
 
   void compute_likelihood();
 

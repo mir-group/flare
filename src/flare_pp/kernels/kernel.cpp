@@ -20,7 +20,7 @@ CompactKernel ::Kuu_grad(const ClusterDescriptor &envs,
 
 std::vector<Eigen::MatrixXd>
 CompactKernel ::Kuf_grad(const ClusterDescriptor &envs,
-                         const std::vector<CompactStructure> &strucs,
+                         const std::vector<Structure> &strucs,
                          int kernel_index, const Eigen::MatrixXd &Kuf,
                          const Eigen::VectorXd &hyps) {
 

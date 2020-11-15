@@ -24,7 +24,7 @@ ThreeBodyWide ::ThreeBodyWide(double cutoff, int n_species,
   }
 }
 
-DescriptorValues ThreeBodyWide ::compute_struc(CompactStructure &structure) {
+DescriptorValues ThreeBodyWide ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();

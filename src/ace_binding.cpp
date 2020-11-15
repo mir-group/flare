@@ -1,12 +1,5 @@
-#include "descriptor.h"
-#include "dot_product_kernel.h"
-#include "kernels.h"
-#include "local_environment.h"
-#include "sparse_gp.h"
-#include "sparse_gp_dtc.h"
+#include "kernel.h"
 #include "structure.h"
-#include "three_body_kernel.h"
-#include "two_body_kernel.h"
 #include "y_grad.h"
 
 #include <pybind11/eigen.h>

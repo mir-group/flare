@@ -106,7 +106,6 @@ set(FLARE_SOURCES
     src/flare_pp/radial.cpp
     src/flare_pp/cutoffs.cpp
     src/flare_pp/structure.cpp
-    src/flare_pp/compact_structure.cpp
     src/flare_pp/bffs/compact_gp.cpp
     src/flare_pp/descriptors/compact_descriptor.cpp
     src/flare_pp/descriptors/b2.cpp

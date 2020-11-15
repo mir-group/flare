@@ -49,7 +49,7 @@ public:
 
   std::vector<Eigen::MatrixXd>
   Kuf_grad(const ClusterDescriptor &envs,
-           const std::vector<CompactStructure> &strucs, int kernel_index,
+           const std::vector<Structure> &strucs, int kernel_index,
            const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps);
 
   void set_hyperparameters(Eigen::VectorXd new_hyps);

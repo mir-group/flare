@@ -1,5 +1,5 @@
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include "squared_exponential.h"
 #include "three_body.h"
 #include "two_body.h"
@@ -24,7 +24,7 @@ public:
   TwoBody desc;
   ThreeBody three_body_desc;
   std::vector<CompactDescriptor *> dc;
-  CompactStructure test_struc;
+  Structure test_struc;
   DescriptorValues struc_desc;
   ClusterDescriptor cluster_desc;
 
@@ -56,7 +56,7 @@ public:
 
 TEST_F(NBodyTest, TwoBodyTest) {
   dc.push_back(&desc);
-  test_struc = CompactStructure(cell, species, positions, cutoff, dc);
+  test_struc = Structure(cell, species, positions, cutoff, dc);
   struc_desc = test_struc.descriptors[0];
   cluster_desc.add_cluster(struc_desc);
 
@@ -73,7 +73,7 @@ TEST_F(NBodyTest, TwoBodyTest) {
 
 TEST_F(NBodyTest, ThreeBodyTest) {
   dc.push_back(&three_body_desc);
-  test_struc = CompactStructure(cell, species, positions, cutoff, dc);
+  test_struc = Structure(cell, species, positions, cutoff, dc);
   struc_desc = test_struc.descriptors[0];
   cluster_desc.add_cluster(struc_desc);
 

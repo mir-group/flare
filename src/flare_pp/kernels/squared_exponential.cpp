@@ -1,6 +1,6 @@
 #include "squared_exponential.h"
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include <iostream>
 #include <stdio.h>
 #undef NDEBUG

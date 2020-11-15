@@ -2,7 +2,7 @@
 #define KERNEL_H
 
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include <Eigen/Dense>
 #include <vector>
 
@@ -47,7 +47,7 @@ public:
 
   std::vector<Eigen::MatrixXd>
   Kuf_grad(const ClusterDescriptor &envs,
-           const std::vector<CompactStructure> &strucs, int kernel_index,
+           const std::vector<Structure> &strucs, int kernel_index,
            const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &hyps);
 
   virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;

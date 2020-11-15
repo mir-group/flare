@@ -1,6 +1,6 @@
 #include "b2.h"
 #include "compact_descriptor.h"
-#include "compact_structure.h"
+#include "structure.h"
 #include "cutoffs.h"
 #include "radial.h"
 #include "y_grad.h"
@@ -42,7 +42,7 @@ B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
   }
 }
 
-DescriptorValues B2 ::compute_struc(CompactStructure &structure) {
+DescriptorValues B2 ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();
@@ -216,7 +216,7 @@ void compute_single_bond(
                        std::vector<double>)>
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const CompactStructure &structure) {
+    const std::vector<double> &cutoff_hyps, const Structure &structure) {
 
   int n_atoms = structure.noa;
   int n_neighbors = structure.n_neighbors;

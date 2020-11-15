@@ -23,7 +23,7 @@ TwoBody ::TwoBody(double cutoff, int n_species, const std::string &cutoff_name,
   }
 }
 
-DescriptorValues TwoBody ::compute_struc(CompactStructure &structure) {
+DescriptorValues TwoBody ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();

@@ -24,7 +24,7 @@ FourBody ::FourBody(double cutoff, int n_species,
   }
 }
 
-DescriptorValues FourBody ::compute_struc(CompactStructure &structure) {
+DescriptorValues FourBody ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.
   DescriptorValues desc = DescriptorValues();
