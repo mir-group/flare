@@ -1,13 +1,13 @@
-#ifndef COMPACT_GP_H
-#define COMPACT_GP_H
+#ifndef SPARSE_GP_DTC_H
+#define SPARSE_GP_DTC_H
 
 #include "compact_descriptor.h"
-#include "structure.h"
 #include "kernel.h"
+#include "structure.h"
 #include <Eigen/Dense>
 #include <vector>
 
-class CompactGP {
+class SparseGP_DTC {
 public:
   Eigen::VectorXd hyperparameters;
 
@@ -37,9 +37,9 @@ public:
   Eigen::VectorXd likelihood_gradient;
 
   // Constructors.
-  CompactGP();
-  CompactGP(std::vector<CompactKernel *> kernels, double energy_noise,
-            double force_noise, double stress_noise);
+  SparseGP_DTC();
+  SparseGP_DTC(std::vector<CompactKernel *> kernels, double energy_noise,
+               double force_noise, double stress_noise);
 
   // TODO: Add sparse environments above an energy uncertainty threshold.
   void add_sparse_environments(const Structure &structure);

@@ -1,4 +1,4 @@
-#include "compact_gp.h"
+#include "sparse_gp_dtc.h"
 #include "test_structure.h"
 #include <chrono>
 
@@ -9,7 +9,7 @@ TEST_F(StructureTest, SparseTest) {
 
   std::vector<CompactKernel *> kernels;
   kernels.push_back(&kernel);
-  CompactGP sparse_gp = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -61,7 +61,7 @@ TEST_F(StructureTest, SqExpKuf) {
 
   std::vector<CompactKernel *> kernels;
   kernels.push_back(&kernel);
-  CompactGP sparse_gp = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -96,7 +96,7 @@ TEST_F(StructureTest, LikeGrad) {
 
   std::vector<CompactKernel *> kernels;
   kernels.push_back(&kernel);
-  CompactGP sparse_gp = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -150,8 +150,8 @@ TEST_F(StructureTest, Set_Hyps) {
   std::vector<CompactKernel *> kernels_1{&kernel_1};
   std::vector<CompactKernel *> kernels_2{&kernel_2};
 
-  CompactGP sparse_gp_1 = CompactGP(kernels_1, sig_e_1, sig_f_1, sig_s_1);
-  CompactGP sparse_gp_2 = CompactGP(kernels_2, sig_e_2, sig_f_2, sig_s_2);
+  SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels_1, sig_e_1, sig_f_1, sig_s_1);
+  SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels_2, sig_e_2, sig_f_2, sig_s_2);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -194,8 +194,8 @@ TEST_F(StructureTest, AddOrder) {
 
   std::vector<CompactKernel *> kernels;
   kernels.push_back(&kernel);
-  CompactGP sparse_gp_1 = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
-  CompactGP sparse_gp_2 = CompactGP(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
 
   // Add structure first.
   sparse_gp_1.add_training_structure(test_struc);
