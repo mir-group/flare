@@ -161,8 +161,16 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   int n_radial = nos * N;
   int n_harmonics = (lmax + 1) * (lmax + 1);
   int n_bond = n_radial * n_harmonics;
-  int n_d = (n_radial * (n_radial + 1) * (n_radial + 1) / 6) *
-            ((lmax + 1) * (lmax + 2) * (lmax + 3) / 6);
+
+  int n_ls;
+  if (lmax == 0) n_ls = 1;
+  else if (lmax == 1) n_ls = 5;
+  else if (lmax == 2) n_ls = 15;
+  else if (lmax == 3) n_ls = 34;
+  else if (lmax == 4) n_ls = 65;
+  else if (lmax == 5) n_ls = 111;
+
+  int n_d = (n_radial * (n_radial + 1) * (n_radial + 2) / 6) * n_ls;
 
   // Initialize arrays.
   B3_vals = Eigen::MatrixXd::Zero(n_atoms, n_d);
@@ -179,47 +187,46 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
     for (int n1 = 0; n1 < n_radial; n1++) {
       for (int n2 = n1; n2 < n_radial; n2++) {
         for (int n3 = n2; n3 < n_radial; n3++) {
-          int w_count = 0;
-          // TODO: Continue when 3j symbol is zero.
           for (int l1 = 0; l1 < (lmax + 1); l1++) {
+            int ind_1 = pow(lmax + 1, 4) * l1 * l1;
             for (int l2 = 0; l2 < (lmax + 1); l2++) {
+              int ind_2 = ind_1 + pow(lmax + 1, 2) * l2 * l2 * (2 * l1 + 1);
               for (int l3 = 0; l3 < (lmax + 1); l3++) {
+                if ((abs(l1 - l2) > l3) || (l3 > l1 + l2)) continue;
+                int ind_3 = ind_2 + l3 * l3 * (2 * l2 + 1) * (2 * l1 + 1);
                 for (int m1 = 0; m1 < (2 * l1 + 1); m1++) {
+                  n1_l = n1 * n_harmonics + (l1 * l1 + m1);
+                  int ind_4 = ind_3 + m1 * (2 * l3 + 1) * (2 * l2 + 1);
                   for (int m2 = 0; m2 < (2 * l2 + 1); m2++) {
+                    n2_l = n2 * n_harmonics + (l2 * l2 + m2);
+                    int ind_5 = ind_4 + m2 * (2 * l3 + 1);
                     for (int m3 = 0; m3 < (2 * l3 + 1); m3++) {
-
-                      n1_l = n1 * n_harmonics + (l1 * l1 + m1);
-                      n2_l = n2 * n_harmonics + (l2 * l2 + m2);
+                      if (m1 + m2 + m3 != 0) continue;
                       n3_l = n3 * n_harmonics + (l3 * l3 + m3);
 
-                      // TODO: Check w_m, and compute w_count from w_l and w_m.
-                      w_l = l1 * (lmax + 1) * (lmax + 1) + l2 * (lmax + 1) + l3;
-                      w_m = m1 * (2 * l1 + 1) * (2 * l2 + 1) +
-                            m2 * (2 * l2 + 1) + m3;
+                      int m_index = ind_5 + m3;
+
                       B3_vals(atom, counter) += single_bond_vals(atom, n1_l) *
                                                 single_bond_vals(atom, n2_l) *
                                                 single_bond_vals(atom, n3_l) *
-                                                wigner3j_coeffs(w_count);
+                                                wigner3j_coeffs(m_index);
 
                       // Store force derivatives.
                       for (int n = 0; n < n_atom_neighbors; n++) {
                         for (int comp = 0; comp < 3; comp++) {
                           int ind = force_start + n * 3 + comp;
                           B3_force_dervs(ind, counter) +=
-                              wigner3j_coeffs(w_count) *
+                              wigner3j_coeffs(m_index) *
                               (single_bond_force_dervs(atom, n1_l) *
                                    single_bond_vals(atom, n2_l) *
                                    single_bond_vals(ind, n3_l) +
-
                                single_bond_vals(atom, n1_l) *
                                    single_bond_force_dervs(atom, n2_l) *
                                    single_bond_vals(ind, n3_l) +
-
                                single_bond_vals(atom, n1_l) *
                                    single_bond_vals(atom, n2_l) *
                                    single_bond_force_dervs(ind, n3_l));
                         }
-                        w_count++;
                       }
                     }
                   }
