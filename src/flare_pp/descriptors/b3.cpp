@@ -168,7 +168,6 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   else if (lmax == 2) n_ls = 15;
   else if (lmax == 3) n_ls = 34;
   else if (lmax == 4) n_ls = 65;
-  else if (lmax == 5) n_ls = 111;
 
   int n_d = (n_radial * (n_radial + 1) * (n_radial + 2) / 6) * n_ls;
 

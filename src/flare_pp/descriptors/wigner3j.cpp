@@ -1,6 +1,7 @@
 #include "wigner3j.h"
 #include <iostream>
 
+// See compute_wigner.py for the calculation of these coefficients.
 Eigen::VectorXd compute_coeffs(int lmax) {
   Eigen::VectorXd wigner3j_coeffs = Eigen::VectorXd::Zero(pow((lmax + 1), 6));
   if (lmax == 0) {
