@@ -103,6 +103,36 @@ TEST(ChebyTest, ChebySupport) {
   }
 }
 
+TEST(BesselDerv, BesselDerv) {
+  double r1 = 0;
+  double r2 = 4;
+  double r = 2.5;
+  int N = 10;
+  double delta = 1e-8;
+  double rdelt = r + delta;
+  double rdelt_2 = r - delta;
+  double r_finite_diff, r_diff;
+  double tolerance = 1e-4;
+  std::vector<double> hyps = {r1, r2};
+
+  std::vector<double> g = std::vector<double>(N, 0);
+  std::vector<double> gderv = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double>(N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double>(N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double>(N, 0);
+
+  bessel(g, gderv, r, N, hyps);
+  bessel(g_rdelt, gderv_rdelt, rdelt, N, hyps);
+  bessel(g_rdelt_2, gderv_rdelt_2, rdelt_2, N, hyps);
+
+  for (int n = 0; n < N; n++) {
+    r_finite_diff = (g_rdelt[n] - g_rdelt_2[n]) / (2 * delta);
+    r_diff = abs(r_finite_diff - gderv[n]);
+    EXPECT_LE(r_diff, tolerance);
+  }
+}
+
 TEST(ChebyTest, ChebyDerv) {
   double r1 = 2;
   double r2 = 4;

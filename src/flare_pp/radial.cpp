@@ -3,6 +3,30 @@
 #include <iostream>
 #define Pi 3.14159265358979323846
 
+void bessel(std::vector<double> &basis_vals,
+            std::vector<double> &basis_derivs, double r, int N,
+            std::vector<double> radial_hyps){
+
+  double r1 = radial_hyps[0];
+  double r2 = radial_hyps[1];
+  double c = r2 - r1;
+  double c1 = sqrt(2 / c);
+  double d = r - r1;
+
+  // If r is ouside the support of the radial basis set, return.
+  if ((r < r1) || (r > r2)) {
+    return;
+  }
+
+  for (int n = 0; n < N; n++){
+      double c2 = Pi * (n + 1) * d;
+      double c3 = c2 / c;
+      double c4 = c * d * d;
+      basis_vals[n] = c1 * sin(c3) / d;
+      basis_derivs[n] = c1 * (c2 * cos(c3) - c * sin(c3)) / c4;
+  }
+}
+
 void chebyshev(std::vector<double> &basis_vals,
                std::vector<double> &basis_derivs, double r, int N,
                std::vector<double> radial_hyps) {
