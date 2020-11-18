@@ -177,11 +177,11 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   B3_norms = Eigen::VectorXd::Zero(n_atoms);
   B3_force_dots = Eigen::VectorXd::Zero(n_neighbors * 3);
 
-#pragma omp parallel for
+// #pragma omp parallel for
   for (int atom = 0; atom < n_atoms; atom++) {
     int n_atom_neighbors = unique_neighbor_count(atom);
     int force_start = cumulative_neighbor_count(atom) * 3;
-    int n1, n2, n3, l1, l2, l3, m1, m2, m3, n1_l, n2_l, n3_l, w_l, w_m;
+    int n1, n2, n3, l1, l2, l3, m1, m2, m3, n1_l, n2_l, n3_l;
     int counter = 0;
     for (int n1 = 0; n1 < n_radial; n1++) {
       for (int n2 = n1; n2 < n_radial; n2++) {
@@ -200,7 +200,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                     n2_l = n2 * n_harmonics + (l2 * l2 + m2);
                     int ind_5 = ind_4 + m2 * (2 * l3 + 1);
                     for (int m3 = 0; m3 < (2 * l3 + 1); m3++) {
-                      if (m1 + m2 + m3 != 0) continue;
+                      if (m1 + m2 + m3 - l1 - l2 - l3 != 0) continue;
                       n3_l = n3 * n_harmonics + (l3 * l3 + m3);
 
                       int m_index = ind_5 + m3;
@@ -209,6 +209,9 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                                                 single_bond_vals(atom, n2_l) *
                                                 single_bond_vals(atom, n3_l) *
                                                 wigner3j_coeffs(m_index);
+
+                    //   std::cout << m_index << std::endl;
+                    //   std::cout << wigner3j_coeffs(m_index) << std::endl;
 
                       // Store force derivatives.
                       for (int n = 0; n < n_atom_neighbors; n++) {

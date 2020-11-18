@@ -1,19 +1,24 @@
 from sympy.physics.wigner import wigner_3j
 import numpy as np
 
-lmax = 4
+lmax = 1
 count = 0
 nonzero_count = 0
 
-# # Count nonzero L triples.
-# lcount = 0
-# for l1 in range(lmax + 1):
-#     for l2 in range(lmax + 1):
-#         for l3 in range(lmax + 1):
-#             if (np.abs(l1 - l2) <= l3) and (l3 <= l1 + l2):
-#                 lcount += 1
+# Count nonzero L triples.
+lcount = 0
+for l1 in range(lmax + 1):
+    for l2 in range(lmax + 1):
+        for l3 in range(lmax + 1):
+            if (np.abs(l1 - l2) <= l3) and (l3 <= l1 + l2):
+                lcount += 1
 
-# print(lcount)
+                print("lvals:")
+                print(l1)
+                print(l2)
+                print(l3)
+
+print(lcount)
 
 for l1 in range(lmax + 1):
     ind_1 = ((lmax + 1)**4) * (l1 * l1)
@@ -35,6 +40,8 @@ for l1 in range(lmax + 1):
                                   (count, wig_val))
                             nonzero_count += 1
 
+                        # print(ind_5 + m3)
+                        # print(count)
                         count += 1
 
 # print(nonzero_count)

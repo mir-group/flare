@@ -6,6 +6,7 @@ add_executable(
   test_structure.cpp
   test_n_body.cpp
   test_sparse_gp_dtc.cpp
+  test_descriptor.cpp
 )
 
 include_directories(../src/flare_pp)
