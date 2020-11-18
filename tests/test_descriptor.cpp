@@ -25,7 +25,7 @@ TEST_F(StructureTest, RotationTest) {
 
     // Define descriptors.
     descriptor_settings[2] = 2;
-    B3 descriptor = B3(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+    B2 descriptor = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
                        descriptor_settings);
     
     // std::cout << descriptor.wigner3j_coeffs << std::endl;
@@ -46,9 +46,9 @@ TEST_F(StructureTest, RotationTest) {
     d1 = struc1.descriptors[0].descriptors[0](0, n);
     d2 = struc2.descriptors[0].descriptors[0](0, n);
     diff = d1 - d2;
-    std::cout << "Comparing:" << std::endl;
-    std::cout << d1 << std::endl;
-    std::cout << d2 << std::endl;
+    // std::cout << "Comparing:" << std::endl;
+    // std::cout << d1 << std::endl;
+    // std::cout << d2 << std::endl;
     EXPECT_LE(abs(diff), tol);
   }
 
