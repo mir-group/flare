@@ -25,10 +25,8 @@ TEST_F(StructureTest, RotationTest) {
 
   // Define descriptors.
   descriptor_settings[2] = 2;
-  B2 descriptor = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+  B3 descriptor = B3(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
                      descriptor_settings);
-
-  // std::cout << descriptor.wigner3j_coeffs << std::endl;
 
   std::vector<Descriptor *> descriptors;
   descriptors.push_back(&descriptor);
@@ -45,24 +43,8 @@ TEST_F(StructureTest, RotationTest) {
     d1 = struc1.descriptors[0].descriptors[0](0, n);
     d2 = struc2.descriptors[0].descriptors[0](0, n);
     diff = d1 - d2;
-    // std::cout << "Comparing:" << std::endl;
-    // std::cout << d1 << std::endl;
-    // std::cout << d2 << std::endl;
     EXPECT_LE(abs(diff), tol);
   }
-
-  //   int lmax = 8;
-  //   desc4.compute(env1);
-  //   desc5.compute(env2);
-  //   no_desc = desc1.descriptor_vals.rows();
-
-  //   for (int n = 0; n < no_desc; n++) {
-  //     d1 = desc4.descriptor_vals(n);
-  //     d2 = desc5.descriptor_vals(n);
-  //     diff = d1 - d2;
-  //     EXPECT_LE(abs(diff), tol);
-  //   }
-  // }
 
   // TEST_F(DescriptorTest, SingleBond) {
   //   // Check that B1 descriptors match the corresponding elements of the
