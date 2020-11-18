@@ -24,10 +24,10 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
   this->wrapped_positions = wrap_positions();
 }
 
-Structure ::Structure(
-    const Eigen::MatrixXd &cell, const std::vector<int> &species,
-    const Eigen::MatrixXd &positions, double cutoff,
-    std::vector<Descriptor *> descriptor_calculators)
+Structure ::Structure(const Eigen::MatrixXd &cell,
+                      const std::vector<int> &species,
+                      const Eigen::MatrixXd &positions, double cutoff,
+                      std::vector<Descriptor *> descriptor_calculators)
     : Structure(cell, species, positions) {
 
   this->cutoff = cutoff;

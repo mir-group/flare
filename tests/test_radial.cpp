@@ -258,8 +258,9 @@ TEST_F(RadialTest, CombDerv) {
   double first_gauss = 1;
   double final_gauss = 6;
   int N = 10;
+  double p = 6;
   std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
-  std::vector<double> cutoff_hyps;
+  std::vector<double> cutoff_hyps = {p};
 
   std::vector<double> g = std::vector<double>(N, 0);
   std::vector<double> gx = std::vector<double>(N, 0);
@@ -278,7 +279,7 @@ TEST_F(RadialTest, CombDerv) {
       basis_function = equispaced_gaussians;
   std::function<void(std::vector<double> &, double, double,
                      std::vector<double>)>
-      cutoff_function = cos_cutoff;
+      cutoff_function = polynomial_cutoff;
 
   calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, x, y, z, r,
                    rcut, N, radial_hyps, cutoff_hyps);
