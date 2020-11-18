@@ -1,5 +1,5 @@
-#include "test_structure.h"
 #include "b3.h"
+#include "test_structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
 #include <cmath>
@@ -7,36 +7,35 @@
 
 TEST_F(StructureTest, RotationTest) {
 
-    // Choose arbitrary rotation angles.
-    double xrot = 1.28;
-    double yrot = -3.21;
-    double zrot = 0.42;
+  // Choose arbitrary rotation angles.
+  double xrot = 1.28;
+  double yrot = -3.21;
+  double zrot = 0.42;
 
-    // Define rotation matrices.
-    Eigen::MatrixXd Rx{3, 3}, Ry{3, 3}, Rz{3, 3}, R{3, 3};
-    Rx << 1, 0, 0, 0, cos(xrot), -sin(xrot), 0, sin(xrot), cos(xrot);
-    Ry << cos(yrot), 0, sin(yrot), 0, 1, 0, -sin(yrot), 0, cos(yrot);
-    Rz << cos(zrot), -sin(zrot), 0, sin(zrot), cos(zrot), 0, 0, 0, 1;
-    R = Rx * Ry * Rz;
+  // Define rotation matrices.
+  Eigen::MatrixXd Rx{3, 3}, Ry{3, 3}, Rz{3, 3}, R{3, 3};
+  Rx << 1, 0, 0, 0, cos(xrot), -sin(xrot), 0, sin(xrot), cos(xrot);
+  Ry << cos(yrot), 0, sin(yrot), 0, 1, 0, -sin(yrot), 0, cos(yrot);
+  Rz << cos(zrot), -sin(zrot), 0, sin(zrot), cos(zrot), 0, 0, 0, 1;
+  R = Rx * Ry * Rz;
 
-    std::cout << R.determinant() << std::endl;
-    Eigen::MatrixXd rotated_pos = positions * R.transpose();
-    Eigen::MatrixXd rotated_cell = cell * R.transpose();
+  std::cout << R.determinant() << std::endl;
+  Eigen::MatrixXd rotated_pos = positions * R.transpose();
+  Eigen::MatrixXd rotated_cell = cell * R.transpose();
 
-    // Define descriptors.
-    descriptor_settings[2] = 2;
-    B2 descriptor = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
-                       descriptor_settings);
-    
-    // std::cout << descriptor.wigner3j_coeffs << std::endl;
+  // Define descriptors.
+  descriptor_settings[2] = 2;
+  B2 descriptor = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+                     descriptor_settings);
 
-    std::vector<Descriptor *> descriptors;
-    descriptors.push_back(&descriptor);
+  // std::cout << descriptor.wigner3j_coeffs << std::endl;
 
-    Structure struc1 = Structure(cell, species, positions, cutoff,
-                                 descriptors);
-    Structure struc2 = Structure(rotated_cell, species, rotated_pos, cutoff,
-                                 descriptors);
+  std::vector<Descriptor *> descriptors;
+  descriptors.push_back(&descriptor);
+
+  Structure struc1 = Structure(cell, species, positions, cutoff, descriptors);
+  Structure struc2 =
+      Structure(rotated_cell, species, rotated_pos, cutoff, descriptors);
 
   // Check that B1 is rotationally invariant.
   double d1, d2, diff;
@@ -52,34 +51,34 @@ TEST_F(StructureTest, RotationTest) {
     EXPECT_LE(abs(diff), tol);
   }
 
-//   int lmax = 8;
-//   desc4.compute(env1);
-//   desc5.compute(env2);
-//   no_desc = desc1.descriptor_vals.rows();
+  //   int lmax = 8;
+  //   desc4.compute(env1);
+  //   desc5.compute(env2);
+  //   no_desc = desc1.descriptor_vals.rows();
 
-//   for (int n = 0; n < no_desc; n++) {
-//     d1 = desc4.descriptor_vals(n);
-//     d2 = desc5.descriptor_vals(n);
-//     diff = d1 - d2;
-//     EXPECT_LE(abs(diff), tol);
-//   }
-// }
+  //   for (int n = 0; n < no_desc; n++) {
+  //     d1 = desc4.descriptor_vals(n);
+  //     d2 = desc5.descriptor_vals(n);
+  //     diff = d1 - d2;
+  //     EXPECT_LE(abs(diff), tol);
+  //   }
+  // }
 
-// TEST_F(DescriptorTest, SingleBond) {
-//   // Check that B1 descriptors match the corresponding elements of the
-//   // single bond vector.
-//   double d1, d2, diff;
-//   double tol = 1e-10;
+  // TEST_F(DescriptorTest, SingleBond) {
+  //   // Check that B1 descriptors match the corresponding elements of the
+  //   // single bond vector.
+  //   double d1, d2, diff;
+  //   double tol = 1e-10;
 
-//   desc1.compute(env1);
-//   desc2.compute(env2);
+  //   desc1.compute(env1);
+  //   desc2.compute(env2);
 
-//   for (int n = 0; n < no_desc; n++) {
-//     d1 = desc1.descriptor_vals(n);
-//     d2 = desc1.single_bond_vals(n);
-//     diff = d1 - d2;
-//     EXPECT_LE(abs(diff), tol);
-//   }
+  //   for (int n = 0; n < no_desc; n++) {
+  //     d1 = desc1.descriptor_vals(n);
+  //     d2 = desc1.single_bond_vals(n);
+  //     diff = d1 - d2;
+  //     EXPECT_LE(abs(diff), tol);
+  //   }
 }
 
 // TEST_F(DescriptorTest, CentTest) {

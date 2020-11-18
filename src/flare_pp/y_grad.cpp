@@ -662,8 +662,6 @@ void get_complex_Y(Eigen::VectorXcd &Y, Eigen::VectorXcd &Yx,
                 r8;
   Yz(counter) = (-3. * sqrt(3003 / Pi) * pow(x + cc1 * y, 6) * z) / (32. * r8);
   counter++;
-  if (l == 6)
-    return;
 }
 
 void get_Y(vector<double> &Y, vector<double> &Yx, vector<double> &Yy,

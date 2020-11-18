@@ -13,18 +13,7 @@ public:
 
   double x, y, z, delta, x_delt, y_delt, z_delt;
 
-  vector<double> Y1;
-  vector<double> Y2;
-  vector<double> Y3;
-  vector<double> Y4;
-
-  vector<double> Y5;
-  vector<double> Y6;
-  vector<double> Y7;
-  vector<double> Y8;
-
-  vector<double> Y9;
-  vector<double> Y10;
+  vector<double> Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10;
 
   YGradTest() {
 
@@ -61,6 +50,93 @@ public:
     Y10 = vector<double>(sz, 0);
   }
 };
+
+TEST(ComplexY, ComplexY) {
+  Eigen::VectorXcd Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8;
+  int l = 6;
+
+  // Choose arbitrary rotation angles.
+  double xrot = 1.28;
+  double yrot = -3.21;
+  double zrot = 0.42;
+
+  // Define rotation matrices.
+  Eigen::MatrixXd Rx{3, 3}, Ry{3, 3}, Rz{3, 3}, R{3, 3};
+  Rx << 1, 0, 0, 0, cos(xrot), -sin(xrot), 0, sin(xrot), cos(xrot);
+  Ry << cos(yrot), 0, sin(yrot), 0, 1, 0, -sin(yrot), 0, cos(yrot);
+  Rz << cos(zrot), -sin(zrot), 0, sin(zrot), cos(zrot), 0, 0, 0, 1;
+  R = Rx * Ry * Rz;
+
+  // Define vectors.
+  Eigen::VectorXd vec(3), rotated_vec(3);
+  vec << 1.2, 3.4, -2.8;
+  rotated_vec = R * vec;
+
+  get_complex_Y(Y1, Y2, Y3, Y4, vec(0), vec(1), vec(2), l);
+  get_complex_Y(Y5, Y6, Y7, Y8, rotated_vec(0), rotated_vec(1), rotated_vec(2),
+                l);
+
+  // Check addition theorem.
+  std::complex<double> test, test2;
+  double test_diff;
+  double tolerance = 1e-8;
+  int count = 0;
+  for (int l_val = 0; l_val < l + 1; l_val++) {
+    int m_no = 2 * l_val + 1;
+    test = 0;
+    test2 = 0;
+
+    for (int m_val = count; m_val < count + m_no; m_val++) {
+      test += Y1[m_val] * conj(Y1[m_val]);
+      test2 += Y5[m_val] * conj(Y5[m_val]);
+    }
+
+    EXPECT_NEAR(imag(test), 0, tolerance);
+    EXPECT_NEAR(imag(test2), 0, tolerance);
+    EXPECT_NEAR(real(test), real(test2), tolerance);
+
+    count += m_no;
+  }
+
+  // Check derivatives.
+  double delta = 1e-8;
+  tolerance = 1e-7;
+  // x derivative
+  get_complex_Y(Y5, Y6, Y7, Y8, vec(0) + delta, vec(1), vec(2), l);
+  for (int test_val = 0; test_val < (l + 1) * (l + 1); test_val++) {
+    std::complex<double> x_derv = Y2(test_val);
+    std::complex<double> x_val_1 = Y1(test_val);
+    std::complex<double> x_val_2 = Y5(test_val);
+    std::complex<double> finite_diff = (x_val_2 - x_val_1) / delta;
+
+    EXPECT_NEAR(real(x_derv), real(finite_diff), tolerance);
+    EXPECT_NEAR(imag(x_derv), imag(finite_diff), tolerance);
+  }
+
+  // y derivative
+  get_complex_Y(Y5, Y6, Y7, Y8, vec(0), vec(1) + delta, vec(2), l);
+  for (int test_val = 0; test_val < (l + 1) * (l + 1); test_val++) {
+    std::complex<double> x_derv = Y3(test_val);
+    std::complex<double> x_val_1 = Y1(test_val);
+    std::complex<double> x_val_2 = Y5(test_val);
+    std::complex<double> finite_diff = (x_val_2 - x_val_1) / delta;
+
+    EXPECT_NEAR(real(x_derv), real(finite_diff), tolerance);
+    EXPECT_NEAR(imag(x_derv), imag(finite_diff), tolerance);
+  }
+
+  // z derivative
+  get_complex_Y(Y5, Y6, Y7, Y8, vec(0), vec(1), vec(2) + delta, l);
+  for (int test_val = 0; test_val < (l + 1) * (l + 1); test_val++) {
+    std::complex<double> x_derv = Y4(test_val);
+    std::complex<double> x_val_1 = Y1(test_val);
+    std::complex<double> x_val_2 = Y5(test_val);
+    std::complex<double> finite_diff = (x_val_2 - x_val_1) / delta;
+
+    EXPECT_NEAR(real(x_derv), real(finite_diff), tolerance);
+    EXPECT_NEAR(imag(x_derv), imag(finite_diff), tolerance);
+  }
+}
 
 TEST_F(YGradTest, Grad) {
   // Check that the spherical harmonic gradients are correctly computed.
