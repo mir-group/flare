@@ -12,6 +12,8 @@ public:
   Descriptor();
 
   virtual DescriptorValues compute_struc(Structure &structure) = 0;
+
+  virtual ~Descriptor() = default;
 };
 
 class DescriptorValues {

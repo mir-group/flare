@@ -33,6 +33,8 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
     this->radial_pointer = weighted_positive_chebyshev;
   } else if (radial_basis == "positive_chebyshev") {
     this->radial_pointer = positive_chebyshev;
+  } else if (radial_basis == "bessel") {
+    this->radial_pointer = bessel;
   }
 
   // Set the cutoff function.
@@ -42,6 +44,8 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
     this->cutoff_pointer = hard_cutoff;
   } else if (cutoff_function == "cosine") {
     this->cutoff_pointer = cos_cutoff;
+  } else if (cutoff_function == "polynomial"){
+    this->cutoff_pointer = polynomial_cutoff;
   }
 }
 

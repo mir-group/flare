@@ -21,6 +21,8 @@ ThreeBody ::ThreeBody(double cutoff, int n_species,
     this->cutoff_function = hard_cutoff;
   } else if (cutoff_name == "cosine") {
     this->cutoff_function = cos_cutoff;
+  } else if (cutoff_name == "polynomial"){
+    this->cutoff_function = polynomial_cutoff;
   }
 }
 
