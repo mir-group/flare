@@ -83,6 +83,9 @@ class FLARE_Calculator(Calculator):
             atoms (FLARE_Atoms): FLARE_Atoms object
         """
 
+        super().calculate(atoms=atoms, properties=properties,
+            system_changes=system_changes)
+
         if properties is None:
             properties = self.implemented_properties
 

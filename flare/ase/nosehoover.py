@@ -10,7 +10,7 @@ It was then adapted by Simon Batzner to be used within ASE. Parts of the overall
 import numpy as np
 
 from ase.md.md import MolecularDynamics
-from ase.md.velocitydistribution import Stationary
+from ase.md.velocitydistribution import Stationary, ZeroRotation
 from ase import units
 
 
@@ -53,14 +53,18 @@ class NoseHoover(MolecularDynamics):
         loginterval=1,
         append_trajectory=False,
     ):
-        # set com momentum to zero
+        # set angular and com momentum to zero, necessary for nose-hoover dynamics.
+        ZeroRotation(atoms)
         Stationary(atoms)
 
+        # thermostat parameters
         self.temp = temperature / units.kB
         self.nvt_q = nvt_q
-        self.dt = timestep  # units: A/sqrt(u/eV)
+        self.dt = timestep
         self.dtdt = np.power(self.dt, 2)
         self.nvt_bath = 0.0
+
+        self.natoms = len(atoms)
 
         MolecularDynamics.__init__(
             self,
@@ -72,44 +76,40 @@ class NoseHoover(MolecularDynamics):
             append_trajectory=append_trajectory,
         )
 
-    def step(self, f=None):
+    def step(self):
         """ Perform a MD step. """
-        # TODO: we do need the f=None argument?
-        atoms = self.atoms
-        natoms = len(atoms)
-        masses = atoms.get_masses()  # units: u
+        masses = self.atoms.get_masses()
 
         modified_acc = (
-            atoms.get_forces() / masses[:, np.newaxis]
-            - self.nvt_bath * atoms.get_velocities()
+            self.atoms.get_forces() / masses[:, np.newaxis]
+            - self.nvt_bath * self.atoms.get_velocities()
         )
         pos_fullstep = (
-            atoms.get_positions()
-            + self.dt * atoms.get_velocities()
+            self.atoms.get_positions()
+            + self.dt * self.atoms.get_velocities()
             + 0.5 * self.dtdt * modified_acc
         )
-        vel_halfstep = atoms.get_velocities() + 0.5 * self.dt * modified_acc
+        vel_halfstep = self.atoms.get_velocities() + 0.5 * self.dt * modified_acc
 
-        atoms.set_positions(pos_fullstep)
-        atoms.get_forces()
+        self.atoms.set_positions(pos_fullstep)
 
         e_kin_diff = 0.5 * (
-            np.sum(masses * np.sum(atoms.get_velocities() ** 2, axis=1))
-            - (3 * natoms + 1) * units.kB * self.temp
+            np.sum(masses * np.sum(self.atoms.get_velocities() ** 2, axis=1))
+            - (3 * self.natoms + 1) * units.kB * self.temp
         )
 
         nvt_bath_halfstep = self.nvt_bath + 0.5 * self.dt * e_kin_diff / self.nvt_q
         e_kin_diff_halfstep = 0.5 * (
             np.sum(masses * np.sum(vel_halfstep ** 2, axis=1))
-            - (3 * natoms + 1) * units.kB * self.temp
+            - (3 * self.natoms + 1) * units.kB * self.temp
         )
         self.nvt_bath = (
             nvt_bath_halfstep + 0.5 * self.dt * e_kin_diff_halfstep / self.nvt_q
         )
-        atoms.set_velocities(
+        self.atoms.set_velocities(
             (
                 vel_halfstep
-                + 0.5 * self.dt * (atoms.get_forces() / masses[:, np.newaxis])
+                + 0.5 * self.dt * (self.atoms.get_forces() / masses[:, np.newaxis])
             )
             / (1 + 0.5 * self.dt * self.nvt_bath)
         )
