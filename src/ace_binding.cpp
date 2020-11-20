@@ -34,6 +34,11 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("cell_transpose", &Structure::cell_transpose)
       .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
       .def_readwrite("volume", &Structure::volume)
+      .def_readwrite("energy", &Structure::energy)
+      .def_readwrite("forces", &Structure::forces)
+      .def_readwrite("stresses", &Structure::stresses)
+      .def_readwrite("mean_efs", &Structure::mean_efs)
+      .def_readwrite("variance_efs", &Structure::variance_efs)
       .def_readonly("descriptors", &Structure::descriptors)
       .def("wrap_positions", &Structure::wrap_positions);
 
