@@ -78,7 +78,7 @@ TEST_F(NBodyTest, ThreeBodyTest) {
   cluster_desc.add_cluster(struc_desc);
 
   std::cout << test_struc.descriptors[0].n_types << std::endl;
-  std::cout << test_struc.descriptors[0].n_atoms_by_type[0] << std::endl;
+  std::cout << test_struc.descriptors[0].n_clusters_by_type[0] << std::endl;
 
   Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc,
                                               kernel.kernel_hyperparameters);

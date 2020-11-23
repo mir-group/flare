@@ -141,7 +141,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
 
     // Compute kernels. Can parallelize over environments.
     int n_sparse = envs.type_count[s];
-    int n_struc = struc.n_atoms_by_type[s];
+    int n_struc = struc.n_clusters_by_type[s];
     int c_sparse = envs.cumulative_type_count[s];
 
 #pragma omp parallel for
@@ -249,8 +249,8 @@ NormalizedDotProduct ::struc_struc(const DescriptorValues &struc1,
     Eigen::VectorXd struc_force_dot_2 = struc2.descriptor_force_dots[s];
 
     // Compute kernels.
-    int n_struc1 = struc1.n_atoms_by_type[s];
-    int n_struc2 = struc2.n_atoms_by_type[s];
+    int n_struc1 = struc1.n_clusters_by_type[s];
+    int n_struc2 = struc2.n_clusters_by_type[s];
 
     for (int i = 0; i < n_struc1; i++) {
       double norm_i = struc1.descriptor_norms[s](i);
@@ -459,7 +459,7 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
     // Compute kernels.
-    int n_struc = struc.n_atoms_by_type[s];
+    int n_struc = struc.n_clusters_by_type[s];
 
     for (int i = 0; i < n_struc; i++) {
       double norm_i = struc.descriptor_norms[s](i);

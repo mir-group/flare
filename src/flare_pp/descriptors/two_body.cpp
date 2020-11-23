@@ -69,7 +69,7 @@ DescriptorValues TwoBody ::compute_struc(Structure &structure) {
 
     // Record species and neighbor count.
     // (For the 2-body descriptor, there is 1 neighbor.)
-    desc.n_atoms_by_type.push_back(n_s);
+    desc.n_clusters_by_type.push_back(n_s);
     desc.n_neighbors_by_type.push_back(n_s);
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, 1));
