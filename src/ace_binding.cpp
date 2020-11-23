@@ -64,7 +64,8 @@ PYBIND11_MODULE(_C_flare, m) {
                      &DescriptorValues::cumulative_neighbor_counts)
       .def_readwrite("atom_indices", &DescriptorValues::atom_indices)
       .def_readwrite("neighbor_indices", &DescriptorValues::neighbor_indices)
-      .def_readwrite("n_atoms_by_type", &DescriptorValues::n_atoms_by_type)
+      .def_readwrite("n_clusters_by_type",
+                     &DescriptorValues::n_clusters_by_type)
       .def_readwrite("n_neighbors_by_type",
                      &DescriptorValues::n_neighbors_by_type);
 

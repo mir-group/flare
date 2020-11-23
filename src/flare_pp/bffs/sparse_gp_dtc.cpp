@@ -125,7 +125,7 @@ void SparseGP_DTC ::add_sparse_environments(const Structure &structure) {
     Eigen::MatrixXd kern_mat =
       Eigen::MatrixXd::Zero(n_sparse + n_envs, n_labels);
 
-// #pragma omp parallel for
+#pragma omp parallel for
     for (int j = 0; j < n_strucs; j++) {
       int n_atoms = training_structures[j].noa;
       Eigen::MatrixXd envs_struc_kernels = kernels[i]->envs_struc(
