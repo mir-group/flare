@@ -79,52 +79,99 @@ void SparseGP_DTC ::add_sparse_environments(const Structure &structure) {
 
     int n_sparse = sparse_descriptors[i].n_clusters;
     int n_envs = cluster_descriptors[i].n_clusters;
+    int n_types = cluster_descriptors[i].n_types;
+    
+    Eigen::MatrixXd kern_mat =
+      Eigen::MatrixXd::Zero(n_sparse + n_envs, n_sparse + n_envs);
+    int n1 = 0; // Total
+    int n2 = 0; // Sparse descriptor count
+    int n3 = 0; // Cluster descriptor count
+    for (int j = 0; j < n_types; j++){
+      int n4 = sparse_descriptors[i].type_count[j];
+      int n5 = cluster_descriptors[i].type_count[j];
 
-    Kuu_kernels[i].conservativeResize(n_sparse + n_envs, n_sparse + n_envs);
-    Kuu_kernels[i].block(0, n_sparse, n_sparse, n_envs) = prev_block;
-    Kuu_kernels[i].block(n_sparse, 0, n_envs, n_sparse) =
-        prev_block.transpose();
-    Kuu_kernels[i].block(n_sparse, n_sparse, n_envs, n_envs) = self_block;
+      Eigen::MatrixXd prev_vals = prev_block.block(n2, n3, n4, n5);
+      Eigen::MatrixXd self_vals = self_block.block(n3, n3, n5, n5);
+
+      kern_mat.block(n1, n1, n4, n4) = Kuu_kernels[i].block(n2, n2, n4, n4);
+      kern_mat.block(n1, n1 + n4, n4, n5) = prev_vals;
+      kern_mat.block(n1 + n4, n1, n5, n4) = prev_vals.transpose();
+      kern_mat.block(n1 + n4, n1 + n4, n5, n5) = self_vals;
+
+      n1 += n4 + n5;
+      n2 += n4;
+      n3 += n5;
+    }
+    Kuu_kernels[i] = kern_mat;
 
     // Update sparse count.
     this->n_sparse += n_envs;
   }
 
   // Compute kernels between new sparse environments and training structures.
-  Eigen::MatrixXd envs_struc_kernels;
   for (int i = 0; i < n_kernels; i++) {
     int n_sparse = sparse_descriptors[i].n_clusters;
     int n_envs = cluster_descriptors[i].n_clusters;
+    int n_types = cluster_descriptors[i].n_types;
 
-    Kuf_kernels[i].conservativeResize(n_sparse + n_envs, n_labels);
+    // Precompute indices.
+    Eigen::ArrayXi inds = Eigen::ArrayXi::Zero(n_types + 1);
+    for (int j = 0; j < n_types; j++){
+      int t1 = sparse_descriptors[i].type_count[j];
+      int t2 = cluster_descriptors[i].type_count[j];
+      inds(j + 1) = t1 + t2;
+    }
 
-#pragma omp parallel for
+    Eigen::MatrixXd kern_mat =
+      Eigen::MatrixXd::Zero(n_sparse + n_envs, n_labels);
+
+// #pragma omp parallel for
     for (int j = 0; j < n_strucs; j++) {
       int n_atoms = training_structures[j].noa;
-      envs_struc_kernels = kernels[i]->envs_struc(
-          cluster_descriptors[i], structure.descriptors[i],
+      Eigen::MatrixXd envs_struc_kernels = kernels[i]->envs_struc(
+          cluster_descriptors[i], training_structures[j].descriptors[i],
           kernels[i]->kernel_hyperparameters);
 
-      int current_count = 0;
-      if (training_structures[j].energy.size() != 0) {
-        Kuf_kernels[i].block(n_sparse, label_count(j), n_envs, 1) =
-            envs_struc_kernels.block(0, 0, n_envs, 1);
-        current_count += 1;
-      }
+      int n1 = 0; // Sparse descriptor count
+      int n2 = 0; // Cluster descriptor count
+      for (int k = 0; k < n_types; k++){
+        int current_count = 0;
+        int u_ind = inds(k);
+        int n3 = sparse_descriptors[i].type_count[k];
+        int n4 = cluster_descriptors[i].type_count[k];
 
-      if (training_structures[j].forces.size() != 0) {
-        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count, n_envs,
-                             n_atoms * 3) =
-            envs_struc_kernels.block(0, 1, n_envs, n_atoms * 3);
-        current_count += n_atoms * 3;
-      }
+        if (training_structures[j].energy.size() != 0) {
+          kern_mat.block(u_ind, label_count(j), n3, 1) =
+            Kuf_kernels[i].block(n1, label_count(j), n3, 1);
+          kern_mat.block(u_ind + n3, label_count(j), n4, 1) =
+            envs_struc_kernels.block(n2, 0, n4, 1);
 
-      if (training_structures[j].stresses.size() != 0) {
-        Kuf_kernels[i].block(n_sparse, label_count(j) + current_count, n_envs,
-                             6) =
-            envs_struc_kernels.block(0, 1 + n_atoms * 3, n_envs, 6);
+          current_count += 1;
+        }
+
+        if (training_structures[j].forces.size() != 0) {
+          kern_mat.block(u_ind, label_count(j) + current_count, n3,
+                         n_atoms * 3) =
+            Kuf_kernels[i].block(n1, label_count(j) + current_count, n3,
+                                 n_atoms * 3);
+          kern_mat.block(u_ind + n3, label_count(j) + current_count, n4,
+                         n_atoms * 3) =
+            envs_struc_kernels.block(n2, 1, n4, n_atoms * 3);
+          current_count += n_atoms * 3;
+        }
+
+        if (training_structures[j].stresses.size() != 0) {
+          kern_mat.block(u_ind, label_count(j) + current_count, n3, 6) =
+            Kuf_kernels[i].block(n1, label_count(j) + current_count, n3, 6);
+          kern_mat.block(u_ind + n3, label_count(j) + current_count, n4, 6) =
+            envs_struc_kernels.block(n2, 1 + n_atoms * 3, n4, 6);
+        }
+
+        n1 += n3;
+        n2 += n4;
       }
     }
+    Kuf_kernels[i] = kern_mat;
   }
 
   // Store sparse environments.

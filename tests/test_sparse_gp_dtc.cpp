@@ -23,14 +23,7 @@ TEST_F(StructureTest, SparseTest) {
 
   sparse_gp.add_training_structure(test_struc);
   sparse_gp.add_sparse_environments(test_struc);
-
-  std::cout << "Kuu1" << std::endl;
-  std::cout << sparse_gp.Kuu << std::endl;
-//   sparse_gp.add_training_structure(test_struc_2);
   sparse_gp.add_sparse_environments(test_struc_2);
-
-  std::cout << "Kuu2" << std::endl;
-  std::cout << sparse_gp.Kuu << std::endl;
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
@@ -94,9 +87,6 @@ TEST_F(StructureTest, SqExpKuf) {
   std::vector<Eigen::MatrixXd> Kuf_grad = kernel.Kuf_grad(
       sparse_gp.sparse_descriptors[0], sparse_gp.training_structures,
       kernel_index, sparse_gp.Kuf, new_hyps);
-
-//   std::cout << sparse_gp.Kuf << std::endl;
-//   std::cout << Kuf_grad[0] << std::endl;
 }
 
 TEST_F(StructureTest, LikeGrad) {

@@ -31,7 +31,6 @@ public:
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
       atom_indices, neighbor_indices;
 
-  // TODO: Rename to n_clusters_by_type.
   std::vector<int> n_clusters_by_type, n_neighbors_by_type;
 };
 
