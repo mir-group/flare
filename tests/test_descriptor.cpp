@@ -1,4 +1,5 @@
 #include "b3.h"
+#include "descriptor.h"
 #include "test_structure.h"
 #include "gtest/gtest.h"
 #include <Eigen/Dense>
@@ -19,7 +20,6 @@ TEST_F(StructureTest, RotationTest) {
   Rz << cos(zrot), -sin(zrot), 0, sin(zrot), cos(zrot), 0, 0, 0, 1;
   R = Rx * Ry * Rz;
 
-  std::cout << R.determinant() << std::endl;
   Eigen::MatrixXd rotated_pos = positions * R.transpose();
   Eigen::MatrixXd rotated_cell = cell * R.transpose();
 
@@ -45,6 +45,7 @@ TEST_F(StructureTest, RotationTest) {
     diff = d1 - d2;
     EXPECT_LE(abs(diff), tol);
   }
+}
 
   // TEST_F(DescriptorTest, SingleBond) {
   //   // Check that B1 descriptors match the corresponding elements of the
@@ -61,7 +62,7 @@ TEST_F(StructureTest, RotationTest) {
   //     diff = d1 - d2;
   //     EXPECT_LE(abs(diff), tol);
   //   }
-}
+// }
 
 // TEST_F(DescriptorTest, CentTest) {
 //   double finite_diff, exact, diff;

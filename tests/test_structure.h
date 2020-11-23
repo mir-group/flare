@@ -1,4 +1,5 @@
 #include "b2.h"
+#include "b3.h"
 #include "structure.h"
 #include "four_body.h"
 #include "normalized_dot_product.h"

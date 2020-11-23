@@ -221,12 +221,12 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                           int ind = force_start + n * 3 + comp;
                           B3_force_dervs(ind, counter) +=
                               real(wigner3j_coeffs(m_index) *
-                              (single_bond_force_dervs(atom, n1_l) *
+                              (single_bond_force_dervs(ind, n1_l) *
                                    single_bond_vals(atom, n2_l) *
-                                   single_bond_vals(ind, n3_l) +
+                                   single_bond_vals(atom, n3_l) +
                                single_bond_vals(atom, n1_l) *
-                                   single_bond_force_dervs(atom, n2_l) *
-                                   single_bond_vals(ind, n3_l) +
+                                   single_bond_force_dervs(ind, n2_l) *
+                                   single_bond_vals(atom, n3_l) +
                                single_bond_vals(atom, n1_l) *
                                    single_bond_vals(atom, n2_l) *
                                    single_bond_force_dervs(ind, n3_l)));
