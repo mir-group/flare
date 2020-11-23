@@ -138,5 +138,6 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("energy_noise", &SparseGP_DTC::energy_noise)
       .def_readonly("stress_noise", &SparseGP_DTC::stress_noise)
       .def_readonly("Kuu", &SparseGP_DTC::Kuu)
-      .def_readonly("Kuf", &SparseGP_DTC::Kuf);
+      .def_readonly("Kuf", &SparseGP_DTC::Kuf)
+      .def_readonly("alpha", &SparseGP_DTC::alpha);
 }
