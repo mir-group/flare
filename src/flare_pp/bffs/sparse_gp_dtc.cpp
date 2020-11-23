@@ -116,10 +116,12 @@ void SparseGP_DTC ::add_sparse_environments(const Structure &structure) {
 
     // Precompute indices.
     Eigen::ArrayXi inds = Eigen::ArrayXi::Zero(n_types + 1);
+    int counter = 0;
     for (int j = 0; j < n_types; j++){
       int t1 = sparse_descriptors[i].type_count[j];
       int t2 = cluster_descriptors[i].type_count[j];
-      inds(j + 1) = t1 + t2;
+      counter += t1 + t2;
+      inds(j + 1) = counter;
     }
 
     Eigen::MatrixXd kern_mat =

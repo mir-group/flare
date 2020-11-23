@@ -17,7 +17,7 @@
 class StructureTest : public ::testing::Test {
 public:
   int n_atoms = 10;
-  int n_species = 2;
+  int n_species = 3;
   Eigen::MatrixXd cell, cell_2;
   std::vector<int> species, species_2;
   Eigen::MatrixXd positions, positions_2;

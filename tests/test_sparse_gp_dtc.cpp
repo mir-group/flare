@@ -161,9 +161,16 @@ TEST_F(StructureTest, AddOrder) {
   double sigma_s = 3;
 
   std::vector<Kernel *> kernels;
-  kernels.push_back(&kernel);
+  kernels.push_back(&kernel_3);
   SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
   SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+//   test_struc.energy = energy;
+    test_struc.forces = forces;
+  //   test_struc.stresses = stresses;
 
   // Add structure first.
   sparse_gp_1.add_training_structure(test_struc);
