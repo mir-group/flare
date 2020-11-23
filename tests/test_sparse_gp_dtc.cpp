@@ -15,7 +15,7 @@ TEST_F(StructureTest, SparseTest) {
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
   Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
   test_struc.energy = energy;
-    // test_struc.forces = forces;
+    test_struc.forces = forces;
   //   test_struc.stresses = stresses;
 
   Eigen::VectorXd forces_2 = Eigen::VectorXd::Random(n_atoms * 3);
