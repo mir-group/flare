@@ -36,10 +36,11 @@ sigma_e = 1.0
 sigma_f = 1.0
 sigma_s = 1.0
 species_map = {0: 0, 1: 1}
+max_iterations = 20
 
 sgp_cpp = SparseGP_DTC([kernel], sigma_e, sigma_f, sigma_s)
 sgp_py = SparseGP([kernel], [calc], cutoff, sigma_e, sigma_f, sigma_s,
-                  species_map)
+                  species_map, max_iterations=max_iterations)
 
 
 def test_update_db():
@@ -48,8 +49,8 @@ def test_update_db():
 
     sgp_py.update_db(test_structure, forces, custom_range, energy, stress)
 
-    assert sgp_py.sparse_gp.Kuu.shape[0] == len(custom_range)
-    assert sgp_py.sparse_gp.Kuf_struc.shape[1] == 1 + n_atoms * 3 + 6
+    assert sgp_py.sparse_gp.Kuu.shape[0] == n_atoms
+    assert sgp_py.sparse_gp.Kuf.shape[1] == 1 + n_atoms * 3 + 6
 
 
 def test_train():
@@ -57,7 +58,7 @@ def test_train():
     train method is called."""
 
     hyps_init = tuple(sgp_py.hyps)
-    sgp_py.train(max_iterations=20)
+    sgp_py.train()
     hyps_post = tuple(sgp_py.hyps)
 
     assert hyps_init != hyps_post
