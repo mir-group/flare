@@ -62,7 +62,7 @@ class SparseGP:
 
     @property
     def force_noise(self):
-        return self.sparse_gp.sigma_f
+        return self.sparse_gp.force_noise
 
     def __str__(self):
         return "Sparse GP model"
