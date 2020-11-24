@@ -5,6 +5,7 @@
 #include "structure.h"
 #include "wigner3j.h"
 #include "y_grad.h"
+#include "omp.h"
 #include <iostream>
 
 B3 ::B3() {}
@@ -181,7 +182,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   B3_norms = Eigen::VectorXd::Zero(n_atoms);
   B3_force_dots = Eigen::VectorXd::Zero(n_neighbors * 3);
 
-#pragma omp parallel for
+  #pragma omp parallel for
   for (int atom = 0; atom < n_atoms; atom++) {
     int n_atom_neighbors = unique_neighbor_count(atom);
     int force_start = cumulative_neighbor_count(atom) * 3;

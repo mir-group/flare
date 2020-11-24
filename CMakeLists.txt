@@ -134,19 +134,22 @@ add_library(flare SHARED ${FLARE_SOURCES})
 add_dependencies(flare eigen_project)
 
 # Link to OpenMP.
-if (DEFINED ENV{OMP_LOC})
-    target_link_libraries(flare PUBLIC $ENV{OMP_LOC})
-else()
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
-    endif()
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 # Link to MKL.
-target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
-include_directories($ENV{MKL_INCLUDE})
-target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
+find_package(LAPACK REQUIRED)
+target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
+message(STATUS "Test")
+if (LAPACK_LIBRARIES MATCHES mkl)
+  message(STATUS "Matches mkl")
+  target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
+endif()
+
+#include_directories($ENV{MKL_INCLUDE})
+#target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
 
 # Create pybind module.
 add_library(flare_module SHARED ${PYBIND_SOURCES})
