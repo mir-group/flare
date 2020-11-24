@@ -1,5 +1,5 @@
 import numpy as np
-from _C_flare import SparseGP_DTC, StructureDescriptor
+from _C_flare import SparseGP_DTC, Structure
 from scipy.optimize import minimize
 from typing import List
 
@@ -13,7 +13,6 @@ class SparseGP:
         kernels: List,
         descriptor_calculators: List,
         cutoff: float,
-        many_body_cutoffs,
         sigma_e: float,
         sigma_f: float,
         sigma_s: float,
@@ -28,7 +27,6 @@ class SparseGP:
         self.sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s)
         self.descriptor_calculators = descriptor_calculators
         self.cutoff = cutoff
-        self.many_body_cutoffs = many_body_cutoffs
         self.hyps_mask = None
         self.species_map = species_map
         self.single_atom_energies = single_atom_energies
@@ -89,13 +87,13 @@ class SparseGP:
         for spec in structure.coded_species:
             coded_species.append(self.species_map[spec])
 
+        print("Making structure...")
         # Convert flare structure to structure descriptor.
-        structure_descriptor = StructureDescriptor(
+        structure_descriptor = Structure(
             structure.cell,
             coded_species,
             structure.positions,
             self.cutoff,
-            self.many_body_cutoffs,
             self.descriptor_calculators,
         )
 
@@ -117,16 +115,9 @@ class SparseGP:
         if (stress is not None) and (self.stress_training):
             structure_descriptor.stresses = stress
 
-        # Assemble sparse environments.
-        sparse_environments = []
-        for sparse_index in custom_range:
-            sparse_environments.append(
-                structure_descriptor.local_environments[sparse_index]
-            )
-
         # Update the sparse GP.
         self.sparse_gp.add_training_structure(structure_descriptor)
-        self.sparse_gp.add_sparse_environments(sparse_environments)
+        self.sparse_gp.add_sparse_environments(structure_descriptor)
         self.sparse_gp.update_matrices_QR()
 
     def set_L_alpha(self):

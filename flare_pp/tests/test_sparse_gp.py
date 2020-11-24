@@ -1,7 +1,10 @@
 import numpy as np
-from flare_pp.sparse_gp import SparseGP
-from build._C_flare import DotProductKernel, B2_Calculator, SparseGP_DTC
 from flare import struc
+import sys
+sys.path.append("../..")
+sys.path.append("../../build")
+from flare_pp.sparse_gp import SparseGP
+from _C_flare import NormalizedDotProduct, B2, SparseGP_DTC
 
 
 # Make random structure.
@@ -20,7 +23,7 @@ stress = np.random.rand(6)
 # Create sparse GP model.
 sigma = 1.0
 power = 2
-kernel = DotProductKernel(1.0, power, 0)
+kernel = NormalizedDotProduct(1.0, power)
 cutoff_function = "quadratic"
 cutoff = 1.0
 many_body_cutoffs = [cutoff]
@@ -28,17 +31,15 @@ radial_basis = "chebyshev"
 radial_hyps = [0.0, cutoff]
 cutoff_hyps = []
 settings = [2, 4, 3]
-calc = B2_Calculator(
-    radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings, 0
-)
+calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings)
 sigma_e = 1.0
 sigma_f = 1.0
 sigma_s = 1.0
+species_map = {0: 0, 1: 1}
 
 sgp_cpp = SparseGP_DTC([kernel], sigma_e, sigma_f, sigma_s)
-sgp_py = SparseGP(
-    [kernel], [calc], cutoff, many_body_cutoffs, sigma_e, sigma_f, sigma_s
-)
+sgp_py = SparseGP([kernel], [calc], cutoff, sigma_e, sigma_f, sigma_s,
+                  species_map)
 
 
 def test_update_db():

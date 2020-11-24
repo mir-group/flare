@@ -1,5 +1,5 @@
 from ase.calculators.calculator import Calculator
-from _C_flare import SparseGP_DTC, StructureDescriptor
+from _C_flare import SparseGP_DTC, Structure
 import numpy as np
 
 
@@ -18,12 +18,11 @@ class SGP_Calculator(Calculator):
             coded_species.append(self.gp_model.species_map[spec])
 
         # Create structure descriptor.
-        structure_descriptor = StructureDescriptor(
+        structure_descriptor = Structure(
             atoms.cell,
             coded_species,
             atoms.positions,
             self.gp_model.cutoff,
-            self.gp_model.many_body_cutoffs,
             self.gp_model.descriptor_calculators,
         )
 
