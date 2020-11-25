@@ -346,13 +346,21 @@ void SparseGP_DTC ::predict_on_structure(Structure &test_structure) {
                                             kernels[i]->kernel_hyperparameters);
   }
 
+  end = std::chrono::steady_clock::now();
+  elapsed_seconds = end - start;
+  std::cout << "Self kernel: " << elapsed_seconds.count() << "s\n";
+
+  start = std::chrono::steady_clock::now();
+
   Q_self = (kernel_mat.transpose() * Kuu_inverse * kernel_mat).diagonal();
   V_SOR = (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
 
   test_structure.variance_efs = K_self - Q_self + V_SOR;
 
   end = std::chrono::steady_clock::now();
-  std::cout << "Variance prediction: " << elapsed_seconds.count() << "s\n";
+  elapsed_seconds = end - start;
+  std::cout << "SOR: " << elapsed_seconds.count() << "s\n";
+
 }
 
 void SparseGP_DTC ::compute_likelihood() {
