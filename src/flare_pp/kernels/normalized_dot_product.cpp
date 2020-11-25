@@ -560,7 +560,7 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
     // Reduce kernel values.
     for (int i = 0; i < n_struc; i++){
       for (int j = 0; j < n_elements; j++){
-        kernel_vector(i) += par_mat(i, j);
+        kernel_vector(j) += par_mat(i, j);
       }
     }
   }
