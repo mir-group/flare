@@ -463,6 +463,8 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
     int n_struc = struc.n_clusters_by_type[s];
 
     // TODO: Parallelize.
+    Eigen::MatrixXd par_mat = Eigen::MatrixXd::Zero(n_struc, n_elements);
+#pragma omp parallel for
     for (int i = 0; i < n_struc; i++) {
       double norm_i = struc.descriptor_norms[s](i);
 
@@ -494,7 +496,7 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
         double norm_dot = dot_vals(i, j) / norm_ij;
         double c1 = (power - 1) * power * pow(norm_dot, power - 2);
         double c2 = power * pow(norm_dot, power - 1);
-        kernel_vector(0) += sig_sq * mult_fac * pow(norm_dot, power);
+        par_mat(i, 0) += sig_sq * mult_fac * pow(norm_dot, power);
 
         // Force kernel.
         int n_neigh_1 = struc.neighbor_counts[s](i);
@@ -533,25 +535,32 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
                   sig_sq * mult_fac * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
 
               if (c_ind_1 == c_ind_2)
-                kernel_vector(1 + c_ind_1 * 3 + m) += kern_val;
+                par_mat(i, 1 + c_ind_1 * 3 + m) += kern_val;
               if (c_ind_1 == n_ind_2)
-                kernel_vector(1 + c_ind_1 * 3 + m) -= kern_val;
+                par_mat(i, 1 + c_ind_1 * 3 + m) -= kern_val;
               if (n_ind_1 == c_ind_2)
-                kernel_vector(1 + n_ind_1 * 3 + m) -= kern_val;
+                par_mat(i, 1 + n_ind_1 * 3 + m) -= kern_val;
               if (n_ind_1 == n_ind_2)
-                kernel_vector(1 + n_ind_1 * 3 + m) += kern_val;
+                par_mat(i, 1 + n_ind_1 * 3 + m) += kern_val;
 
               // Stress kernel.
               for (int n = m; n < 3; n++) {
                 double coord1 = struc.neighbor_coordinates[s](ind1, n);
                 double coord2 = struc.neighbor_coordinates[s](ind2, n);
-                kernel_vector(1 + 3 * struc.n_atoms + stress_counter) +=
+                par_mat(i, 1 + 3 * struc.n_atoms + stress_counter) +=
                     kern_val * coord1 * coord2 * vol_inv_sq;
                 stress_counter++;
               }
             }
           }
         }
+      }
+    }
+
+    // Reduce kernel values.
+    for (int i = 0; i < n_struc; i++){
+      for (int j = 0; j < n_elements; j++){
+        kernel_vector(i) += par_mat(i, j);
       }
     }
   }

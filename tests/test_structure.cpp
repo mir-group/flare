@@ -39,7 +39,7 @@ TEST_F(StructureTest, TestEnvironments) {
 TEST_F(StructureTest, TimeSelfKernel) {
   auto start = std::chrono::steady_clock::now();
   Eigen::VectorXd self_kern =
-      kernel.self_kernel_struc(struc_desc, kernel.kernel_hyperparameters);
+      kernel_3.self_kernel_struc(struc_desc, kernel.kernel_hyperparameters);
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "Self kernel: " << elapsed_seconds.count() << "s\n";
