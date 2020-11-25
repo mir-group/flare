@@ -44,7 +44,7 @@ TEST_F(StructureTest, SparseTest) {
   EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters,
             sparse_gp.Kuu_inverse.rows());
 
-  sparse_gp.predict_on_structure(test_struc);
+  sparse_gp.predict_DTC(test_struc);
 
   // Check that the variances on all quantities are positive.
   int mean_size = test_struc.mean_efs.size();

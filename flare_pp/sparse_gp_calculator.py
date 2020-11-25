@@ -12,17 +12,14 @@ class SGP_Calculator(Calculator):
         self.use_mapping = False
         self.mgp_model = None
 
+    # TODO: Figure out why this is called twice per MD step.
     def calculate(self, atoms):
-        time_init = time.time()
-
         # Convert coded species to 0, 1, 2, etc.
         coded_species = []
         for spec in atoms.coded_species:
             coded_species.append(self.gp_model.species_map[spec])
 
         # Create structure descriptor.
-        print("Computing descriptors.")
-        time1 = time.time()
         structure_descriptor = Structure(
             atoms.cell,
             coded_species,
@@ -30,15 +27,12 @@ class SGP_Calculator(Calculator):
             self.gp_model.cutoff,
             self.gp_model.descriptor_calculators,
         )
-        time2 = time.time()
-        print("Time: %.2f s" % (time2 - time1))
 
         # Predict on structure.
-        print("Predicting on structure.")
-        time3 = time.time()
-        self.gp_model.sparse_gp.predict_on_structure(structure_descriptor)
-        time4 = time.time()
-        print("Time: %.2f s" % (time4 - time3))
+        if self.gp_model.variance_type == "SOR":
+            self.gp_model.sparse_gp.predict_SOR(structure_descriptor)
+        elif self.gp_model.variance_type == "DTC":
+            self.gp_model.sparse_gp.predict_DTC(structure_descriptor)
 
         # Set results.
         self.results["energy"] = structure_descriptor.mean_efs[0]
@@ -61,9 +55,6 @@ class SGP_Calculator(Calculator):
         self.results["stds"] = np.sqrt(
             structure_descriptor.variance_efs[1:-6].reshape(-1, 3)
         )
-
-        time_final = time.time()
-        print("Total calcultion time: %.2f" % (time_final - time_init))
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():

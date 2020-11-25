@@ -48,7 +48,9 @@ public:
   void update_Kuf();
 
   void update_matrices_QR();
-  void predict_on_structure(Structure &structure);
+
+  void predict_SOR(Structure &structure);
+  void predict_DTC(Structure &structure);
 
   void compute_likelihood();
 

@@ -17,6 +17,7 @@ class SparseGP:
         sigma_f: float,
         sigma_s: float,
         species_map: dict,
+        variance_type: str = "SOR",
         single_atom_energies: dict = None,
         energy_training=True,
         force_training=True,
@@ -29,6 +30,7 @@ class SparseGP:
         self.cutoff = cutoff
         self.hyps_mask = None
         self.species_map = species_map
+        self.variance_type = variance_type
         self.single_atom_energies = single_atom_energies
         self.energy_training = energy_training
         self.force_training = force_training
@@ -87,7 +89,6 @@ class SparseGP:
         for spec in structure.coded_species:
             coded_species.append(self.species_map[spec])
 
-        print("Making structure...")
         # Convert flare structure to structure descriptor.
         structure_descriptor = Structure(
             structure.cell,

@@ -252,6 +252,7 @@ NormalizedDotProduct ::struc_struc(const DescriptorValues &struc1,
     int n_struc1 = struc1.n_clusters_by_type[s];
     int n_struc2 = struc2.n_clusters_by_type[s];
 
+    // TODO: Parallelize.
     for (int i = 0; i < n_struc1; i++) {
       double norm_i = struc1.descriptor_norms[s](i);
 
@@ -461,6 +462,7 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
     // Compute kernels.
     int n_struc = struc.n_clusters_by_type[s];
 
+    // TODO: Parallelize.
     for (int i = 0; i < n_struc; i++) {
       double norm_i = struc.descriptor_norms[s](i);
 
