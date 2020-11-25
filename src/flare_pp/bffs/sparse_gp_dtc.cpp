@@ -1,4 +1,5 @@
 #include "sparse_gp_dtc.h"
+#include <chrono>
 #include <iostream>
 
 SparseGP_DTC ::SparseGP_DTC() {}
@@ -317,6 +318,8 @@ void SparseGP_DTC ::predict_on_structure(Structure &test_structure) {
   int n_out = 1 + 3 * n_atoms + 6;
   int n_kernels = kernels.size();
 
+  auto start = std::chrono::steady_clock::now();
+
   Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
   int count = 0;
   for (int i = 0; i < Kuu_kernels.size(); i++) {
@@ -329,7 +332,13 @@ void SparseGP_DTC ::predict_on_structure(Structure &test_structure) {
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
 
+  auto end = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end - start;
+  std::cout << "Mean prediction: " << elapsed_seconds.count() << "s\n";
+
   // Compute variances.
+  start = std::chrono::steady_clock::now();
+
   Eigen::VectorXd V_SOR, Q_self, K_self = Eigen::VectorXd::Zero(n_out);
 
   for (int i = 0; i < n_kernels; i++) {
@@ -341,6 +350,9 @@ void SparseGP_DTC ::predict_on_structure(Structure &test_structure) {
   V_SOR = (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
 
   test_structure.variance_efs = K_self - Q_self + V_SOR;
+
+  end = std::chrono::steady_clock::now();
+  std::cout << "Variance prediction: " << elapsed_seconds.count() << "s\n";
 }
 
 void SparseGP_DTC ::compute_likelihood() {
