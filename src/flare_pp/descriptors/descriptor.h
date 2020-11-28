@@ -38,6 +38,8 @@ class ClusterDescriptor {
 public:
   ClusterDescriptor();
   ClusterDescriptor(const DescriptorValues &structure);
+  ClusterDescriptor(const DescriptorValues &structure,
+                    const std::vector<std::vector<int>> &clusters);
 
   std::vector<Eigen::MatrixXd> descriptors;
   std::vector<Eigen::VectorXd> descriptor_norms, cutoff_values;

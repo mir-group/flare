@@ -1,6 +1,8 @@
 #include "sparse_gp_dtc.h"
 #include <chrono>
 #include <iostream>
+#include <numeric> // Iota
+#include <algorithm> // Random shuffle
 
 SparseGP_DTC ::SparseGP_DTC() {}
 
@@ -49,6 +51,18 @@ SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels,
   }
 }
 
+void SparseGP_DTC ::initialize_sparse_descriptors(const Structure &structure){
+  if (sparse_descriptors.size() != 0) return;
+
+  for (int i = 0; i < structure.descriptors.size(); i++) {
+    ClusterDescriptor empty_descriptor;
+    empty_descriptor.initialize_cluster(
+      structure.descriptors[i].n_types,
+      structure.descriptors[i].n_descriptors);
+    sparse_descriptors.push_back(empty_descriptor);
+  }
+};
+
 // TODO: Implement.
 void SparseGP_DTC ::add_uncertain_environments(
     const Structure &structure, const std::vector<int> &n_added) {
@@ -60,26 +74,45 @@ void SparseGP_DTC ::add_random_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
   // Randomly select environments (without replacement).
+  std::vector<std::vector<std::vector<int>>> envs1;
+  for (int i = 0; i < structure.descriptors.size(); i++){
+    std::vector<std::vector<int>> envs2;
+    for (int j = 0; j < structure.descriptors[i].n_types; j++){
+      std::vector<int> envs3;
+      int n_clusters = structure.descriptors[i].n_clusters_by_type[j];
+      std::vector<int> clusters(n_clusters);
+      std::iota(clusters.begin(), clusters.end(), 0);
+      std::random_shuffle(clusters.begin(), clusters.end());
+      int n_curr = n_added[i];
+      if (n_curr > n_clusters) n_curr = n_clusters;
+      for (int k = 0; k < n_curr; k++){
+          envs3.push_back(clusters[k]);
+      }
+      envs2.push_back(envs3);
+    }
+    envs1.push_back(envs2);
+  }
 
   // Create cluster descriptors.
+  std::vector<ClusterDescriptor> cluster_descriptors;
+  for (int i = 0; i < structure.descriptors.size(); i++) {
+    ClusterDescriptor cluster_descriptor =
+        ClusterDescriptor(structure.descriptors[i], envs1[i]);
+    cluster_descriptors.push_back(cluster_descriptor);
+  }
 
   // Update covariance matrices.
 }
 
 void SparseGP_DTC ::add_all_environments(const Structure &structure) {
+  initialize_sparse_descriptors(structure);
+
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
   for (int i = 0; i < structure.descriptors.size(); i++) {
     ClusterDescriptor cluster_descriptor =
         ClusterDescriptor(structure.descriptors[i]);
     cluster_descriptors.push_back(cluster_descriptor);
-
-    if (sparse_descriptors.size() == 0) {
-      ClusterDescriptor empty_descriptor;
-      empty_descriptor.initialize_cluster(cluster_descriptor.n_types,
-                                          cluster_descriptor.n_descriptors);
-      sparse_descriptors.push_back(empty_descriptor);
-    }
   }
 
   // Update Kuu matrices.
@@ -202,22 +235,13 @@ void SparseGP_DTC ::add_all_environments(const Structure &structure) {
 
 void SparseGP_DTC ::add_training_structure(const Structure &structure) {
 
+  initialize_sparse_descriptors(structure);
+
   int n_energy = structure.energy.size();
   int n_force = structure.forces.size();
   int n_stress = structure.stresses.size();
   int n_struc_labels = n_energy + n_force + n_stress;
   int n_atoms = structure.noa;
-
-  // Initialize sparse descriptors.
-  if (sparse_descriptors.size() == 0) {
-    for (int i = 0; i < structure.descriptors.size(); i++) {
-      ClusterDescriptor empty_descriptor;
-      empty_descriptor.initialize_cluster(
-          structure.descriptors[i].n_types,
-          structure.descriptors[i].n_descriptors);
-      sparse_descriptors.push_back(empty_descriptor);
-    }
-  }
 
   // Update Kuf kernels.
   Eigen::MatrixXd envs_struc_kernels;

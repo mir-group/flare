@@ -42,6 +42,7 @@ public:
   SparseGP_DTC(std::vector<Kernel *> kernels, double energy_noise,
                double force_noise, double stress_noise);
 
+  void initialize_sparse_descriptors(const Structure &structure);
   void add_all_environments(const Structure &structure);
   void add_random_environments(const Structure &structure,
                                const std::vector<int> &n_added);

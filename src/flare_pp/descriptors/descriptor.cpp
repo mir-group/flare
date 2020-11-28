@@ -15,6 +15,13 @@ ClusterDescriptor::ClusterDescriptor(const DescriptorValues &structure) {
   add_all_clusters(structure);
 }
 
+ClusterDescriptor::ClusterDescriptor(
+  const DescriptorValues &structure,
+  const std::vector<std::vector<int>> &clusters) {
+
+  add_clusters(structure, clusters);
+}
+
 void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
   if (n_clusters != 0) return;
 
