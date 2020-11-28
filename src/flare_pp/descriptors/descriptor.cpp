@@ -12,10 +12,12 @@ DescriptorValues::DescriptorValues() {}
 ClusterDescriptor::ClusterDescriptor() {}
 
 ClusterDescriptor::ClusterDescriptor(const DescriptorValues &structure) {
-  add_cluster(structure);
+  add_all_clusters(structure);
 }
 
 void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
+  if (n_clusters != 0) return;
+
   this->n_types = n_types;
   this->n_descriptors = n_descriptors;
 
@@ -30,12 +32,45 @@ void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
   }
 }
 
-void ClusterDescriptor ::add_cluster(const DescriptorValues &structure) {
+void ClusterDescriptor ::add_clusters(
+  const DescriptorValues &structure,
+  const std::vector<std::vector<int>> &clusters){
 
-  // If this is the first time adding a cluster, initialize attributes.
-  if (n_clusters == 0) {
-    initialize_cluster(structure.n_types, structure.n_descriptors);
+  initialize_cluster(structure.n_types, structure.n_descriptors);
+
+  // Resize descriptor matrices.
+  for (int s = 0; s < n_types; s++){
+    descriptors[s].conservativeResize(
+      type_count[s] + clusters[s].size(), n_descriptors);
+    descriptor_norms[s].conservativeResize(type_count[s] + clusters[s].size());
+    cutoff_values[s].conservativeResize(type_count[s] + clusters[s].size());
   }
+
+  // Update descriptors.
+  for (int s = 0; s < n_types; s++) {
+    for (int i = 0; i < clusters[s].size(); i++) {
+      descriptors[s].row(type_count[s] + i) =
+        structure.descriptors[s].row(clusters[s][i]);
+      descriptor_norms[s](type_count[s] + i) =
+        structure.descriptor_norms[s](clusters[s][i]);
+      cutoff_values[s](type_count[s] + i) =
+        structure.cutoff_values[s](clusters[s][i]);
+    }
+  }
+
+  // Update type counts.
+  for (int s = 0; s < n_types; s++) {
+    type_count[s] += clusters[s].size();
+    n_clusters += clusters[s].size();
+    if (s > 0)
+      cumulative_type_count[s] =
+          cumulative_type_count[s - 1] + type_count[s - 1];
+  }
+}
+
+void ClusterDescriptor ::add_all_clusters(const DescriptorValues &structure) {
+
+  initialize_cluster(structure.n_types, structure.n_descriptors);
 
   // Resize descriptor matrices.
   for (int s = 0; s < n_types; s++) {

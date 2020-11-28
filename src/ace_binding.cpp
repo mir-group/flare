@@ -115,7 +115,10 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("set_hyperparameters", &SparseGP_DTC::set_hyperparameters)
       .def("predict_SOR", &SparseGP_DTC::predict_SOR)
       .def("predict_DTC", &SparseGP_DTC::predict_DTC)
-      .def("add_sparse_environments", &SparseGP_DTC::add_sparse_environments)
+      .def("add_all_environments", &SparseGP_DTC::add_all_environments)
+      .def("add_random_environments", &SparseGP_DTC::add_random_environments)
+      .def("add_uncertain_environments",
+           &SparseGP_DTC::add_uncertain_environments)
       .def("add_training_structure", &SparseGP_DTC::add_training_structure)
       .def("update_matrices_QR", &SparseGP_DTC::update_matrices_QR)
       .def("compute_likelihood", &SparseGP_DTC::compute_likelihood)

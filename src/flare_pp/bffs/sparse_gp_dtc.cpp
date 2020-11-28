@@ -9,6 +9,7 @@ SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels,
                             double stress_noise) {
 
   this->kernels = kernels;
+  n_kernels = kernels.size();
   Kuu_jitter = 1e-8; // default value
   label_count = Eigen::VectorXd::Zero(1);
 
@@ -48,12 +49,24 @@ SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels,
   }
 }
 
-void SparseGP_DTC ::add_sparse_environments(const Structure &structure) {
+// TODO: Implement.
+void SparseGP_DTC ::add_uncertain_environments(
+    const Structure &structure, const std::vector<int> &n_added) {
 
-  int n_kernels = kernels.size();
-  int n_labels = Kuf.cols();
-  int n_strucs = training_structures.size();
+}
 
+// TODO: Implement.
+void SparseGP_DTC ::add_random_environments(
+    const Structure &structure, const std::vector<int> &n_added) {
+
+  // Randomly select environments (without replacement).
+
+  // Create cluster descriptors.
+
+  // Update covariance matrices.
+}
+
+void SparseGP_DTC ::add_all_environments(const Structure &structure) {
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
   for (int i = 0; i < structure.descriptors.size(); i++) {
@@ -179,7 +192,7 @@ void SparseGP_DTC ::add_sparse_environments(const Structure &structure) {
 
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
-    sparse_descriptors[i].add_cluster(structure.descriptors[i]);
+    sparse_descriptors[i].add_all_clusters(structure.descriptors[i]);
   }
 
   // Update Kuu and Kuf.
@@ -194,7 +207,6 @@ void SparseGP_DTC ::add_training_structure(const Structure &structure) {
   int n_stress = structure.stresses.size();
   int n_struc_labels = n_energy + n_force + n_stress;
   int n_atoms = structure.noa;
-  int n_kernels = kernels.size();
 
   // Initialize sparse descriptors.
   if (sparse_descriptors.size() == 0) {
@@ -250,6 +262,7 @@ void SparseGP_DTC ::add_training_structure(const Structure &structure) {
 
   // Store training structure.
   training_structures.push_back(structure);
+  n_strucs += 1;
 
   // Update Kuf.
   update_Kuf();
@@ -316,7 +329,6 @@ void SparseGP_DTC ::predict_SOR(Structure &test_structure) {
 
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
-  int n_kernels = kernels.size();
 
   Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
   int count = 0;
@@ -337,7 +349,6 @@ void SparseGP_DTC ::predict_DTC(Structure &test_structure) {
 
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
-  int n_kernels = kernels.size();
 
   Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
   int count = 0;
@@ -402,7 +413,6 @@ double SparseGP_DTC ::compute_likelihood_gradient(
     const Eigen::VectorXd &hyperparameters) {
 
   // Compute Kuu and Kuf matrices and gradients.
-  int n_kernels = kernels.size();
   int n_hyps_total = hyperparameters.size();
 
   Eigen::MatrixXd Kuu_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
@@ -539,7 +549,6 @@ double SparseGP_DTC ::compute_likelihood_gradient(
 
 void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps) {
   // Reset Kuu and Kuf matrices.
-  int n_kernels = kernels.size();
   int n_hyps, hyp_index = 0;
   Eigen::VectorXd new_hyps;
 

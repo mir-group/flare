@@ -33,8 +33,8 @@ TEST_F(StructureTest, SparseTest) {
   test_struc_2.forces = forces_2;
 
   sparse_gp.add_training_structure(test_struc);
-  sparse_gp.add_sparse_environments(test_struc);
-  sparse_gp.add_sparse_environments(test_struc_2);
+  sparse_gp.add_all_environments(test_struc);
+  sparse_gp.add_all_environments(test_struc_2);
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
@@ -85,7 +85,7 @@ TEST_F(StructureTest, LikeGrad) {
   test_struc.stresses = stresses;
 
   sparse_gp.add_training_structure(test_struc);
-  sparse_gp.add_sparse_environments(test_struc);
+  sparse_gp.add_all_environments(test_struc);
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
@@ -141,9 +141,9 @@ TEST_F(StructureTest, Set_Hyps) {
 
   // Add sparse environments and training structures.
   sparse_gp_1.add_training_structure(test_struc);
-  sparse_gp_1.add_sparse_environments(test_struc);
+  sparse_gp_1.add_all_environments(test_struc);
   sparse_gp_2.add_training_structure(test_struc);
-  sparse_gp_2.add_sparse_environments(test_struc);
+  sparse_gp_2.add_all_environments(test_struc);
 
   sparse_gp_1.update_matrices_QR();
   sparse_gp_2.update_matrices_QR();
@@ -185,11 +185,11 @@ TEST_F(StructureTest, AddOrder) {
 
   // Add structure first.
   sparse_gp_1.add_training_structure(test_struc);
-  sparse_gp_1.add_sparse_environments(test_struc);
+  sparse_gp_1.add_all_environments(test_struc);
   sparse_gp_1.update_matrices_QR();
 
   // Add environments first.
-  sparse_gp_2.add_sparse_environments(test_struc);
+  sparse_gp_2.add_all_environments(test_struc);
   sparse_gp_2.add_training_structure(test_struc);
   sparse_gp_2.update_matrices_QR();
 

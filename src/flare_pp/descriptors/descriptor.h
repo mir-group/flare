@@ -45,11 +45,10 @@ public:
   int n_descriptors, n_types;
   int n_clusters = 0;
 
-  // Add all clusters in a structure.
   void initialize_cluster(int n_types, int n_descriptors);
-  void add_cluster(const DescriptorValues &structure);
-
-  // TODO: Allow specific clusters to be added.
+  void add_clusters(const DescriptorValues &structure,
+                    const std::vector<std::vector<int>> &clusters);
+  void add_all_clusters(const DescriptorValues &structure);
 };
 
 #endif

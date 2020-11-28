@@ -33,7 +33,7 @@ TEST_F(StructureTest, TestDescriptor) {
 
 TEST_F(StructureTest, TestEnvironments) {
   ClusterDescriptor envs;
-  envs.add_cluster(struc_desc);
+  envs.add_all_clusters(struc_desc);
 }
 
 TEST_F(StructureTest, TimeSelfKernel) {
@@ -50,7 +50,7 @@ TEST_F(StructureTest, TestEnvsEnvs) {
       kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
 
   ClusterDescriptor envs;
-  envs.add_cluster(struc_desc);
+  envs.add_all_clusters(struc_desc);
   Eigen::MatrixXd kern_mat =
       kernel.envs_envs(envs, envs, kernel.kernel_hyperparameters);
 
@@ -69,7 +69,7 @@ TEST_F(StructureTest, TestEnvsStruc) {
       kernel.struc_struc(struc_desc, struc_desc, kernel.kernel_hyperparameters);
 
   ClusterDescriptor envs;
-  envs.add_cluster(struc_desc);
+  envs.add_all_clusters(struc_desc);
   Eigen::MatrixXd kern_mat =
       kernel.envs_struc(envs, struc_desc, kernel.kernel_hyperparameters);
 
@@ -91,7 +91,7 @@ TEST_F(StructureTest, SqExpGrad) {
 
   // Define cluster.
   ClusterDescriptor envs;
-  envs.add_cluster(struc_desc);
+  envs.add_all_clusters(struc_desc);
 
   // Define hyperparameters.
   double delta = 1e-4;

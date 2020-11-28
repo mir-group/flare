@@ -15,6 +15,7 @@ public:
   std::vector<Kernel *> kernels;
   std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels;
   Eigen::MatrixXd Kuu, Kuf;
+  int n_kernels = 0;
   double Kuu_jitter;
 
   // Solution attributes.
@@ -28,7 +29,7 @@ public:
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
-      n_sparse = 0, n_labels = 0;
+      n_sparse = 0, n_labels = 0, n_strucs = 0;
   double energy_noise, force_noise, stress_noise;
 
   // Likelihood attributes.
@@ -41,8 +42,13 @@ public:
   SparseGP_DTC(std::vector<Kernel *> kernels, double energy_noise,
                double force_noise, double stress_noise);
 
-  // TODO: Add sparse environments above an energy uncertainty threshold.
-  void add_sparse_environments(const Structure &structure);
+  void add_all_environments(const Structure &structure);
+  void add_random_environments(const Structure &structure,
+                               const std::vector<int> &n_added);
+  void add_uncertain_environments(const Structure &structure,
+                                  const std::vector<int> &n_added);
+
+
   void add_training_structure(const Structure &structure);
   void update_Kuu();
   void update_Kuf();

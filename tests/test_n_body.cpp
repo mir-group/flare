@@ -58,7 +58,7 @@ TEST_F(NBodyTest, TwoBodyTest) {
   dc.push_back(&desc);
   test_struc = Structure(cell, species, positions, cutoff, dc);
   struc_desc = test_struc.descriptors[0];
-  cluster_desc.add_cluster(struc_desc);
+  cluster_desc.add_all_clusters(struc_desc);
 
   Eigen::MatrixXd kern_mat = kernel.envs_envs(cluster_desc, cluster_desc,
                                               kernel.kernel_hyperparameters);
@@ -75,7 +75,7 @@ TEST_F(NBodyTest, ThreeBodyTest) {
   dc.push_back(&three_body_desc);
   test_struc = Structure(cell, species, positions, cutoff, dc);
   struc_desc = test_struc.descriptors[0];
-  cluster_desc.add_cluster(struc_desc);
+  cluster_desc.add_all_clusters(struc_desc);
 
   std::cout << test_struc.descriptors[0].n_types << std::endl;
   std::cout << test_struc.descriptors[0].n_clusters_by_type[0] << std::endl;
