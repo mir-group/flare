@@ -20,7 +20,7 @@ TEST_F(StructureTest, SparseTest) {
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
-  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -74,7 +74,7 @@ TEST_F(StructureTest, TestAdd){
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
-  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -103,7 +103,7 @@ TEST_F(StructureTest, LikeGrad) {
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel);
-  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -157,8 +157,8 @@ TEST_F(StructureTest, Set_Hyps) {
   std::vector<Kernel *> kernels_1{&kernel_1};
   std::vector<Kernel *> kernels_2{&kernel_2};
 
-  SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels_1, sig_e_1, sig_f_1, sig_s_1);
-  SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels_2, sig_e_2, sig_f_2, sig_s_2);
+  SparseGP sparse_gp_1 = SparseGP(kernels_1, sig_e_1, sig_f_1, sig_s_1);
+  SparseGP sparse_gp_2 = SparseGP(kernels_2, sig_e_2, sig_f_2, sig_s_2);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
@@ -201,8 +201,8 @@ TEST_F(StructureTest, AddOrder) {
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel_3);
-  SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
-  SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP sparse_gp_1 = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP sparse_gp_2 = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);

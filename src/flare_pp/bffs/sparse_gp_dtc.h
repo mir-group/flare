@@ -1,5 +1,5 @@
-#ifndef SPARSE_GP_DTC_H
-#define SPARSE_GP_DTC_H
+#ifndef SPARSE_GP_H
+#define SPARSE_GP_H
 
 #include "descriptor.h"
 #include "kernel.h"
@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-class SparseGP_DTC {
+class SparseGP {
 public:
   Eigen::VectorXd hyperparameters;
 
@@ -38,8 +38,8 @@ public:
   Eigen::VectorXd likelihood_gradient;
 
   // Constructors.
-  SparseGP_DTC();
-  SparseGP_DTC(std::vector<Kernel *> kernels, double energy_noise,
+  SparseGP();
+  SparseGP(std::vector<Kernel *> kernels, double energy_noise,
                double force_noise, double stress_noise);
 
   void initialize_sparse_descriptors(const Structure &structure);
