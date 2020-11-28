@@ -73,7 +73,7 @@ void SparseGP_DTC ::add_uncertain_environments(
 void SparseGP_DTC ::add_random_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
-  // Randomly select environments (without replacement).
+  // Randomly select environments without replacement.
   std::vector<std::vector<std::vector<int>>> envs1;
   for (int i = 0; i < structure.descriptors.size(); i++){
     std::vector<std::vector<int>> envs2;
@@ -101,7 +101,16 @@ void SparseGP_DTC ::add_random_environments(
     cluster_descriptors.push_back(cluster_descriptor);
   }
 
-  // Update covariance matrices.
+  // Update Kuu and Kuf.
+  update_Kuu(cluster_descriptors);
+  update_Kuf(cluster_descriptors);
+  stack_Kuu();
+  stack_Kuf();
+
+  // Store sparse environments.
+  for (int i = 0; i < n_kernels; i++) {
+    sparse_descriptors[i].add_all_clusters(structure.descriptors[i]);
+  }
 }
 
 void SparseGP_DTC ::add_all_environments(const Structure &structure) {
@@ -114,6 +123,21 @@ void SparseGP_DTC ::add_all_environments(const Structure &structure) {
         ClusterDescriptor(structure.descriptors[i]);
     cluster_descriptors.push_back(cluster_descriptor);
   }
+
+  // Update Kuu and Kuf.
+  update_Kuu(cluster_descriptors);
+  update_Kuf(cluster_descriptors);
+  stack_Kuu();
+  stack_Kuf();
+
+  // Store sparse environments.
+  for (int i = 0; i < n_kernels; i++) {
+    sparse_descriptors[i].add_all_clusters(structure.descriptors[i]);
+  }
+}
+
+void SparseGP_DTC ::update_Kuu(
+  const std::vector<ClusterDescriptor> &cluster_descriptors){
 
   // Update Kuu matrices.
   for (int i = 0; i < n_kernels; i++) {
@@ -154,6 +178,10 @@ void SparseGP_DTC ::add_all_environments(const Structure &structure) {
     // Update sparse count.
     this->n_sparse += n_envs;
   }
+}
+
+void SparseGP_DTC ::update_Kuf(
+  const std::vector<ClusterDescriptor> &cluster_descriptors){
 
   // Compute kernels between new sparse environments and training structures.
   for (int i = 0; i < n_kernels; i++) {
@@ -222,15 +250,6 @@ void SparseGP_DTC ::add_all_environments(const Structure &structure) {
     }
     Kuf_kernels[i] = kern_mat;
   }
-
-  // Store sparse environments.
-  for (int i = 0; i < n_kernels; i++) {
-    sparse_descriptors[i].add_all_clusters(structure.descriptors[i]);
-  }
-
-  // Update Kuu and Kuf.
-  update_Kuu();
-  update_Kuf();
 }
 
 void SparseGP_DTC ::add_training_structure(const Structure &structure) {
@@ -289,10 +308,10 @@ void SparseGP_DTC ::add_training_structure(const Structure &structure) {
   n_strucs += 1;
 
   // Update Kuf.
-  update_Kuf();
+  stack_Kuf();
 }
 
-void SparseGP_DTC ::update_Kuu() {
+void SparseGP_DTC ::stack_Kuu() {
   // Update Kuu.
   Kuu = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
   int count = 0;
@@ -303,7 +322,7 @@ void SparseGP_DTC ::update_Kuu() {
   }
 }
 
-void SparseGP_DTC ::update_Kuf() {
+void SparseGP_DTC ::stack_Kuf() {
   // Update Kuf kernels.
   Kuf = Eigen::MatrixXd::Zero(n_sparse, n_labels);
   int count = 0;
@@ -592,8 +611,8 @@ void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps) {
     hyp_index += n_hyps;
   }
 
-  update_Kuu();
-  update_Kuf();
+  stack_Kuu();
+  stack_Kuf();
 
   hyperparameters = hyps;
   energy_noise = hyps(hyp_index);

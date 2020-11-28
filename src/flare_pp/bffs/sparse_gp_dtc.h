@@ -49,10 +49,11 @@ public:
   void add_uncertain_environments(const Structure &structure,
                                   const std::vector<int> &n_added);
 
-
   void add_training_structure(const Structure &structure);
-  void update_Kuu();
-  void update_Kuf();
+  void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);
+  void update_Kuf(const std::vector<ClusterDescriptor> &cluster_descriptors);
+  void stack_Kuu();
+  void stack_Kuf();
 
   void update_matrices_QR();
 
