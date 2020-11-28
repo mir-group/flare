@@ -67,6 +67,34 @@ TEST_F(StructureTest, SparseTest) {
     EXPECT_NEAR(like1, like2, 1e-8);
 }
 
+TEST_F(StructureTest, TestAdd){
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  std::vector<Kernel *> kernels;
+  kernels.push_back(&kernel);
+  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+  test_struc.forces = forces;
+  test_struc.stresses = stresses;
+
+  std::vector<int> envs(1);
+  envs[0] = 2;
+
+  sparse_gp.add_training_structure(test_struc);
+  sparse_gp.add_random_environments(test_struc, envs);
+
+  sparse_gp.update_matrices_QR();
+  EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters, sparse_gp.Sigma.rows());
+  EXPECT_EQ(sparse_gp.sparse_descriptors[0].n_clusters,
+            sparse_gp.Kuu_inverse.rows());
+}
+
 TEST_F(StructureTest, LikeGrad) {
   // Check that the DTC likelihood gradient is correctly computed.
   double sigma_e = 1;

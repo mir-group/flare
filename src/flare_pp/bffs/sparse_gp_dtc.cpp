@@ -67,9 +67,17 @@ void SparseGP_DTC ::initialize_sparse_descriptors(const Structure &structure){
 void SparseGP_DTC ::add_uncertain_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
+  // Compute cluster uncertainties.
+
+  // Order clusters by uncertainties.
+
+  // Create cluster descriptors.
+
+  // Update Kuu and Kuf.
+
+  // Store sparse environments.
 }
 
-// TODO: Implement.
 void SparseGP_DTC ::add_random_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
@@ -109,7 +117,7 @@ void SparseGP_DTC ::add_random_environments(
 
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
-    sparse_descriptors[i].add_all_clusters(structure.descriptors[i]);
+    sparse_descriptors[i].add_clusters(structure.descriptors[i], envs1[i]);
   }
 }
 
