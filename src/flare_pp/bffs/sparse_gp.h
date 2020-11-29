@@ -48,6 +48,8 @@ public:
                                const std::vector<int> &n_added);
   void add_uncertain_environments(const Structure &structure,
                                   const std::vector<int> &n_added);
+  std::vector<Eigen::VectorXd> compute_cluster_uncertainties(
+    const Structure &structure);
 
   void add_training_structure(const Structure &structure);
   void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);

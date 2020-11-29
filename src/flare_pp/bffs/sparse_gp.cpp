@@ -63,11 +63,55 @@ void SparseGP ::initialize_sparse_descriptors(const Structure &structure){
   }
 };
 
+std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
+  const Structure &structure){
+
+  // Create cluster descriptors.
+  std::vector<ClusterDescriptor> cluster_descriptors;
+  for (int i = 0; i < structure.descriptors.size(); i++) {
+    ClusterDescriptor cluster_descriptor =
+        ClusterDescriptor(structure.descriptors[i]);
+    cluster_descriptors.push_back(cluster_descriptor);
+  }
+
+  // Compute cluster uncertainties.
+  std::vector<Eigen::VectorXd> K_self, Q_self, variances;
+  std::vector<Eigen::MatrixXd> sparse_kernels;
+  int sparse_count = 0;
+  for (int i = 0; i < n_kernels; i++) {
+    K_self.push_back(
+      (kernels[i]->envs_envs(cluster_descriptors[i], cluster_descriptors[i],
+                             kernels[i]->kernel_hyperparameters)).diagonal()
+    );
+
+    sparse_kernels.push_back(
+      kernels[i]->envs_envs(cluster_descriptors[i], sparse_descriptors[i],
+                             kernels[i]->kernel_hyperparameters)
+    );
+
+    int n_clusters = sparse_descriptors[i].n_clusters;
+    Eigen::MatrixXd Kuu_inverse_block =
+      Kuu_inverse.block(sparse_count, sparse_count, n_clusters, n_clusters);
+    sparse_count += n_clusters;
+
+    Q_self.push_back(
+      (sparse_kernels[i].transpose() * Kuu_inverse_block *
+       sparse_kernels[i]).diagonal()
+    );
+
+    variances.push_back(K_self[i] - Q_self[i]);
+  }
+
+  return variances;
+}
+
 // TODO: Implement.
 void SparseGP ::add_uncertain_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
   // Compute cluster uncertainties.
+  std::vector<Eigen::VectorXd> variances =
+    compute_cluster_uncertainties(structure);
 
   // Order clusters by uncertainties.
 
