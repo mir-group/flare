@@ -1,4 +1,4 @@
-#include "sparse_gp_dtc.h"
+#include "sparse_gp.h"
 #include <chrono>
 #include <iostream>
 #include <numeric> // Iota

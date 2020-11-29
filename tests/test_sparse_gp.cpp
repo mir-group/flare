@@ -1,4 +1,4 @@
-#include "sparse_gp_dtc.h"
+#include "sparse_gp.h"
 #include "test_structure.h"
 #include "omp.h"
 #include <thread>

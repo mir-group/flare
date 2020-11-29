@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include "structure.h"
 #include "y_grad.h"
-#include "sparse_gp_dtc.h"
+#include "sparse_gp.h"
 #include "b2.h"
 #include "b3.h"
 #include "two_body.h"

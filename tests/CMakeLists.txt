@@ -5,7 +5,7 @@ add_executable(
   test_radial.cpp
   test_structure.cpp
   test_n_body.cpp
-  test_sparse_gp_dtc.cpp
+  test_sparse_gp.cpp
   test_descriptor.cpp
 )
 
