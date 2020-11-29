@@ -45,11 +45,19 @@ TEST_F(StructureTest, SparseTest) {
             sparse_gp.Kuu_inverse.rows());
 
   sparse_gp.predict_DTC(test_struc);
+  std::vector<Eigen::VectorXd> cluster_variances =
+    sparse_gp.compute_cluster_uncertainties(test_struc_2);
 
   // Check that the variances on all quantities are positive.
   int mean_size = test_struc.mean_efs.size();
   for (int i = 0; i < mean_size; i++) {
     EXPECT_GE(test_struc.variance_efs[i], 0);
+  }
+
+  for (int i = 0; i < cluster_variances.size(); i++){
+      for (int j = 0; j < cluster_variances[i].size(); j++){
+          EXPECT_GE(cluster_variances[i](j), 0);
+      }
   }
 
   // Compute the marginal likelihood.

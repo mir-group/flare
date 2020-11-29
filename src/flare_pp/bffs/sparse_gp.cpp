@@ -95,8 +95,8 @@ std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
     sparse_count += n_clusters;
 
     Q_self.push_back(
-      (sparse_kernels[i].transpose() * Kuu_inverse_block *
-       sparse_kernels[i]).diagonal()
+      (sparse_kernels[i] * Kuu_inverse_block *
+       sparse_kernels[i].transpose()).diagonal()
     );
 
     variances.push_back(K_self[i] - Q_self[i]);
