@@ -113,7 +113,10 @@ void SparseGP ::add_uncertain_environments(
   std::vector<Eigen::VectorXd> variances =
     compute_cluster_uncertainties(structure);
 
-  // Order clusters by uncertainties.
+//   // Order clusters by uncertainties.
+//   for (int i = 0; i < n_kernels; i++){
+
+//   }
 
   // Create cluster descriptors.
 
@@ -161,7 +164,8 @@ void SparseGP ::add_random_environments(
 
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
-    sparse_descriptors[i].add_clusters(structure.descriptors[i], envs1[i]);
+    sparse_descriptors[i].add_clusters_by_type(
+      structure.descriptors[i], envs1[i]);
   }
 }
 

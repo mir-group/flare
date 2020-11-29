@@ -38,8 +38,14 @@ class ClusterDescriptor {
 public:
   ClusterDescriptor();
   ClusterDescriptor(const DescriptorValues &structure);
+
+  // Specify clusters of each type.
   ClusterDescriptor(const DescriptorValues &structure,
                     const std::vector<std::vector<int>> &clusters);
+
+  // Specify clusters of any type.
+  ClusterDescriptor(const DescriptorValues &structure,
+                    const std::vector<int> & clusters);
 
   std::vector<Eigen::MatrixXd> descriptors;
   std::vector<Eigen::VectorXd> descriptor_norms, cutoff_values;
@@ -48,8 +54,10 @@ public:
   int n_clusters = 0;
 
   void initialize_cluster(int n_types, int n_descriptors);
+  void add_clusters_by_type(const DescriptorValues &structure,
+                            const std::vector<std::vector<int>> &clusters);
   void add_clusters(const DescriptorValues &structure,
-                    const std::vector<std::vector<int>> &clusters);
+                    const std::vector<int> &clusters);
   void add_all_clusters(const DescriptorValues &structure);
 };
 
