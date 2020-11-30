@@ -14,6 +14,45 @@
 //   }
 // }
 
+TEST_F(StructureTest, SortTest){
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  std::vector<Kernel *> kernels;
+  kernels.push_back(&kernel);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+  test_struc.forces = forces;
+  test_struc.stresses = stresses;
+
+  sparse_gp.add_training_structure(test_struc);
+  sparse_gp.add_all_environments(test_struc);
+  sparse_gp.update_matrices_QR();
+
+  // Compute variances.
+  std::vector<Eigen::VectorXd> variances =
+    sparse_gp.compute_cluster_uncertainties(test_struc_2);
+
+  // Sort clusters.
+  std::vector<std::vector<int>> clusters =
+    sparse_gp.sort_clusters_by_uncertainty(test_struc_2);
+
+  EXPECT_EQ(variances.size(), clusters.size());
+
+  for (int i = 0; i < variances.size(); i++){
+    for (int j = 0; j < variances[i].size() - 1; j++){
+      int ind = clusters[i][j];
+      int ind2 = clusters[i][j+1];
+      EXPECT_GE(variances[i][ind], variances[i][ind2]);
+    }
+  }
+}
+
 TEST_F(StructureTest, SparseTest) {
   double sigma_e = 1;
   double sigma_f = 2;
@@ -27,7 +66,7 @@ TEST_F(StructureTest, SparseTest) {
   Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
   Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
   test_struc.energy = energy;
-    test_struc.forces = forces;
+  test_struc.forces = forces;
   //   test_struc.stresses = stresses;
 
   Eigen::VectorXd forces_2 = Eigen::VectorXd::Random(n_atoms * 3);
