@@ -126,7 +126,6 @@ std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
   return variances;
 }
 
-// TODO: Implement.
 void SparseGP ::add_uncertain_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
@@ -147,10 +146,24 @@ void SparseGP ::add_uncertain_environments(
   }
 
   // Create cluster descriptors.
+  std::vector<ClusterDescriptor> cluster_descriptors;
+  for (int i = 0; i < n_kernels; i++) {
+    ClusterDescriptor cluster_descriptor =
+        ClusterDescriptor(structure.descriptors[i], n_sorted_indices[i]);
+    cluster_descriptors.push_back(cluster_descriptor);
+  }
 
   // Update Kuu and Kuf.
+  update_Kuu(cluster_descriptors);
+  update_Kuf(cluster_descriptors);
+  stack_Kuu();
+  stack_Kuf();
 
   // Store sparse environments.
+  for (int i = 0; i < n_kernels; i++) {
+    sparse_descriptors[i].add_clusters(structure.descriptors[i],
+                                       n_sorted_indices[i]);
+  }
 }
 
 void SparseGP ::add_random_environments(
