@@ -63,6 +63,27 @@ void SparseGP ::initialize_sparse_descriptors(const Structure &structure){
   }
 };
 
+std::vector<std::vector<int>> SparseGP ::sort_clusters_by_uncertainty(
+  const Structure &structure){
+
+  // Compute cluster uncertainties.
+  std::vector<Eigen::VectorXd> variances =
+    compute_cluster_uncertainties(structure);
+
+  std::vector<std::vector<int>> sorted_indices;
+  for (int i = 0; i < n_kernels; i++){
+    // Sort cluster indices by decreasing uncertainty.
+    std::vector<int> indices(variances[i].size());
+    iota(indices.begin(), indices.end(), 0);
+    Eigen::VectorXd v = variances[i];
+    stable_sort(indices.begin(), indices.end(),
+                [&v](int i1, int i2){return v(i1) > v(i2);});
+    sorted_indices.push_back(indices);
+  }
+
+  return sorted_indices;
+}
+
 std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
   const Structure &structure){
 
@@ -110,26 +131,19 @@ void SparseGP ::add_uncertain_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
   // Compute cluster uncertainties.
-  std::vector<Eigen::VectorXd> variances =
-    compute_cluster_uncertainties(structure);
+  std::vector<std::vector<int>> sorted_indices =
+    sort_clusters_by_uncertainty(structure);
 
-  std::vector<std::vector<int>> sorted_indices;
+  std::vector<std::vector<int>> n_sorted_indices;
   for (int i = 0; i < n_kernels; i++){
-    // Sort cluster indices by decreasing uncertainty.
-    std::vector<int> indices(variances[i].size());
-    iota(indices.begin(), indices.end(), 0);
-    Eigen::VectorXd v = variances[i];
-    stable_sort(indices.begin(), indices.end(),
-                [&v](int i1, int i2){return v(i1) > v(i2);});
-
     // Take the first N indices.
     int n_curr = n_added[i];
-    if (n_curr > variances[i].size()) n_curr = variances[i].size();
+    if (n_curr > sorted_indices[i].size()) n_curr = sorted_indices[i].size();
     std::vector<int> n_indices(n_curr);
     for (int j = 0; j < n_curr; j++){
-      n_indices[j] = indices[j];
+      n_indices[j] = sorted_indices[i][j];
     }
-    sorted_indices.push_back(n_indices);
+    n_sorted_indices.push_back(n_indices);
   }
 
   // Create cluster descriptors.

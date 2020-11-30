@@ -5,20 +5,6 @@
 #include <chrono>
 #include <numeric> // Iota
 
-TEST(TestSort, TestSort){
-    std::vector<int> test(5);
-    iota(test.begin(), test.end(), 0);
-    Eigen::VectorXd test2(5);
-    test2 << 3, 1, 2, 5, 4;
-
-    std::stable_sort(test.begin(), test.end(),
-                     [&test2](int i, int j) {return test2[i] > test2[j];});
-    
-    for (int i = 0; i < test.size(); i++){
-        std::cout << test[i] << std::endl;
-    }
-}
-
 // TEST(TestPar, TestPar){
 //   std::cout << omp_get_max_threads() << std::endl;
 //   #pragma omp parallel for
