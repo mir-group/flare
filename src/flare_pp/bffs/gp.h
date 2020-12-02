@@ -50,6 +50,8 @@ public:
 
 void assign_kernels(
   const Eigen::MatrixXd &efs_kernels, Eigen::MatrixXd &Kff_kernels,
-  int n_energy, int n_force, int n_stress, int n_labels, int n_atoms);
+  int n_energy_1, int n_force_1, int n_stress_1, int n_atoms_1,
+  int n_energy_2, int n_force_2, int n_stress_2, int n_atoms_2,
+  int row, int col);
 
 #endif
