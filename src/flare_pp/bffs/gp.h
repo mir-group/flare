@@ -39,6 +39,7 @@ public:
   GP(std::vector<Kernel *> kernels, double energy_noise, double force_noise,
      double stress_noise);
 
+  // TODO:
   void add_training_structure(const Structure &structure);
   void update_matrices();
   void predict(Structure &structure);
@@ -46,5 +47,9 @@ public:
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
   void set_hyperparameters(Eigen::VectorXd hyps);
 };
+
+void assign_kernels(
+  const Eigen::MatrixXd &efs_kernels, Eigen::MatrixXd &Kff_kernels,
+  int n_energy, int n_force, int n_stress, int n_labels, int n_atoms);
 
 #endif
