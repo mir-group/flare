@@ -9,6 +9,3 @@ Kernels
    mc_sephyps
    cutoffs
    helper
-
-.. automodule:: flare.gp
-    :members:
