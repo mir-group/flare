@@ -4,7 +4,7 @@ function of the low-dimensional decomposition of Gaussian Process, \
 with little loss of accuracy. Refer to \
 `Xie et al. <https://arxiv.org/abs/2008.11796>`_, \
 `Vandermause et al. <https://www.nature.com/articles/s41524-020-0283-z>`_, \
-`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_.
+`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
 """
 import time, os, math, inspect, subprocess, json, warnings, pickle
 import numpy as np
