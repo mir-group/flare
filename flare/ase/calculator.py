@@ -58,7 +58,7 @@ class FLARE_Calculator(Calculator):
             by default.
     """
 
-    implemented_properties = ['energy', 'forces', 'stress', 'stds']
+    implemented_properties = ["energy", "forces", "stress", "stds"]
 
     def __init__(
         self, gp_model, mgp_model=None, par=False, use_mapping=False, **kwargs
@@ -73,8 +73,7 @@ class FLARE_Calculator(Calculator):
     def get_uncertainties(self, atoms):
         return self.get_property("stds", atoms)
 
-    def calculate(self, atoms=None, properties=None,
-                  system_changes=all_changes):
+    def calculate(self, atoms=None, properties=None, system_changes=all_changes):
         """
         Calculate properties including: energy, local energies, forces,
             stress, uncertainties.
@@ -83,8 +82,9 @@ class FLARE_Calculator(Calculator):
             atoms (FLARE_Atoms): FLARE_Atoms object
         """
 
-        super().calculate(atoms=atoms, properties=properties,
-            system_changes=system_changes)
+        super().calculate(
+            atoms=atoms, properties=properties, system_changes=system_changes
+        )
 
         if properties is None:
             properties = self.implemented_properties
@@ -187,7 +187,6 @@ class FLARE_Calculator(Calculator):
 
     def calculation_required(self, atoms, quantities):
         return True
-
 
     def as_dict(self):
         outdict = {}

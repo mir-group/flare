@@ -1874,7 +1874,7 @@ def get_neg_like(
 
     alpha = np.matmul(ky_mat_inv, labels)
 
-    like = get_like_from_mats(ky_mat,l_mat,alpha,name)
+    like = get_like_from_mats(ky_mat, l_mat, alpha, name)
 
     logger.debug(f"get_like_from_mats {time.time()-time0}")
 
@@ -1882,6 +1882,7 @@ def get_neg_like(
     logger.debug(f"{name} Likelihood: {like}")
 
     return -like
+
 
 def get_neg_like_grad(
     hyps: np.ndarray,

@@ -41,7 +41,7 @@ class OTF:
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
-        force_only (bool, optional): If True, only use forces for training. 
+        force_only (bool, optional): If True, only use forces for training.
             Default to False, use forces, energy and stress for training.
 
         std_tolerance_factor (float, optional): Threshold that determines
@@ -297,7 +297,7 @@ class OTF:
 
             counter += 1
             # TODO: Reinstate velocity rescaling.
-            self.md_step() # update positions by Verlet
+            self.md_step()  # update positions by Verlet
             self.steps_since_dft += 1
             self.rescale_temperature(self.structure.positions)
 
