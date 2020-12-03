@@ -25,10 +25,13 @@ Gaussian Processes
 
 
 2. How should I choose my cutoffs?
-        The right cutoff depends on the system you're studying: ionic systems often do better with a larger 2-body cutoff, 
-        while dense systems like diamond require smaller cutoffs. We recommend you to refer to the radial distribution function 
-        of your atomic system first, then try a range of cutoff values and examine the model error, optimized noise parameter, 
-        and model likelihood as a function of the cutoff.
+        * The right cutoff depends on the system you're studying: ionic systems often do better with a larger 2-body cutoff, 
+        while dense systems like diamond require smaller cutoffs. 
+
+        * We recommend you to refer to the radial distribution function of your atomic system first, then try a range of cutoff 
+        values and examine the model error, optimized noise parameter, and model likelihood as a function of the cutoff.
+
+        * In the current implementation, the 3-body cutoff needs to be smaller than 2-body cutoff.
 
 3. What is a good strategy for hyperparameter optimization?	
         The hyperparameter optimization is important for obtaining a good model. 
