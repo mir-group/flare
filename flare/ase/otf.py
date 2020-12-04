@@ -210,9 +210,6 @@ class ASE_OTF(OTF):
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
 
-    def write_gp(self):
-        self.flare_calc.write_model(self.flare_name)
-
     def rescale_temperature(self, new_pos):
         # call OTF method
         super().rescale_temperature(new_pos)
