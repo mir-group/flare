@@ -117,11 +117,9 @@ def parameter():
 
         delta = 1e-8
         cutoffs, hyps1, hyps2, hm1, hm2 = generate_same_hm(kernels, multi_cutoff=False)
-        (
-            cutoffs,
-            hyps2,
-            hm2,
-        ) = generate_diff_hm(kernels, diff_cutoff=False, constraint=False)
+        (cutoffs, hyps2, hm2,) = generate_diff_hm(
+            kernels, diff_cutoff=False, constraint=False
+        )
 
         cell = 1e7 * np.eye(3)
         env1 = generate_mb_envs(hm1["cutoffs"], cell, delta, 1)

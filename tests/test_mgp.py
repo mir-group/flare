@@ -306,8 +306,9 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     map_str = "energy"
     gp_pred_var = gp_pred_envar
     print("mgp_en, gp_en", mgp_pred[3], gp_pred_en)
-    assert  np.allclose(mgp_pred[3], gp_pred_en, rtol=2e-3), f"{bodies} body" \
-                                                             f" {map_str} mapping is wrong"
+    assert np.allclose(mgp_pred[3], gp_pred_en, rtol=2e-3), (
+        f"{bodies} body" f" {map_str} mapping is wrong"
+    )
 
     #    if multihyps and ('3' in bodies):
     #        pytest.skip()

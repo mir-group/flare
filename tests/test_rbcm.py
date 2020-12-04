@@ -61,8 +61,7 @@ def test_prediction():
     """
     prior_var = 0.1
     rbcm = RobustBayesianCommitteeMachine(
-        ndata_per_expert=100,
-        prior_variance=prior_var,
+        ndata_per_expert=100, prior_variance=prior_var,
     )
     gp = GaussianProcess()
 
