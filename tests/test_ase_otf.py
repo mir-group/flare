@@ -161,10 +161,10 @@ def qe_calc():
     dft_calculator = LennardJones()
     dft_calculator.parameters.sigma = 3.0
     dft_calculator.parameters.rc = 3 * dft_calculator.parameters.sigma
-                                   
-    yield dft_calculator           
-    del dft_calculator             
-                                   
+
+    yield dft_calculator
+    del dft_calculator
+
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
