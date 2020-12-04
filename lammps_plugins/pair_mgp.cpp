@@ -65,10 +65,10 @@ PairMGP::PairMGP(LAMMPS *lmp) : Pair(lmp) {
   ecoeff_3body = NULL;
   fcoeff_3body = NULL;
 
+  cutmax = 0.0;
   cutsq = NULL;
   cut2bsq = NULL;
   cut3bsq = NULL;
-
   cutshortsq = 0;
 
   maxshort = 20;
@@ -95,6 +95,19 @@ PairMGP::PairMGP(LAMMPS *lmp) : Pair(lmp) {
   // {-3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0},
   // { 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0}
 
+  // initialize with 0.0
+  for (int j = 0; j < 4; j++) {
+    Bd[j] = 0.0;
+    Cd[j] = 0.0;
+    basis[j] = 0.0;
+    for (int i = 0; i < 4; i++) {
+      dAd[j][i] = 0.0;
+      d2Ad[j][i] = 0.0;
+    }
+  }
+
+
+  // calculate values
   for (int j = 0; j < 4; j++) {
     for (int i = 1; i < 4; i++) {
       dAd[j][i] = Ad[j][i - 1] * (4 - i);
@@ -266,6 +279,9 @@ void PairMGP::compute(int eflag, int vflag) {
 
             r = sqrt(rsq);
 
+            if (r < lo_2body[mapid])
+              error->all(FLERR, "MGP lower bound: The interatomic distance is smaller than the 2b lower bound.");
+
             // TODO: pay attention to the sign of the force
 
             // energy and forces are both computed
@@ -362,6 +378,8 @@ void PairMGP::compute(int eflag, int vflag) {
           rij = sqrt(rsq1);
           rik = sqrt(rsq2);
           rjk = sqrt(rsq12);
+          if (rij < lo_3body[mapid1][0] || rik < lo_3body[mapid1][1] || rjk < lo_3body[mapid1][2])
+              error->all(FLERR, "MGP lower bound: The interatomic distance is smaller than the 3b lower bound.");
 
           // compute spline
           eval_cubic_splines_3d(lo_3body[mapid1], hi_3body[mapid1],
@@ -405,13 +423,13 @@ void PairMGP::compute(int eflag, int vflag) {
           //          if (evflag)
           //          ev_tally3(i,j,k,evdwl,0.0,fij,fik,delr1,delr2);
           if (evflag) {
-            ev_tally_full(i,evdwl,0.0,-f_ij,delr1[0],delr1[1],delr1[2]);
-            ev_tally_full(i,evdwl,0.0,-f_ik,delr2[0],delr2[1],delr2[2]);
+//            ev_tally_full(i,evdwl,0.0,-f_ij,delr1[0],delr1[1],delr1[2]);
+//            ev_tally_full(i,evdwl,0.0,-f_ik,delr2[0],delr2[1],delr2[2]);
 
-//            ev_tally_xyz_full(i, evdwl, 0.0, -fij[0], -fij[1], -fij[2],
-//                              delr1[0], delr1[1], delr1[2]);
-//            ev_tally_xyz_full(i, evdwl, 0.0, -fik[0], -fik[1], -fik[2],
-//                              delr2[0], delr2[1], delr2[2]);
+            ev_tally_xyz_full(i, evdwl, 0.0, -fij[0], -fij[1], -fij[2],
+                              delr1[0], delr1[1], delr1[2]);
+            ev_tally_xyz_full(i, evdwl, 0.0, -fik[0], -fik[1], -fik[2],
+                              delr2[0], delr2[1], delr2[2]);
           }
 
           //          if (evflag) {

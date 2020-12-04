@@ -7,9 +7,7 @@ Download
 --------
 
 If you want to use MGP force field in LAMMPS, the first step is to download our MGP pair_style source code from:
-https://github.com/mir-group/flare/tree/master/flare/mgp/pair_styles
-
-If you want to install without Kokkos acceleration, please download `pair_mgp.*`, otherwise, download `pair_mgp_kokkos.*`.
+https://github.com/mir-group/flare/tree/master/lammps_plugins
 
 Then, follow the instruction below to compile the LAMMPS executable.
 
@@ -23,8 +21,9 @@ Compiling
 
 .. code-block:: bash
 
-    cp lammps_plugin/pair_mgp.* /path/to/lammps/src
+    cp -r lammps_plugin /path/to/lammps/src/USER-MGP
     cd /path/to/lammps/src
+    make yes-user-mgp
     make -j$(nproc) mpi
 
 
@@ -50,8 +49,9 @@ Compiling
 
 .. code-block:: bash
 
-    cp lammps_plugin/pair_mgp*.* /path/to/lammps/src
+    cp -r lammps_plugin /path/to/lammps/src/USER-MGP
     cd /path/to/lammps/src
+    make yes-user-mgp
     make yes-kokkos
     make -j$(nproc) kokkos_omp
 
@@ -99,8 +99,9 @@ Compiling
 
 .. code-block:: bash
 
-    cp lammps_plugin/pair_mgp*.* /path/to/lammps/src
+    cp -r lammps_plugin /path/to/lammps/src/USER-MGP
     cd /path/to/lammps/src
+    make yes-user-mgp
     make yes-kokkos
     make -j$(nproc) KOKKOS_ARCH=Volta70 kokkos_cuda_mpi
 

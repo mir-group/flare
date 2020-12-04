@@ -1082,7 +1082,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         thestr += f"Cutoffs: {self.cutoffs}\n"
         thestr += f"Number of Experts: {len(self.training_data)}\n"
 
-
         thestr += f"Number of hyperparameters: {len(self.hyps)}\n"
         thestr += f"Hyperparameters_array: {str(self.hyps)}\n"
         thestr += "Hyperparameters: \n"

@@ -385,7 +385,7 @@ class Output:
         else:
             for i, hyp in enumerate(hyps):
                 f.info(f"Hyp{i} : {hyp:.4f}")
-        if isinstance(like,list):
+        if isinstance(like, list):
             f.info(f"Likelihood: {np.round(like,4)}")
         else:
             f.info(f"Likelihood: {like:.4f}")

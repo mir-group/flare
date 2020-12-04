@@ -963,6 +963,7 @@ class GaussianProcess:
                     )
             new_gp.energy_labels = deepcopy(dictionary["energy_labels"])
             new_gp.energy_labels_np = deepcopy(dictionary["energy_labels_np"])
+            new_gp.sync_data()
 
         new_gp.all_labels = np.concatenate(
             (new_gp.training_labels_np, new_gp.energy_labels_np)
@@ -1322,6 +1323,8 @@ class GaussianProcess:
             return (
                 _global_training_data.pop(self.name, None),
                 _global_training_labels.pop(self.name, None),
+                _global_training_structures.pop(self.name, None),
+                _global_energy_labels.pop(self.name, None),
             )
 
     @staticmethod
