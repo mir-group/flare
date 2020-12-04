@@ -3,8 +3,8 @@ from flare import struc
 import sys
 sys.path.append("../..")
 sys.path.append("../../build")
-from flare_pp.sparse_gp import SparseGP
-from _C_flare import NormalizedDotProduct, B2, SparseGP_DTC
+from flare_pp.sparse_gp import SGP_Wrapper
+from _C_flare import NormalizedDotProduct, B2, SparseGP
 
 
 # Make random structure.
@@ -38,9 +38,9 @@ sigma_s = 1.0
 species_map = {0: 0, 1: 1}
 max_iterations = 20
 
-sgp_cpp = SparseGP_DTC([kernel], sigma_e, sigma_f, sigma_s)
-sgp_py = SparseGP([kernel], [calc], cutoff, sigma_e, sigma_f, sigma_s,
-                  species_map, max_iterations=max_iterations)
+sgp_cpp = SparseGP([kernel], sigma_e, sigma_f, sigma_s)
+sgp_py = SGP_Wrapper([kernel], [calc], cutoff, sigma_e, sigma_f, sigma_s,
+                     species_map, max_iterations=max_iterations)
 
 
 def test_update_db():

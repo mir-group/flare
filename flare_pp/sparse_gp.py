@@ -1,10 +1,10 @@
 import numpy as np
-from _C_flare import SparseGP_DTC, Structure
+from _C_flare import SparseGP, Structure
 from scipy.optimize import minimize
 from typing import List
 
 
-class SparseGP:
+class SGP_Wrapper:
     """Wrapper class used to make the C++ sparse GP object compatible with
     OTF. Methods and properties are designed to mirror the GP class."""
 
@@ -25,7 +25,7 @@ class SparseGP:
         max_iterations=10,
     ):
 
-        self.sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s)
+        self.sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s)
         self.descriptor_calculators = descriptor_calculators
         self.cutoff = cutoff
         self.hyps_mask = None
@@ -118,7 +118,7 @@ class SparseGP:
 
         # Update the sparse GP.
         self.sparse_gp.add_training_structure(structure_descriptor)
-        self.sparse_gp.add_sparse_environments(structure_descriptor)
+        self.sparse_gp.add_all_environments(structure_descriptor)
         self.sparse_gp.update_matrices_QR()
 
     def set_L_alpha(self):
