@@ -15,7 +15,7 @@ public:
 
   virtual ~Descriptor() = default;
 
-  void write_to_file(std::ofstream &coeff_file, int coeff_size);
+  virtual void write_to_file(std::ofstream &coeff_file, int coeff_size);
 };
 
 class DescriptorValues {

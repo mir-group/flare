@@ -150,7 +150,7 @@ TEST_F(StructureTest, LikeGrad) {
   double sigma_s = 3;
 
   std::vector<Kernel *> kernels;
-  kernels.push_back(&kernel);
+  kernels.push_back(&kernel_3);
   SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
@@ -167,6 +167,9 @@ TEST_F(StructureTest, LikeGrad) {
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
 
   sparse_gp.update_matrices_QR();
+
+  // Test mapping coefficients.
+  sparse_gp.write_mapping_coefficients("beta.txt", "Jon V", 0);
 
   // Check the likelihood function.
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;

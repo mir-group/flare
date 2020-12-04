@@ -48,6 +48,7 @@ GP ::GP(std::vector<Kernel *> kernels, double energy_noise, double force_noise,
   }
 }
 
+// TODO: Finish implementing.
 void GP ::add_training_structure(const Structure &structure) {
 
   int n_energy = structure.energy.size();
