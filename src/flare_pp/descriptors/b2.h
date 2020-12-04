@@ -27,6 +27,8 @@ public:
      const std::vector<int> &descriptor_settings);
 
   DescriptorValues compute_struc(Structure &structure);
+
+  void write_to_file(std::ofstream &coeff_file, int coeff_size);
 };
 
 void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,

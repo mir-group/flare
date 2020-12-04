@@ -14,6 +14,8 @@ public:
   virtual DescriptorValues compute_struc(Structure &structure) = 0;
 
   virtual ~Descriptor() = default;
+
+  void write_to_file(std::ofstream &coeff_file, int coeff_size);
 };
 
 class DescriptorValues {

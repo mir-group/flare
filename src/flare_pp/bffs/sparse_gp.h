@@ -68,6 +68,10 @@ public:
 
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
   void set_hyperparameters(Eigen::VectorXd hyps);
+
+  void write_mapping_coefficients(std::string file_name,
+                                  std::string contributor,
+                                  int kernel_index);
 };
 
 #endif

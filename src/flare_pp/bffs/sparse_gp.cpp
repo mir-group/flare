@@ -1,8 +1,10 @@
 #include "sparse_gp.h"
 #include <chrono>
 #include <iostream>
+#include <fstream> // File operations
 #include <numeric> // Iota
 #include <algorithm> // Random shuffle
+#include <iomanip> // setprecision
 
 SparseGP ::SparseGP() {}
 
@@ -741,4 +743,66 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
 
   // Update remaining matrices.
   update_matrices_QR();
+}
+
+void SparseGP::write_mapping_coefficients(
+  std::string file_name, std::string contributor, int kernel_index) {
+
+  // Compute mapping coefficients.
+  Eigen::MatrixXd mapping_coeffs =
+    kernels[kernel_index]->compute_mapping_coefficients(*this, kernel_index);
+
+  // Make beta file.
+  std::ofstream coeff_file;
+  coeff_file.open(file_name);
+
+  // Record the date.
+  time_t now = std::time(0);
+  std::string t(ctime(&now));
+  coeff_file << "DATE: ";
+  coeff_file << t.substr(0, t.length() - 1) << " ";
+
+  // Record the contributor.
+  coeff_file << "CONTRIBUTOR: ";
+  coeff_file << contributor << "\n";
+
+  // Write descriptor information to file.
+  int coeff_size = mapping_coeffs.row(0).size();
+  training_structures[0].descriptor_calculators[kernel_index]->
+    write_to_file(coeff_file, coeff_size);
+
+  // Write beta vectors to file.
+  coeff_file << std::scientific << std::setprecision(16);
+
+  int count = 0;
+  for (int i = 0; i < mapping_coeffs.rows(); i++) {
+    Eigen::VectorXd coeff_vals = mapping_coeffs.row(i);
+
+    // Start a new line for each beta.
+    if (count != 0) {
+      coeff_file << "\n";
+    }
+
+    for (int j = 0; j < coeff_vals.size(); j++) {
+      double coeff_val = coeff_vals[j];
+
+      // Pad with 2 spaces if positive, 1 if negative.
+      if (coeff_val > 0) {
+        coeff_file << "  ";
+      } else {
+        coeff_file << " ";
+      }
+
+      coeff_file << coeff_vals[j];
+      count++;
+
+      // New line if 5 numbers have been added.
+      if (count == 5) {
+        count = 0;
+        coeff_file << "\n";
+      }
+    }
+  }
+
+  coeff_file.close();
 }
