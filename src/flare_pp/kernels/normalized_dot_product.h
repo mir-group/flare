@@ -8,7 +8,6 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
-// TODO: Make this an abstract class.
 class NormalizedDotProduct : public Kernel {
 public:
   double sigma, sig2, power;
@@ -53,6 +52,9 @@ public:
            const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &new_hyps);
 
   void set_hyperparameters(Eigen::VectorXd new_hyps);
+
+  Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
+                                               int kernel_index);
 };
 
 #endif

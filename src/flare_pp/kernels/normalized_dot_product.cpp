@@ -1,6 +1,7 @@
 #include "normalized_dot_product.h"
 #include "descriptor.h"
 #include "structure.h"
+#include "sparse_gp.h"
 #undef NDEBUG
 #include <assert.h>
 #include <cmath>
@@ -618,4 +619,71 @@ void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {
   sigma = new_hyps(0);
   sig2 = sigma * sigma;
   kernel_hyperparameters = new_hyps;
+}
+
+Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
+    const SparseGP &gp_model, int kernel_index){
+
+  // Assumes there is at least one sparse environment stored in the sparse GP.
+
+  Eigen::MatrixXd mapping_coeffs;
+  if (power != 2){
+      std::cout
+          << "Mapping coefficients of the normalized dot product kernel are "
+             "implemented for power 2 only."
+          << std::endl;
+      return mapping_coeffs;
+  }
+
+  // Initialize beta vector.
+  int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
+  int beta_size = p_size * (p_size + 1) / 2;
+  int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
+  int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
+  mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
+
+  // Get alpha index.
+  int alpha_ind = 0;
+  for (int i = 0; i < kernel_index; i++){
+      alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
+  }
+
+  // Loop over types.
+  for (int i = 0; i < n_species; i++){
+    int n_types = gp_model.sparse_descriptors[kernel_index].type_count[i];
+    int c_types =
+      gp_model.sparse_descriptors[kernel_index].cumulative_type_count[i];
+
+    // Loop over clusters within each type.
+    for (int j = 0; j < n_types; j++){
+      Eigen::VectorXd p_current =
+        gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
+      double p_norm =
+        gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
+      double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
+      int beta_count = 0;
+
+      // First loop over descriptor values.
+      for (int k = 0; k < p_size; k++) {
+        double p_ik = p_current(k) / p_norm;
+
+        // Second loop over descriptor values.
+        for (int l = k; l < p_size; l++){
+          double p_il = p_current(l) / p_norm;
+          double beta_val = sig2 * p_ik * p_il * alpha_val;
+
+          // Update beta vector.
+          if (j != k) {
+            mapping_coeffs(i, beta_count) += 2 * beta_val;
+          } else {
+            mapping_coeffs(i, beta_count) += beta_val;
+          }
+
+          beta_count++;
+        }
+      }
+    }
+  }
+
+  return mapping_coeffs;
 }

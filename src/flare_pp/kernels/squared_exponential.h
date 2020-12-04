@@ -40,6 +40,9 @@ public:
                               const Eigen::VectorXd &hyps);
 
   void set_hyperparameters(Eigen::VectorXd hyps);
+
+  Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
+                                               int kernel_index);
 };
 
 #endif
