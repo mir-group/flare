@@ -1322,6 +1322,8 @@ class GaussianProcess:
             return (
                 _global_training_data.pop(self.name, None),
                 _global_training_labels.pop(self.name, None),
+                _global_training_structures.pop(self.name, None),
+                _global_energy_labels.pop(self.name, None),
             )
 
     @staticmethod
