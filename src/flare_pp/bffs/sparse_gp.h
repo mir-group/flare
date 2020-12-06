@@ -20,7 +20,7 @@ public:
 
   // Solution attributes.
   Eigen::MatrixXd Sigma, Kuu_inverse;
-  Eigen::VectorXd alpha;
+  Eigen::VectorXd alpha, R_inv_diag, L_diag;
 
   // Training and sparse points.
   std::vector<ClusterDescriptor> sparse_descriptors;
@@ -64,6 +64,7 @@ public:
   void predict_SOR(Structure &structure);
   void predict_DTC(Structure &structure);
 
+  void compute_likelihood_stable();
   void compute_likelihood();
 
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);

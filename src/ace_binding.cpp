@@ -122,6 +122,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("add_training_structure", &SparseGP::add_training_structure)
       .def("update_matrices_QR", &SparseGP::update_matrices_QR)
       .def("compute_likelihood", &SparseGP::compute_likelihood)
+      .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)
       .def("compute_likelihood_gradient",
            &SparseGP::compute_likelihood_gradient)
       .def("write_mapping_coefficients", &SparseGP::write_mapping_coefficients)

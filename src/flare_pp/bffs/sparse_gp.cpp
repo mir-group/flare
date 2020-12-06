@@ -439,9 +439,10 @@ void SparseGP ::update_matrices_QR() {
   // Cholesky decompose Kuu.
   Eigen::LLT<Eigen::MatrixXd> chol(
       Kuu + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()));
+  Eigen::MatrixXd L_mat = chol.matrixL();
+  L_diag = L_mat.diagonal();
 
   // Get the inverse from Cholesky decomposition.
-  // TODO: Check if this is actually faster than explicit inversion.
   Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
   Kuu_inverse = chol.solve(Kuu_eye);
 
@@ -459,10 +460,10 @@ void SparseGP ::update_matrices_QR() {
   // QR decompose A.
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
   Eigen::VectorXd Q_b = qr.householderQ().transpose() * b;
-  Eigen::MatrixXd R_inv = qr.matrixQR()
-                              .block(0, 0, Kuu.cols(), Kuu.cols())
-                              .triangularView<Eigen::Upper>()
-                              .solve(Kuu_eye);
+  Eigen::MatrixXd R_inv = qr.matrixQR().block(0, 0, Kuu.cols(), Kuu.cols())
+                                       .triangularView<Eigen::Upper>()
+                                       .solve(Kuu_eye);
+  R_inv_diag = R_inv.diagonal();
   alpha = R_inv * Q_b;
   Sigma = R_inv * R_inv.transpose();
 }
@@ -516,6 +517,35 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
   V_SOR = (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
 
   test_structure.variance_efs = K_self - Q_self + V_SOR;
+}
+
+void SparseGP ::compute_likelihood_stable(){
+  // Compute inverse of Qff from Sigma.
+  Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
+  Eigen::MatrixXd Qff_inverse =
+    noise_diag - noise_diag * Kuf.transpose() * Sigma * Kuf * noise_diag;
+
+  data_fit = -(1./2.) * y.transpose() * Qff_inverse * y;
+  constant_term = -(1./2.) * n_labels * log(2 * M_PI);
+
+  // Compute complexity penalty.
+  double noise_det = 0;
+  for (int i = 0; i < noise_vector.size(); i++){
+    noise_det += log(noise_vector(i));
+  }
+
+  double Kuu_inv_det = 0;
+  for (int i = 0; i < L_diag.size(); i++){
+    Kuu_inv_det += 2 * log(abs(L_diag(i)));
+  }
+
+  double sigma_inv_det = 0;
+  for (int i = 0; i < R_inv_diag.size(); i++){
+    sigma_inv_det += 2 * log(abs(R_inv_diag(i)));
+  }
+
+  complexity_penalty = (1./2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
+  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
 void SparseGP ::compute_likelihood() {

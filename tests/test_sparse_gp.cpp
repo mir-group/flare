@@ -108,11 +108,15 @@ TEST_F(StructureTest, SparseTest) {
             sparse_gp.log_marginal_likelihood);
   double like1 = sparse_gp.log_marginal_likelihood;
 
-    // Check the likelihood function.
-    Eigen::VectorXd hyps = sparse_gp.hyperparameters;
-    double like2 = sparse_gp.compute_likelihood_gradient(hyps);
+  sparse_gp.compute_likelihood_stable();
+  double like2 = sparse_gp.log_marginal_likelihood;
 
-    EXPECT_NEAR(like1, like2, 1e-8);
+  // Check the likelihood function.
+  Eigen::VectorXd hyps = sparse_gp.hyperparameters;
+  double like3 = sparse_gp.compute_likelihood_gradient(hyps);
+
+  EXPECT_NEAR(like1, like2, 1e-8);
+  EXPECT_NEAR(like1, like3, 1e-8);
 }
 
 TEST_F(StructureTest, TestAdd){
