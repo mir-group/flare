@@ -45,7 +45,7 @@ Kernel ::Kuf_grad(const ClusterDescriptor &envs,
         current_count += strucs[i].stresses.size();
     }
 
-    label_count(i + 1) = current_count;
+    label_count(i + 1) = label_count(i) + current_count;
     n_labels += current_count;
   }
 

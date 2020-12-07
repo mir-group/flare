@@ -135,6 +135,37 @@ def compute_negative_likelihood(hyperparameters, sparse_gp):
 
     assert len(hyperparameters) == len(sparse_gp.hyperparameters)
 
+    sparse_gp.set_hyperparameters(hyperparameters)
+    sparse_gp.compute_likelihood()
+    negative_likelihood = -sparse_gp.log_marginal_likelihood
+
+    # negative_likelihood = -sparse_gp.compute_likelihood_gradient(hyperparameters)
+    # negative_likelihood_gradient = -sparse_gp.likelihood_gradient
+
+    print("hyperparameters:")
+    print(hyperparameters)
+    # print("likelihood gradient:")
+    # print(-negative_likelihood_gradient)
+    print("likelihood:")
+    print(-negative_likelihood)
+    print("\n")
+
+    # print("hyperparameters:")
+    # print(hyperparameters)
+    # print("complexity penalty:")
+    # print(sparse_gp.complexity_penalty)
+    # print("data fit:")
+    # print(sparse_gp.data_fit)
+
+    return negative_likelihood
+
+
+def compute_negative_likelihood_grad(hyperparameters, sparse_gp):
+    """Compute the negative log likelihood and gradient with respect to the
+    hyperparameters."""
+
+    assert len(hyperparameters) == len(sparse_gp.hyperparameters)
+
     negative_likelihood = -sparse_gp.compute_likelihood_gradient(hyperparameters)
     negative_likelihood_gradient = -sparse_gp.likelihood_gradient
 
@@ -149,6 +180,32 @@ def compute_negative_likelihood(hyperparameters, sparse_gp):
     return negative_likelihood, negative_likelihood_gradient
 
 
+def optimize_hyperparameters_NM(
+    sparse_gp, display_results=True, gradient_tolerance=1e-4, max_iterations=10
+):
+    """Optimize the hyperparameters of a sparse GP model."""
+
+    # Optimize the hyperparameters with BFGS.
+    initial_guess = sparse_gp.hyperparameters
+
+    arguments = sparse_gp
+
+    optimization_result = minimize(
+        compute_negative_likelihood,
+        initial_guess,
+        args=arguments,
+        method="nelder-mead",
+        options={
+            "maxiter": max_iterations,
+        }
+    )
+
+    # Set the hyperparameters to the optimal value.
+    sparse_gp.set_hyperparameters(optimization_result.x)
+
+    return optimization_result
+
+
 def optimize_hyperparameters(
     sparse_gp, display_results=True, gradient_tolerance=1e-4, max_iterations=10
 ):
@@ -159,7 +216,7 @@ def optimize_hyperparameters(
     arguments = sparse_gp
 
     optimization_result = minimize(
-        compute_negative_likelihood,
+        compute_negative_likelihood_grad,
         initial_guess,
         arguments,
         method="BFGS",

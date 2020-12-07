@@ -522,10 +522,9 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
 void SparseGP ::compute_likelihood_stable(){
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
-  Eigen::MatrixXd Qff_inverse =
-    noise_diag - noise_diag * Kuf.transpose() * Sigma * Kuf * noise_diag;
 
-  data_fit = -(1./2.) * y.transpose() * Qff_inverse * y;
+  data_fit = -(1./2.) * y.transpose() * noise_diag *
+             (y - Kuf.transpose() * alpha);
   constant_term = -(1./2.) * n_labels * log(2 * M_PI);
 
   // Compute complexity penalty.
@@ -693,7 +692,7 @@ double SparseGP ::compute_likelihood_gradient(
   Eigen::MatrixXd Qff_inverse = lu.inverse();
 
   // Compute log determinant from the diagonal of U.
-  double complexity_penalty = 0;
+  complexity_penalty = 0;
   for (int i = 0; i < Qff_plus_lambda.rows(); i++) {
     complexity_penalty += -log(abs(Qff_plus_lambda(i, i)));
   }
@@ -701,10 +700,9 @@ double SparseGP ::compute_likelihood_gradient(
 
   // Compute log marginal likelihood.
   Eigen::VectorXd Q_inv_y = Qff_inverse * y;
-  double data_fit = -(1. / 2.) * y.transpose() * Q_inv_y;
-  double constant_term = -n_labels * log(2 * M_PI) / 2;
-  double log_marginal_likelihood =
-      complexity_penalty + data_fit + constant_term;
+  data_fit = -(1. / 2.) * y.transpose() * Q_inv_y;
+  constant_term = -n_labels * log(2 * M_PI) / 2;
+  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 
   // Compute likelihood gradient.
   likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
