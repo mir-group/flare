@@ -611,8 +611,10 @@ double SparseGP ::compute_likelihood_gradient(
       Kuu_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_sparse));
       Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
 
-      Kuu_grads[j].block(count, count, size, size) = Kuu_grad[j + 1];
-      Kuf_grads[j].block(count, 0, size, n_labels) = Kuf_grad[j + 1];
+      Kuu_grads[hyp_index + j].block(count, count, size, size) =
+        Kuu_grad[j + 1];
+      Kuf_grads[hyp_index + j].block(count, 0, size, n_labels) =
+        Kuf_grad[j + 1];
     }
 
     count += size;
