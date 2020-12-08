@@ -49,9 +49,9 @@ Eigen::MatrixXd SquaredExponential ::envs_envs(const ClusterDescriptor &envs1,
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
     // Compute kernels.
-    int n_sparse_1 = envs1.type_count[s];
+    int n_sparse_1 = envs1.n_clusters_by_type[s];
     int c_sparse_1 = envs1.cumulative_type_count[s];
-    int n_sparse_2 = envs2.type_count[s];
+    int n_sparse_2 = envs2.n_clusters_by_type[s];
     int c_sparse_2 = envs2.cumulative_type_count[s];
 
 #pragma omp parallel for
@@ -112,9 +112,9 @@ SquaredExponential ::envs_envs_grad(const ClusterDescriptor &envs1,
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
     // Compute kernels.
-    int n_sparse_1 = envs1.type_count[s];
+    int n_sparse_1 = envs1.n_clusters_by_type[s];
     int c_sparse_1 = envs1.cumulative_type_count[s];
-    int n_sparse_2 = envs2.type_count[s];
+    int n_sparse_2 = envs2.n_clusters_by_type[s];
     int c_sparse_2 = envs2.cumulative_type_count[s];
 
 #pragma omp parallel for
@@ -182,7 +182,7 @@ Eigen::MatrixXd SquaredExponential ::envs_struc(const ClusterDescriptor &envs,
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
     // Compute kernels, parallelizing over environments.
-    int n_sparse = envs.type_count[s];
+    int n_sparse = envs.n_clusters_by_type[s];
     int n_struc = struc.n_clusters_by_type[s];
     int c_sparse = envs.cumulative_type_count[s];
 
@@ -283,7 +283,7 @@ SquaredExponential ::envs_struc_grad(const ClusterDescriptor &envs,
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
     // Compute kernels, parallelizing over environments.
-    int n_sparse = envs.type_count[s];
+    int n_sparse = envs.n_clusters_by_type[s];
     int n_struc = struc.n_clusters_by_type[s];
     int c_sparse = envs.cumulative_type_count[s];
 

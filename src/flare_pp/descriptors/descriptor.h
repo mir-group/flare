@@ -18,6 +18,7 @@ public:
   virtual void write_to_file(std::ofstream &coeff_file, int coeff_size);
 };
 
+// DescriptorValues holds the descriptor values for a single structure.
 class DescriptorValues {
 public:
   DescriptorValues();
@@ -36,6 +37,8 @@ public:
   std::vector<int> n_clusters_by_type, n_neighbors_by_type;
 };
 
+// ClusterDescriptor holds the descriptor values for a collection of clusters
+// (excluding partial force derivatives).
 class ClusterDescriptor {
 public:
   ClusterDescriptor();
@@ -51,7 +54,7 @@ public:
 
   std::vector<Eigen::MatrixXd> descriptors;
   std::vector<Eigen::VectorXd> descriptor_norms, cutoff_values;
-  std::vector<int> type_count, cumulative_type_count;
+  std::vector<int> n_clusters_by_type, cumulative_type_count;
   int n_descriptors, n_types;
   int n_clusters = 0;
 

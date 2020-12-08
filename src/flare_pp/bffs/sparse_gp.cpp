@@ -257,8 +257,8 @@ void SparseGP ::update_Kuu(
     int n2 = 0; // Sparse descriptor count
     int n3 = 0; // Cluster descriptor count
     for (int j = 0; j < n_types; j++){
-      int n4 = sparse_descriptors[i].type_count[j];
-      int n5 = cluster_descriptors[i].type_count[j];
+      int n4 = sparse_descriptors[i].n_clusters_by_type[j];
+      int n5 = cluster_descriptors[i].n_clusters_by_type[j];
 
       Eigen::MatrixXd prev_vals = prev_block.block(n2, n3, n4, n5);
       Eigen::MatrixXd self_vals = self_block.block(n3, n3, n5, n5);
@@ -292,8 +292,8 @@ void SparseGP ::update_Kuf(
     Eigen::ArrayXi inds = Eigen::ArrayXi::Zero(n_types + 1);
     int counter = 0;
     for (int j = 0; j < n_types; j++){
-      int t1 = sparse_descriptors[i].type_count[j];
-      int t2 = cluster_descriptors[i].type_count[j];
+      int t1 = sparse_descriptors[i].n_clusters_by_type[j];
+      int t2 = cluster_descriptors[i].n_clusters_by_type[j];
       counter += t1 + t2;
       inds(j + 1) = counter;
     }
@@ -313,8 +313,8 @@ void SparseGP ::update_Kuf(
       for (int k = 0; k < n_types; k++){
         int current_count = 0;
         int u_ind = inds(k);
-        int n3 = sparse_descriptors[i].type_count[k];
-        int n4 = cluster_descriptors[i].type_count[k];
+        int n3 = sparse_descriptors[i].n_clusters_by_type[k];
+        int n4 = cluster_descriptors[i].n_clusters_by_type[k];
 
         if (training_structures[j].energy.size() != 0) {
           kern_mat.block(u_ind, label_count(j), n3, 1) =
