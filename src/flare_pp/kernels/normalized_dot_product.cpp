@@ -673,7 +673,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
           double beta_val = sig2 * p_ik * p_il * alpha_val;
 
           // Update beta vector.
-          if (j != k) {
+          if (k != l) {
             mapping_coeffs(i, beta_count) += 2 * beta_val;
           } else {
             mapping_coeffs(i, beta_count) += beta_val;
