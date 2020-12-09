@@ -141,8 +141,14 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("force_noise", &SparseGP::force_noise)
       .def_readonly("energy_noise", &SparseGP::energy_noise)
       .def_readonly("stress_noise", &SparseGP::stress_noise)
+      .def_readonly("noise_vector", &SparseGP::noise_vector)
       .def_readonly("Kuu", &SparseGP::Kuu)
+      .def_readonly("Kuu_kernels", &SparseGP::Kuu_kernels)
       .def_readonly("Kuf", &SparseGP::Kuf)
+      .def_readonly("Kuf_kernels", &SparseGP::Kuf_kernels)
       .def_readonly("alpha", &SparseGP::alpha)
-      .def_readonly("Kuu_inverse", &SparseGP::Kuu_inverse);
+      .def_readonly("Kuu_inverse", &SparseGP::Kuu_inverse)
+      .def_readonly("n_sparse", &SparseGP::n_sparse)
+      .def_readonly("n_labels", &SparseGP::n_labels)
+      .def_readonly("y", &SparseGP::y);
 }

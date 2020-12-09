@@ -44,6 +44,8 @@ public:
 
   void initialize_sparse_descriptors(const Structure &structure);
   void add_all_environments(const Structure &structure);
+  void add_specific_environments(const Structure &structure,
+                                 const std::vector<int> atoms);
   void add_random_environments(const Structure &structure,
                                const std::vector<int> &n_added);
   void add_uncertain_environments(const Structure &structure,

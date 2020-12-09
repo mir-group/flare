@@ -94,12 +94,15 @@ DescriptorValues FourBody ::compute_struc(Structure &structure) {
   }
 
   // Initialize arrays.
+  desc.cumulative_type_count.push_back(0);
   for (int s = 0; s < desc.n_types; s++) {
     int n_s = type_count(s);
     int n_neigh = n_s * 3;
     int n_d = 6;
 
     desc.n_clusters_by_type.push_back(n_s);
+    desc.cumulative_type_count.push_back(desc.cumulative_type_count[s] + n_s);
+    desc.n_clusters += n_s;
     desc.n_neighbors_by_type.push_back(n_neigh);
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, n_d));

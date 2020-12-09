@@ -51,9 +51,9 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
     // Compute kernels.
-    int n_sparse_1 = envs1.type_count[s];
+    int n_sparse_1 = envs1.n_clusters_by_type[s];
     int c_sparse_1 = envs1.cumulative_type_count[s];
-    int n_sparse_2 = envs2.type_count[s];
+    int n_sparse_2 = envs2.n_clusters_by_type[s];
     int c_sparse_2 = envs2.cumulative_type_count[s];
 
 #pragma omp parallel for
@@ -143,7 +143,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
     // Compute kernels. Can parallelize over environments.
-    int n_sparse = envs.type_count[s];
+    int n_sparse = envs.n_clusters_by_type[s];
     int n_struc = struc.n_clusters_by_type[s];
     int c_sparse = envs.cumulative_type_count[s];
 
@@ -652,7 +652,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
 
   // Loop over types.
   for (int i = 0; i < n_species; i++){
-    int n_types = gp_model.sparse_descriptors[kernel_index].type_count[i];
+    int n_types = gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[i];
     int c_types =
       gp_model.sparse_descriptors[kernel_index].cumulative_type_count[i];
 
@@ -675,7 +675,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
           double beta_val = sig2 * p_ik * p_il * alpha_val;
 
           // Update beta vector.
-          if (j != k) {
+          if (k != l) {
             mapping_coeffs(i, beta_count) += 2 * beta_val;
           } else {
             mapping_coeffs(i, beta_count) += beta_val;

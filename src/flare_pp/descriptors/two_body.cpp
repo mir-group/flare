@@ -64,12 +64,15 @@ DescriptorValues TwoBody ::compute_struc(Structure &structure) {
   }
 
   // Initialize arrays.
+  desc.cumulative_type_count.push_back(0);
   for (int s = 0; s < desc.n_types; s++) {
     int n_s = type_count(s);
 
     // Record species and neighbor count.
     // (For the 2-body descriptor, there is 1 neighbor.)
     desc.n_clusters_by_type.push_back(n_s);
+    desc.cumulative_type_count.push_back(desc.cumulative_type_count[s] + n_s);
+    desc.n_clusters += n_s;
     desc.n_neighbors_by_type.push_back(n_s);
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, 1));
@@ -135,7 +138,6 @@ DescriptorValues TwoBody ::compute_struc(Structure &structure) {
           desc.cumulative_neighbor_counts[current_type](count) = count;
           desc.atom_indices[current_type](count) = i;
           desc.neighbor_indices[current_type](count) = struc_index;
-
           type_counter(current_type)++;
         }
       }

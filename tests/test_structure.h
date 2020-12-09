@@ -19,12 +19,12 @@ class StructureTest : public ::testing::Test {
 public:
   int n_atoms = 10;
   int n_species = 3;
-  Eigen::MatrixXd cell, cell_2;
-  std::vector<int> species, species_2;
-  Eigen::MatrixXd positions, positions_2;
+  Eigen::MatrixXd cell, cell_2, cell_3;
+  std::vector<int> species, species_2, species_3;
+  Eigen::MatrixXd positions, positions_2, positions_3;
   B2 ps;
   std::vector<Descriptor *> dc;
-  Structure test_struc, test_struc_2;
+  Structure test_struc, test_struc_2, test_struc_3;
   DescriptorValues struc_desc;
 
   double cell_size = 10;
@@ -49,13 +49,17 @@ public:
     // Make positions.
     cell = Eigen::MatrixXd::Identity(3, 3) * cell_size;
     cell_2 = Eigen::MatrixXd::Identity(3, 3) * cell_size;
+    cell_3 = Eigen::MatrixXd::Identity(3, 3) * cell_size;
+
     positions = Eigen::MatrixXd::Random(n_atoms, 3) * cell_size / 2;
     positions_2 = Eigen::MatrixXd::Random(n_atoms, 3) * cell_size / 2;
+    positions_3 = Eigen::MatrixXd::Random(n_atoms, 3) * cell_size / 2;
 
     // Make random species.
     for (int i = 0; i < n_atoms; i++) {
       species.push_back(rand() % n_species);
       species_2.push_back(rand() % n_species);
+      species_3.push_back(rand() % n_species);
     }
 
     ps = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
@@ -65,6 +69,7 @@ public:
 
     test_struc = Structure(cell, species, positions, cutoff, dc);
     test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
+    test_struc_3 = Structure(cell_3, species_3, positions_3, cutoff, dc);
 
     struc_desc = test_struc.descriptors[0];
 

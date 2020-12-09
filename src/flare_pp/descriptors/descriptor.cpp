@@ -45,7 +45,7 @@ void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
     descriptors.push_back(empty_mat);
     descriptor_norms.push_back(empty_vec);
     cutoff_values.push_back(empty_vec);
-    type_count.push_back(0);
+    n_clusters_by_type.push_back(0);
     cumulative_type_count.push_back(0);
   }
 }
@@ -53,25 +53,17 @@ void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
 void ClusterDescriptor ::add_clusters(
   const DescriptorValues &structure, const std::vector<int> &clusters){
  
-  // Compute cumulative clusters by type.
-  // TODO: Consider making this an attribute of DescriptorValues.
-  std::vector<int> ccount(structure.n_types + 1);
-  ccount[0] = 0;
-  int cluster_count = 0;
-  for (int i = 0; i < structure.n_types; i++){
-    cluster_count += structure.n_clusters_by_type[i];
-    ccount[i + 1] = cluster_count;
-  }
-
   // Determine the type of each cluster.
   std::vector<std::vector<int>> clusters_by_type(structure.n_types);
   for (int i = 0; i < clusters.size(); i++){
     int cluster_val = clusters[i];
     int type, val;
     for (int j = 0; j < structure.n_types; j++){
-        if ((cluster_val >= ccount[j]) && (cluster_val < ccount[j+1])){
+        int ccount = structure.cumulative_type_count[j];
+        int ccount_p1 = structure.cumulative_type_count[j+1];
+        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)){
           type = j;
-          val = cluster_val - ccount[j];
+          val = cluster_val - ccount;
         }
     }
     clusters_by_type[type].push_back(val);
@@ -90,30 +82,30 @@ void ClusterDescriptor ::add_clusters_by_type(
   // Resize descriptor matrices.
   for (int s = 0; s < n_types; s++){
     descriptors[s].conservativeResize(
-      type_count[s] + clusters[s].size(), n_descriptors);
-    descriptor_norms[s].conservativeResize(type_count[s] + clusters[s].size());
-    cutoff_values[s].conservativeResize(type_count[s] + clusters[s].size());
+      n_clusters_by_type[s] + clusters[s].size(), n_descriptors);
+    descriptor_norms[s].conservativeResize(n_clusters_by_type[s] + clusters[s].size());
+    cutoff_values[s].conservativeResize(n_clusters_by_type[s] + clusters[s].size());
   }
 
   // Update descriptors.
   for (int s = 0; s < n_types; s++) {
     for (int i = 0; i < clusters[s].size(); i++) {
-      descriptors[s].row(type_count[s] + i) =
+      descriptors[s].row(n_clusters_by_type[s] + i) =
         structure.descriptors[s].row(clusters[s][i]);
-      descriptor_norms[s](type_count[s] + i) =
+      descriptor_norms[s](n_clusters_by_type[s] + i) =
         structure.descriptor_norms[s](clusters[s][i]);
-      cutoff_values[s](type_count[s] + i) =
+      cutoff_values[s](n_clusters_by_type[s] + i) =
         structure.cutoff_values[s](clusters[s][i]);
     }
   }
 
   // Update type counts.
   for (int s = 0; s < n_types; s++) {
-    type_count[s] += clusters[s].size();
+    n_clusters_by_type[s] += clusters[s].size();
     n_clusters += clusters[s].size();
     if (s > 0)
       cumulative_type_count[s] =
-          cumulative_type_count[s - 1] + type_count[s - 1];
+          cumulative_type_count[s - 1] + n_clusters_by_type[s - 1];
   }
 }
 
@@ -124,28 +116,28 @@ void ClusterDescriptor ::add_all_clusters(const DescriptorValues &structure) {
   // Resize descriptor matrices.
   for (int s = 0; s < n_types; s++) {
     descriptors[s].conservativeResize(
-        type_count[s] + structure.n_clusters_by_type[s], n_descriptors);
-    descriptor_norms[s].conservativeResize(type_count[s] +
+        n_clusters_by_type[s] + structure.n_clusters_by_type[s], n_descriptors);
+    descriptor_norms[s].conservativeResize(n_clusters_by_type[s] +
                                            structure.n_clusters_by_type[s]);
-    cutoff_values[s].conservativeResize(type_count[s] +
+    cutoff_values[s].conservativeResize(n_clusters_by_type[s] +
                                         structure.n_clusters_by_type[s]);
   }
 
   // Update descriptors.
   for (int s = 0; s < n_types; s++) {
     for (int i = 0; i < structure.n_clusters_by_type[s]; i++) {
-      descriptors[s].row(type_count[s] + i) = structure.descriptors[s].row(i);
-      descriptor_norms[s](type_count[s] + i) = structure.descriptor_norms[s](i);
-      cutoff_values[s](type_count[s] + i) = structure.cutoff_values[s](i);
+      descriptors[s].row(n_clusters_by_type[s] + i) = structure.descriptors[s].row(i);
+      descriptor_norms[s](n_clusters_by_type[s] + i) = structure.descriptor_norms[s](i);
+      cutoff_values[s](n_clusters_by_type[s] + i) = structure.cutoff_values[s](i);
     }
   }
 
   // Update type counts.
   for (int s = 0; s < n_types; s++) {
-    type_count[s] += structure.n_clusters_by_type[s];
+    n_clusters_by_type[s] += structure.n_clusters_by_type[s];
     n_clusters += structure.n_clusters_by_type[s];
     if (s > 0)
       cumulative_type_count[s] =
-          cumulative_type_count[s - 1] + type_count[s - 1];
+          cumulative_type_count[s - 1] + n_clusters_by_type[s - 1];
   }
 }

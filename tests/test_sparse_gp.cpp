@@ -206,8 +206,8 @@ TEST_F(StructureTest, Set_Hyps) {
   double sig1 = 1.5, sig2 = 2.0, sig_e_1 = 1.0, sig_e_2 = 2.0, sig_f_1 = 1.5,
     sig_f_2 = 2.5, sig_s_1 = 3.0, sig_s_2 = 3.5;
 
-  NormalizedDotProduct kernel_1 = NormalizedDotProduct(sig1, power);
-  NormalizedDotProduct kernel_2 = NormalizedDotProduct(sig2, power);
+  SquaredExponential kernel_1 = SquaredExponential(sig1, power);
+  SquaredExponential kernel_2 = SquaredExponential(sig2, power);
 
   std::vector<Kernel *> kernels_1{&kernel_1};
   std::vector<Kernel *> kernels_2{&kernel_2};
@@ -222,11 +222,23 @@ TEST_F(StructureTest, Set_Hyps) {
   test_struc.forces = forces;
   test_struc.stresses = stresses;
 
+  Eigen::VectorXd energy_2 = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces_2 = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses_2 = Eigen::VectorXd::Random(6);
+  test_struc_2.energy = energy_2;
+  test_struc_2.forces = forces_2;
+  test_struc_2.stresses = stresses_2;
+
   // Add sparse environments and training structures.
   sparse_gp_1.add_training_structure(test_struc);
+  sparse_gp_1.add_training_structure(test_struc_2);
   sparse_gp_1.add_all_environments(test_struc);
+  sparse_gp_1.add_all_environments(test_struc_2);
+
   sparse_gp_2.add_training_structure(test_struc);
+  sparse_gp_2.add_training_structure(test_struc_2);
   sparse_gp_2.add_all_environments(test_struc);
+  sparse_gp_2.add_all_environments(test_struc_2);
 
   sparse_gp_1.update_matrices_QR();
   sparse_gp_2.update_matrices_QR();
@@ -239,14 +251,14 @@ TEST_F(StructureTest, Set_Hyps) {
             sparse_gp_2.log_marginal_likelihood);
 
   // Reset the hyperparameters of the second GP.
-  Eigen::VectorXd new_hyps(4);
-  new_hyps << sig1, sig_e_1, sig_f_1, sig_s_1;
+  Eigen::VectorXd new_hyps(5);
+  new_hyps << sig1, power, sig_e_1, sig_f_1, sig_s_1;
   sparse_gp_2.set_hyperparameters(new_hyps);
 
   sparse_gp_2.compute_likelihood();
 
-  EXPECT_EQ(sparse_gp_1.log_marginal_likelihood,
-            sparse_gp_2.log_marginal_likelihood);
+  EXPECT_NEAR(sparse_gp_1.log_marginal_likelihood,
+            sparse_gp_2.log_marginal_likelihood, 1e-8);
 }
 
 TEST_F(StructureTest, AddOrder) {

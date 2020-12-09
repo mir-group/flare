@@ -172,21 +172,17 @@ void SparseGP ::add_random_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
   // Randomly select environments without replacement.
-  std::vector<std::vector<std::vector<int>>> envs1;
+  std::vector<std::vector<int>> envs1;
   for (int i = 0; i < structure.descriptors.size(); i++){
-    std::vector<std::vector<int>> envs2;
-    for (int j = 0; j < structure.descriptors[i].n_types; j++){
-      std::vector<int> envs3;
-      int n_clusters = structure.descriptors[i].n_clusters_by_type[j];
-      std::vector<int> clusters(n_clusters);
-      std::iota(clusters.begin(), clusters.end(), 0);
-      std::random_shuffle(clusters.begin(), clusters.end());
-      int n_curr = n_added[i];
-      if (n_curr > n_clusters) n_curr = n_clusters;
-      for (int k = 0; k < n_curr; k++){
-          envs3.push_back(clusters[k]);
-      }
-      envs2.push_back(envs3);
+    std::vector<int> envs2;
+    int n_clusters = structure.descriptors[i].n_clusters;
+    std::vector<int> clusters(n_clusters);
+    std::iota(clusters.begin(), clusters.end(), 0);
+    std::random_shuffle(clusters.begin(), clusters.end());
+    int n_curr = n_added[i];
+    if (n_curr > n_clusters) n_curr = n_clusters;
+    for (int k = 0; k < n_curr; k++){
+      envs2.push_back(clusters[k]);
     }
     envs1.push_back(envs2);
   }
@@ -207,8 +203,7 @@ void SparseGP ::add_random_environments(
 
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
-    sparse_descriptors[i].add_clusters_by_type(
-      structure.descriptors[i], envs1[i]);
+    sparse_descriptors[i].add_clusters(structure.descriptors[i], envs1[i]);
   }
 }
 
@@ -257,8 +252,8 @@ void SparseGP ::update_Kuu(
     int n2 = 0; // Sparse descriptor count
     int n3 = 0; // Cluster descriptor count
     for (int j = 0; j < n_types; j++){
-      int n4 = sparse_descriptors[i].type_count[j];
-      int n5 = cluster_descriptors[i].type_count[j];
+      int n4 = sparse_descriptors[i].n_clusters_by_type[j];
+      int n5 = cluster_descriptors[i].n_clusters_by_type[j];
 
       Eigen::MatrixXd prev_vals = prev_block.block(n2, n3, n4, n5);
       Eigen::MatrixXd self_vals = self_block.block(n3, n3, n5, n5);
@@ -292,8 +287,8 @@ void SparseGP ::update_Kuf(
     Eigen::ArrayXi inds = Eigen::ArrayXi::Zero(n_types + 1);
     int counter = 0;
     for (int j = 0; j < n_types; j++){
-      int t1 = sparse_descriptors[i].type_count[j];
-      int t2 = cluster_descriptors[i].type_count[j];
+      int t1 = sparse_descriptors[i].n_clusters_by_type[j];
+      int t2 = cluster_descriptors[i].n_clusters_by_type[j];
       counter += t1 + t2;
       inds(j + 1) = counter;
     }
@@ -313,8 +308,8 @@ void SparseGP ::update_Kuf(
       for (int k = 0; k < n_types; k++){
         int current_count = 0;
         int u_ind = inds(k);
-        int n3 = sparse_descriptors[i].type_count[k];
-        int n4 = cluster_descriptors[i].type_count[k];
+        int n3 = sparse_descriptors[i].n_clusters_by_type[k];
+        int n4 = cluster_descriptors[i].n_clusters_by_type[k];
 
         if (training_structures[j].energy.size() != 0) {
           kern_mat.block(u_ind, label_count(j), n3, 1) =
@@ -522,10 +517,9 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
 void SparseGP ::compute_likelihood_stable(){
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
-  Eigen::MatrixXd Qff_inverse =
-    noise_diag - noise_diag * Kuf.transpose() * Sigma * Kuf * noise_diag;
 
-  data_fit = -(1./2.) * y.transpose() * Qff_inverse * y;
+  data_fit = -(1./2.) * y.transpose() * noise_diag *
+             (y - Kuf.transpose() * alpha);
   constant_term = -(1./2.) * n_labels * log(2 * M_PI);
 
   // Compute complexity penalty.
@@ -612,8 +606,10 @@ double SparseGP ::compute_likelihood_gradient(
       Kuu_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_sparse));
       Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
 
-      Kuu_grads[j].block(count, count, size, size) = Kuu_grad[j + 1];
-      Kuf_grads[j].block(count, 0, size, n_labels) = Kuf_grad[j + 1];
+      Kuu_grads[hyp_index + j].block(count, count, size, size) =
+        Kuu_grad[j + 1];
+      Kuf_grads[hyp_index + j].block(count, 0, size, n_labels) =
+        Kuf_grad[j + 1];
     }
 
     count += size;
@@ -693,7 +689,7 @@ double SparseGP ::compute_likelihood_gradient(
   Eigen::MatrixXd Qff_inverse = lu.inverse();
 
   // Compute log determinant from the diagonal of U.
-  double complexity_penalty = 0;
+  complexity_penalty = 0;
   for (int i = 0; i < Qff_plus_lambda.rows(); i++) {
     complexity_penalty += -log(abs(Qff_plus_lambda(i, i)));
   }
@@ -701,10 +697,9 @@ double SparseGP ::compute_likelihood_gradient(
 
   // Compute log marginal likelihood.
   Eigen::VectorXd Q_inv_y = Qff_inverse * y;
-  double data_fit = -(1. / 2.) * y.transpose() * Q_inv_y;
-  double constant_term = -n_labels * log(2 * M_PI) / 2;
-  double log_marginal_likelihood =
-      complexity_penalty + data_fit + constant_term;
+  data_fit = -(1. / 2.) * y.transpose() * Q_inv_y;
+  constant_term = -n_labels * log(2 * M_PI) / 2;
+  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 
   // Compute likelihood gradient.
   likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
