@@ -126,7 +126,50 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
 }
 
 void SparseGP ::add_specific_environments(const Structure &structure,
-                                          const std::vector<int> atoms) {}
+                                          const std::vector<int> atoms) {
+
+  // Gather clusters with central atom in the given list.
+  std::vector<std::vector<std::vector<int>>> indices_1;
+  for (int i = 0; i < n_kernels; i++){
+    int n_types = structure.descriptors[i].n_types;
+    std::vector<std::vector<int>> indices_2;
+    for (int j = 0; j < n_types; j++){
+      int n_clusters = structure.descriptors[i].n_clusters_by_type[j];
+      std::vector<int> indices_3;
+      for (int k = 0; k < n_clusters; k++){
+        int atom_index_1 = structure.descriptors[i].atom_indices[j](k);
+        for (int l = 0; l < atoms.size(); l++){
+          int atom_index_2 = atoms[l];
+          if (atom_index_1 == atom_index_2){
+            indices_3.push_back(k);
+          }
+        }
+      }
+      indices_2.push_back(indices_3);
+    }
+    indices_1.push_back(indices_2);
+  }
+
+  // Create cluster descriptors.
+  std::vector<ClusterDescriptor> cluster_descriptors;
+  for (int i = 0; i < n_kernels; i++) {
+    ClusterDescriptor cluster_descriptor =
+        ClusterDescriptor(structure.descriptors[i], indices_1[i]);
+    cluster_descriptors.push_back(cluster_descriptor);
+  }
+
+  // Update Kuu and Kuf.
+  update_Kuu(cluster_descriptors);
+  update_Kuf(cluster_descriptors);
+  stack_Kuu();
+  stack_Kuf();
+
+  // Store sparse environments.
+  for (int i = 0; i < n_kernels; i++) {
+    sparse_descriptors[i].add_clusters_by_type(structure.descriptors[i],
+                                               indices_1[i]);
+  }
+}
 
 void SparseGP ::add_uncertain_environments(const Structure &structure,
                                            const std::vector<int> &n_added) {

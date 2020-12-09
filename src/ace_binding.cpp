@@ -116,6 +116,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("predict_SOR", &SparseGP::predict_SOR)
       .def("predict_DTC", &SparseGP::predict_DTC)
       .def("add_all_environments", &SparseGP::add_all_environments)
+      .def("add_specific_environments", &SparseGP::add_specific_environments)
       .def("add_random_environments", &SparseGP::add_random_environments)
       .def("add_uncertain_environments",
            &SparseGP::add_uncertain_environments)
