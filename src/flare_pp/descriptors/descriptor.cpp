@@ -53,25 +53,17 @@ void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
 void ClusterDescriptor ::add_clusters(
   const DescriptorValues &structure, const std::vector<int> &clusters){
  
-  // Compute cumulative clusters by type.
-  // TODO: Consider making this an attribute of DescriptorValues.
-  std::vector<int> ccount(structure.n_types + 1);
-  ccount[0] = 0;
-  int cluster_count = 0;
-  for (int i = 0; i < structure.n_types; i++){
-    cluster_count += structure.n_clusters_by_type[i];
-    ccount[i + 1] = cluster_count;
-  }
-
   // Determine the type of each cluster.
   std::vector<std::vector<int>> clusters_by_type(structure.n_types);
   for (int i = 0; i < clusters.size(); i++){
     int cluster_val = clusters[i];
     int type, val;
     for (int j = 0; j < structure.n_types; j++){
-        if ((cluster_val >= ccount[j]) && (cluster_val < ccount[j+1])){
+        int ccount = structure.cumulative_type_count[j];
+        int ccount_p1 = structure.cumulative_type_count[j+1];
+        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)){
           type = j;
-          val = cluster_val - ccount[j];
+          val = cluster_val - ccount;
         }
     }
     clusters_by_type[type].push_back(val);

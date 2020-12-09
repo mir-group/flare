@@ -111,12 +111,14 @@ DescriptorValues B2 ::compute_struc(Structure &structure) {
   desc.n_types = nos;
   desc.n_atoms = noa;
   desc.volume = structure.volume;
+  desc.cumulative_type_count.push_back(0);
   for (int s = 0; s < nos; s++) {
     int n_s = species_count(s);
     int n_neigh = neighbor_count(s);
 
     // Record species and neighbor count.
     desc.n_clusters_by_type.push_back(n_s);
+    desc.cumulative_type_count.push_back(desc.cumulative_type_count[s] + n_s);
     desc.n_clusters += n_s;
     desc.n_neighbors_by_type.push_back(n_neigh);
 
