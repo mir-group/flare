@@ -75,6 +75,11 @@ public:
   void write_mapping_coefficients(std::string file_name,
                                   std::string contributor,
                                   int kernel_index);
+
+  void write_varmap_coefficients(std::string file_name,
+                                  std::string contributor,
+                                  int kernel_index);
+
 };
 
 #endif

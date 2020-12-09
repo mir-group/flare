@@ -690,7 +690,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
   return mapping_coeffs;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::compute_variance_mapping_coefficients(
+Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
     const SparseGP &gp_model, int kernel_index){
 
   // Assumes there is at least one sparse environment stored in the sparse GP.
@@ -722,6 +722,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_variance_mapping_coefficients(
     int n_types = gp_model.sparse_descriptors[kernel_index].type_count[s];
     int c_types =
       gp_model.sparse_descriptors[kernel_index].cumulative_type_count[s];
+    int K_ind = alpha_ind + c_types;
 
     // Loop over clusters within each type.
     for (int i = 0; i < n_types; i++){
@@ -730,28 +731,32 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_variance_mapping_coefficients(
       double pi_norm =
         gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](i);
 
+        // TODO: include symmetry of i & j
         // Loop over clusters within each type.
         for (int j = 0; j < n_types; j++){
           Eigen::VectorXd pj_current =
             gp_model.sparse_descriptors[kernel_index].descriptors[s].row(j);
           double pj_norm =
             gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
-          //double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
+
+          double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
+          double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
           int beta_count = 0;
 
           // First loop over descriptor values.
           for (int k = 0; k < p_size; k++) {
-            double p_ik = pi_current(k) / p_norm;
+            double p_ik = pi_current(k) / pi_norm;
     
             // Second loop over descriptor values.
             for (int l = k; l < p_size; l++){
-              double p_jl = pj_current(l) / p_norm;
-              double beta_val = sig2 * p_ik * p_jl * Mij;
+              double p_jl = pj_current(l) / pj_norm;
     
               // Update beta vector.
-              if (j != k) {
+              if (k != l) {
+                double beta_val = sig2 * p_ik * p_jl * (- Kuu_inv_ij + Sigma_ij);
                 mapping_coeffs(s, beta_count) += 2 * beta_val;
               } else {
+                double beta_val = sig2 * p_ik * p_jl * (1 - Kuu_inv_ij + Sigma_ij);
                 mapping_coeffs(s, beta_count) += beta_val;
               }
     
