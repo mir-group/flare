@@ -44,6 +44,8 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
   double empty_thresh = 1e-8;
 
   for (int s = 0; s < n_types; s++) {
+      // Why not do envs1.descriptors[s] / envs1.descriptor_norms[s]
+      // and then multiply them to get norm_dot matrix directly??
     // Compute dot products. (Should be done in parallel with MKL.)
     Eigen::MatrixXd dot_vals =
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
@@ -74,7 +76,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
 
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
-        double dval = power * pow(norm_dot, power - 1);
+        double dval = power * pow(norm_dot, power - 1); // remove this line??
         kern_mat(ind1, ind2) += sig_sq * pow(norm_dot, power);
       }
     }
@@ -680,6 +682,81 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
           }
 
           beta_count++;
+        }
+      }
+    }
+  }
+
+  return mapping_coeffs;
+}
+
+Eigen::MatrixXd NormalizedDotProduct ::compute_variance_mapping_coefficients(
+    const SparseGP &gp_model, int kernel_index){
+
+  // Assumes there is at least one sparse environment stored in the sparse GP.
+
+  Eigen::MatrixXd mapping_coeffs;
+  if (power != 1){
+      std::cout
+          << "Mapping coefficients of the normalized dot product kernel are "
+             "implemented for power 1 only."
+          << std::endl;
+      return mapping_coeffs;
+  }
+
+  // Initialize beta vector.
+  int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
+  int beta_size = p_size * (p_size + 1) / 2;
+  int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
+  int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
+  mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
+
+  // Get alpha index.
+  int alpha_ind = 0;
+  for (int i = 0; i < kernel_index; i++){
+      alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
+  }
+
+  // Loop over types.
+  for (int s = 0; s < n_species; s++){
+    int n_types = gp_model.sparse_descriptors[kernel_index].type_count[s];
+    int c_types =
+      gp_model.sparse_descriptors[kernel_index].cumulative_type_count[s];
+
+    // Loop over clusters within each type.
+    for (int i = 0; i < n_types; i++){
+      Eigen::VectorXd pi_current =
+        gp_model.sparse_descriptors[kernel_index].descriptors[s].row(i);
+      double pi_norm =
+        gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](i);
+
+        // Loop over clusters within each type.
+        for (int j = 0; j < n_types; j++){
+          Eigen::VectorXd pj_current =
+            gp_model.sparse_descriptors[kernel_index].descriptors[s].row(j);
+          double pj_norm =
+            gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
+          //double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
+          int beta_count = 0;
+
+          // First loop over descriptor values.
+          for (int k = 0; k < p_size; k++) {
+            double p_ik = pi_current(k) / p_norm;
+    
+            // Second loop over descriptor values.
+            for (int l = k; l < p_size; l++){
+              double p_jl = pj_current(l) / p_norm;
+              double beta_val = sig2 * p_ik * p_jl * Mij;
+    
+              // Update beta vector.
+              if (j != k) {
+                mapping_coeffs(s, beta_count) += 2 * beta_val;
+              } else {
+                mapping_coeffs(s, beta_count) += beta_val;
+              }
+    
+              beta_count++;
+            }
         }
       }
     }
