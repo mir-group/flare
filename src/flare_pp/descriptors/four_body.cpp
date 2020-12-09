@@ -100,6 +100,7 @@ DescriptorValues FourBody ::compute_struc(Structure &structure) {
     int n_d = 6;
 
     desc.n_clusters_by_type.push_back(n_s);
+    desc.n_clusters += n_s;
     desc.n_neighbors_by_type.push_back(n_neigh);
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, n_d));

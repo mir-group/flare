@@ -71,10 +71,6 @@ DescriptorValues ThreeBodyWide ::compute_struc(Structure &structure) {
         double r2 = structure.relative_positions(neigh_index_2, 0);
         if (r2 > cutoff)
           continue;
-        double x2 = structure.relative_positions(neigh_index_2, 1);
-        double y2 = structure.relative_positions(neigh_index_2, 2);
-        double z2 = structure.relative_positions(neigh_index_2, 3);
-        double r3 = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
         int current_type = t1 + t2 + t3;
         type_count(current_type)++;
       }
@@ -90,6 +86,7 @@ DescriptorValues ThreeBodyWide ::compute_struc(Structure &structure) {
     // Record species and neighbor count.
     // (For the 3-body descriptor, there are 2 neighbors.)
     desc.n_clusters_by_type.push_back(n_s);
+    desc.n_clusters += n_s;
     desc.n_neighbors_by_type.push_back(n_neigh);
 
     desc.descriptors.push_back(Eigen::MatrixXd::Zero(n_s, n_d));

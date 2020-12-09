@@ -135,7 +135,7 @@ DescriptorValues TwoBody ::compute_struc(Structure &structure) {
           desc.cumulative_neighbor_counts[current_type](count) = count;
           desc.atom_indices[current_type](count) = i;
           desc.neighbor_indices[current_type](count) = struc_index;
-
+          desc.n_clusters++;
           type_counter(current_type)++;
         }
       }

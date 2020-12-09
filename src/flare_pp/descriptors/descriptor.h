@@ -34,7 +34,9 @@ public:
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
       atom_indices, neighbor_indices;
 
-  std::vector<int> n_clusters_by_type, n_neighbors_by_type;
+  int n_clusters = 0;
+  std::vector<int> n_clusters_by_type, cumulative_type_count,
+    n_neighbors_by_type;
 };
 
 // ClusterDescriptor holds the descriptor values for a collection of clusters
