@@ -172,21 +172,17 @@ void SparseGP ::add_random_environments(
     const Structure &structure, const std::vector<int> &n_added) {
 
   // Randomly select environments without replacement.
-  std::vector<std::vector<std::vector<int>>> envs1;
+  std::vector<std::vector<int>> envs1;
   for (int i = 0; i < structure.descriptors.size(); i++){
-    std::vector<std::vector<int>> envs2;
-    for (int j = 0; j < structure.descriptors[i].n_types; j++){
-      std::vector<int> envs3;
-      int n_clusters = structure.descriptors[i].n_clusters_by_type[j];
-      std::vector<int> clusters(n_clusters);
-      std::iota(clusters.begin(), clusters.end(), 0);
-      std::random_shuffle(clusters.begin(), clusters.end());
-      int n_curr = n_added[i];
-      if (n_curr > n_clusters) n_curr = n_clusters;
-      for (int k = 0; k < n_curr; k++){
-          envs3.push_back(clusters[k]);
-      }
-      envs2.push_back(envs3);
+    std::vector<int> envs2;
+    int n_clusters = structure.descriptors[i].n_clusters;
+    std::vector<int> clusters(n_clusters);
+    std::iota(clusters.begin(), clusters.end(), 0);
+    std::random_shuffle(clusters.begin(), clusters.end());
+    int n_curr = n_added[i];
+    if (n_curr > n_clusters) n_curr = n_clusters;
+    for (int k = 0; k < n_curr; k++){
+      envs2.push_back(clusters[k]);
     }
     envs1.push_back(envs2);
   }
@@ -207,8 +203,7 @@ void SparseGP ::add_random_environments(
 
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
-    sparse_descriptors[i].add_clusters_by_type(
-      structure.descriptors[i], envs1[i]);
+    sparse_descriptors[i].add_clusters(structure.descriptors[i], envs1[i]);
   }
 }
 
