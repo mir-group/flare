@@ -8,10 +8,9 @@ Kernel ::Kernel(Eigen::VectorXd kernel_hyperparameters) {
   this->kernel_hyperparameters = kernel_hyperparameters;
 };
 
-std::vector<Eigen::MatrixXd>
-Kernel ::Kuu_grad(const ClusterDescriptor &envs,
-                         const Eigen::MatrixXd &Kuu,
-                         const Eigen::VectorXd &hyps) {
+std::vector<Eigen::MatrixXd> Kernel ::Kuu_grad(const ClusterDescriptor &envs,
+                                               const Eigen::MatrixXd &Kuu,
+                                               const Eigen::VectorXd &hyps) {
 
   std::vector<Eigen::MatrixXd> Kuu_grad = envs_envs_grad(envs, envs, hyps);
 
@@ -20,9 +19,8 @@ Kernel ::Kuu_grad(const ClusterDescriptor &envs,
 
 std::vector<Eigen::MatrixXd>
 Kernel ::Kuf_grad(const ClusterDescriptor &envs,
-                         const std::vector<Structure> &strucs,
-                         int kernel_index, const Eigen::MatrixXd &Kuf,
-                         const Eigen::VectorXd &hyps) {
+                  const std::vector<Structure> &strucs, int kernel_index,
+                  const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &hyps) {
 
   int n_sparse = envs.n_clusters;
   int n_hyps = hyps.size();
@@ -31,18 +29,18 @@ Kernel ::Kuf_grad(const ClusterDescriptor &envs,
   int n_strucs = strucs.size();
   Eigen::VectorXd label_count = Eigen::VectorXd::Zero(n_strucs + 1);
   int n_labels = 0;
-  for (int i = 0; i < n_strucs; i++){
+  for (int i = 0; i < n_strucs; i++) {
     int current_count = 0;
-    if (strucs[i].energy.size() != 0){
-        current_count += 1;
+    if (strucs[i].energy.size() != 0) {
+      current_count += 1;
     }
 
-    if (strucs[i].forces.size() != 0){
-        current_count += strucs[i].forces.size();
+    if (strucs[i].forces.size() != 0) {
+      current_count += strucs[i].forces.size();
     }
 
-    if (strucs[i].stresses.size() != 0){
-        current_count += strucs[i].stresses.size();
+    if (strucs[i].stresses.size() != 0) {
+      current_count += strucs[i].stresses.size();
     }
 
     label_count(i + 1) = label_count(i) + current_count;

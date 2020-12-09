@@ -7,7 +7,7 @@
 
 Descriptor::Descriptor() {}
 
-void Descriptor::write_to_file(std::ofstream &coeff_file, int coeff_size){
+void Descriptor::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   std::cout << "Mapping this descriptor is not implemented yet." << std::endl;
   return;
 }
@@ -21,20 +21,21 @@ ClusterDescriptor::ClusterDescriptor(const DescriptorValues &structure) {
 }
 
 ClusterDescriptor::ClusterDescriptor(
-  const DescriptorValues &structure,
-  const std::vector<std::vector<int>> &clusters) {
+    const DescriptorValues &structure,
+    const std::vector<std::vector<int>> &clusters) {
 
   add_clusters_by_type(structure, clusters);
 }
 
-ClusterDescriptor::ClusterDescriptor(
-  const DescriptorValues &structure, const std::vector<int> &clusters) {
+ClusterDescriptor::ClusterDescriptor(const DescriptorValues &structure,
+                                     const std::vector<int> &clusters) {
 
   add_clusters(structure, clusters);
 }
 
 void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
-  if (n_clusters != 0) return;
+  if (n_clusters != 0)
+    return;
 
   this->n_types = n_types;
   this->n_descriptors = n_descriptors;
@@ -50,21 +51,21 @@ void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
   }
 }
 
-void ClusterDescriptor ::add_clusters(
-  const DescriptorValues &structure, const std::vector<int> &clusters){
- 
+void ClusterDescriptor ::add_clusters(const DescriptorValues &structure,
+                                      const std::vector<int> &clusters) {
+
   // Determine the type of each cluster.
   std::vector<std::vector<int>> clusters_by_type(structure.n_types);
-  for (int i = 0; i < clusters.size(); i++){
+  for (int i = 0; i < clusters.size(); i++) {
     int cluster_val = clusters[i];
     int type, val;
-    for (int j = 0; j < structure.n_types; j++){
-        int ccount = structure.cumulative_type_count[j];
-        int ccount_p1 = structure.cumulative_type_count[j+1];
-        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)){
-          type = j;
-          val = cluster_val - ccount;
-        }
+    for (int j = 0; j < structure.n_types; j++) {
+      int ccount = structure.cumulative_type_count[j];
+      int ccount_p1 = structure.cumulative_type_count[j + 1];
+      if ((cluster_val >= ccount) && (cluster_val < ccount_p1)) {
+        type = j;
+        val = cluster_val - ccount;
+      }
     }
     clusters_by_type[type].push_back(val);
   }
@@ -74,28 +75,30 @@ void ClusterDescriptor ::add_clusters(
 }
 
 void ClusterDescriptor ::add_clusters_by_type(
-  const DescriptorValues &structure,
-  const std::vector<std::vector<int>> &clusters){
+    const DescriptorValues &structure,
+    const std::vector<std::vector<int>> &clusters) {
 
   initialize_cluster(structure.n_types, structure.n_descriptors);
 
   // Resize descriptor matrices.
-  for (int s = 0; s < n_types; s++){
+  for (int s = 0; s < n_types; s++) {
     descriptors[s].conservativeResize(
-      n_clusters_by_type[s] + clusters[s].size(), n_descriptors);
-    descriptor_norms[s].conservativeResize(n_clusters_by_type[s] + clusters[s].size());
-    cutoff_values[s].conservativeResize(n_clusters_by_type[s] + clusters[s].size());
+        n_clusters_by_type[s] + clusters[s].size(), n_descriptors);
+    descriptor_norms[s].conservativeResize(n_clusters_by_type[s] +
+                                           clusters[s].size());
+    cutoff_values[s].conservativeResize(n_clusters_by_type[s] +
+                                        clusters[s].size());
   }
 
   // Update descriptors.
   for (int s = 0; s < n_types; s++) {
     for (int i = 0; i < clusters[s].size(); i++) {
       descriptors[s].row(n_clusters_by_type[s] + i) =
-        structure.descriptors[s].row(clusters[s][i]);
+          structure.descriptors[s].row(clusters[s][i]);
       descriptor_norms[s](n_clusters_by_type[s] + i) =
-        structure.descriptor_norms[s](clusters[s][i]);
+          structure.descriptor_norms[s](clusters[s][i]);
       cutoff_values[s](n_clusters_by_type[s] + i) =
-        structure.cutoff_values[s](clusters[s][i]);
+          structure.cutoff_values[s](clusters[s][i]);
     }
   }
 
@@ -126,9 +129,12 @@ void ClusterDescriptor ::add_all_clusters(const DescriptorValues &structure) {
   // Update descriptors.
   for (int s = 0; s < n_types; s++) {
     for (int i = 0; i < structure.n_clusters_by_type[s]; i++) {
-      descriptors[s].row(n_clusters_by_type[s] + i) = structure.descriptors[s].row(i);
-      descriptor_norms[s](n_clusters_by_type[s] + i) = structure.descriptor_norms[s](i);
-      cutoff_values[s](n_clusters_by_type[s] + i) = structure.cutoff_values[s](i);
+      descriptors[s].row(n_clusters_by_type[s] + i) =
+          structure.descriptors[s].row(i);
+      descriptor_norms[s](n_clusters_by_type[s] + i) =
+          structure.descriptor_norms[s](i);
+      cutoff_values[s](n_clusters_by_type[s] + i) =
+          structure.cutoff_values[s](i);
     }
   }
 

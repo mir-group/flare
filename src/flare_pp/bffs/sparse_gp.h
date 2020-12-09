@@ -40,20 +40,21 @@ public:
   // Constructors.
   SparseGP();
   SparseGP(std::vector<Kernel *> kernels, double energy_noise,
-               double force_noise, double stress_noise);
+           double force_noise, double stress_noise);
 
   void initialize_sparse_descriptors(const Structure &structure);
   void add_all_environments(const Structure &structure);
+  // TODO: Implement add_specific_environments.
   void add_specific_environments(const Structure &structure,
                                  const std::vector<int> atoms);
   void add_random_environments(const Structure &structure,
                                const std::vector<int> &n_added);
   void add_uncertain_environments(const Structure &structure,
                                   const std::vector<int> &n_added);
-  std::vector<Eigen::VectorXd> compute_cluster_uncertainties(
-    const Structure &structure);
-  std::vector<std::vector<int>> sort_clusters_by_uncertainty(
-    const Structure &structure);
+  std::vector<Eigen::VectorXd>
+  compute_cluster_uncertainties(const Structure &structure);
+  std::vector<std::vector<int>>
+  sort_clusters_by_uncertainty(const Structure &structure);
 
   void add_training_structure(const Structure &structure);
   void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);
@@ -73,8 +74,7 @@ public:
   void set_hyperparameters(Eigen::VectorXd hyps);
 
   void write_mapping_coefficients(std::string file_name,
-                                  std::string contributor,
-                                  int kernel_index);
+                                  std::string contributor, int kernel_index);
 };
 
 #endif
