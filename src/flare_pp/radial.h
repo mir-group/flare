@@ -5,9 +5,8 @@
 #include <vector>
 
 // Radial basis sets.
-void bessel(std::vector<double> &basis_vals,
-            std::vector<double> &basis_derivs, double r, int N,
-            std::vector<double> radial_hyps);
+void bessel(std::vector<double> &basis_vals, std::vector<double> &basis_derivs,
+            double r, int N, std::vector<double> radial_hyps);
 
 void equispaced_gaussians(std::vector<double> &basis_vals,
                           std::vector<double> &basis_derivs, double r, int N,

@@ -27,7 +27,7 @@ public:
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
-    n_labels = 0, n_strucs = 0;
+      n_labels = 0, n_strucs = 0;
   double energy_noise, force_noise, stress_noise;
 
   // Likelihood attributes.
@@ -48,10 +48,10 @@ public:
   void set_hyperparameters(Eigen::VectorXd hyps);
 };
 
-void assign_kernels(
-  const Eigen::MatrixXd &efs_kernels, Eigen::MatrixXd &Kff_kernels,
-  int n_energy_1, int n_force_1, int n_stress_1, int n_atoms_1,
-  int n_energy_2, int n_force_2, int n_stress_2, int n_atoms_2,
-  int row, int col);
+void assign_kernels(const Eigen::MatrixXd &efs_kernels,
+                    Eigen::MatrixXd &Kff_kernels, int n_energy_1, int n_force_1,
+                    int n_stress_1, int n_atoms_1, int n_energy_2,
+                    int n_force_2, int n_stress_2, int n_atoms_2, int row,
+                    int col);
 
 #endif

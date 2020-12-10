@@ -1,8 +1,8 @@
 #ifndef Y_GRAD_H
 #define Y_GRAD_H
 
-#include <vector>
 #include <Eigen/Dense>
+#include <vector>
 
 // Spherical harmonics.
 void get_Y(std::vector<double> &Y, std::vector<double> &Yx,
@@ -10,8 +10,7 @@ void get_Y(std::vector<double> &Y, std::vector<double> &Yx,
            const double y, const double z, const int l);
 
 void get_complex_Y(Eigen::VectorXcd &Y, Eigen::VectorXcd &Yx,
-                   Eigen::VectorXcd &Yy, Eigen::VectorXcd &Yz,
-                   const double x, const double y, const double z,
-                   const int l);
+                   Eigen::VectorXcd &Yy, Eigen::VectorXcd &Yz, const double x,
+                   const double y, const double z, const int l);
 
 #endif

@@ -36,7 +36,7 @@ public:
 
   int n_clusters = 0;
   std::vector<int> n_clusters_by_type, cumulative_type_count,
-    n_neighbors_by_type;
+      n_neighbors_by_type;
 };
 
 // ClusterDescriptor holds the descriptor values for a collection of clusters
@@ -52,7 +52,7 @@ public:
 
   // Specify clusters of any type.
   ClusterDescriptor(const DescriptorValues &structure,
-                    const std::vector<int> & clusters);
+                    const std::vector<int> &clusters);
 
   std::vector<Eigen::MatrixXd> descriptors;
   std::vector<Eigen::VectorXd> descriptor_norms, cutoff_values;

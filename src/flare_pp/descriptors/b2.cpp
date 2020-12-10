@@ -4,7 +4,7 @@
 #include "radial.h"
 #include "structure.h"
 #include "y_grad.h"
-#include <fstream>  // File operations
+#include <fstream> // File operations
 #include <iomanip> // setprecision
 #include <iostream>
 
@@ -43,12 +43,12 @@ B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
     this->cutoff_pointer = hard_cutoff;
   } else if (cutoff_function == "cosine") {
     this->cutoff_pointer = cos_cutoff;
-  } else if (cutoff_function == "polynomial"){
+  } else if (cutoff_function == "polynomial") {
     this->cutoff_pointer = polynomial_cutoff;
   }
 }
 
-void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size){
+void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   // Report radial basis set.
   coeff_file << radial_basis << "\n";
 

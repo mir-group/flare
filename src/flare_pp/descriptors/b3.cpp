@@ -1,11 +1,11 @@
 #include "b3.h"
 #include "cutoffs.h"
 #include "descriptor.h"
+#include "omp.h"
 #include "radial.h"
 #include "structure.h"
 #include "wigner3j.h"
 #include "y_grad.h"
-#include "omp.h"
 #include <iostream>
 
 B3 ::B3() {}
@@ -45,7 +45,7 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
     this->cutoff_pointer = hard_cutoff;
   } else if (cutoff_function == "cosine") {
     this->cutoff_pointer = cos_cutoff;
-  } else if (cutoff_function == "polynomial"){
+  } else if (cutoff_function == "polynomial") {
     this->cutoff_pointer = polynomial_cutoff;
   }
 }
@@ -171,11 +171,16 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   int n_bond = n_radial * n_harmonics;
 
   int n_ls;
-  if (lmax == 0) n_ls = 1;
-  else if (lmax == 1) n_ls = 5;
-  else if (lmax == 2) n_ls = 15;
-  else if (lmax == 3) n_ls = 34;
-  else if (lmax == 4) n_ls = 65;
+  if (lmax == 0)
+    n_ls = 1;
+  else if (lmax == 1)
+    n_ls = 5;
+  else if (lmax == 2)
+    n_ls = 15;
+  else if (lmax == 3)
+    n_ls = 34;
+  else if (lmax == 4)
+    n_ls = 65;
 
   int n_d = (n_radial * (n_radial + 1) * (n_radial + 2) / 6) * n_ls;
 
@@ -185,7 +190,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   B3_norms = Eigen::VectorXd::Zero(n_atoms);
   B3_force_dots = Eigen::VectorXd::Zero(n_neighbors * 3);
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (int atom = 0; atom < n_atoms; atom++) {
     int n_atom_neighbors = unique_neighbor_count(atom);
     int force_start = cumulative_neighbor_count(atom) * 3;
@@ -199,7 +204,8 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
             for (int l2 = 0; l2 < (lmax + 1); l2++) {
               int ind_2 = ind_1 + pow(lmax + 1, 2) * l2 * l2 * (2 * l1 + 1);
               for (int l3 = 0; l3 < (lmax + 1); l3++) {
-                if ((abs(l1 - l2) > l3) || (l3 > l1 + l2)) continue;
+                if ((abs(l1 - l2) > l3) || (l3 > l1 + l2))
+                  continue;
                 int ind_3 = ind_2 + l3 * l3 * (2 * l2 + 1) * (2 * l1 + 1);
                 for (int m1 = 0; m1 < (2 * l1 + 1); m1++) {
                   n1_l = n1 * n_harmonics + (l1 * l1 + m1);
@@ -208,16 +214,17 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                     n2_l = n2 * n_harmonics + (l2 * l2 + m2);
                     int ind_5 = ind_4 + m2 * (2 * l3 + 1);
                     for (int m3 = 0; m3 < (2 * l3 + 1); m3++) {
-                      if (m1 + m2 + m3 - l1 - l2 - l3 != 0) continue;
+                      if (m1 + m2 + m3 - l1 - l2 - l3 != 0)
+                        continue;
                       n3_l = n3 * n_harmonics + (l3 * l3 + m3);
 
                       int m_index = ind_5 + m3;
 
-                      B3_vals(atom, counter) += 
-                        real(single_bond_vals(atom, n1_l) *
-                             single_bond_vals(atom, n2_l) *
-                             single_bond_vals(atom, n3_l) *
-                             wigner3j_coeffs(m_index));
+                      B3_vals(atom, counter) +=
+                          real(single_bond_vals(atom, n1_l) *
+                               single_bond_vals(atom, n2_l) *
+                               single_bond_vals(atom, n3_l) *
+                               wigner3j_coeffs(m_index));
 
                       // Store force derivatives.
                       for (int n = 0; n < n_atom_neighbors; n++) {
@@ -225,15 +232,15 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                           int ind = force_start + n * 3 + comp;
                           B3_force_dervs(ind, counter) +=
                               real(wigner3j_coeffs(m_index) *
-                              (single_bond_force_dervs(ind, n1_l) *
-                                   single_bond_vals(atom, n2_l) *
-                                   single_bond_vals(atom, n3_l) +
-                               single_bond_vals(atom, n1_l) *
-                                   single_bond_force_dervs(ind, n2_l) *
-                                   single_bond_vals(atom, n3_l) +
-                               single_bond_vals(atom, n1_l) *
-                                   single_bond_vals(atom, n2_l) *
-                                   single_bond_force_dervs(ind, n3_l)));
+                                   (single_bond_force_dervs(ind, n1_l) *
+                                        single_bond_vals(atom, n2_l) *
+                                        single_bond_vals(atom, n3_l) +
+                                    single_bond_vals(atom, n1_l) *
+                                        single_bond_force_dervs(ind, n2_l) *
+                                        single_bond_vals(atom, n3_l) +
+                                    single_bond_vals(atom, n1_l) *
+                                        single_bond_vals(atom, n2_l) *
+                                        single_bond_force_dervs(ind, n3_l)));
                         }
                       }
                     }

@@ -1,7 +1,7 @@
 #include "normalized_dot_product.h"
 #include "descriptor.h"
-#include "structure.h"
 #include "sparse_gp.h"
+#include "structure.h"
 #undef NDEBUG
 #include <assert.h>
 #include <cmath>
@@ -561,8 +561,8 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
     }
 
     // Reduce kernel values.
-    for (int i = 0; i < n_struc; i++){
-      for (int j = 0; j < n_elements; j++){
+    for (int i = 0; i < n_struc; i++) {
+      for (int j = 0; j < n_elements; j++) {
         kernel_vector(j) += par_mat(i, j);
       }
     }
@@ -623,18 +623,19 @@ void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {
   kernel_hyperparameters = new_hyps;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
-    const SparseGP &gp_model, int kernel_index){
+Eigen::MatrixXd
+NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
+                                                    int kernel_index) {
 
   // Assumes there is at least one sparse environment stored in the sparse GP.
 
   Eigen::MatrixXd mapping_coeffs;
-  if (power != 2){
-      std::cout
-          << "Mapping coefficients of the normalized dot product kernel are "
-             "implemented for power 2 only."
-          << std::endl;
-      return mapping_coeffs;
+  if (power != 2) {
+    std::cout
+        << "Mapping coefficients of the normalized dot product kernel are "
+           "implemented for power 2 only."
+        << std::endl;
+    return mapping_coeffs;
   }
 
   // Initialize beta vector.
@@ -646,22 +647,23 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
 
   // Get alpha index.
   int alpha_ind = 0;
-  for (int i = 0; i < kernel_index; i++){
-      alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
+  for (int i = 0; i < kernel_index; i++) {
+    alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
   }
 
   // Loop over types.
-  for (int i = 0; i < n_species; i++){
-    int n_types = gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[i];
+  for (int i = 0; i < n_species; i++) {
+    int n_types =
+        gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[i];
     int c_types =
-      gp_model.sparse_descriptors[kernel_index].cumulative_type_count[i];
+        gp_model.sparse_descriptors[kernel_index].cumulative_type_count[i];
 
     // Loop over clusters within each type.
-    for (int j = 0; j < n_types; j++){
+    for (int j = 0; j < n_types; j++) {
       Eigen::VectorXd p_current =
-        gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
+          gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
       double p_norm =
-        gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
+          gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
       double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
       int beta_count = 0;
 
@@ -670,7 +672,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_mapping_coefficients(
         double p_ik = p_current(k) / p_norm;
 
         // Second loop over descriptor values.
-        for (int l = k; l < p_size; l++){
+        for (int l = k; l < p_size; l++) {
           double p_il = p_current(l) / p_norm;
           double beta_val = sig2 * p_ik * p_il * alpha_val;
 

@@ -1,16 +1,15 @@
 #include "sparse_gp.h"
-#include <chrono>
-#include <iostream>
-#include <fstream> // File operations
-#include <numeric> // Iota
 #include <algorithm> // Random shuffle
+#include <chrono>
+#include <fstream> // File operations
 #include <iomanip> // setprecision
+#include <iostream>
+#include <numeric> // Iota
 
 SparseGP ::SparseGP() {}
 
-SparseGP ::SparseGP(std::vector<Kernel *> kernels,
-                            double energy_noise, double force_noise,
-                            double stress_noise) {
+SparseGP ::SparseGP(std::vector<Kernel *> kernels, double energy_noise,
+                    double force_noise, double stress_noise) {
 
   this->kernels = kernels;
   n_kernels = kernels.size();
@@ -53,41 +52,41 @@ SparseGP ::SparseGP(std::vector<Kernel *> kernels,
   }
 }
 
-void SparseGP ::initialize_sparse_descriptors(const Structure &structure){
-  if (sparse_descriptors.size() != 0) return;
+void SparseGP ::initialize_sparse_descriptors(const Structure &structure) {
+  if (sparse_descriptors.size() != 0)
+    return;
 
   for (int i = 0; i < structure.descriptors.size(); i++) {
     ClusterDescriptor empty_descriptor;
-    empty_descriptor.initialize_cluster(
-      structure.descriptors[i].n_types,
-      structure.descriptors[i].n_descriptors);
+    empty_descriptor.initialize_cluster(structure.descriptors[i].n_types,
+                                        structure.descriptors[i].n_descriptors);
     sparse_descriptors.push_back(empty_descriptor);
   }
 };
 
-std::vector<std::vector<int>> SparseGP ::sort_clusters_by_uncertainty(
-  const Structure &structure){
+std::vector<std::vector<int>>
+SparseGP ::sort_clusters_by_uncertainty(const Structure &structure) {
 
   // Compute cluster uncertainties.
   std::vector<Eigen::VectorXd> variances =
-    compute_cluster_uncertainties(structure);
+      compute_cluster_uncertainties(structure);
 
   std::vector<std::vector<int>> sorted_indices;
-  for (int i = 0; i < n_kernels; i++){
+  for (int i = 0; i < n_kernels; i++) {
     // Sort cluster indices by decreasing uncertainty.
     std::vector<int> indices(variances[i].size());
     iota(indices.begin(), indices.end(), 0);
     Eigen::VectorXd v = variances[i];
     stable_sort(indices.begin(), indices.end(),
-                [&v](int i1, int i2){return v(i1) > v(i2);});
+                [&v](int i1, int i2) { return v(i1) > v(i2); });
     sorted_indices.push_back(indices);
   }
 
   return sorted_indices;
 }
 
-std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
-  const Structure &structure){
+std::vector<Eigen::VectorXd>
+SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
 
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
@@ -103,24 +102,22 @@ std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
   int sparse_count = 0;
   for (int i = 0; i < n_kernels; i++) {
     K_self.push_back(
-      (kernels[i]->envs_envs(cluster_descriptors[i], cluster_descriptors[i],
-                             kernels[i]->kernel_hyperparameters)).diagonal()
-    );
+        (kernels[i]->envs_envs(cluster_descriptors[i], cluster_descriptors[i],
+                               kernels[i]->kernel_hyperparameters))
+            .diagonal());
 
     sparse_kernels.push_back(
-      kernels[i]->envs_envs(cluster_descriptors[i], sparse_descriptors[i],
-                             kernels[i]->kernel_hyperparameters)
-    );
+        kernels[i]->envs_envs(cluster_descriptors[i], sparse_descriptors[i],
+                              kernels[i]->kernel_hyperparameters));
 
     int n_clusters = sparse_descriptors[i].n_clusters;
     Eigen::MatrixXd Kuu_inverse_block =
-      Kuu_inverse.block(sparse_count, sparse_count, n_clusters, n_clusters);
+        Kuu_inverse.block(sparse_count, sparse_count, n_clusters, n_clusters);
     sparse_count += n_clusters;
 
     Q_self.push_back(
-      (sparse_kernels[i] * Kuu_inverse_block *
-       sparse_kernels[i].transpose()).diagonal()
-    );
+        (sparse_kernels[i] * Kuu_inverse_block * sparse_kernels[i].transpose())
+            .diagonal());
 
     variances.push_back(K_self[i] - Q_self[i]);
   }
@@ -128,20 +125,67 @@ std::vector<Eigen::VectorXd> SparseGP ::compute_cluster_uncertainties(
   return variances;
 }
 
-void SparseGP ::add_uncertain_environments(
-    const Structure &structure, const std::vector<int> &n_added) {
+void SparseGP ::add_specific_environments(const Structure &structure,
+                                          const std::vector<int> atoms) {
+
+  // Gather clusters with central atom in the given list.
+  std::vector<std::vector<std::vector<int>>> indices_1;
+  for (int i = 0; i < n_kernels; i++){
+    int n_types = structure.descriptors[i].n_types;
+    std::vector<std::vector<int>> indices_2;
+    for (int j = 0; j < n_types; j++){
+      int n_clusters = structure.descriptors[i].n_clusters_by_type[j];
+      std::vector<int> indices_3;
+      for (int k = 0; k < n_clusters; k++){
+        int atom_index_1 = structure.descriptors[i].atom_indices[j](k);
+        for (int l = 0; l < atoms.size(); l++){
+          int atom_index_2 = atoms[l];
+          if (atom_index_1 == atom_index_2){
+            indices_3.push_back(k);
+          }
+        }
+      }
+      indices_2.push_back(indices_3);
+    }
+    indices_1.push_back(indices_2);
+  }
+
+  // Create cluster descriptors.
+  std::vector<ClusterDescriptor> cluster_descriptors;
+  for (int i = 0; i < n_kernels; i++) {
+    ClusterDescriptor cluster_descriptor =
+        ClusterDescriptor(structure.descriptors[i], indices_1[i]);
+    cluster_descriptors.push_back(cluster_descriptor);
+  }
+
+  // Update Kuu and Kuf.
+  update_Kuu(cluster_descriptors);
+  update_Kuf(cluster_descriptors);
+  stack_Kuu();
+  stack_Kuf();
+
+  // Store sparse environments.
+  for (int i = 0; i < n_kernels; i++) {
+    sparse_descriptors[i].add_clusters_by_type(structure.descriptors[i],
+                                               indices_1[i]);
+  }
+}
+
+void SparseGP ::add_uncertain_environments(const Structure &structure,
+                                           const std::vector<int> &n_added) {
 
   // Compute cluster uncertainties.
   std::vector<std::vector<int>> sorted_indices =
-    sort_clusters_by_uncertainty(structure);
+      sort_clusters_by_uncertainty(structure);
 
   std::vector<std::vector<int>> n_sorted_indices;
-  for (int i = 0; i < n_kernels; i++){
+  for (int i = 0; i < n_kernels; i++) {
     // Take the first N indices.
     int n_curr = n_added[i];
-    if (n_curr > sorted_indices[i].size()) n_curr = sorted_indices[i].size();
+    if (n_curr > sorted_indices[i].size())
+      n_curr = sorted_indices[i].size();
     std::vector<int> n_indices(n_curr);
-    for (int j = 0; j < n_curr; j++){
+    for (int j = 0; j < n_curr; j++) {
       n_indices[j] = sorted_indices[i][j];
     }
     n_sorted_indices.push_back(n_indices);
@@ -168,20 +212,21 @@ void SparseGP ::add_uncertain_environments(
   }
 }
 
-void SparseGP ::add_random_environments(
-    const Structure &structure, const std::vector<int> &n_added) {
+void SparseGP ::add_random_environments(const Structure &structure,
+                                        const std::vector<int> &n_added) {
 
   // Randomly select environments without replacement.
   std::vector<std::vector<int>> envs1;
-  for (int i = 0; i < structure.descriptors.size(); i++){
+  for (int i = 0; i < structure.descriptors.size(); i++) {
     std::vector<int> envs2;
     int n_clusters = structure.descriptors[i].n_clusters;
     std::vector<int> clusters(n_clusters);
     std::iota(clusters.begin(), clusters.end(), 0);
     std::random_shuffle(clusters.begin(), clusters.end());
     int n_curr = n_added[i];
-    if (n_curr > n_clusters) n_curr = n_clusters;
-    for (int k = 0; k < n_curr; k++){
+    if (n_curr > n_clusters)
+      n_curr = n_clusters;
+    for (int k = 0; k < n_curr; k++) {
       envs2.push_back(clusters[k]);
     }
     envs1.push_back(envs2);
@@ -231,7 +276,7 @@ void SparseGP ::add_all_environments(const Structure &structure) {
 }
 
 void SparseGP ::update_Kuu(
-  const std::vector<ClusterDescriptor> &cluster_descriptors){
+    const std::vector<ClusterDescriptor> &cluster_descriptors) {
 
   // Update Kuu matrices.
   for (int i = 0; i < n_kernels; i++) {
@@ -245,13 +290,13 @@ void SparseGP ::update_Kuu(
     int n_sparse = sparse_descriptors[i].n_clusters;
     int n_envs = cluster_descriptors[i].n_clusters;
     int n_types = cluster_descriptors[i].n_types;
-    
+
     Eigen::MatrixXd kern_mat =
-      Eigen::MatrixXd::Zero(n_sparse + n_envs, n_sparse + n_envs);
+        Eigen::MatrixXd::Zero(n_sparse + n_envs, n_sparse + n_envs);
     int n1 = 0; // Total
     int n2 = 0; // Sparse descriptor count
     int n3 = 0; // Cluster descriptor count
-    for (int j = 0; j < n_types; j++){
+    for (int j = 0; j < n_types; j++) {
       int n4 = sparse_descriptors[i].n_clusters_by_type[j];
       int n5 = cluster_descriptors[i].n_clusters_by_type[j];
 
@@ -275,7 +320,7 @@ void SparseGP ::update_Kuu(
 }
 
 void SparseGP ::update_Kuf(
-  const std::vector<ClusterDescriptor> &cluster_descriptors){
+    const std::vector<ClusterDescriptor> &cluster_descriptors) {
 
   // Compute kernels between new sparse environments and training structures.
   for (int i = 0; i < n_kernels; i++) {
@@ -286,7 +331,7 @@ void SparseGP ::update_Kuf(
     // Precompute indices.
     Eigen::ArrayXi inds = Eigen::ArrayXi::Zero(n_types + 1);
     int counter = 0;
-    for (int j = 0; j < n_types; j++){
+    for (int j = 0; j < n_types; j++) {
       int t1 = sparse_descriptors[i].n_clusters_by_type[j];
       int t2 = cluster_descriptors[i].n_clusters_by_type[j];
       counter += t1 + t2;
@@ -294,7 +339,7 @@ void SparseGP ::update_Kuf(
     }
 
     Eigen::MatrixXd kern_mat =
-      Eigen::MatrixXd::Zero(n_sparse + n_envs, n_labels);
+        Eigen::MatrixXd::Zero(n_sparse + n_envs, n_labels);
 
 #pragma omp parallel for
     for (int j = 0; j < n_strucs; j++) {
@@ -305,7 +350,7 @@ void SparseGP ::update_Kuf(
 
       int n1 = 0; // Sparse descriptor count
       int n2 = 0; // Cluster descriptor count
-      for (int k = 0; k < n_types; k++){
+      for (int k = 0; k < n_types; k++) {
         int current_count = 0;
         int u_ind = inds(k);
         int n3 = sparse_descriptors[i].n_clusters_by_type[k];
@@ -313,9 +358,9 @@ void SparseGP ::update_Kuf(
 
         if (training_structures[j].energy.size() != 0) {
           kern_mat.block(u_ind, label_count(j), n3, 1) =
-            Kuf_kernels[i].block(n1, label_count(j), n3, 1);
+              Kuf_kernels[i].block(n1, label_count(j), n3, 1);
           kern_mat.block(u_ind + n3, label_count(j), n4, 1) =
-            envs_struc_kernels.block(n2, 0, n4, 1);
+              envs_struc_kernels.block(n2, 0, n4, 1);
 
           current_count += 1;
         }
@@ -323,19 +368,19 @@ void SparseGP ::update_Kuf(
         if (training_structures[j].forces.size() != 0) {
           kern_mat.block(u_ind, label_count(j) + current_count, n3,
                          n_atoms * 3) =
-            Kuf_kernels[i].block(n1, label_count(j) + current_count, n3,
-                                 n_atoms * 3);
+              Kuf_kernels[i].block(n1, label_count(j) + current_count, n3,
+                                   n_atoms * 3);
           kern_mat.block(u_ind + n3, label_count(j) + current_count, n4,
                          n_atoms * 3) =
-            envs_struc_kernels.block(n2, 1, n4, n_atoms * 3);
+              envs_struc_kernels.block(n2, 1, n4, n_atoms * 3);
           current_count += n_atoms * 3;
         }
 
         if (training_structures[j].stresses.size() != 0) {
           kern_mat.block(u_ind, label_count(j) + current_count, n3, 6) =
-            Kuf_kernels[i].block(n1, label_count(j) + current_count, n3, 6);
+              Kuf_kernels[i].block(n1, label_count(j) + current_count, n3, 6);
           kern_mat.block(u_ind + n3, label_count(j) + current_count, n4, 6) =
-            envs_struc_kernels.block(n2, 1 + n_atoms * 3, n4, 6);
+              envs_struc_kernels.block(n2, 1 + n_atoms * 3, n4, 6);
         }
 
         n1 += n3;
@@ -455,9 +500,10 @@ void SparseGP ::update_matrices_QR() {
   // QR decompose A.
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
   Eigen::VectorXd Q_b = qr.householderQ().transpose() * b;
-  Eigen::MatrixXd R_inv = qr.matrixQR().block(0, 0, Kuu.cols(), Kuu.cols())
-                                       .triangularView<Eigen::Upper>()
-                                       .solve(Kuu_eye);
+  Eigen::MatrixXd R_inv = qr.matrixQR()
+                              .block(0, 0, Kuu.cols(), Kuu.cols())
+                              .triangularView<Eigen::Upper>()
+                              .solve(Kuu_eye);
   R_inv_diag = R_inv.diagonal();
   alpha = R_inv * Q_b;
   Sigma = R_inv * R_inv.transpose();
@@ -480,7 +526,7 @@ void SparseGP ::predict_SOR(Structure &test_structure) {
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
   test_structure.variance_efs =
-    (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
+      (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
 }
 
 void SparseGP ::predict_DTC(Structure &test_structure) {
@@ -514,31 +560,31 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
   test_structure.variance_efs = K_self - Q_self + V_SOR;
 }
 
-void SparseGP ::compute_likelihood_stable(){
+void SparseGP ::compute_likelihood_stable() {
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
 
-  data_fit = -(1./2.) * y.transpose() * noise_diag *
-             (y - Kuf.transpose() * alpha);
-  constant_term = -(1./2.) * n_labels * log(2 * M_PI);
+  data_fit =
+      -(1. / 2.) * y.transpose() * noise_diag * (y - Kuf.transpose() * alpha);
+  constant_term = -(1. / 2.) * n_labels * log(2 * M_PI);
 
   // Compute complexity penalty.
   double noise_det = 0;
-  for (int i = 0; i < noise_vector.size(); i++){
+  for (int i = 0; i < noise_vector.size(); i++) {
     noise_det += log(noise_vector(i));
   }
 
   double Kuu_inv_det = 0;
-  for (int i = 0; i < L_diag.size(); i++){
+  for (int i = 0; i < L_diag.size(); i++) {
     Kuu_inv_det += 2 * log(abs(L_diag(i)));
   }
 
   double sigma_inv_det = 0;
-  for (int i = 0; i < R_inv_diag.size(); i++){
+  for (int i = 0; i < R_inv_diag.size(); i++) {
     sigma_inv_det += 2 * log(abs(R_inv_diag(i)));
   }
 
-  complexity_penalty = (1./2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
+  complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
@@ -575,8 +621,8 @@ void SparseGP ::compute_likelihood() {
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
-double SparseGP ::compute_likelihood_gradient(
-    const Eigen::VectorXd &hyperparameters) {
+double
+SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
 
   // Compute Kuu and Kuf matrices and gradients.
   int n_hyps_total = hyperparameters.size();
@@ -607,9 +653,9 @@ double SparseGP ::compute_likelihood_gradient(
       Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
 
       Kuu_grads[hyp_index + j].block(count, count, size, size) =
-        Kuu_grad[j + 1];
+          Kuu_grad[j + 1];
       Kuf_grads[hyp_index + j].block(count, 0, size, n_labels) =
-        Kuf_grad[j + 1];
+          Kuf_grad[j + 1];
     }
 
     count += size;
@@ -770,12 +816,13 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
   update_matrices_QR();
 }
 
-void SparseGP::write_mapping_coefficients(
-  std::string file_name, std::string contributor, int kernel_index) {
+void SparseGP::write_mapping_coefficients(std::string file_name,
+                                          std::string contributor,
+                                          int kernel_index) {
 
   // Compute mapping coefficients.
   Eigen::MatrixXd mapping_coeffs =
-    kernels[kernel_index]->compute_mapping_coefficients(*this, kernel_index);
+      kernels[kernel_index]->compute_mapping_coefficients(*this, kernel_index);
 
   // Make beta file.
   std::ofstream coeff_file;
@@ -793,8 +840,8 @@ void SparseGP::write_mapping_coefficients(
 
   // Write descriptor information to file.
   int coeff_size = mapping_coeffs.row(0).size();
-  training_structures[0].descriptor_calculators[kernel_index]->
-    write_to_file(coeff_file, coeff_size);
+  training_structures[0].descriptor_calculators[kernel_index]->write_to_file(
+      coeff_file, coeff_size);
 
   // Write beta vectors to file.
   coeff_file << std::scientific << std::setprecision(16);

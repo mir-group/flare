@@ -23,8 +23,7 @@ public:
                                     const Eigen::VectorXd &hyps) = 0;
 
   virtual std::vector<Eigen::MatrixXd>
-  envs_envs_grad(const ClusterDescriptor &envs1,
-                 const ClusterDescriptor &envs2,
+  envs_envs_grad(const ClusterDescriptor &envs1, const ClusterDescriptor &envs2,
                  const Eigen::VectorXd &hyps) = 0;
 
   virtual Eigen::MatrixXd envs_struc(const ClusterDescriptor &envs,
@@ -42,17 +41,18 @@ public:
                                       const DescriptorValues &struc2,
                                       const Eigen::VectorXd &hyps) = 0;
 
-  virtual Eigen::MatrixXd compute_mapping_coefficients(
-    const SparseGP &gp_model, int kernel_index) = 0;
+  virtual Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
+                                                       int kernel_index) = 0;
 
-  std::vector<Eigen::MatrixXd>
-  Kuu_grad(const ClusterDescriptor &envs, const Eigen::MatrixXd &Kuu,
-           const Eigen::VectorXd &hyps);
+  std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
+                                        const Eigen::MatrixXd &Kuu,
+                                        const Eigen::VectorXd &hyps);
 
-  std::vector<Eigen::MatrixXd>
-  Kuf_grad(const ClusterDescriptor &envs,
-           const std::vector<Structure> &strucs, int kernel_index,
-           const Eigen::MatrixXd &Kuf, const Eigen::VectorXd &hyps);
+  std::vector<Eigen::MatrixXd> Kuf_grad(const ClusterDescriptor &envs,
+                                        const std::vector<Structure> &strucs,
+                                        int kernel_index,
+                                        const Eigen::MatrixXd &Kuf,
+                                        const Eigen::VectorXd &hyps);
 
   virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;
 
