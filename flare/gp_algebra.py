@@ -1113,9 +1113,7 @@ def energy_energy_vector_unit(
     training_structures = _global_training_structures[name]
 
     size = e - s
-    energy_energy_unit = np.zeros(
-        size,
-    )
+    energy_energy_unit = np.zeros(size,)
 
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -1141,9 +1139,7 @@ def energy_force_vector_unit(
 
     ds = [1, 2, 3]
     size = (e - s) * 3
-    k_v = np.zeros(
-        size,
-    )
+    k_v = np.zeros(size,)
 
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -1164,9 +1160,7 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask, d_
 
     size = e - s
     args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-    force_energy_unit = np.zeros(
-        size,
-    )
+    force_energy_unit = np.zeros(size,)
 
     for m_index in range(size):
         training_structure = training_structures[m_index + s]

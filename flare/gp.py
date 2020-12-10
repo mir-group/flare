@@ -163,21 +163,15 @@ class GaussianProcess:
 
         self.training_data = []  # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
-        self.training_labels_np = np.empty(
-            0,
-        )
+        self.training_labels_np = np.empty(0,)
         self.n_envs_prev = len(self.training_data)
 
         # Attributes to accomodate energy labels:
         self.training_structures = []  # Environments of each structure
         self.energy_labels = []  # Energies of training structures
-        self.energy_labels_np = np.empty(
-            0,
-        )
+        self.energy_labels_np = np.empty(0,)
         self.energy_noise = energy_noise
-        self.all_labels = np.empty(
-            0,
-        )
+        self.all_labels = np.empty(0,)
 
         # Parameters set during training
         self.ky_mat = None
@@ -963,6 +957,7 @@ class GaussianProcess:
                     )
             new_gp.energy_labels = deepcopy(dictionary["energy_labels"])
             new_gp.energy_labels_np = deepcopy(dictionary["energy_labels_np"])
+            new_gp.sync_data()
 
         new_gp.all_labels = np.concatenate(
             (new_gp.training_labels_np, new_gp.energy_labels_np)
@@ -1322,6 +1317,8 @@ class GaussianProcess:
             return (
                 _global_training_data.pop(self.name, None),
                 _global_training_labels.pop(self.name, None),
+                _global_training_structures.pop(self.name, None),
+                _global_energy_labels.pop(self.name, None),
             )
 
     @staticmethod
@@ -1376,15 +1373,11 @@ class GaussianProcess:
             # Environments of each structure
             dictionary["training_structures"] = []
             dictionary["energy_labels"] = []  # Energies of training structures
-            dictionary["energy_labels_np"] = np.empty(
-                0,
-            )
+            dictionary["energy_labels_np"] = np.empty(0,)
 
         if "training_labels" not in dictionary:
             dictionary["training_labels"] = []
-            dictionary["training_labels_np"] = np.empty(
-                0,
-            )
+            dictionary["training_labels_np"] = np.empty(0,)
 
         if "energy_noise" not in dictionary:
             dictionary["energy_noise"] = 0.01

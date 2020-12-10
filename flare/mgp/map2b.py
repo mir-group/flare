@@ -14,8 +14,7 @@ from flare.kernels.utils import from_mask_to_args
 
 class Map2body(MapXbody):
     def __init__(
-        self,
-        **kwargs,
+        self, **kwargs,
     ):
         """
         args: the same arguments as MapXbody, to guarantee they have the same
