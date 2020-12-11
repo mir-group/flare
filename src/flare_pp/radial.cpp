@@ -39,7 +39,7 @@ void chebyshev(std::vector<double> &basis_vals,
   }
 
   double c = 1 / (r2 - r1);
-  double x = (r - r1) * c;
+  double x = 2 * (r - r1) * c - 1;
 
   for (int n = 0; n < N; n++) {
     if (n == 0) {
@@ -47,13 +47,13 @@ void chebyshev(std::vector<double> &basis_vals,
       basis_derivs[n] = 0;
     } else if (n == 1) {
       basis_vals[n] = x;
-      basis_derivs[n] = c;
+      basis_derivs[n] = 2 * c;
     }
     // TODO: Check if using Chebyshev polynomials of the second kind improves
     // the derivative.
     else {
       basis_vals[n] = 2 * x * basis_vals[n - 1] - basis_vals[n - 2];
-      basis_derivs[n] = 2 * basis_vals[n - 1] * c +
+      basis_derivs[n] = 2 * basis_vals[n - 1] * 2 * c +
                         2 * x * basis_derivs[n - 1] - basis_derivs[n - 2];
     }
   }
