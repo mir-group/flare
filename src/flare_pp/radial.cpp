@@ -3,6 +3,42 @@
 #include <iostream>
 #define Pi 3.14159265358979323846
 
+void fourier(std::vector<double> &basis_vals,
+             std::vector<double> &basis_derivs, double r, int N,
+             std::vector<double> radial_hyps){
+
+  double r1 = radial_hyps[0];
+  double r2 = radial_hyps[1];
+  double c = 1 / (r2 - r1);
+  double x = (r - r1) * c;
+
+  // If r is ouside the support of the radial basis set, return.
+  if ((r < r1) || (r > r2)) {
+    return;
+  }
+
+  int cos_count = 1;
+  int sin_count = 1;
+  for (int n = 0; n < N; n++) {
+    if (n == 0){
+      basis_vals[n] = 1;
+      basis_derivs[n] = 0;
+    }
+    else if ((n % 2) == 1){
+      double c2 = (Pi / 2) * cos_count;
+      basis_vals[n] = cos(c2 * x);
+      basis_derivs[n] = -sin(c2 * x) * c2 * c;
+      cos_count ++;
+    }
+    else if ((n % 2) == 0){
+      double c2 = (Pi / 2) * sin_count;
+      basis_vals[n] = sin(c2 * x);
+      basis_derivs[n] = cos(c2 * x) * c2 * c;
+      sin_count ++;
+    }
+  }
+}
+
 void bessel(std::vector<double> &basis_vals, std::vector<double> &basis_derivs,
             double r, int N, std::vector<double> radial_hyps) {
 
@@ -289,5 +325,7 @@ void set_radial_basis(const std::string &basis_name,
     radial_pointer = positive_chebyshev;
   } else if (basis_name == "bessel") {
     radial_pointer = bessel;
+  } else if (basis_name == "fourier") {
+    radial_pointer = fourier;
   }
 }

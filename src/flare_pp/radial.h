@@ -5,6 +5,10 @@
 #include <vector>
 
 // Radial basis sets.
+void fourier(std::vector<double> &basis_vals,
+             std::vector<double> &basis_derivs, double r, int N,
+             std::vector<double> radial_hyps);
+
 void bessel(std::vector<double> &basis_vals, std::vector<double> &basis_derivs,
             double r, int N, std::vector<double> radial_hyps);
 
