@@ -9,6 +9,9 @@
 void polynomial_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                        std::vector<double> cutoff_hyps);
 
+void power_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
+                  std::vector<double> cutoff_hyps);
+
 void quadratic_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                       std::vector<double> cutoff_hyps);
 

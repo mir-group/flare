@@ -26,6 +26,21 @@ void polynomial_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
   rcut_vals[1] = -c4 * pow(d, p - 1) + c5 * pow(d, p) - c6 * pow(d, p + 1);
 }
 
+void power_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
+                  std::vector<double> cutoff_hyps) {
+
+  if (r > rcut) {
+    rcut_vals[0] = 0;
+    rcut_vals[1] = 0;
+    return;
+  }
+
+  double pow_val = cutoff_hyps[0];
+  double rdiff = rcut - r;
+  rcut_vals[0] = pow(rdiff, pow_val);
+  rcut_vals[1] = -pow_val * pow(rdiff, pow_val - 1);
+}
+
 void quadratic_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                       std::vector<double> cutoff_hyps) {
 
@@ -82,5 +97,7 @@ void set_cutoff(const std::string &cutoff_function,
     cutoff_pointer = cos_cutoff;
   } else if (cutoff_function == "polynomial") {
     cutoff_pointer = polynomial_cutoff;
+  } else if (cutoff_function == "power") {
+    cutoff_pointer = power_cutoff;
   }
 }
