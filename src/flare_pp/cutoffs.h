@@ -2,6 +2,7 @@
 #define CUTOFFS_H
 
 #include <vector>
+#include <string>
 
 // Radial cutoff functions.
 void polynomial_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
