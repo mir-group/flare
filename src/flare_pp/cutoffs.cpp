@@ -3,6 +3,7 @@
 #include <iostream>
 #define Pi 3.14159265358979323846
 
+// This polynomial cutoff was introduced in Klicpera et al. arXiv:2003.03123.
 void polynomial_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                        std::vector<double> cutoff_hyps) {
 
@@ -66,4 +67,20 @@ void hard_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
 
   rcut_vals[0] = 1;
   rcut_vals[1] = 0;
+}
+
+void set_cutoff(const std::string &cutoff_function,
+                std::function<void(std::vector<double> &, double, double,
+                                   std::vector<double>)> &cutoff_pointer){
+
+  // Set the cutoff function.
+  if (cutoff_function == "quadratic") {
+    cutoff_pointer = quadratic_cutoff;
+  } else if (cutoff_function == "hard") {
+    cutoff_pointer = hard_cutoff;
+  } else if (cutoff_function == "cosine") {
+    cutoff_pointer = cos_cutoff;
+  } else if (cutoff_function == "polynomial") {
+    cutoff_pointer = polynomial_cutoff;
+  }
 }

@@ -15,5 +15,9 @@ void cos_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
 
 void hard_cutoff(std::vector<double> &rcut_vals, double r, double rcut,
                  std::vector<double> cutoff_hyps);
+    
+void set_cutoff(const std::string &cutoff_function,
+                std::function<void(std::vector<double> &, double, double,
+                                   std::vector<double>)> &cutoff_pointer);
 
 #endif

@@ -268,3 +268,26 @@ void calculate_radial(
                 basis_vals[n] * zrel * rcut_vals[1];
   }
 }
+
+void set_radial_basis(const std::string &basis_name,
+                      std::function <void(std::vector<double> &,
+                                          std::vector<double> &,
+                                          double, int,
+                                          std::vector<double>)>
+                                          &radial_pointer){
+
+  // Set the radial basis.
+  if (basis_name == "chebyshev") {
+    radial_pointer = chebyshev;
+  } else if (basis_name == "weighted_chebyshev") {
+    radial_pointer = weighted_chebyshev;
+  } else if (basis_name == "equispaced_gaussians") {
+    radial_pointer = equispaced_gaussians;
+  } else if (basis_name == "weighted_positive_chebyshev") {
+    radial_pointer = weighted_positive_chebyshev;
+  } else if (basis_name == "positive_chebyshev") {
+    radial_pointer = positive_chebyshev;
+  } else if (basis_name == "bessel") {
+    radial_pointer = bessel;
+  }
+}
