@@ -3,6 +3,7 @@
 #include "y_grad.h"
 #include "sparse_gp.h"
 #include "b2.h"
+#include "b2_simple.h"
 #include "b3.h"
 #include "two_body.h"
 #include "three_body.h"
@@ -90,6 +91,11 @@ PYBIND11_MODULE(_C_flare, m) {
                     const std::vector<double> &>());
 
   py::class_<B2, Descriptor>(m, "B2")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &>());
+
+  py::class_<B2_Simple, Descriptor>(m, "B2_Simple")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &>());

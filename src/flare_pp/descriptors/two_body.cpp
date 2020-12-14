@@ -13,16 +13,7 @@ TwoBody ::TwoBody(double cutoff, int n_species, const std::string &cutoff_name,
   this->cutoff_name = cutoff_name;
   this->cutoff_hyps = cutoff_hyps;
 
-  // Set the cutoff function.
-  if (cutoff_name == "quadratic") {
-    this->cutoff_function = quadratic_cutoff;
-  } else if (cutoff_name == "hard") {
-    this->cutoff_function = hard_cutoff;
-  } else if (cutoff_name == "cosine") {
-    this->cutoff_function = cos_cutoff;
-  } else if (cutoff_name == "polynomial") {
-    this->cutoff_function = polynomial_cutoff;
-  }
+  set_cutoff(cutoff_name, this->cutoff_function);
 }
 
 DescriptorValues TwoBody ::compute_struc(Structure &structure) {

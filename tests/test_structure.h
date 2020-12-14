@@ -1,4 +1,5 @@
 #include "b2.h"
+#include "b2_simple.h"
 #include "b3.h"
 #include "structure.h"
 #include "four_body.h"
@@ -23,6 +24,7 @@ public:
   std::vector<int> species, species_2, species_3;
   Eigen::MatrixXd positions, positions_2, positions_3;
   B2 ps;
+  B2_Simple ps_simple;
   std::vector<Descriptor *> dc;
   Structure test_struc, test_struc_2, test_struc_3;
   DescriptorValues struc_desc;
@@ -64,8 +66,10 @@ public:
 
     ps = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
             descriptor_settings);
+    ps_simple = B2_Simple(radial_string, cutoff_string, radial_hyps,
+                          cutoff_hyps, descriptor_settings);
 
-    dc.push_back(&ps);
+    dc.push_back(&ps_simple);
 
     test_struc = Structure(cell, species, positions, cutoff, dc);
     test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);

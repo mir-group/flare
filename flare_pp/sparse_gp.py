@@ -244,7 +244,9 @@ def optimize_kernel_hyperparameters(
         )
 
     # Set the hyperparameters to the optimal value.
-    sparse_gp.set_hyperparameters(optimization_result.x)
+    new_hyps = np.copy(sparse_gp.hyperparameters)
+    new_hyps[:-3] = optimization_result.x
+    sparse_gp.set_hyperparameters(new_hyps)
     sparse_gp.log_marginal_likelihood = -optimization_result.fun
 
     return optimization_result

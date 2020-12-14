@@ -21,31 +21,8 @@ B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
   this->cutoff_hyps = cutoff_hyps;
   this->descriptor_settings = descriptor_settings;
 
-  // Set the radial basis.
-  if (radial_basis == "chebyshev") {
-    this->radial_pointer = chebyshev;
-  } else if (radial_basis == "weighted_chebyshev") {
-    this->radial_pointer = weighted_chebyshev;
-  } else if (radial_basis == "equispaced_gaussians") {
-    this->radial_pointer = equispaced_gaussians;
-  } else if (radial_basis == "weighted_positive_chebyshev") {
-    this->radial_pointer = weighted_positive_chebyshev;
-  } else if (radial_basis == "positive_chebyshev") {
-    this->radial_pointer = positive_chebyshev;
-  } else if (radial_basis == "bessel") {
-    this->radial_pointer = bessel;
-  }
-
-  // Set the cutoff function.
-  if (cutoff_function == "quadratic") {
-    this->cutoff_pointer = quadratic_cutoff;
-  } else if (cutoff_function == "hard") {
-    this->cutoff_pointer = hard_cutoff;
-  } else if (cutoff_function == "cosine") {
-    this->cutoff_pointer = cos_cutoff;
-  } else if (cutoff_function == "polynomial") {
-    this->cutoff_pointer = polynomial_cutoff;
-  }
+  set_radial_basis(radial_basis, this->radial_pointer);
+  set_cutoff(cutoff_function, this->cutoff_pointer);
 }
 
 void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
