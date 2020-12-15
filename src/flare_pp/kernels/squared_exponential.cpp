@@ -621,3 +621,16 @@ SquaredExponential ::compute_mapping_coefficients(const SparseGP &gp_model,
   Eigen::MatrixXd empty_mat;
   return empty_mat;
 }
+
+Eigen::MatrixXd
+SquaredExponential ::compute_varmap_coefficients(const SparseGP &gp_model,
+                                                  int kernel_index) {
+
+  std::cout
+      << "Mapping coefficients are not implemented for the squared exponential "
+         "kernel. And never will be, because there are infinitely many of them."
+      << std::endl;
+
+  Eigen::MatrixXd empty_mat;
+  return empty_mat;
+}

@@ -721,7 +721,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
 
   // Loop over types.
   for (int s = 0; s < n_species; s++){
-    int n_types = gp_model.sparse_descriptors[kernel_index].type_count[s];
+    int n_types = gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[s];
     int c_types =
       gp_model.sparse_descriptors[kernel_index].cumulative_type_count[s];
     int K_ind = alpha_ind + c_types;
