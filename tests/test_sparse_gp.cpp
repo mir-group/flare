@@ -174,6 +174,7 @@ TEST_F(StructureTest, LikeGrad) {
 
   // Test mapping coefficients.
   sparse_gp.write_mapping_coefficients("beta.txt", "Jon V", 0);
+  sparse_gp.write_varmap_coefficients("beta_var.txt", "YX", 0);
 
   // Check the likelihood function.
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;

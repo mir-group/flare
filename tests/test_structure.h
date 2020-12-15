@@ -43,7 +43,7 @@ public:
 
   double sigma = 2.0;
   double ls = 0.9;
-  int power = 2;
+  int power = 1;
   NormalizedDotProduct kernel_3;
   SquaredExponential kernel;
 
