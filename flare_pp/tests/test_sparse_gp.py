@@ -4,7 +4,7 @@ import sys
 sys.path.append("../..")
 sys.path.append("../../build")
 from flare_pp.sparse_gp import SGP_Wrapper
-from _C_flare import NormalizedDotProduct, B2, SparseGP
+from _C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 
 
 # Make random structure.
@@ -63,3 +63,7 @@ def test_train():
 
     assert hyps_init != hyps_post
     assert sgp_py.likelihood != 0.0
+
+def test_map():
+    sgp_py.write_mapping_coefficients("beta.txt", "A", 0);
+    sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0);

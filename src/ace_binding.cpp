@@ -133,6 +133,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("compute_likelihood_gradient",
            &SparseGP::compute_likelihood_gradient)
       .def("write_mapping_coefficients", &SparseGP::write_mapping_coefficients)
+      .def("write_varmap_coefficients", &SparseGP::write_varmap_coefficients)
       .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
       .def_readonly("complexity_penalty", &SparseGP::complexity_penalty)
       .def_readonly("data_fit", &SparseGP::data_fit)

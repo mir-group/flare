@@ -128,6 +128,12 @@ class SGP_Wrapper:
     def train(self, logger_name=None):
         optimize_hyperparameters(self.sparse_gp, max_iterations=self.max_iterations)
 
+    def write_mapping_coefficients(self, filename, contributor, kernel_idx):
+        self.sparse_gp.write_mapping_coefficients(filename, contributor, kernel_idx)
+
+    def write_varmap_coefficients(self, filename, contributor, kernel_idx):
+        self.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
+
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):
     """Compute the negative log likelihood and gradient with respect to the
