@@ -293,31 +293,46 @@ void SparseGP ::update_Kuu(
 
     Eigen::MatrixXd kern_mat =
         Eigen::MatrixXd::Zero(n_sparse + n_envs, n_sparse + n_envs);
-    int n1 = 0; // Total
-    int n2 = 0; // Sparse descriptor count
-    int n3 = 0; // Cluster descriptor count
+
+    int n1 = 0; // Sparse descriptor counter 1
+    int n2 = 0; // Cluster descriptor counter 1
+
+    // TODO: Generalize to allow comparisons across types.
     for (int j = 0; j < n_types; j++) {
-      int n4 = sparse_descriptors[i].n_clusters_by_type[j];
-      int n5 = cluster_descriptors[i].n_clusters_by_type[j];
+      int n3 = 0; // Sparse descriptor counter 2
+      int n4 = 0; // Cluster descriptor counter 2
+      int n5 = sparse_descriptors[i].n_clusters_by_type[j];
+      int n6 = cluster_descriptors[i].n_clusters_by_type[j];
 
-      Eigen::MatrixXd prev_vals = prev_block.block(n2, n3, n4, n5);
-      Eigen::MatrixXd self_vals = self_block.block(n3, n3, n5, n5);
+      for (int k = 0; k < n_types; k++){
+        int n7 = sparse_descriptors[i].n_clusters_by_type[k];
+        int n8 = cluster_descriptors[i].n_clusters_by_type[k];
 
-      kern_mat.block(n1, n1, n4, n4) = Kuu_kernels[i].block(n2, n2, n4, n4);
-      kern_mat.block(n1, n1 + n4, n4, n5) = prev_vals;
-      kern_mat.block(n1 + n4, n1, n5, n4) = prev_vals.transpose();
-      kern_mat.block(n1 + n4, n1 + n4, n5, n5) = self_vals;
+        Eigen::MatrixXd prev_vals_1 = prev_block.block(n1, n4, n5, n8);
+        Eigen::MatrixXd prev_vals_2 = prev_block.block(n3, n2, n7, n6);
+        Eigen::MatrixXd self_vals = self_block.block(n2, n4, n6, n8);
 
-      n1 += n4 + n5;
-      n2 += n4;
-      n3 += n5;
+        kern_mat.block(n1 + n2, n3 + n4, n5, n7) =
+          Kuu_kernels[i].block(n1, n3, n5, n7);
+        kern_mat.block(n1 + n2, n3 + n4 + n7, n5, n8) =
+          prev_vals_1;
+        kern_mat.block(n1 + n2 + n5, n3 + n4, n6, n7) =
+          prev_vals_2.transpose();
+        kern_mat.block(n1 + n2 + n5, n3 + n4 + n7, n6, n8) =
+          self_vals;
+
+        n3 += n7;
+        n4 += n8;
+      }
+      n1 += n5;
+      n2 += n6;
     }
     Kuu_kernels[i] = kern_mat;
 
     // Update sparse count.
     this->n_sparse += n_envs;
+    }
   }
-}
 
 void SparseGP ::update_Kuf(
     const std::vector<ClusterDescriptor> &cluster_descriptors) {
