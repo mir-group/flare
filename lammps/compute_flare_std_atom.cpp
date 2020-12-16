@@ -27,11 +27,20 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp) : Pair(lmp) {
+ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) : 
+  Compute(lmp, narg, arg),
+  stds(NULL)
+{
+  peratom_flag = 1;
+  size_peratom_cols = 0;
+  timeflag = 1;
+  comm_reverse = 1;
+
   restartinfo = 0;
   manybody_flag = 1;
 
   beta = NULL;
+  coeff(narg, arg);
 }
 
 /* ----------------------------------------------------------------------
@@ -48,17 +57,23 @@ ComputeFlareStdAtom::~ComputeFlareStdAtom() {
     memory->destroy(setflag);
     memory->destroy(cutsq);
   }
+
+  memory->destroy(stds);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void ComputeFlareStdAtom::compute_peratom() {
+  if (atom->nmax > nmax) {
+    memory->destroy(stds);
+    nmax = atom->nmax;
+    memory->create(stds,nmax,"flarestd/atom:stds");
+    vector_atom = stds;
+  }
+
   int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
   double evdwl, delx, dely, delz, xtmp, ytmp, ztmp, rsq;
-  double *coeff;
   int *ilist, *jlist, *numneigh, **firstneigh;
-
-  evdwl = 0.0;
 
   double **x = atom->x;
   double **f = atom->f;
@@ -66,6 +81,8 @@ void ComputeFlareStdAtom::compute_peratom() {
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int newton_pair = force->newton_pair;
+  int ntotal = nlocal;
+  if (force->newton) ntotal += atom->nghost;
 
   inum = list->inum;
   ilist = list->ilist;
@@ -76,6 +93,10 @@ void ComputeFlareStdAtom::compute_peratom() {
   double B2_norm_squared, B2_val_1, B2_val_2;
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+
+  for (int ii = 0; ii < ntotal; ii++) {
+    stds[ii] = 0.0;
+  }
 
   for (ii = 0; ii < inum; ii++) {
     i = list->ilist[ii];
@@ -111,37 +132,74 @@ void ComputeFlareStdAtom::compute_peratom() {
 
     // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
-    evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
-    partial_forces =
-        2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
+    stds[i] += pow(B2_vals.dot(beta_p) / B2_norm_squared, 0.5) ;
+    //partial_forces =
+    //    2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
 
     // Update energy, force and stress arrays.
-    n_count = 0;
-    for (int jj = 0; jj < jnum; jj++) {
-      j = jlist[jj];
-      delx = xtmp - x[j][0];
-      dely = ytmp - x[j][1];
-      delz = ztmp - x[j][2];
-      rsq = delx * delx + dely * dely + delz * delz;
+    //n_count = 0;
+    //for (int jj = 0; jj < jnum; jj++) {
+    //  j = jlist[jj];
+    //  delx = xtmp - x[j][0];
+    //  dely = ytmp - x[j][1];
+    //  delz = ztmp - x[j][2];
+    //  rsq = delx * delx + dely * dely + delz * delz;
 
-      if (rsq < (cutoff * cutoff)) {
-        double fx = -partial_forces(n_count * 3);
-        double fy = -partial_forces(n_count * 3 + 1);
-        double fz = -partial_forces(n_count * 3 + 2);
-        f[i][0] += fx;
-        f[i][1] += fy;
-        f[i][2] += fz;
-        f[j][0] -= fx;
-        f[j][1] -= fy;
-        f[j][2] -= fz;
+    //  if (rsq < (cutoff * cutoff)) {
+    //    double fx = -partial_forces(n_count * 3);
+    //    double fy = -partial_forces(n_count * 3 + 1);
+    //    double fz = -partial_forces(n_count * 3 + 2);
+    //    f[i][0] += fx;
+    //    f[i][1] += fy;
+    //    f[i][2] += fz;
+    //    f[j][0] -= fx;
+    //    f[j][1] -= fy;
+    //    f[j][2] -= fz;
 
-        n_count++;
-      }
-    }
+    //    n_count++;
+    //  }
+    //}
 
   }
 
 }
+
+/* ---------------------------------------------------------------------- */
+
+int ComputeFlareStdAtom::pack_reverse_comm(int n, int first, double *buf)
+{
+  int i,m,last;
+
+  m = 0;
+  last = first + n;
+  for (i = first; i < last; i++) buf[m++] = stds[i];
+  return m;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ComputeFlareStdAtom::unpack_reverse_comm(int n, int *list, double *buf)
+{
+  int i,j,m;
+
+  m = 0;
+  for (i = 0; i < n; i++) {
+    j = list[i];
+    stds[j] += buf[m++];
+  }
+}
+
+/* ----------------------------------------------------------------------
+   memory usage of local atom-based array
+------------------------------------------------------------------------- */
+
+double ComputeFlareStdAtom::memory_usage()
+{
+  double bytes = nmax * sizeof(double);
+  return bytes;
+}
+
+
 
 /* ----------------------------------------------------------------------
    allocate all arrays
@@ -182,11 +240,11 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
 
   // Should be exactly 3 arguments following "pair_coeff" in the input file.
   if (narg != 3)
-    error->all(FLERR, "Incorrect args for pair coefficients");
+    error->all(FLERR, "Incorrect args for compute coefficients");
 
   // Ensure I,J args are "* *".
   if (strcmp(arg[0], "*") != 0 || strcmp(arg[1], "*") != 0)
-    error->all(FLERR, "Incorrect args for pair coefficients");
+    error->all(FLERR, "Incorrect args for compute coefficients");
 
   read_file(arg[2]);
 }
@@ -195,7 +253,7 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
    init specific to this pair style
 ------------------------------------------------------------------------- */
 
-void ComputeFlareStdAtom::init_style() {
+void ComputeFlareStdAtom::init() {
   // Require newton on.
   if (force->newton_pair == 0)
     error->all(FLERR, "Compute command requires newton pair on");
@@ -204,6 +262,11 @@ void ComputeFlareStdAtom::init_style() {
   int irequest = neighbor->request(this, instance_me);
   neighbor->requests[irequest]->half = 0;
   neighbor->requests[irequest]->full = 1;
+}
+
+void ComputeFlareStdAtom::init_list(int /*id*/, NeighList *ptr)
+{
+  list = ptr;
 }
 
 /* ----------------------------------------------------------------------
@@ -231,7 +294,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     fptr = force->open_potential(filename);
     if (fptr == NULL) {
       char str[128];
-      snprintf(str, 128, "Cannot open EAM potential file %s", filename);
+      snprintf(str, 128, "Cannot open variance file %s", filename);
       error->one(FLERR, str);
     }
   }
