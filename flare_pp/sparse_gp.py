@@ -132,7 +132,37 @@ class SGP_Wrapper:
         self.sparse_gp.write_mapping_coefficients(filename, contributor, kernel_idx)
 
     def write_varmap_coefficients(self, filename, contributor, kernel_idx):
-        self.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
+        old_kernels = self.sparse_gp.kernels
+        assert len(old_kernels) == 1, "Not support multiple kernels"
+
+        if old_kernels[0].power != 1:
+            # change to power 1 kernel
+            power = 1
+            new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
+    
+            # make a new GP with power = 1 kernel and the same training data
+            new_spg = SGP_Wrapper(
+                kernels=new_kernels,
+                descriptor_calculators=self.descriptor_calculators,
+                cutoff=self.cutoff,
+                sigma_e=self.sparse_gp.energy_noise,
+                sigma_f=self.sparse_gp.force_noise,
+                sigma_s=self.sparse_gp.stress_noise,
+                species_map=self.species_map,
+                variance_type=self.variance_type,
+                single_atom_energies=self.single_atom_energies,
+                energy_training=self.energy_training,
+                force_training=self.force_training,
+                stress_training=self.stress_training,
+                max_iterations=self.max_iterations,
+            )
+
+            # add training data
+
+            # write var map coefficient file
+            new_spg.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
+        else:
+            self.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):

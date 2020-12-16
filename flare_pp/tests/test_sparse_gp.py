@@ -1,8 +1,14 @@
+import os
 import numpy as np
-from flare import struc
+import pytest
 import sys
 sys.path.append("../..")
 sys.path.append("../../build")
+
+from ase.io import read
+from flare import struc
+from flare.lammps import lammps_calculator
+
 from flare_pp.sparse_gp import SGP_Wrapper
 from _C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 
@@ -10,9 +16,13 @@ from _C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 # Make random structure.
 n_atoms = 4
 cell = np.eye(3)
-positions = np.random.rand(n_atoms, 3)
+train_positions = np.random.rand(n_atoms, 3)
+test_positions = np.random.rand(n_atoms, 3)
+atom_types = [0, 1]
+atom_masses = [2, 4]
 species = [0, 1, 0, 1]
-test_structure = struc.Structure(cell, species, positions)
+train_structure = struc.Structure(cell, species, train_positions)
+test_structure = struc.Structure(cell, species, test_positions)
 
 # Test update db
 custom_range = [1, 3]
@@ -42,12 +52,11 @@ sgp_cpp = SparseGP([kernel], sigma_e, sigma_f, sigma_s)
 sgp_py = SGP_Wrapper([kernel], [calc], cutoff, sigma_e, sigma_f, sigma_s,
                      species_map, max_iterations=max_iterations)
 
-
 def test_update_db():
     """Check that the covariance matrices have the correct size after the
     sparse GP is updated."""
 
-    sgp_py.update_db(test_structure, forces, custom_range, energy, stress)
+    sgp_py.update_db(train_structure, forces, custom_range, energy, stress)
 
     assert sgp_py.sparse_gp.Kuu.shape[0] == n_atoms
     assert sgp_py.sparse_gp.Kuf.shape[1] == 1 + n_atoms * 3 + 6
@@ -67,3 +76,49 @@ def test_train():
 def test_map():
     sgp_py.write_mapping_coefficients("beta.txt", "A", 0);
     sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0);
+
+@pytest.mark.skipif(
+    not os.environ.get("lmp", False),
+    reason=(
+        "lmp not found "
+        "in environment: Please install LAMMPS "
+        "and set the $lmp env. "
+        "variable to point to the executatble."
+    ),
+)
+def test_lammps():
+    # set up input and data files
+    data_file_name = 'tmp.data'
+    lammps_location = 'beta.txt'
+    style_string = 'flare'
+    coeff_string = '* * {}'.format(lammps_location)
+    lammps_executable = os.environ.get("lmp")
+    dump_file_name = 'tmp.dump'
+    input_file_name = 'tmp.in'
+    output_file_name = 'tmp.out'
+    
+    # write data file
+    data_text = lammps_calculator.lammps_dat(test_structure, atom_types,
+                                             atom_masses, species)
+    lammps_calculator.write_text(data_file_name, data_text)
+    
+    # write input file
+    input_text = \
+        lammps_calculator.generic_lammps_input(data_file_name, style_string,
+                                               coeff_string, dump_file_name)
+    lammps_calculator.write_text(input_file_name, input_text)
+    
+    # run lammps
+    lammps_calculator.run_lammps(lammps_executable, input_file_name,
+                                 output_file_name)
+
+    # read output
+    lmp_dump = read(dump_file_name, format="lammps-dump-text")
+    lmp_forces = lmp_dump.get_forces()
+
+    # compare with sgp_py prediction
+    assert len(sgp_py.sparse_gp.training_data) > 0
+
+    sgp_forces = sgp_py.sparse_gp.predict(test_structure)
+    assert np.allclose(lmp_forces, sgp_forces)
+    
