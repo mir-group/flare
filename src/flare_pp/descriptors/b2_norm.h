@@ -20,4 +20,13 @@ public:
   DescriptorValues compute_struc(Structure &structure);
 };
 
+void compute_b2_norm(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
+                     Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,
+                     const Eigen::MatrixXd &single_bond_vals,
+                     const Eigen::MatrixXd &single_bond_force_dervs,
+                     const Eigen::VectorXi &unique_neighbor_count,
+                     const Eigen::VectorXi &cumulative_neighbor_count,
+                     const Eigen::VectorXi &descriptor_indices, int nos, int N,
+                     int lmax);
+
 #endif
