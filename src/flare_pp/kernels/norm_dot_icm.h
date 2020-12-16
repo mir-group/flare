@@ -11,7 +11,7 @@ class ClusterDescriptor;
 class NormalizedDotProduct_ICM : public Kernel {
 public:
   double sigma, sig2, power;
-  int n_icm_coeffs;
+  int no_types, n_icm_coeffs;
   Eigen::MatrixXd icm_coeffs;
 
   NormalizedDotProduct_ICM();

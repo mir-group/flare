@@ -19,12 +19,15 @@ NormalizedDotProduct_ICM ::NormalizedDotProduct_ICM(
   this->icm_coeffs = icm_coeffs;
 
   // Set kernel hyperparameters.
-  n_icm_coeffs = icm_coeffs.rows() * (icm_coeffs.rows() + 1) / 2;
-  Eigen::VectorXd hyps(1 + n_icm_coeffs);
-  hyps << sigma;
-  for (int i = 0; i < n_icm_coeffs; i++) {
-    for (int j = i; j < n_icm_coeffs; j++) {
-      hyps << icm_coeffs(i, j);
+  no_types = icm_coeffs.rows();
+  n_icm_coeffs = no_types * (no_types + 1) / 2;
+  Eigen::VectorXd hyps = Eigen::VectorXd::Zero(1 + n_icm_coeffs);
+  hyps(0) = sigma;
+  int icm_counter = 0;
+  for (int i = 0; i < no_types; i++) {
+    for (int j = i; j < no_types; j++) {
+      hyps(1 + icm_counter) = icm_coeffs(i, j);
+      icm_counter ++;
     }
   }
   kernel_hyperparameters = hyps;
@@ -108,23 +111,33 @@ NormalizedDotProduct_ICM ::envs_envs_grad(const ClusterDescriptor &envs1,
   grad_mats.push_back(kern);
   grad_mats.push_back(grad);
 
+  // Initialize ICM gradients.
+  Eigen::MatrixXd init_mat =
+    Eigen::MatrixXd::Zero(envs1.n_clusters, envs2.n_clusters);
+  std::vector<Eigen::MatrixXd> icm_mats;
+  for (int i = 0; i < n_icm_coeffs; i++) {
+    icm_mats.push_back(init_mat);
+  }
+
   int n_types = envs1.n_types;
   for (int s1 = 0; s1 < n_types; s1++) {
     int n_sparse_1 = envs1.n_clusters_by_type[s1];
     int c_sparse_1 = envs1.cumulative_type_count[s1];
     for (int s2 = 0; s2 < n_types; s2++) {
-      int n_sparse_2 = envs1.n_clusters_by_type[s2];
-      int c_sparse_2 = envs1.cumulative_type_count[s2];
+      int n_sparse_2 = envs2.n_clusters_by_type[s2];
+      int c_sparse_2 = envs2.cumulative_type_count[s2];
 
       int icm_index = get_icm_index(s1, s2, n_types);
       double icm_val = hyps(1 + icm_index);
 
-      Eigen::MatrixXd icm_grad =
-          Eigen::MatrixXd::Zero(kern.rows(), kern.cols());
-      icm_grad.block(c_sparse_1, c_sparse_2, n_sparse_1, n_sparse_2) =
-          kern.block(c_sparse_1, c_sparse_2, n_sparse_1, n_sparse_2) / icm_val;
-      grad_mats.push_back(icm_grad);
+      icm_mats[icm_index].block(c_sparse_1, c_sparse_2, n_sparse_1,
+                                n_sparse_2) =
+        kern.block(c_sparse_1, c_sparse_2, n_sparse_1, n_sparse_2) / icm_val;
     }
+  }
+
+  for (int i = 0; i < n_icm_coeffs; i++){
+    grad_mats.push_back(icm_mats[i]);
   }
 
   return grad_mats;
@@ -232,14 +245,14 @@ NormalizedDotProduct_ICM ::envs_struc_grad(const ClusterDescriptor &envs,
                   force_kern_val;
 
               sig_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
-                  sig_force_derv;
+                sig_force_derv;
               sig_mat(sparse_index, 1 + 3 * atom_index + comp) +=
-                  sig_force_derv;
+                sig_force_derv;
 
               icm_mats[icm_index](sparse_index, 1 + 3 * neighbor_index +
                                                     comp) -= icm_force_derv;
-              icm_mats[icm_index](sparse_index, 1 + 3 * neighbor_index +
-                                                    comp) -= icm_force_derv;
+              icm_mats[icm_index](sparse_index, 1 + 3 * atom_index + comp) +=
+                icm_force_derv;
 
               for (int comp2 = comp; comp2 < 3; comp2++) {
                 double coord = struc.neighbor_coordinates[s2](ind, comp2);
@@ -251,7 +264,7 @@ NormalizedDotProduct_ICM ::envs_struc_grad(const ClusterDescriptor &envs,
                     sig_force_derv * coord * vol_inv;
 
                 icm_mats[icm_index](sparse_index,
-                                    1 + 3 * neighbor_index + comp) -=
+                                    1 + 3 * struc.n_atoms + stress_counter) -=
                     icm_force_derv * coord * vol_inv;
                 stress_counter++;
               }
@@ -630,8 +643,8 @@ void NormalizedDotProduct_ICM ::set_hyperparameters(Eigen::VectorXd new_hyps) {
 
   // Store ICM coefficients.
   int icm_counter = 0;
-  for (int i = 0; i < n_icm_coeffs; i++) {
-    for (int j = i; j < n_icm_coeffs; j++) {
+  for (int i = 0; i < no_types; i++) {
+    for (int j = i; j < no_types; j++) {
       icm_coeffs(i, j) = new_hyps(1 + icm_counter);
       icm_coeffs(j, i) = new_hyps(1 + icm_counter);
       icm_counter += 1;
@@ -639,79 +652,23 @@ void NormalizedDotProduct_ICM ::set_hyperparameters(Eigen::VectorXd new_hyps) {
   }
 }
 
+// TODO: Implement.
 Eigen::MatrixXd NormalizedDotProduct_ICM ::compute_mapping_coefficients(
     const SparseGP &gp_model, int kernel_index) {
 
-  //   // Assumes there is at least one sparse environment stored in the sparse
-  //   GP.
+  std::cout
+      << "Not implemented yet."
+      << std::endl;
 
-  //   Eigen::MatrixXd mapping_coeffs;
-  //   if (power != 2) {
-  //     std::cout
-  //         << "Mapping coefficients of the normalized dot product kernel are "
-  //            "implemented for power 2 only."
-  //         << std::endl;
-  //     return mapping_coeffs;
-  //   }
-
-  //   // Initialize beta vector.
-  //   int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
-  //   int beta_size = p_size * (p_size + 1) / 2;
-  //   int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
-  //   int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
-  //   mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
-
-  //   // Get alpha index.
-  //   int alpha_ind = 0;
-  //   for (int i = 0; i < kernel_index; i++) {
-  //     alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
-  //   }
-
-  //   // Loop over types.
-  //   for (int i = 0; i < n_species; i++) {
-  //     int n_types =
-  //         gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[i];
-  //     int c_types =
-  //         gp_model.sparse_descriptors[kernel_index].cumulative_type_count[i];
-
-  //     // Loop over clusters within each type.
-  //     for (int j = 0; j < n_types; j++) {
-  //       Eigen::VectorXd p_current =
-  //           gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
-  //       double p_norm =
-  //           gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
-  //       double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
-  //       int beta_count = 0;
-
-  //       // First loop over descriptor values.
-  //       for (int k = 0; k < p_size; k++) {
-  //         double p_ik = p_current(k) / p_norm;
-
-  //         // Second loop over descriptor values.
-  //         for (int l = k; l < p_size; l++) {
-  //           double p_il = p_current(l) / p_norm;
-  //           double beta_val = sig2 * p_ik * p_il * alpha_val;
-
-  //           // Update beta vector.
-  //           if (k != l) {
-  //             mapping_coeffs(i, beta_count) += 2 * beta_val;
-  //           } else {
-  //             mapping_coeffs(i, beta_count) += beta_val;
-  //           }
-
-  //           beta_count++;
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   return mapping_coeffs;
+  Eigen::MatrixXd empty_mat;
+  return empty_mat;
 }
 
 int get_icm_index(int s1, int s2, int n_types) {
-  // Get ICM coefficient.
   int s_min = std::min(s1, s2);
-  int s_diff = n_types - s_min;
-  int icm_index = (n_types * (n_types + 1) / 2) - (s_diff * (s_diff + 1) / 2);
+  int diff_1 = n_types - s_min;
+  int diff_2 = abs(s1 - s2);
+  int index_1 = (n_types * (n_types + 1) / 2) - (diff_1 * (diff_1 + 1) / 2);
+  int icm_index = index_1 + diff_2;
   return icm_index;
 }

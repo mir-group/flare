@@ -4,6 +4,7 @@
 #include "structure.h"
 #include "four_body.h"
 #include "normalized_dot_product.h"
+#include "norm_dot_icm.h"
 #include "squared_exponential.h"
 #include "structure.h"
 #include "three_body.h"
@@ -44,8 +45,9 @@ public:
   double sigma = 2.0;
   double ls = 0.9;
   int power = 2;
-  NormalizedDotProduct kernel_3;
+  NormalizedDotProduct_ICM kernel_3;
   SquaredExponential kernel;
+  Eigen::MatrixXd icm_coeffs;
 
   StructureTest() {
     // Make positions.
@@ -78,6 +80,11 @@ public:
     struc_desc = test_struc.descriptors[0];
 
     kernel = SquaredExponential(sigma, ls);
-    kernel_3 = NormalizedDotProduct(sigma, power);
+
+    icm_coeffs = Eigen::MatrixXd::Zero(3, 3);
+    // icm_coeffs << 1, 2, 3, 2, 3, 4, 3, 4, 5;
+    icm_coeffs << 1, 0.001, 0.001, 0.001, 1, 0.001, 0.001, 0.001, 1;
+    kernel_3 = NormalizedDotProduct_ICM(sigma, power, icm_coeffs);
+    // kernel_3 = NormalizedDotProduct(sigma, power);
   }
 };
