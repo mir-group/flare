@@ -11,6 +11,7 @@
 #include "four_body.h"
 #include "squared_exponential.h"
 #include "normalized_dot_product.h"
+#include "norm_dot_icm.h"
 
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
@@ -110,6 +111,9 @@ PYBIND11_MODULE(_C_flare, m) {
 
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
       .def(py::init<double, double>());
+
+  py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
+      .def(py::init<double, double, Eigen::MatrixXd>());
 
   py::class_<SquaredExponential, Kernel>(m, "SquaredExponential")
       .def(py::init<double, double>());
