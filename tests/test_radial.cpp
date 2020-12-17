@@ -122,9 +122,9 @@ TEST(FourierDerv, FourierDerv) {
   std::vector<double> g_rdelt_2 = std::vector<double>(N, 0);
   std::vector<double> gderv_rdelt_2 = std::vector<double>(N, 0);
 
-  fourier(g, gderv, r, N, hyps);
-  fourier(g_rdelt, gderv_rdelt, rdelt, N, hyps);
-  fourier(g_rdelt_2, gderv_rdelt_2, rdelt_2, N, hyps);
+  fourier_quarter(g, gderv, r, N, hyps);
+  fourier_quarter(g_rdelt, gderv_rdelt, rdelt, N, hyps);
+  fourier_quarter(g_rdelt_2, gderv_rdelt_2, rdelt_2, N, hyps);
 
   for (int n = 0; n < N; n++) {
     r_finite_diff = (g_rdelt[n] - g_rdelt_2[n]) / (2 * delta);

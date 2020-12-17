@@ -4,6 +4,7 @@
 #include "sparse_gp.h"
 #include "b2.h"
 #include "b2_simple.h"
+#include "b2_norm.h"
 #include "b3.h"
 #include "two_body.h"
 #include "three_body.h"
@@ -97,6 +98,11 @@ PYBIND11_MODULE(_C_flare, m) {
                     const std::vector<int> &>());
 
   py::class_<B2_Simple, Descriptor>(m, "B2_Simple")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &>());
+
+  py::class_<B2_Norm, Descriptor>(m, "B2_Norm")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &>());
