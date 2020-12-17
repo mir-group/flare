@@ -25,6 +25,7 @@ public:
   void compute_peratom();
   //void init_style();
 
+  void settings(int, char **);
   int pack_reverse_comm(int, int, double *);
   void unpack_reverse_comm(int, int *, double *);
   double memory_usage();
@@ -35,7 +36,6 @@ public:
 protected:
   double *stds;
   class NeighList *list;
-  int allocated=0;
 
   int n_species, n_max, l_max, n_descriptors, beta_size;
 
@@ -48,6 +48,7 @@ protected:
 
   std::vector<double> radial_hyps, cutoff_hyps;
 
+  int nmax; // number of atoms
   double cutoff;
   double *beta;
   Eigen::MatrixXd beta_matrix;
@@ -58,6 +59,12 @@ protected:
   void grab(FILE *, int, double *);
 
   virtual void coeff(int, char **);
+
+  // below are defined in pair.h
+  int allocated=1;
+  int **setflag;                 // 0/1 = whether each i,j has been set
+  double **cutsq;                // cutoff sq for each atom pair
+    
 };
 
 } // namespace LAMMPS_NS

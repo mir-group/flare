@@ -36,10 +36,14 @@ ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) :
   timeflag = 1;
   comm_reverse = 1;
 
-  restartinfo = 0;
-  manybody_flag = 1;
+  // restartinfo = 0;
+  // manybody_flag = 1;
+
+  setflag = 0;
+  cutsq = NULL;
 
   beta = NULL;
+  settings(narg, arg);
   coeff(narg, arg);
 }
 
@@ -275,7 +279,8 @@ void ComputeFlareStdAtom::init_list(int /*id*/, NeighList *ptr)
 
 double ComputeFlareStdAtom::init_one(int i, int j) {
   // init_one is called for each i, j pair in pair.cpp after calling init_style.
-
+  if (setflag[i][j] == 0)
+    error->all(FLERR, "All pair coeffs are not set");
   return cutoff;
 }
 
@@ -291,7 +296,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
   // Check that the potential file can be opened.
   if (me == 0) {
-    fptr = force->open_potential(filename);
+    fptr = utils::open_potential(filename,lmp,nullptr);
     if (fptr == NULL) {
       char str[128];
       snprintf(str, 128, "Cannot open variance file %s", filename);
