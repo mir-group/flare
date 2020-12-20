@@ -217,7 +217,7 @@ void SparseGP ::add_random_environments(const Structure &structure,
 
   // Randomly select environments without replacement.
   std::vector<std::vector<int>> envs1;
-  for (int i = 0; i < structure.descriptors.size(); i++) {
+  for (int i = 0; i < structure.descriptors.size(); i++) { // NOTE: n_kernels might be diff from descriptors number
     std::vector<int> envs2;
     int n_clusters = structure.descriptors[i].n_clusters;
     std::vector<int> clusters(n_clusters);

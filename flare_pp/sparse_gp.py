@@ -2,7 +2,7 @@ import numpy as np
 from _C_flare import SparseGP, Structure
 from scipy.optimize import minimize
 from typing import List
-
+import warnings
 
 class SGP_Wrapper:
     """Wrapper class used to make the C++ sparse GP object compatible with
@@ -41,6 +41,9 @@ class SGP_Wrapper:
         self.hyp_labels = []
         for n in range(len(self.hyps)):
             self.hyp_labels.append("Hyp" + str(n))
+
+    def __len__(self):
+        return len(self.training_data)
 
     @property
     def training_data(self):
@@ -82,6 +85,7 @@ class SGP_Wrapper:
         custom_range=(),
         energy: float = None,
         stress: "ndarray" = None,
+        mode: str = "all",
     ):
 
         # Convert coded species to 0, 1, 2, etc.
@@ -118,7 +122,32 @@ class SGP_Wrapper:
 
         # Update the sparse GP.
         self.sparse_gp.add_training_structure(structure_descriptor)
-        self.sparse_gp.add_all_environments(structure_descriptor)
+        if mode == "all":
+            if not custom_range:
+                self.sparse_gp.add_all_environments(structure_descriptor)
+            else:
+                raise Exception("Set mode='specific' for a user-defined custom_range")
+        elif mode == "uncertain":
+            if len(custom_range) == 1: # custom_range gives n_added
+                n_added = custom_range
+                self.sparse_gp.add_uncertain_environments(structure_descriptor, n_added)
+            else:
+                raise Exception("The custom_range should be set as [n_added] if mode='uncertain'")
+        elif mode == "specific":
+            if not custom_range:
+                self.sparse_gp.add_all_environments(structure_descriptor)
+                warnings.warn("The mode='specific' but no custom_range is given, will add all atoms")
+            else:
+                self.sparse_gp.add_specific_environments(structure_descriptor, custom_range)
+        elif mode == "random":
+            if len(custom_range) == 1: # custom_range gives n_added
+                n_added = custom_range
+                self.sparse_gp.add_random_environments(structure_descriptor, n_added)
+            else:
+                raise Exception("The custom_range should be set as [n_added] if mode='random'")
+        else:
+            raise NotImplementedError
+
         self.sparse_gp.update_matrices_QR()
 
     def set_L_alpha(self):

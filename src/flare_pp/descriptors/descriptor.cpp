@@ -65,6 +65,7 @@ void ClusterDescriptor ::add_clusters(const DescriptorValues &structure,
       if ((cluster_val >= ccount) && (cluster_val < ccount_p1)) {
         type = j;
         val = cluster_val - ccount;
+        break;
       }
     }
     clusters_by_type[type].push_back(val);
