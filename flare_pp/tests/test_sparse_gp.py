@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pytest
 import sys
+
 sys.path.append("../..")
 sys.path.append("../../build")
 
@@ -18,9 +19,9 @@ n_atoms = 4
 cell = np.eye(3)
 train_positions = np.random.rand(n_atoms, 3)
 test_positions = np.random.rand(n_atoms, 3)
-atom_types = [0, 1]
+atom_types = [1, 2]
 atom_masses = [2, 4]
-species = [0, 1, 0, 1]
+species = [1, 2, 1, 2]
 train_structure = struc.Structure(cell, species, train_positions)
 test_structure = struc.Structure(cell, species, test_positions)
 
@@ -29,6 +30,14 @@ custom_range = [1, 3]
 energy = np.random.rand()
 forces = np.random.rand(n_atoms, 3)
 stress = np.random.rand(6)
+np.savez(
+    "random_data",
+    train_pos=train_positions,
+    test_pos=test_positions,
+    energy=energy,
+    forces=forces,
+    stress=stress,
+)
 
 # Create sparse GP model.
 sigma = 1.0
@@ -45,20 +54,32 @@ calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings)
 sigma_e = 1.0
 sigma_f = 1.0
 sigma_s = 1.0
-species_map = {0: 0, 1: 1}
+species_map = {1: 0, 2: 1}
 max_iterations = 20
 
 sgp_cpp = SparseGP([kernel], sigma_e, sigma_f, sigma_s)
-sgp_py = SGP_Wrapper([kernel], [calc], cutoff, sigma_e, sigma_f, sigma_s,
-                     species_map, max_iterations=max_iterations)
+sgp_py = SGP_Wrapper(
+    [kernel],
+    [calc],
+    cutoff,
+    sigma_e,
+    sigma_f,
+    sigma_s,
+    species_map,
+    max_iterations=max_iterations,
+)
+
 
 def test_update_db():
     """Check that the covariance matrices have the correct size after the
     sparse GP is updated."""
 
-    sgp_py.update_db(train_structure, forces, custom_range, energy, stress)
+    sgp_py.update_db(
+        train_structure, forces, custom_range, energy, stress, mode="specific"
+    )
 
-    assert sgp_py.sparse_gp.Kuu.shape[0] == n_atoms
+    n_envs = len(custom_range)
+    assert sgp_py.sparse_gp.Kuu.shape[0] == n_envs
     assert sgp_py.sparse_gp.Kuf.shape[1] == 1 + n_atoms * 3 + 6
 
 
@@ -73,9 +94,11 @@ def test_train():
     assert hyps_init != hyps_post
     assert sgp_py.likelihood != 0.0
 
+
 def test_map():
-    sgp_py.write_mapping_coefficients("beta.txt", "A", 0);
-    sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0);
+    sgp_py.write_mapping_coefficients("beta.txt", "A", 0)
+    sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0)
+
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -88,37 +111,52 @@ def test_map():
 )
 def test_lammps():
     # set up input and data files
-    data_file_name = 'tmp.data'
-    lammps_location = 'beta.txt'
-    style_string = 'flare'
-    coeff_string = '* * {}'.format(lammps_location)
+    data_file_name = "tmp.data"
+    lammps_location = "beta.txt"
+    style_string = "flare"
+    coeff_string = "* * {}".format(lammps_location)
     lammps_executable = os.environ.get("lmp")
-    dump_file_name = 'tmp.dump'
-    input_file_name = 'tmp.in'
-    output_file_name = 'tmp.out'
-    
+    dump_file_name = "tmp.dump"
+    input_file_name = "tmp.in"
+    output_file_name = "tmp.out"
+    newton = True
+
     # write data file
-    data_text = lammps_calculator.lammps_dat(test_structure, atom_types,
-                                             atom_masses, species)
+    data_text = lammps_calculator.lammps_dat(
+        test_structure, atom_types, atom_masses, species
+    )
     lammps_calculator.write_text(data_file_name, data_text)
-    
+
     # write input file
-    input_text = \
-        lammps_calculator.generic_lammps_input(data_file_name, style_string,
-                                               coeff_string, dump_file_name)
+    input_text = lammps_calculator.generic_lammps_input(
+        data_file_name, style_string, coeff_string, dump_file_name, newton=newton
+    )
     lammps_calculator.write_text(input_file_name, input_text)
-    
+
     # run lammps
-    lammps_calculator.run_lammps(lammps_executable, input_file_name,
-                                 output_file_name)
+    lammps_calculator.run_lammps(lammps_executable, input_file_name, output_file_name)
 
     # read output
     lmp_dump = read(dump_file_name, format="lammps-dump-text")
     lmp_forces = lmp_dump.get_forces()
 
     # compare with sgp_py prediction
-    assert len(sgp_py.sparse_gp.training_data) > 0
+    assert len(sgp_py.training_data) > 0
 
-    sgp_forces = sgp_py.sparse_gp.predict(test_structure)
+    # Convert coded species to 0, 1, 2, etc.
+    coded_species = []
+    for spec in test_structure.coded_species:
+        coded_species.append(species_map[spec])
+
+    test_cpp_struc = Structure(
+        test_structure.cell,
+        coded_species,
+        test_structure.positions,
+        sgp_py.cutoff,
+        sgp_py.descriptor_calculators,
+    )
+
+    sgp_py.sparse_gp.predict_DTC(test_cpp_struc)
+    sgp_efs = test_cpp_struc.mean_efs
+    sgp_forces = np.reshape(sgp_efs[1:len(sgp_efs)-6], (test_structure.nat, 3))
     assert np.allclose(lmp_forces, sgp_forces)
-    
