@@ -63,16 +63,20 @@ ComputeFlareStdAtom::~ComputeFlareStdAtom() {
   }
 
   memory->destroy(stds);
+  memory->destroy(desc_derv);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void ComputeFlareStdAtom::compute_peratom() {
   if (atom->nmax > nmax) {
-    memory->destroy(stds);
     nmax = atom->nmax;
-    memory->create(stds,nmax,"flarestd/atom:stds");
-    vector_atom = stds;
+    memory->destroy(stds);
+    memory->create(stds,nmax,3,"flarestd/atom:stds");
+    array_atom = stds;
+
+    memory->destroy(desc_derv); // need to monitor the memory since the descriptors can be high dim
+    memory->create(desc_derv,nmax * 3, n_descriptors,"flarestd/atom:desc_derv");
   }
 
   int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
@@ -99,11 +103,17 @@ void ComputeFlareStdAtom::compute_peratom() {
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
   for (int ii = 0; ii < ntotal; ii++) {
-    stds[ii] = 0.0;
+    i = ilist[ii];
+    for (int comp = 0; comp < 3; comp++) {
+      stds[i][comp] = 0.0;
+      for (int nl = 0; nl < n_descriptors; nl++) {
+        desc_derv[i * 3 + comp][nl] = 0.0;
+      }
+    }
   }
 
   for (ii = 0; ii < inum; ii++) {
-    i = list->ilist[ii];
+    i = ilist[ii];
     itype = type[i];
     jnum = numneigh[i];
     xtmp = x[i][0];
@@ -135,36 +145,50 @@ void ComputeFlareStdAtom::compute_peratom() {
                   l_max);
 
     // Compute local energy and partial forces.
-    beta_p = beta_matrices[itype - 1] * B2_vals;
-    stds[i] += pow(B2_vals.dot(beta_p) / B2_norm_squared, 0.5) ;
+    //beta_p = beta_matrices[itype - 1] * B2_vals;
+    //stds[i] += pow(B2_vals.dot(beta_p) / B2_norm_squared, 0.5) ;
     //partial_forces =
     //    2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
 
     // Update energy, force and stress arrays.
-    //n_count = 0;
-    //for (int jj = 0; jj < jnum; jj++) {
-    //  j = jlist[jj];
-    //  delx = xtmp - x[j][0];
-    //  dely = ytmp - x[j][1];
-    //  delz = ztmp - x[j][2];
-    //  rsq = delx * delx + dely * dely + delz * delz;
+    n_count = 0;
+    for (int jj = 0; jj < jnum; jj++) {
+      j = jlist[jj];
+      delx = xtmp - x[j][0];
+      dely = ytmp - x[j][1];
+      delz = ztmp - x[j][2];
+      rsq = delx * delx + dely * dely + delz * delz;
 
-    //  if (rsq < (cutoff * cutoff)) {
-    //    double fx = -partial_forces(n_count * 3);
-    //    double fy = -partial_forces(n_count * 3 + 1);
-    //    double fz = -partial_forces(n_count * 3 + 2);
-    //    f[i][0] += fx;
-    //    f[i][1] += fy;
-    //    f[i][2] += fz;
-    //    f[j][0] -= fx;
-    //    f[j][1] -= fy;
-    //    f[j][2] -= fz;
+      if (rsq < (cutoff * cutoff)) {
+        for (int comp = 0; comp < 3; comp++) {
+          for (int nl = 0; nl < n_descriptors; nl++) { // need to make sure the neighbor orders of B2_env_derv and jj are the same
+            desc_derv[i * 3 + comp][nl] += B2_env_dervs(n_count * 3 + comp, nl);
+            desc_derv[j * 3 + comp][nl] -= B2_env_dervs(n_count * 3 + comp, nl);
+          }
+        }
+        n_count++;
+      }
+    }
+  }
+  // be careful the beta matrix has a factor of two, see read_file 
+  for (ii = 0; ii < inum; ii++) {
+    i = ilist[ii];
+    itype = type[i];
 
-    //    n_count++;
-    //  }
-    //}
+    for (int nl1 = 0; nl1 < n_descriptors; nl1++) {
+      for (int nl2 = nl1; nl2 < n_descriptors; nl2++) {
+        for (int comp = 0; comp < 3; comp++) {
+          if (nl1 == nl2) {
+            stds[i][comp] += desc_derv[i * 3 + comp][nl1] * beta_matrices[itype - 1](nl1, nl2) * desc_derv[i * 3 + comp][nl2];
+          } else {
+            stds[i][comp] += desc_derv[i * 3 + comp][nl1] * beta_matrices[itype - 1](nl1, nl2) * desc_derv[i * 3 + comp][nl2] * 2;
+          }
+        }
+      }
+    }
 
   }
+
 
 }
 
@@ -176,7 +200,11 @@ int ComputeFlareStdAtom::pack_reverse_comm(int n, int first, double *buf)
 
   m = 0;
   last = first + n;
-  for (i = first; i < last; i++) buf[m++] = stds[i];
+  for (i = first; i < last; i++) {
+    for (int comp = 0; comp < 3; comp++) {
+      buf[m++] = stds[i][comp];
+    }
+  }
   return m;
 }
 
@@ -189,7 +217,9 @@ void ComputeFlareStdAtom::unpack_reverse_comm(int n, int *list, double *buf)
   m = 0;
   for (i = 0; i < n; i++) {
     j = list[i];
-    stds[j] += buf[m++];
+    for (int comp = 0; comp < 3; comp++) {
+      stds[j][comp] += buf[m++];
+    }
   }
 }
 

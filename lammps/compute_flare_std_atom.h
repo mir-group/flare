@@ -34,7 +34,8 @@ public:
   void init_list(int, class NeighList *);
 
 protected:
-  double *stds;
+  double **stds;
+  double **desc_derv;
   class NeighList *list;
 
   int n_species, n_max, l_max, n_descriptors, beta_size;
