@@ -110,6 +110,8 @@ PYBIND11_MODULE(_C_flare, m) {
 
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
       .def(py::init<double, double>());
+      .def_readonly("sigma", &NormalizedDotProduct::sigma)
+      .def_readonly("power", &NormalizedDotProduct::power)
 
   py::class_<SquaredExponential, Kernel>(m, "SquaredExponential")
       .def(py::init<double, double>());
@@ -141,6 +143,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("log_marginal_likelihood",
                      &SparseGP::log_marginal_likelihood)
       .def_readwrite("likelihood_gradient", &SparseGP::likelihood_gradient)
+      .def_readonly("kernels", &SparseGP::kernels)
       .def_readonly("hyperparameters", &SparseGP::hyperparameters)
       .def_readonly("training_structures", &SparseGP::training_structures)
       .def_readonly("n_energy_labels", &SparseGP::n_energy_labels)
