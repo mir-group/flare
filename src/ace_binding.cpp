@@ -146,6 +146,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("kernels", &SparseGP::kernels)
       .def_readonly("hyperparameters", &SparseGP::hyperparameters)
       .def_readonly("training_structures", &SparseGP::training_structures)
+      .def_readonly("sparse_indices", &SparseGP::sparse_indices)
       .def_readonly("n_energy_labels", &SparseGP::n_energy_labels)
       .def_readonly("n_force_labels", &SparseGP::n_force_labels)
       .def_readonly("n_stress_labels", &SparseGP::n_stress_labels)
