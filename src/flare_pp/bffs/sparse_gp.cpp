@@ -515,10 +515,9 @@ void SparseGP ::update_matrices_QR() {
   // QR decompose A.
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
   Eigen::VectorXd Q_b = qr.householderQ().transpose() * b;
-  Eigen::MatrixXd R_inv = qr.matrixQR()
-                              .block(0, 0, Kuu.cols(), Kuu.cols())
-                              .triangularView<Eigen::Upper>()
-                              .solve(Kuu_eye);
+  R_inv = qr.matrixQR().block(0, 0, Kuu.cols(), Kuu.cols())
+                       .triangularView<Eigen::Upper>()
+                       .solve(Kuu_eye);
   R_inv_diag = R_inv.diagonal();
   alpha = R_inv * Q_b;
   Sigma = R_inv * R_inv.transpose();
@@ -540,8 +539,9 @@ void SparseGP ::predict_SOR(Structure &test_structure) {
   }
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
+  Eigen::MatrixXd variance_sqrt = kernel_mat.transpose() * R_inv;
   test_structure.variance_efs =
-      (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
+      (variance_sqrt * variance_sqrt.transpose()).diagonal();
 }
 
 void SparseGP ::predict_DTC(Structure &test_structure) {
