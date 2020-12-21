@@ -52,9 +52,16 @@ class SGP_Calculator(Calculator):
         )
         self.results["stress"] = ase_stress
 
-        self.results["stds"] = np.sqrt(
-            structure_descriptor.variance_efs[1:-6].reshape(-1, 3)
-        )
+        # Report negative variances.
+        variances = structure_descriptor.variance_efs[1:-6]
+        stds = np.zeros(len(variances))
+        for n in range(len(variances)):
+            var = variances[n]
+            if var > 0:
+                stds[n] = np.sqrt(var)
+            else:
+                stds[n] = -np.sqrt(var)
+        self.results["stds"] = stds.reshape(-1, 3)
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():
