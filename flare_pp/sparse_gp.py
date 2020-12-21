@@ -23,6 +23,7 @@ class SGP_Wrapper:
         force_training=True,
         stress_training=True,
         max_iterations=10,
+        opt_type="all"
     ):
 
         self.sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s)
@@ -36,6 +37,7 @@ class SGP_Wrapper:
         self.force_training = force_training
         self.stress_training = stress_training
         self.max_iterations = max_iterations
+        self.opt_type = opt_type
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -126,7 +128,12 @@ class SGP_Wrapper:
         pass
 
     def train(self, logger_name=None):
-        optimize_hyperparameters(self.sparse_gp, max_iterations=self.max_iterations)
+        if self.opt_type == "all":
+            optimize_hyperparameters(self.sparse_gp,
+                                     max_iterations=self.max_iterations)
+        elif self.opt_type == "freeze_noise":
+            optimize_kernel_hyperparameters(
+                self.sparse_gp, max_iterations=self.max_iterations)
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):
