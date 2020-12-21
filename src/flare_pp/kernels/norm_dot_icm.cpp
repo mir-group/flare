@@ -664,6 +664,19 @@ Eigen::MatrixXd NormalizedDotProduct_ICM ::compute_mapping_coefficients(
   return empty_mat;
 }
 
+Eigen::MatrixXd
+NormalizedDotProduct_ICM ::compute_varmap_coefficients(const SparseGP &gp_model,
+                                                       int kernel_index) {
+
+  std::cout
+      << "Mapping coefficients are not implemented for the squared exponential "
+         "kernel. And never will be, because there are infinitely many of them."
+      << std::endl;
+
+  Eigen::MatrixXd empty_mat;
+  return empty_mat;
+}
+
 int get_icm_index(int s1, int s2, int n_types) {
   int s_min = std::min(s1, s2);
   int diff_1 = n_types - s_min;
@@ -672,3 +685,4 @@ int get_icm_index(int s1, int s2, int n_types) {
   int icm_index = index_1 + diff_2;
   return icm_index;
 }
+
