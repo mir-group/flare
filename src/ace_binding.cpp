@@ -4,6 +4,7 @@
 #include "sparse_gp.h"
 #include "b2.h"
 #include "b2_simple.h"
+#include "b2_norm.h"
 #include "b3.h"
 #include "two_body.h"
 #include "three_body.h"
@@ -11,6 +12,7 @@
 #include "four_body.h"
 #include "squared_exponential.h"
 #include "normalized_dot_product.h"
+#include "norm_dot_icm.h"
 
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
@@ -100,6 +102,11 @@ PYBIND11_MODULE(_C_flare, m) {
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &>());
 
+  py::class_<B2_Norm, Descriptor>(m, "B2_Norm")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &>());
+
   py::class_<B3, Descriptor>(m, "B3")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
@@ -112,6 +119,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<double, double>());
       .def_readonly("sigma", &NormalizedDotProduct::sigma)
       .def_readonly("power", &NormalizedDotProduct::power)
+
+  py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
+      .def(py::init<double, double, Eigen::MatrixXd>());
 
   py::class_<SquaredExponential, Kernel>(m, "SquaredExponential")
       .def(py::init<double, double>());

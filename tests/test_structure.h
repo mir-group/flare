@@ -1,4 +1,5 @@
 #include "b2.h"
+#include "b2_norm.h"
 #include "b2_simple.h"
 #include "b3.h"
 #include "structure.h"
@@ -25,7 +26,7 @@ public:
   std::vector<int> species, species_2, species_3;
   Eigen::MatrixXd positions, positions_2, positions_3;
   B2 ps;
-  B2_Simple ps_simple;
+  B2_Norm ps_norm;
   std::vector<Descriptor *> dc;
   Structure test_struc, test_struc_2, test_struc_3;
   DescriptorValues struc_desc;
@@ -45,7 +46,7 @@ public:
   double sigma = 2.0;
   double ls = 0.9;
   int power = 2;
-  NormalizedDotProduct_ICM kernel_3;
+  SquaredExponential kernel_3;
   SquaredExponential kernel;
   Eigen::MatrixXd icm_coeffs;
 
@@ -68,10 +69,10 @@ public:
 
     ps = B2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
             descriptor_settings);
-    ps_simple = B2_Simple(radial_string, cutoff_string, radial_hyps,
-                          cutoff_hyps, descriptor_settings);
+    ps_norm = B2_Norm(radial_string, cutoff_string, radial_hyps,
+                      cutoff_hyps, descriptor_settings);
 
-    dc.push_back(&ps_simple);
+    dc.push_back(&ps_norm);
 
     test_struc = Structure(cell, species, positions, cutoff, dc);
     test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
@@ -84,7 +85,8 @@ public:
     icm_coeffs = Eigen::MatrixXd::Zero(3, 3);
     // icm_coeffs << 1, 2, 3, 2, 3, 4, 3, 4, 5;
     icm_coeffs << 1, 0.001, 0.001, 0.001, 1, 0.001, 0.001, 0.001, 1;
-    kernel_3 = NormalizedDotProduct_ICM(sigma, power, icm_coeffs);
+    // kernel_3 = NormalizedDotProduct_ICM(sigma, power, icm_coeffs);
     // kernel_3 = NormalizedDotProduct(sigma, power);
+    kernel_3 = SquaredExponential(sigma, ls);
   }
 };

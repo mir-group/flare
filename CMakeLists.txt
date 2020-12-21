@@ -31,7 +31,7 @@ include(FetchContent)
 ################################################################################
 
 FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
+#    GIT_REPOSITORY https://github.com/google/googletest.git
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
     UPDATE_COMMAND ""
 )
@@ -110,6 +110,7 @@ set(FLARE_SOURCES
     src/flare_pp/bffs/gp.cpp
     src/flare_pp/descriptors/descriptor.cpp
     src/flare_pp/descriptors/b2.cpp
+    src/flare_pp/descriptors/b2_norm.cpp
     src/flare_pp/descriptors/b2_simple.cpp
     src/flare_pp/descriptors/b3.cpp
     src/flare_pp/descriptors/wigner3j.cpp
