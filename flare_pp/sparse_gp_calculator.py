@@ -60,7 +60,7 @@ class SGP_Calculator(Calculator):
             if var > 0:
                 stds[n] = np.sqrt(var)
             else:
-                stds[n] = -np.sqrt(var)
+                stds[n] = -np.sqrt(np.abs(var))
         self.results["stds"] = stds.reshape(-1, 3)
 
     def get_property(self, name, atoms=None, allow_calculation=True):
