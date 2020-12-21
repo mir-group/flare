@@ -116,9 +116,9 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<Kernel>(m, "Kernel");
 
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
-      .def(py::init<double, double>());
+      .def(py::init<double, double>())
       .def_readonly("sigma", &NormalizedDotProduct::sigma)
-      .def_readonly("power", &NormalizedDotProduct::power)
+      .def_readonly("power", &NormalizedDotProduct::power);
 
   py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
       .def(py::init<double, double, Eigen::MatrixXd>());

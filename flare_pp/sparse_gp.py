@@ -1,8 +1,9 @@
 import numpy as np
-from _C_flare import SparseGP, Structure
+from _C_flare import SparseGP, Structure, NormalizedDotProduct
 from scipy.optimize import minimize
 from typing import List
 import warnings
+from flare import struc
 
 class SGP_Wrapper:
     """Wrapper class used to make the C++ sparse GP object compatible with
@@ -91,9 +92,15 @@ class SGP_Wrapper:
     ):
 
         # Convert coded species to 0, 1, 2, etc.
-        coded_species = []
-        for spec in structure.coded_species:
-            coded_species.append(self.species_map[spec])
+        if isinstance(structure, struc.Structure):
+            coded_species = []
+            for spec in structure.coded_species:
+                coded_species.append(self.species_map[spec])
+        elif isinstance(structure, Structure):
+            coded_species = structure.species
+            print("coded_species", coded_species)
+        else:
+            raise Exception
 
         # Convert flare structure to structure descriptor.
         structure_descriptor = Structure(
@@ -194,6 +201,26 @@ class SGP_Wrapper:
             )
 
             # add training data
+            sparse_indices = self.sparse_gp.sparse_indices
+            assert len(sparse_indices) == len(old_kernels)
+            assert len(sparse_indices[0]) == len(self.training_data)
+
+            for s in range(len(self.training_data)):
+                custom_range = sparse_indices[0][s]
+                struc_cpp = self.training_data[s]
+                #structure = struc.Structure(
+                #    struc_cpp.cell,
+                #    struc_cpp.species,
+                #    struc_cpp.positions,
+                #)
+                new_spg.update_db(
+                    struc_cpp,
+                    struc_cpp.forces,
+                    custom_range=custom_range,
+                    energy=struc_cpp.energy[0],
+                    stress=struc_cpp.stresses,
+                    mode="specific",
+                )
 
             # write var map coefficient file
             new_spg.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)

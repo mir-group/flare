@@ -25,6 +25,7 @@ public:
   // Training and sparse points.
   std::vector<ClusterDescriptor> sparse_descriptors;
   std::vector<Structure> training_structures;
+  std::vector<std::vector<std::vector<int>>> sparse_indices;
 
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count;
