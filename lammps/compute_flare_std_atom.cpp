@@ -29,12 +29,14 @@ using namespace LAMMPS_NS;
 
 ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) : 
   Compute(lmp, narg, arg),
-  stds(NULL)
+  stds(nullptr)
 {
+  if (narg < 4) error->all(FLERR, "Illegal compute flare/std/atom command");
+
   peratom_flag = 1;
-  size_peratom_cols = 0;
+  size_peratom_cols = 3;
   timeflag = 1;
-  comm_reverse = 1;
+  comm_reverse = 3;
 
   // restartinfo = 0;
   // manybody_flag = 1;
@@ -43,8 +45,10 @@ ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) :
   cutsq = NULL;
 
   beta = NULL;
-  settings(narg, arg);
   coeff(narg, arg);
+
+  nmax = 0;
+  desc_derv = NULL;
 }
 
 /* ----------------------------------------------------------------------
@@ -57,34 +61,69 @@ ComputeFlareStdAtom::~ComputeFlareStdAtom() {
 
   memory->destroy(beta);
 
-  if (allocated) {
-    memory->destroy(setflag);
-    memory->destroy(cutsq);
-  }
+//  if (allocated) {
+//    memory->destroy(setflag);
+//    memory->destroy(cutsq);
+//  }
 
   memory->destroy(stds);
   memory->destroy(desc_derv);
 }
 
+/* ----------------------------------------------------------------------
+   init specific to this compute command 
+------------------------------------------------------------------------- */
+
+void ComputeFlareStdAtom::init() {
+  // Require newton on.
+//  if (force->newton_pair == 0)
+//    error->all(FLERR, "Compute command requires newton pair on");
+
+  // Request a full neighbor list.
+  int irequest = neighbor->request(this, instance_me);
+  neighbor->requests[irequest]->pair = 0;
+  neighbor->requests[irequest]->compute = 1;
+  neighbor->requests[irequest]->half = 0;
+  neighbor->requests[irequest]->full = 1;
+  neighbor->requests[irequest]->occasional = 1;
+}
+
+void ComputeFlareStdAtom::init_list(int /*id*/, NeighList *ptr)
+{
+  list = ptr;
+}
+
+
 /* ---------------------------------------------------------------------- */
 
 void ComputeFlareStdAtom::compute_peratom() {
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "begin compute_peratom\n");
+  }
+
+
   if (atom->nmax > nmax) {
-    nmax = atom->nmax;
     memory->destroy(stds);
-    memory->create(stds,nmax,3,"flarestd/atom:stds");
+    nmax = atom->nmax;
+    memory->create(stds,nmax,3,"flare/std/atom:stds");
     array_atom = stds;
 
+    // TODO: see if we can only create a n_neighbor size one
     memory->destroy(desc_derv); // need to monitor the memory since the descriptors can be high dim
-    memory->create(desc_derv,nmax * 3, n_descriptors,"flarestd/atom:desc_derv");
+    memory->create(desc_derv,nmax * 3, n_descriptors,"flare/std/atom:desc_derv");
+  }
+
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "allocated memory\n");
   }
 
   int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
-  double evdwl, delx, dely, delz, xtmp, ytmp, ztmp, rsq;
+  double delx, dely, delz, xtmp, ytmp, ztmp, rsq;
   int *ilist, *jlist, *numneigh, **firstneigh;
 
   double **x = atom->x;
-  double **f = atom->f;
   int *type = atom->type;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
@@ -99,18 +138,29 @@ void ComputeFlareStdAtom::compute_peratom() {
 
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
+
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
-  for (int ii = 0; ii < ntotal; ii++) {
-    i = ilist[ii];
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "begin initialization\n");
+  }
+
+  for (ii = 0; ii < ntotal; ii++) {
     for (int comp = 0; comp < 3; comp++) {
-      stds[i][comp] = 0.0;
+      stds[ii][comp] = 0.0;
       for (int nl = 0; nl < n_descriptors; nl++) {
-        desc_derv[i * 3 + comp][nl] = 0.0;
+        desc_derv[ii * 3 + comp][nl] = 0.0;
       }
     }
   }
+
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "initialized by 0.0\n");
+  }
+
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
@@ -189,7 +239,6 @@ void ComputeFlareStdAtom::compute_peratom() {
 
   }
 
-
 }
 
 /* ---------------------------------------------------------------------- */
@@ -229,7 +278,7 @@ void ComputeFlareStdAtom::unpack_reverse_comm(int n, int *list, double *buf)
 
 double ComputeFlareStdAtom::memory_usage()
 {
-  double bytes = nmax * sizeof(double);
+  double bytes = nmax * 3 * (1 + n_descriptors) * sizeof(double);
   return bytes;
 }
 
@@ -241,26 +290,16 @@ double ComputeFlareStdAtom::memory_usage()
 
 void ComputeFlareStdAtom::allocate() {
   allocated = 1;
-  int n = atom->ntypes;
-
-  memory->create(setflag, n + 1, n + 1, "compute:setflag");
-
-  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
-  for (int i = 1; i <= n; i++)
-    setflag[i][i] = 1;
-
-  // Create cutsq array (used in pair.cpp)
-  memory->create(cutsq, n + 1, n + 1, "compute:cutsq");
-}
-
-/* ----------------------------------------------------------------------
-   global settings
-------------------------------------------------------------------------- */
-
-void ComputeFlareStdAtom::settings(int narg, char ** /*arg*/) {
-  // "flare" should be the only word after "compute" in the input file.
-  if (narg > 0)
-    error->all(FLERR, "Illegal compute command");
+//  int n = atom->ntypes;
+//
+//  memory->create(setflag, n + 1, n + 1, "compute:setflag");
+//
+//  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
+//  for (int i = 1; i <= n; i++)
+//    setflag[i][i] = 1;
+//
+//  // Create cutsq array (used in pair.cpp)
+//  memory->create(cutsq, n + 1, n + 1, "compute:cutsq");
 }
 
 /* ----------------------------------------------------------------------
@@ -272,47 +311,31 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
   if (!allocated)
     allocate();
 
-  // Should be exactly 3 arguments following "pair_coeff" in the input file.
-  if (narg != 3)
+  // Should be exactly 3 arguments following "compute" in the input file.
+  if (narg != 4)
     error->all(FLERR, "Incorrect args for compute coefficients");
 
-  // Ensure I,J args are "* *".
-  if (strcmp(arg[0], "*") != 0 || strcmp(arg[1], "*") != 0)
-    error->all(FLERR, "Incorrect args for compute coefficients");
+  read_file(arg[3]);
 
-  read_file(arg[2]);
-}
-
-/* ----------------------------------------------------------------------
-   init specific to this pair style
-------------------------------------------------------------------------- */
-
-void ComputeFlareStdAtom::init() {
-  // Require newton on.
-  if (force->newton_pair == 0)
-    error->all(FLERR, "Compute command requires newton pair on");
-
-  // Request a full neighbor list.
-  int irequest = neighbor->request(this, instance_me);
-  neighbor->requests[irequest]->half = 0;
-  neighbor->requests[irequest]->full = 1;
-}
-
-void ComputeFlareStdAtom::init_list(int /*id*/, NeighList *ptr)
-{
-  list = ptr;
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "\narg[1] %s\n", arg[1]);
+    fprintf(screen, "\narg[2] %s\n", arg[2]);
+    fprintf(screen, "\narg[3] %s\n", arg[3]);
+    fprintf(screen, "read_file done\n");
+  }
 }
 
 /* ----------------------------------------------------------------------
    init for one type pair i,j and corresponding j,i
 ------------------------------------------------------------------------- */
 
-double ComputeFlareStdAtom::init_one(int i, int j) {
-  // init_one is called for each i, j pair in pair.cpp after calling init_style.
-  if (setflag[i][j] == 0)
-    error->all(FLERR, "All pair coeffs are not set");
-  return cutoff;
-}
+//double ComputeFlareStdAtom::init_one(int i, int j) {
+//  // init_one is called for each i, j pair in pair.cpp after calling init_style.
+//  if (setflag[i][j] == 0)
+//    error->all(FLERR, "All pair coeffs are not set");
+//  return cutoff;
+//}
 
 /* ----------------------------------------------------------------------
    read potential values from a DYNAMO single element funcfl file
@@ -332,6 +355,11 @@ void ComputeFlareStdAtom::read_file(char *filename) {
       snprintf(str, 128, "Cannot open variance file %s", filename);
       error->one(FLERR, str);
     }
+  }
+
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "file opened\n");
   }
 
   int tmp, nwords;
@@ -385,6 +413,11 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   if (me == 0)
     grab(fptr, beta_size * n_species, beta);
   MPI_Bcast(beta, beta_size * n_species, MPI_DOUBLE, 0, world);
+
+  // screen print debug
+  if (screen) {
+    fprintf(screen, "begin reading beta matrix\n");
+  }
 
   // Fill in the beta matrix.
   // TODO: Remove factor of 2 from beta.

@@ -23,13 +23,11 @@ public:
   ComputeFlareStdAtom(class LAMMPS *, int, char **);
   ~ComputeFlareStdAtom();
   void compute_peratom();
-  //void init_style();
 
-  void settings(int, char **);
   int pack_reverse_comm(int, int, double *);
   void unpack_reverse_comm(int, int *, double *);
   double memory_usage();
-  double init_one(int, int);
+  //double init_one(int, int);
   void init();
   void init_list(int, class NeighList *);
 
@@ -62,7 +60,8 @@ protected:
   virtual void coeff(int, char **);
 
   // below are defined in pair.h
-  int allocated=1;
+  void settings(int, char **);
+  int allocated=0;
   int **setflag;                 // 0/1 = whether each i,j has been set
   double **cutsq;                // cutoff sq for each atom pair
     
