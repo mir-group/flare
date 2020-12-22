@@ -7,6 +7,7 @@ add_executable(
   test_n_body.cpp
   test_sparse_gp.cpp
   test_descriptor.cpp
+  test_sgp_norm.cpp
 )
 
 include_directories(../src/flare_pp)

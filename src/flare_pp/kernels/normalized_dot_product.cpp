@@ -742,24 +742,25 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
             gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
 
           double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
+          double Kuu_inv_ij_normed = Kuu_inv_ij / pi_norm / pj_norm;
           double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
+          double Sigma_ij_normed = Sigma_ij / pi_norm / pj_norm;
           int beta_count = 0;
 
           // First loop over descriptor values.
           for (int k = 0; k < p_size; k++) {
-            double p_ik = pi_current(k) / pi_norm;
+            double p_ik = pi_current(k);
     
             // Second loop over descriptor values.
             for (int l = k; l < p_size; l++){
-              double p_jl = pj_current(l) / pj_norm;
+              double p_jl = pj_current(l);
     
               // Update beta vector.
-              if (k != l) {
-                double beta_val = sig2 * p_ik * p_jl * (- Kuu_inv_ij + Sigma_ij);
-                mapping_coeffs(s, beta_count) += 2 * beta_val;
-              } else {
-                double beta_val = sig2 * p_ik * p_jl * (1 - Kuu_inv_ij + Sigma_ij);
-                mapping_coeffs(s, beta_count) += beta_val;
+              double beta_val = sig2 * sig2 * p_ik * p_jl * (- Kuu_inv_ij_normed + Sigma_ij_normed);
+              mapping_coeffs(s, beta_count) += beta_val;
+
+              if (k == l && i == 0 && j == 0) {
+                mapping_coeffs(s, beta_count) += sig2; // the self kernel term
               }
     
               beta_count++;

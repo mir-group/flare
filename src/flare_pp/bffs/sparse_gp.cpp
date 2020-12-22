@@ -89,6 +89,7 @@ SparseGP ::sort_clusters_by_uncertainty(const Structure &structure) {
 
 std::vector<Eigen::VectorXd>
 SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
+  // TODO: this only computes the energy-energy variance?
 
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
