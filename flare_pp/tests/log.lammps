@@ -14,12 +14,13 @@ Reading data file ...
   read_data CPU = 0.003 seconds
 
 pair_style flare
-pair_coeff * * beta.txt
-Reading potential file beta.txt with DATE: Sun
+pair_coeff * * beta_2.txt
+Reading potential file beta_2.txt with DATE: Mon
 
 thermo_style one
-
-dump 1 all custom 1 tmp.dump id type x y z fx fy fz
+compute std all flare/std/atom beta_var.txt
+Reading potential file beta_var.txt with DATE: Mon
+dump 1 all custom 1 tmp.dump id type x y z fx fy fz c_std[1] c_std[2] c_std[3]
 dump_modify 1 sort id
 run 0
 WARNING: No fixes defined, atoms won't move (../verlet.cpp:54)
@@ -29,19 +30,24 @@ Neighbor list info ...
   master list distance cutoff = 3
   ghost atom cutoff = 3
   binsize = 1.5, bins = 1 1 1
-  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  2 neighbor lists, perpetual/occasional/extra = 1 1 0
   (1) pair flare, perpetual
       attributes: full, newton on
       pair build: full/bin/atomonly
       stencil: full/bin/3d
       bin: standard
+  (2) compute flare/std/atom, occasional, copy from (1)
+      attributes: full, newton on
+      pair build: copy
+      stencil: none
+      bin: none
 WARNING: Proc sub-domain size < neighbor skin, could lead to lost atoms (../domain.cpp:963)
-Per MPI rank memory allocation (min/avg/max) = 4.284 | 4.284 | 4.284 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 59.04 | 59.04 | 59.04 Mbytes
 Step Temp E_pair E_mol TotEng Press 
-       0            0 2.0557401e-11            0 2.0557401e-11 3.7584242e-06 
-Loop time of 3.09944e-06 on 1 procs for 0 steps with 4 atoms
+       0            0 1.0830313e-09            0 1.0830313e-09 -6.8374915e-05 
+Loop time of 2.14577e-06 on 1 procs for 0 steps with 4 atoms
 
-64.5% CPU use with 1 MPI tasks x no OpenMP threads
+46.6% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -51,7 +57,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 3.099e-06  |            |       |100.00
+Other   |            | 2.146e-06  |            |       |100.00
 
 Nlocal:        4.00000 ave           4 max           4 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -59,11 +65,11 @@ Nghost:        1368.00 ave        1368 max        1368 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 Neighs:        0.00000 ave           0 max           0 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-FullNghs:      1830.00 ave        1830 max        1830 min
+FullNghs:      1846.00 ave        1846 max        1846 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 1830
-Ave neighs/atom = 457.50000
+Total # of neighbors = 1846
+Ave neighs/atom = 461.50000
 Neighbor list builds = 0
 Dangerous builds = 0
 Total wall time: 0:00:00

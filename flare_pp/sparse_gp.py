@@ -224,8 +224,10 @@ class SGP_Wrapper:
 
             # write var map coefficient file
             new_spg.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
+            return new_spg
         else:
             self.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
+            return self
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):

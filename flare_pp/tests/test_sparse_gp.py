@@ -41,7 +41,7 @@ np.savez(
 
 # Create sparse GP model.
 sigma = 1.0
-power = 2
+power = 1 
 kernel = NormalizedDotProduct(1.0, power)
 cutoff_function = "quadratic"
 cutoff = 1.0
@@ -111,7 +111,7 @@ def test_lammps():
 
     # set up input and data files
     data_file_name = "tmp.data"
-    lammps_location = "beta.txt"
+    lammps_location = "beta_2.txt"
     style_string = "flare"
     coeff_string = "* * {}".format(lammps_location)
     lammps_executable = os.environ.get("lmp")
@@ -139,7 +139,10 @@ def test_lammps():
     # read output
     lmp_dump = read(dump_file_name, format="lammps-dump-text")
     lmp_forces = lmp_dump.get_forces()
-    lmp_var = lmp_dump.get_array("c_std")
+    lmp_var_1 = lmp_dump.get_array("c_std[1]")
+    lmp_var_2 = lmp_dump.get_array("c_std[2]")
+    lmp_var_3 = lmp_dump.get_array("c_std[3]")
+    lmp_var = np.hstack([lmp_var_1, lmp_var_2, lmp_var_3])
     print(lmp_var)
 
     # compare with sgp_py prediction
@@ -162,3 +165,14 @@ def test_lammps():
     sgp_efs = test_cpp_struc.mean_efs
     sgp_forces = np.reshape(sgp_efs[1:len(sgp_efs)-6], (test_structure.nat, 3))
     assert np.allclose(lmp_forces, sgp_forces)
+
+    test_cpp_struc_pow1 = Structure(
+        test_structure.cell,
+        coded_species,
+        test_structure.positions,
+        pow1_sgp.cutoff,
+        pow1_sgp.descriptor_calculators,
+    )
+    pow1_sgp.sparse_gp.predict_DTC(test_cpp_struc_pow1)
+    sgp_var = np.reshape(test_cpp_struc_pow1.variance_efs[1:len(sgp_efs)-6], (test_structure.nat, 3))
+    print(sgp_var)
