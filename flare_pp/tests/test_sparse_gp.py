@@ -95,10 +95,6 @@ def test_train():
     assert sgp_py.likelihood != 0.0
 
 
-def test_map():
-    sgp_py.write_mapping_coefficients("beta.txt", "A", 0)
-    sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0)
-
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -110,6 +106,9 @@ def test_map():
     ),
 )
 def test_lammps():
+    sgp_py.write_mapping_coefficients("beta.txt", "A", 0)
+    pow1_sgp = sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0)
+
     # set up input and data files
     data_file_name = "tmp.data"
     lammps_location = "beta.txt"
@@ -129,7 +128,8 @@ def test_lammps():
 
     # write input file
     input_text = lammps_calculator.generic_lammps_input(
-        data_file_name, style_string, coeff_string, dump_file_name, newton=newton
+        data_file_name, style_string, coeff_string, dump_file_name, newton=newton,
+        std_string="beta_var.txt", std_style="flare_pp",
     )
     lammps_calculator.write_text(input_file_name, input_text)
 
@@ -139,6 +139,8 @@ def test_lammps():
     # read output
     lmp_dump = read(dump_file_name, format="lammps-dump-text")
     lmp_forces = lmp_dump.get_forces()
+    lmp_var = lmp_dump.get_array("c_std")
+    print(lmp_var)
 
     # compare with sgp_py prediction
     assert len(sgp_py.training_data) > 0
