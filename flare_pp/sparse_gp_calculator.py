@@ -33,6 +33,8 @@ class SGP_Calculator(Calculator):
             self.gp_model.sparse_gp.predict_SOR(structure_descriptor)
         elif self.gp_model.variance_type == "DTC":
             self.gp_model.sparse_gp.predict_DTC(structure_descriptor)
+        elif self.gp_model.variance_type == "local":
+            self.gp_model.sparse_gp.predict_local_uncertainties(structure_descriptor)
 
         # Set results.
         self.results["energy"] = structure_descriptor.mean_efs[0]
@@ -52,16 +54,26 @@ class SGP_Calculator(Calculator):
         )
         self.results["stress"] = ase_stress
 
-        # Report negative variances.
-        variances = structure_descriptor.variance_efs[1:-6]
-        stds = np.zeros(len(variances))
-        for n in range(len(variances)):
-            var = variances[n]
-            if var > 0:
-                stds[n] = np.sqrt(var)
-            else:
-                stds[n] = -np.sqrt(np.abs(var))
-        self.results["stds"] = stds.reshape(-1, 3)
+        # Report negative variances, which can arise if there are numerical
+        # instabilities.
+        if (self.gp_model.variance_type == "SOR") or (
+            self.gp_model.variance_type == "DTC"
+        ):
+            variances = structure_descriptor.variance_efs[1:-6]
+            stds = np.zeros(len(variances))
+            for n in range(len(variances)):
+                var = variances[n]
+                if var > 0:
+                    stds[n] = np.sqrt(var)
+                else:
+                    stds[n] = -np.sqrt(np.abs(var))
+            self.results["stds"] = stds.reshape(-1, 3)
+        # The local variance type should only be used if the model uses a
+        # single atom-centered descriptor.
+        elif (self.gp_model.variance_type == "local"):
+            stds = np.zeros((len(atoms), 3))
+            stds[:, 0] = structure_descriptor.local_uncertainties[0]
+            self.results["stds"] = stds
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():
