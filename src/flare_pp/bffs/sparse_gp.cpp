@@ -111,13 +111,12 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
                               kernels[i]->kernel_hyperparameters));
 
     int n_clusters = sparse_descriptors[i].n_clusters;
-    Eigen::MatrixXd Kuu_inverse_block =
-        Kuu_inverse.block(sparse_count, sparse_count, n_clusters, n_clusters);
+    Eigen::MatrixXd L_inverse_block =
+        L_inv.block(sparse_count, sparse_count, n_clusters, n_clusters);
     sparse_count += n_clusters;
 
-    Q_self.push_back(
-        (sparse_kernels[i] * Kuu_inverse_block * sparse_kernels[i].transpose())
-            .diagonal());
+    Eigen::MatrixXd Q1 = L_inverse_block * sparse_kernels[i].transpose();
+    Q_self.push_back((Q1.transpose() * Q1).diagonal());
 
     variances.push_back(K_self[i] - Q_self[i]);
   }
@@ -497,7 +496,7 @@ void SparseGP ::update_matrices_QR() {
 
   // Get the inverse of Kuu from Cholesky decomposition.
   Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-  Eigen::MatrixXd L_inv = chol.matrixL().solve(Kuu_eye);
+  L_inv = chol.matrixL().solve(Kuu_eye);
   L_diag = L_inv.diagonal();
   Kuu_inverse = L_inv.transpose() * L_inv;
 
