@@ -42,6 +42,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("stresses", &Structure::stresses)
       .def_readwrite("mean_efs", &Structure::mean_efs)
       .def_readwrite("variance_efs", &Structure::variance_efs)
+      .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
       .def_readonly("descriptors", &Structure::descriptors)
       .def("wrap_positions", &Structure::wrap_positions);
 
@@ -132,6 +133,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("set_hyperparameters", &SparseGP::set_hyperparameters)
       .def("predict_SOR", &SparseGP::predict_SOR)
       .def("predict_DTC", &SparseGP::predict_DTC)
+      .def("predict_local_uncertainties",
+           &SparseGP::predict_local_uncertainties)
       .def("add_all_environments", &SparseGP::add_all_environments)
       .def("add_specific_environments", &SparseGP::add_specific_environments)
       .def("add_random_environments", &SparseGP::add_random_environments)

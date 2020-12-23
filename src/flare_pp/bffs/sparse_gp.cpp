@@ -575,6 +575,28 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
   test_structure.variance_efs = K_self - Q_self + V_SOR;
 }
 
+void SparseGP ::predict_local_uncertainties(Structure &test_structure) {
+  int n_atoms = test_structure.noa;
+  int n_out = 1 + 3 * n_atoms + 6;
+
+  Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
+  int count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++) {
+    int size = Kuu_kernels[i].rows();
+    kernel_mat.block(count, 0, size, n_out) = kernels[i]->envs_struc(
+        sparse_descriptors[i], test_structure.descriptors[i],
+        kernels[i]->kernel_hyperparameters);
+    count += size;
+  }
+
+  test_structure.mean_efs = kernel_mat.transpose() * alpha;
+
+  std::vector<Eigen::VectorXd> local_uncertainties =
+    compute_cluster_uncertainties(test_structure);
+  test_structure.local_uncertainties = local_uncertainties;
+
+}
+
 void SparseGP ::compute_likelihood_stable() {
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();

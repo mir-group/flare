@@ -44,7 +44,7 @@ public:
 
   void initialize_sparse_descriptors(const Structure &structure);
   void add_all_environments(const Structure &structure);
-  // TODO: Implement add_specific_environments.
+
   void add_specific_environments(const Structure &structure,
                                  const std::vector<int> atoms);
   void add_random_environments(const Structure &structure,
@@ -66,6 +66,7 @@ public:
 
   void predict_SOR(Structure &structure);
   void predict_DTC(Structure &structure);
+  void predict_local_uncertainties(Structure &structure);
 
   void compute_likelihood_stable();
   void compute_likelihood();
