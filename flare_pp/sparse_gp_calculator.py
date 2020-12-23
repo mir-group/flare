@@ -75,7 +75,7 @@ class SGP_Calculator(Calculator):
             stds = np.sqrt(variances)
             stds_full = np.zeros((len(variances), 3))
             stds_full[:, 0] = stds
-            self.results["stds"] = stds
+            self.results["stds"] = stds_full
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():
