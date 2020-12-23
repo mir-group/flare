@@ -19,7 +19,7 @@ public:
   double Kuu_jitter;
 
   // Solution attributes.
-  Eigen::MatrixXd Sigma, Kuu_inverse, R_inv;
+  Eigen::MatrixXd Sigma, Kuu_inverse, R_inv, L_inv;
   Eigen::VectorXd alpha, R_inv_diag, L_diag;
 
   // Training and sparse points.

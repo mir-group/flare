@@ -494,12 +494,12 @@ void SparseGP ::update_matrices_QR() {
   // Cholesky decompose Kuu.
   Eigen::LLT<Eigen::MatrixXd> chol(
       Kuu + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()));
-  Eigen::MatrixXd L_mat = chol.matrixL();
-  L_diag = L_mat.diagonal();
 
-  // Get the inverse from Cholesky decomposition.
+  // Get the inverse of Kuu from Cholesky decomposition.
   Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-  Kuu_inverse = chol.solve(Kuu_eye);
+  Eigen::MatrixXd L_inv = chol.matrixL().solve(Kuu_eye);
+  L_diag = L_inv.diagonal();
+  Kuu_inverse = L_inv.transpose() * L_inv;
 
   // Form A matrix.
   Eigen::MatrixXd A =
@@ -613,7 +613,7 @@ void SparseGP ::compute_likelihood_stable() {
 
   double Kuu_inv_det = 0;
   for (int i = 0; i < L_diag.size(); i++) {
-    Kuu_inv_det += 2 * log(abs(L_diag(i)));
+    Kuu_inv_det -= 2 * log(abs(L_diag(i)));
   }
 
   double sigma_inv_det = 0;
