@@ -71,8 +71,10 @@ class SGP_Calculator(Calculator):
         # The local variance type should only be used if the model uses a
         # single atom-centered descriptor.
         elif (self.gp_model.variance_type == "local"):
-            stds = np.zeros((len(atoms), 3))
-            stds[:, 0] = structure_descriptor.local_uncertainties[0]
+            variances = structure_descriptor.local_uncertainties[0]
+            stds = np.sqrt(variances)
+            stds_full = np.zeros((len(variances), 3))
+            stds_full[:, 0] = stds
             self.results["stds"] = stds
 
     def get_property(self, name, atoms=None, allow_calculation=True):
