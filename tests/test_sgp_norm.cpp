@@ -182,8 +182,8 @@ TEST_F(StructureTest, LikeGrad_norm) {
   //sparse_gp.write_varmap_coefficients("beta_var.txt", "YX", 0);
 
   // Test mapped variance
-  sparse_gp.Sigma = Eigen::MatrixXd::Identity(sparse_gp.Sigma.rows(), sparse_gp.Sigma.cols());
-  sparse_gp.Kuu_inverse = Eigen::MatrixXd::Zero(sparse_gp.Kuu.rows(), sparse_gp.Kuu.cols());
+  //sparse_gp.Sigma = Eigen::MatrixXd::Identity(sparse_gp.Sigma.rows(), sparse_gp.Sigma.cols());
+  //sparse_gp.Kuu_inverse = Eigen::MatrixXd::Zero(sparse_gp.Kuu.rows(), sparse_gp.Kuu.cols());
 
   // compute the gp predicted variance
   sparse_gp.predict_DTC(test_struc);
@@ -217,22 +217,40 @@ TEST_F(StructureTest, LikeGrad_norm) {
   double beta_val;
 
   for (int k = 0; k < n_species; k++) {
-    beta_count = 0;
-    beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
-    for (int i = 0; i < n_descriptors; i++) {
-      for (int j = i; j < n_descriptors; j++) {
-        if (i == j)
-          beta_matrix(i, j) = mapped_coeffs(k, beta_count);
-        else if (i != j) {
-          beta_val = mapped_coeffs(k, beta_count);
-          beta_matrix(i, j) = beta_val;
-          beta_matrix(j, i) = beta_val;
+    for (int l = 0; l < n_species; l++) {
+      int kl = k * n_species + l;
+
+      beta_count = 0;
+      beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
+
+      for (int i = 0; i < n_descriptors; i++) {
+        for (int j = 0; j < n_descriptors; j++) {
+          beta_matrix(i, j) = mapped_coeffs(kl, beta_count);
+          beta_count++;
         }
-        beta_count++;
       }
+      beta_matrices.push_back(beta_matrix);
     }
-    beta_matrices.push_back(beta_matrix);
   }
+
+
+//  for (int k = 0; k < n_species; k++) {
+//    beta_count = 0;
+//    beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
+//    for (int i = 0; i < n_descriptors; i++) {
+//      for (int j = i; j < n_descriptors; j++) {
+//        if (i == j)
+//          beta_matrix(i, j) = mapped_coeffs(k, beta_count);
+//        else if (i != j) {
+//          beta_val = mapped_coeffs(k, beta_count);
+//          beta_matrix(i, j) = beta_val;
+//          beta_matrix(j, i) = beta_val;
+//        }
+//        beta_count++;
+//      }
+//    }
+//    beta_matrices.push_back(beta_matrix);
+//  }
 
   std::cout
       << "got beta matrices"
@@ -241,16 +259,38 @@ TEST_F(StructureTest, LikeGrad_norm) {
   // get the (local energy) descriptors of test struc
   Eigen::MatrixXd mapped_var = Eigen::MatrixXd::Zero(1, 1);
   for (int s = 0; s < n_species; s++) { // TODO: need to check the n_species here
-    int n_struc = test_struc.descriptors[0].n_clusters_by_type[s];
-    Eigen::MatrixXd desc_type = Eigen::MatrixXd::Zero(1, n_descriptors);
-    for (int j = 0; j < n_struc; j++) {
+    int n_struc_s = test_struc.descriptors[0].n_clusters_by_type[s];
+    for (int j = 0; j < n_struc_s; j++) {
       double norm_j = test_struc.descriptors[0].descriptor_norms[s](j);
-      for (int k = 0; k < n_descriptors; k++) {
-        desc_type(0, k) += test_struc.descriptors[0].descriptors[s](j, k) / norm_j;
+
+      for (int t = 0; t < n_species; t++) { // TODO: need to check the n_species here
+        int n_struc_t = test_struc.descriptors[0].n_clusters_by_type[t];
+        for (int i = 0; i < n_struc_t; i++) {
+          double norm_i = test_struc.descriptors[0].descriptor_norms[t](i);
+
+          mapped_var += test_struc.descriptors[0].descriptors[s].row(j) * 
+              beta_matrices[s * n_species + t] * 
+              test_struc.descriptors[0].descriptors[t].row(i).transpose() / 
+              norm_j / norm_i;
+        }
       }
     }
-    mapped_var += desc_type * beta_matrices[s] * desc_type.transpose();
   }
+
+
+//  // get the (local energy) descriptors of test struc
+//  Eigen::MatrixXd mapped_var = Eigen::MatrixXd::Zero(1, 1);
+//  for (int s = 0; s < n_species; s++) { // TODO: need to check the n_species here
+//    int n_struc = test_struc.descriptors[0].n_clusters_by_type[s];
+//    Eigen::MatrixXd desc_type = Eigen::MatrixXd::Zero(1, n_descriptors);
+//    for (int j = 0; j < n_struc; j++) {
+//      double norm_j = test_struc.descriptors[0].descriptor_norms[s](j);
+//      for (int k = 0; k < n_descriptors; k++) {
+//        desc_type(0, k) += test_struc.descriptors[0].descriptors[s](j, k) / norm_j;
+//      }
+//    }
+//    mapped_var += desc_type * beta_matrices[s] * desc_type.transpose();
+//  }
 
   std::cout
       << "computed mapped var"
