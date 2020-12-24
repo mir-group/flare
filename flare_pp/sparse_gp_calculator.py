@@ -68,13 +68,14 @@ class SGP_Calculator(Calculator):
                 else:
                     stds[n] = -np.sqrt(np.abs(var))
             self.results["stds"] = stds.reshape(-1, 3)
-        # The local variance type should only be used if the model uses a
+        # The "local" variance type should be used only if the model has a
         # single atom-centered descriptor.
         elif (self.gp_model.variance_type == "local"):
             variances = structure_descriptor.local_uncertainties[0]
             stds = np.sqrt(variances)
             stds_full = np.zeros((len(variances), 3))
-            stds_full[:, 0] = stds
+            # Divide by the signal std to get a unitless value.
+            stds_full[:, 0] = stds / self.gp_model.hyps[0]
             self.results["stds"] = stds_full
 
     def get_property(self, name, atoms=None, allow_calculation=True):
