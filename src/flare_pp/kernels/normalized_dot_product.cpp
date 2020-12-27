@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 
 NormalizedDotProduct ::NormalizedDotProduct(){};
 
@@ -147,6 +148,18 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
     int n_struc = struc.n_clusters_by_type[s];
     int c_sparse = envs.cumulative_type_count[s];
 
+    //debug
+    std::cout
+      << "s="
+      << s
+      << " n_sparse="
+      << n_sparse
+      << " c_sparse="
+      << c_sparse
+      << " "
+    //  << dot_vals.cwiseAbs().maxCoeff()
+      << std::endl;
+ 
 #pragma omp parallel for
     for (int i = 0; i < n_sparse; i++) {
       double norm_i = envs.descriptor_norms[s](i);
@@ -734,8 +747,23 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
         gp_model.sparse_descriptors[kernel_index].cumulative_type_count[s2];
       int K_ind2 = alpha_ind + c_types2;
 
-      int s = s1 * n_species + s2;
+      if (n_types1 == 0 || n_types2 == 0) { // TODO: figure out this issue
+        throw std::invalid_argument( "The training data set does not cover all types" );
+      }
 
+      int s = s1 * n_species + s2;
+      ////debug
+      //std::cout
+      //  << "s1="
+      //  << s1
+      //  << " s2="
+      //  << s2
+      //  << " "
+      //  << n_types1
+      //  << " "
+      //  << n_types2 
+      //  << std::endl;
+ 
       // Loop over clusters within each type.
       for (int i = 0; i < n_types1; i++){
         Eigen::VectorXd pi_current =
@@ -833,5 +861,13 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
 //    }
 //  }
 
+  ////debug
+  //std::cout
+  //  << "mapping_coeff"
+  //  << mapping_coeffs(0, 0) 
+  //  << " "
+  //  << mapping_coeffs(3, 0) 
+  //  << std::endl;
+ 
   return mapping_coeffs;
 }
