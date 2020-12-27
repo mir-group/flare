@@ -913,9 +913,18 @@ void SparseGP::write_varmap_coefficients(
   // add an option in the function above for mapping "mean" or "var"
 
   // Compute mapping coefficients.
-  Eigen::MatrixXd mapping_coeffs =
+  //Eigen::MatrixXd varmap_coeffs =
+  varmap_coeffs =
     kernels[kernel_index]->compute_varmap_coefficients(*this, kernel_index);
 
+  ////debug
+  //std::cout
+  //  << "varmap_coeffs"
+  //  << varmap_coeffs(0, 0) 
+  //  << " "
+  //  << varmap_coeffs(3, 0) 
+  //  << std::endl;
+  
   // Make beta file.
   std::ofstream coeff_file;
   coeff_file.open(file_name);
@@ -931,7 +940,7 @@ void SparseGP::write_varmap_coefficients(
   coeff_file << contributor << "\n";
 
   // Write descriptor information to file.
-  int coeff_size = mapping_coeffs.row(0).size();
+  int coeff_size = varmap_coeffs.row(0).size();
   training_structures[0].descriptor_calculators[kernel_index]->
     write_to_file(coeff_file, coeff_size);
 
@@ -939,8 +948,8 @@ void SparseGP::write_varmap_coefficients(
   coeff_file << std::scientific << std::setprecision(16);
 
   int count = 0;
-  for (int i = 0; i < mapping_coeffs.rows(); i++) {
-    Eigen::VectorXd coeff_vals = mapping_coeffs.row(i);
+  for (int i = 0; i < varmap_coeffs.rows(); i++) {
+    Eigen::VectorXd coeff_vals = varmap_coeffs.row(i);
 
     // Start a new line for each beta.
     if (count != 0) {
