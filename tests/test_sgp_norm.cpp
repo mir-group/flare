@@ -165,7 +165,18 @@ TEST_F(StructureTest, LikeGrad_norm) {
   test_struc.stresses = stresses;
 
   sparse_gp.add_training_structure(test_struc);
-  sparse_gp.add_all_environments(test_struc);
+  //sparse_gp.add_all_environments(test_struc);
+  //std::vector<int> envs(1);
+  //envs[0] = 2;
+
+  //sparse_gp.add_training_structure(test_struc);
+  //sparse_gp.add_random_environments(test_struc, envs);
+
+  std::vector<int> atoms_to_add;
+  atoms_to_add.push_back(0);
+  atoms_to_add.push_back(1);
+  atoms_to_add.push_back(2);
+  sparse_gp.add_specific_environments(test_struc, atoms_to_add); // for debug
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
@@ -212,7 +223,7 @@ TEST_F(StructureTest, LikeGrad_norm) {
 
   // Fill in the beta matrix.
   // TODO: Remove factor of 2 from beta.
-  Eigen::MatrixXd beta_matrix;
+  Eigen::MatrixXd beta_matrix; // = Eigen::MatrixXd::Zero(n_species * n_descriptors, n_species * n_descriptors);
   int beta_count;
   double beta_val;
 
@@ -233,50 +244,40 @@ TEST_F(StructureTest, LikeGrad_norm) {
     }
   }
 
-
-//  for (int k = 0; k < n_species; k++) {
-//    beta_count = 0;
-//    beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
-//    for (int i = 0; i < n_descriptors; i++) {
-//      for (int j = i; j < n_descriptors; j++) {
-//        if (i == j)
-//          beta_matrix(i, j) = mapped_coeffs(k, beta_count);
-//        else if (i != j) {
-//          beta_val = mapped_coeffs(k, beta_count);
-//          beta_matrix(i, j) = beta_val;
-//          beta_matrix(j, i) = beta_val;
-//        }
-//        beta_count++;
-//      }
-//    }
-//    beta_matrices.push_back(beta_matrix);
-//  }
-
   std::cout
       << "got beta matrices"
       << std::endl;
 
   // get the (local energy) descriptors of test struc
+  Eigen::MatrixXd energy_desc = Eigen::MatrixXd::Zero(n_species, n_descriptors);
   Eigen::MatrixXd mapped_var = Eigen::MatrixXd::Zero(1, 1);
   for (int s = 0; s < n_species; s++) { // TODO: need to check the n_species here
     int n_struc_s = test_struc.descriptors[0].n_clusters_by_type[s];
     for (int j = 0; j < n_struc_s; j++) {
       double norm_j = test_struc.descriptors[0].descriptor_norms[s](j);
 
-      for (int t = 0; t < n_species; t++) { // TODO: need to check the n_species here
-        int n_struc_t = test_struc.descriptors[0].n_clusters_by_type[t];
-        for (int i = 0; i < n_struc_t; i++) {
-          double norm_i = test_struc.descriptors[0].descriptor_norms[t](i);
-
-          mapped_var += test_struc.descriptors[0].descriptors[s].row(j) * 
-              beta_matrices[s * n_species + t] * 
-              test_struc.descriptors[0].descriptors[t].row(i).transpose() / 
-              norm_j / norm_i;
-        }
+      for (int k = 0; k < n_descriptors; k++) {
+        energy_desc(s, k) += test_struc.descriptors[0].descriptors[s](j, k) / norm_j;
       }
+//      for (int t = 0; t < n_species; t++) { // TODO: need to check the n_species here
+//        int n_struc_t = test_struc.descriptors[0].n_clusters_by_type[t];
+//        for (int i = 0; i < n_struc_t; i++) {
+//          double norm_i = test_struc.descriptors[0].descriptor_norms[t](i);
+//
+//          mapped_var += test_struc.descriptors[0].descriptors[s].row(j) * 
+//              beta_matrices[s * n_species + t] * 
+//              test_struc.descriptors[0].descriptors[t].row(i).transpose() / 
+//              norm_j / norm_i;
+//        }
+//      }
     }
   }
 
+  for (int s = 0; s < n_species; s++) { // TODO: need to check the n_species here
+    for (int t = 0; t < n_species; t++) { // TODO: need to check the n_species here
+      mapped_var += energy_desc.row(s) * beta_matrices[s * n_species + t] * energy_desc.row(t).transpose();
+    }
+  }
 
 //  // get the (local energy) descriptors of test struc
 //  Eigen::MatrixXd mapped_var = Eigen::MatrixXd::Zero(1, 1);

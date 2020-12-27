@@ -75,6 +75,9 @@ public:
 
     dc.push_back(&ps_norm);
 
+    species[0] = 0; // for debug
+    species[1] = 1;
+    species[2] = 2;
     test_struc = Structure(cell, species, positions, cutoff, dc);
     test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
     test_struc_3 = Structure(cell_3, species_3, positions_3, cutoff, dc);
