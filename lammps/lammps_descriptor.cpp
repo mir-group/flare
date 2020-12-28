@@ -54,7 +54,7 @@ void single_bond(
     rsq = delx * delx + dely * dely + delz * delz;
     r = sqrt(rsq);
 
-    if (rsq < cutforcesq) {
+    if (rsq < cutforcesq) { // minus a small value to prevent numerial error
       s = type[j] - 1;
       calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, delx,
                        dely, delz, r, cutoff, N, radial_hyps, cutoff_hyps);

@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 
+
 void single_bond(
     double **x, int *type, int jnum, int n_inner, int i, double xtmp,
     double ytmp, double ztmp, int *jlist,

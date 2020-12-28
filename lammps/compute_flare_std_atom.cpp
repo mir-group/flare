@@ -34,9 +34,9 @@ ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4) error->all(FLERR, "Illegal compute flare/std/atom command");
 
   peratom_flag = 1;
-  size_peratom_cols = 3;
+  size_peratom_cols = 0;
   timeflag = 1;
-  comm_reverse = 3;
+  comm_reverse = 1;
 
   // restartinfo = 0;
   // manybody_flag = 1;
@@ -97,34 +97,16 @@ void ComputeFlareStdAtom::init_list(int /*id*/, NeighList *ptr)
 /* ---------------------------------------------------------------------- */
 
 void ComputeFlareStdAtom::compute_peratom() {
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "begin compute_peratom\n");
-  }
-
-
   if (atom->nmax > nmax) {
     memory->destroy(stds);
     nmax = atom->nmax;
-    memory->create(stds,nmax,3,"flare/std/atom:stds");
-    array_atom = stds;
-
-    // TODO: see if we can only create a n_neighbor size one
-    memory->destroy(desc_derv); // need to monitor the memory since the descriptors can be high dim
-    memory->create(desc_derv,nmax * 3, n_species * n_descriptors,"flare/std/atom:desc_derv");
-  }
-
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "allocated memory\n");
+    memory->create(stds,nmax,"flare/std/atom:stds");
+    vector_atom = stds;
   }
 
   int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
   double delx, dely, delz, xtmp, ytmp, ztmp, rsq;
   int *ilist, *jlist, *numneigh, **firstneigh;
-
-  tagint *tag = atom->tag;
-  tagint itag, jtag;
 
   double **x = atom->x;
   int *type = atom->type;
@@ -149,25 +131,8 @@ void ComputeFlareStdAtom::compute_peratom() {
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "begin initialization\n");
-  }
-
   for (ii = 0; ii < ntotal; ii++) {
-    for (int comp = 0; comp < 3; comp++) {
-      stds[ii][comp] = 0.0;
-      for (int s = 0; s < n_species; s++) {
-        for (int nl = 0; nl < n_descriptors; nl++) {
-          desc_derv[ii * 3 + comp][s * n_descriptors + nl] = 0.0;
-        }
-      }
-    }
-  }
-
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "initialized by 0.0. n_descriptors=%d, inum=%d\n", n_descriptors, inum);
+    stds[ii] = 0.0;
   }
 
   for (ii = 0; ii < inum; ii++) {
@@ -183,17 +148,15 @@ void ComputeFlareStdAtom::compute_peratom() {
     n_inner = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
+
       delx = x[j][0] - xtmp;
       dely = x[j][1] - ytmp;
       delz = x[j][2] - ztmp;
       rsq = delx * delx + dely * dely + delz * delz;
-      if (rsq < (cutoff * cutoff))
+      if (rsq < (cutoff * cutoff)) {
         n_inner++;
-    }
+      }
 
-    // screen print debug
-    if (screen) {
-      fprintf(screen, "begin calculating single bond, b2 descriptor. n_inner=%d\n", n_inner);
     }
 
     // Compute covariant descriptors.
@@ -207,73 +170,14 @@ void ComputeFlareStdAtom::compute_peratom() {
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max);
 
+
     // Compute local energy and partial forces.
-    //beta_p = beta_matrices[itype - 1] * B2_vals;
-    //stds[i] += pow(B2_vals.dot(beta_p) / B2_norm_squared, 0.5) ;
-    //partial_forces =
-    //    2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
-
-    double B2_norm = pow(B2_norm_squared, 0.5);
-    double B2_norm_cube = pow(B2_norm_squared, 1.5);
-    double bond_derv;
-
-    // Update descriptors.
-    n_count = 0;
-    for (int jj = 0; jj < jnum; jj++) {
-      j = jlist[jj];
-      delx = xtmp - x[j][0];
-      dely = ytmp - x[j][1];
-      delz = ztmp - x[j][2];
-      rsq = delx * delx + dely * dely + delz * delz;
-
-      itag = tag[i];
-      jtag = tag[j];
-
-      if (rsq < (cutoff * cutoff)) {
-        for (int comp = 0; comp < 3; comp++) {
-          for (int nl = 0; nl < n_descriptors; nl++) { // need to make sure the neighbor orders of B2_env_derv and jj are the same
-            bond_derv = B2_env_dervs(n_count * 3 + comp, nl) / B2_norm - 
-                B2_vals(nl) * B2_env_dot(n_count * 3 + comp) / B2_norm_cube;
-
-            // restrict the type should start from 1, and continuous
-            // TODO: make the species explicity so safer
-            desc_derv[i * 3 + comp][(type[i] - 1) * n_descriptors + nl] += bond_derv; 
-            desc_derv[j * 3 + comp][(type[i] - 1) * n_descriptors + nl] -= bond_derv; 
-
-          }
-        }
-        n_count++;
-      }
-    }
-
-
-  }
-
-  for (ii = 0; ii < inum; ii++) {
-    i = ilist[ii];
-    itag = tag[i];
-
-    for (int comp = 0; comp < 3; comp++) {
-      for (int s1 = 0; s1 < n_species; s1++) { // The desc_derv is std::vec, better to use Eigen MatrixXd for direct matrix multiplication
-        for (int s2 = 0; s2 < n_species; s2++) {
-          for (int n1 = 0; n1 < n_descriptors; n1++) {
-            for (int n2 = 0; n2 < n_descriptors; n2++) {
-              stds[i][comp] += desc_derv[i * 3 + comp][s1 * n_descriptors + n1] * beta_matrices[s1 * n_species + s2](n1, n2) * desc_derv[i * 3 + comp][s2 * n_descriptors + n2];
-            }
-          }
-        }
-      }
-    }
-
-//      for (int s1 = 0; s1 < n_species; s1++) { // The desc_derv is std::vec, better to use Eigen MatrixXd for direct matrix multiplication
-//        for (int s2 = 0; s2 < n_species; s2++) {
-//          stds[i][0] += desc_derv.row(s1) * beta_matrices[s1 * n_species + s2] * desc_derv.row(s2).transpose();
-//        }
-//      }
-  }
+    beta_p = beta_matrices[itype - 1] * B2_vals;
+    stds[i] = B2_vals.dot(beta_p) / B2_norm_squared;
 
   // TODO: get square root for stds
 
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -287,9 +191,10 @@ int ComputeFlareStdAtom::pack_reverse_comm(int n, int first, double *buf)
   last = first + n;
   for (i = first; i < last; i++) {
     for (int comp = 0; comp < 3; comp++) {
-      buf[m++] = stds[i][comp];
+      buf[m++] = stds[i];
     }
   }
+
   return m;
 }
 
@@ -303,9 +208,10 @@ void ComputeFlareStdAtom::unpack_reverse_comm(int n, int *list, double *buf)
   for (i = 0; i < n; i++) {
     j = list[i];
     for (int comp = 0; comp < 3; comp++) {
-      stds[j][comp] += buf[m++];
+      stds[j] += buf[m++];
     }
   }
+
 }
 
 /* ----------------------------------------------------------------------
@@ -353,13 +259,6 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
 
   read_file(arg[3]);
 
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "\narg[1] %s\n", arg[1]);
-    fprintf(screen, "\narg[2] %s\n", arg[2]);
-    fprintf(screen, "\narg[3] %s\n", arg[3]);
-    fprintf(screen, "read_file done\n");
-  }
 }
 
 /* ----------------------------------------------------------------------
@@ -391,11 +290,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
       snprintf(str, 128, "Cannot open variance file %s", filename);
       error->one(FLERR, str);
     }
-  }
-
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "file opened\n");
   }
 
   int tmp, nwords;
@@ -445,15 +339,13 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     cutoff_function = cos_cutoff;
 
   // Parse the beta vectors.
-  memory->create(beta, beta_size * n_species * n_species, "compute:beta");
+  //memory->create(beta, beta_size * n_species * n_species, "compute:beta");
+  memory->create(beta, beta_size * n_species, "compute:beta");
   if (me == 0)
-    grab(fptr, beta_size * n_species * n_species, beta);
-  MPI_Bcast(beta, beta_size * n_species * n_species, MPI_DOUBLE, 0, world);
-
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "begin reading beta matrix\n");
-  }
+  //  grab(fptr, beta_size * n_species * n_species, beta);
+    grab(fptr, beta_size * n_species, beta);
+  //MPI_Bcast(beta, beta_size * n_species * n_species, MPI_DOUBLE, 0, world);
+  MPI_Bcast(beta, beta_size * n_species, MPI_DOUBLE, 0, world);
 
   // Fill in the beta matrix.
   // TODO: Remove factor of 2 from beta.
@@ -461,7 +353,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   int beta_count = 0;
   double beta_val;
   for (int k = 0; k < n_species; k++) {
-    for (int l = 0; l < n_species; l++) {
+//    for (int l = 0; l < n_species; l++) {
 
       beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
       for (int i = 0; i < n_descriptors; i++) {
@@ -472,15 +364,8 @@ void ComputeFlareStdAtom::read_file(char *filename) {
         }
       }
       beta_matrices.push_back(beta_matrix);
-    }
+//    }
   }
-
-  // screen print debug
-  if (screen) {
-    fprintf(screen, "end reading beta matrix, size=%d\n", beta_matrices.size());
-  }
-
-
 
 
 }
