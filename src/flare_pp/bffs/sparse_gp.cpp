@@ -89,7 +89,7 @@ SparseGP ::sort_clusters_by_uncertainty(const Structure &structure) {
 
 std::vector<Eigen::VectorXd>
 SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
-  // TODO: this only computes the energy-energy variance?
+  // TODO: this only computes the energy-energy variance, and the Sigma matrix is not considered?
 
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
@@ -122,7 +122,7 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
         (sparse_kernels[i] * Kuu_inverse_block * sparse_kernels[i].transpose())
             .diagonal());
 
-    variances.push_back(K_self[i] - Q_self[i]);
+    variances.push_back(K_self[i] - Q_self[i]); // it is sorted by clusters, not the original atomic order 
   }
 
   return variances;
@@ -917,14 +917,6 @@ void SparseGP::write_varmap_coefficients(
   varmap_coeffs =
     kernels[kernel_index]->compute_varmap_coefficients(*this, kernel_index);
 
-  ////debug
-  //std::cout
-  //  << "varmap_coeffs"
-  //  << varmap_coeffs(0, 0) 
-  //  << " "
-  //  << varmap_coeffs(3, 0) 
-  //  << std::endl;
-  
   // Make beta file.
   std::ofstream coeff_file;
   coeff_file.open(file_name);

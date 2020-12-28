@@ -145,7 +145,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("compute_likelihood_gradient",
            &SparseGP::compute_likelihood_gradient)
       .def("write_mapping_coefficients", &SparseGP::write_mapping_coefficients)
-      .def_readonly("varmap_coeffs", &SparseGP::varmap_coeffs) // for debugging; TODO: remove
+      .def_readonly("varmap_coeffs", &SparseGP::varmap_coeffs) // for debugging and unit test
+      .def("compute_cluster_uncertainties", &SparseGP::compute_cluster_uncertainties) // for debugging and unit test
       .def("write_varmap_coefficients", &SparseGP::write_varmap_coefficients)
       .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
       .def_readonly("complexity_penalty", &SparseGP::complexity_penalty)
