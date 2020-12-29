@@ -45,6 +45,17 @@ class SGP_Wrapper:
         for n in range(len(self.hyps)):
             self.hyp_labels.append("Hyp" + str(n))
 
+        # prepare a new sGP for variance mapping
+        self.sgp_var = None
+        if isinstance(kernels[0], NormalizedDotProduct): # TODO: adapt this to multiple kernels
+            if kernels[0].power == 1:
+                self.sgp_var_flag = "self"
+            else:
+                self.sgp_var_flag = "new"
+        else:
+            warnings.warn("kernels[0] should be NormalizedDotProduct for variance mapping")
+            self.sgp_var_flag = None
+
     def __len__(self):
         return len(self.training_data)
 
@@ -89,6 +100,7 @@ class SGP_Wrapper:
         energy: float = None,
         stress: "ndarray" = None,
         mode: str = "all",
+        sgp: SparseGP = None, # for creating sgp_var
     ):
 
         # Convert coded species to 0, 1, 2, etc.
@@ -130,34 +142,37 @@ class SGP_Wrapper:
             structure_descriptor.stresses = stress
 
         # Update the sparse GP.
-        self.sparse_gp.add_training_structure(structure_descriptor)
+        if sgp is None:
+            sgp = self.sparse_gp
+
+        sgp.add_training_structure(structure_descriptor)
         if mode == "all":
             if not custom_range:
-                self.sparse_gp.add_all_environments(structure_descriptor)
+                sgp.add_all_environments(structure_descriptor)
             else:
                 raise Exception("Set mode='specific' for a user-defined custom_range")
         elif mode == "uncertain":
             if len(custom_range) == 1: # custom_range gives n_added
                 n_added = custom_range
-                self.sparse_gp.add_uncertain_environments(structure_descriptor, n_added)
+                sgp.add_uncertain_environments(structure_descriptor, n_added)
             else:
                 raise Exception("The custom_range should be set as [n_added] if mode='uncertain'")
         elif mode == "specific":
             if not custom_range:
-                self.sparse_gp.add_all_environments(structure_descriptor)
+                sgp.add_all_environments(structure_descriptor)
                 warnings.warn("The mode='specific' but no custom_range is given, will add all atoms")
             else:
-                self.sparse_gp.add_specific_environments(structure_descriptor, custom_range)
+                sgp.add_specific_environments(structure_descriptor, custom_range)
         elif mode == "random":
             if len(custom_range) == 1: # custom_range gives n_added
                 n_added = custom_range
-                self.sparse_gp.add_random_environments(structure_descriptor, n_added)
+                sgp.add_random_environments(structure_descriptor, n_added)
             else:
                 raise Exception("The custom_range should be set as [n_added] if mode='random'")
         else:
             raise NotImplementedError
 
-        self.sparse_gp.update_matrices_QR()
+        sgp.update_matrices_QR()
 
     def set_L_alpha(self):
         # Taken care of in the update_db method.
@@ -176,28 +191,18 @@ class SGP_Wrapper:
 
     def write_varmap_coefficients(self, filename, contributor, kernel_idx):
         old_kernels = self.sparse_gp.kernels
-        assert len(old_kernels) == 1, "Not support multiple kernels"
+        assert (len(old_kernels) == 1) and (kernel_idx == 0), "Not support multiple kernels"
 
-        if old_kernels[0].power != 1:
+        if self.sgp_var_flag == "new":
             # change to power 1 kernel
             power = 1
             new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
     
-            # make a new GP with power = 1 kernel and the same training data
-            new_spg = SGP_Wrapper(
-                kernels=new_kernels,
-                descriptor_calculators=self.descriptor_calculators,
-                cutoff=self.cutoff,
-                sigma_e=self.sparse_gp.energy_noise,
-                sigma_f=self.sparse_gp.force_noise,
-                sigma_s=self.sparse_gp.stress_noise,
-                species_map=self.species_map,
-                variance_type=self.variance_type,
-                single_atom_energies=self.single_atom_energies,
-                energy_training=self.energy_training,
-                force_training=self.force_training,
-                stress_training=self.stress_training,
-                max_iterations=self.max_iterations,
+            self.sgp_var = SparseGP(
+                new_kernels, 
+                self.sparse_gp.energy_noise,
+                self.sparse_gp.force_noise,
+                self.sparse_gp.stress_noise,
             )
 
             # add training data
@@ -206,28 +211,26 @@ class SGP_Wrapper:
             assert len(sparse_indices[0]) == len(self.training_data)
 
             for s in range(len(self.training_data)):
-                custom_range = sparse_indices[0][s]
+                custom_range = sparse_indices[0][s] # TODO: this one is not correct, the sparse_indices are sorted by type
                 struc_cpp = self.training_data[s]
-                #structure = struc.Structure(
-                #    struc_cpp.cell,
-                #    struc_cpp.species,
-                #    struc_cpp.positions,
-                #)
-                new_spg.update_db(
+                self.update_db(
                     struc_cpp,
                     struc_cpp.forces,
                     custom_range=custom_range,
                     energy=struc_cpp.energy[0],
                     stress=struc_cpp.stresses,
                     mode="specific",
+                    sgp=self.sgp_var,
                 )
 
             # write var map coefficient file
-            new_spg.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
-            return new_spg
-        else:
+            self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
+            return new_kernels
+
+        elif self.sgp_var_flag == "self":
             self.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
-            return self
+            self.sgp_var = self.sparse_gp
+            return old_kernels 
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):
