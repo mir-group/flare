@@ -72,6 +72,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("n_neighbors_by_type",
                      &DescriptorValues::n_neighbors_by_type);
 
+  py::class_<ClusterDescriptor>(m, "ClusterDescriptor")
+      .def_readonly("descriptors", &ClusterDescriptor::descriptors);
+
   // Descriptor calculators
   py::class_<Descriptor>(m, "Descriptor")
       .def("compute_struc", &Descriptor::compute_struc);
@@ -160,6 +163,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("hyperparameters", &SparseGP::hyperparameters)
       .def_readonly("training_structures", &SparseGP::training_structures)
       .def_readonly("sparse_indices", &SparseGP::sparse_indices)
+      .def_readonly("sparse_descriptors", &SparseGP::sparse_descriptors)
       .def_readonly("n_energy_labels", &SparseGP::n_energy_labels)
       .def_readonly("n_force_labels", &SparseGP::n_force_labels)
       .def_readonly("n_stress_labels", &SparseGP::n_stress_labels)

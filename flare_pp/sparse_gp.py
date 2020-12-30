@@ -211,7 +211,7 @@ class SGP_Wrapper:
             assert len(sparse_indices[0]) == len(self.training_data)
 
             for s in range(len(self.training_data)):
-                custom_range = sparse_indices[0][s] # TODO: this one is not correct, the sparse_indices are sorted by type
+                custom_range = sparse_indices[0][s] 
                 struc_cpp = self.training_data[s]
                 self.update_db(
                     struc_cpp,

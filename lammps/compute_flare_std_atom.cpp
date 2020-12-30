@@ -173,9 +173,7 @@ void ComputeFlareStdAtom::compute_peratom() {
 
     // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
-    stds[i] = B2_vals.dot(beta_p) / B2_norm_squared;
-
-  // TODO: get square root for stds
+    stds[i] = pow(B2_vals.dot(beta_p) / B2_norm_squared, 0.5);
 
   }
 }

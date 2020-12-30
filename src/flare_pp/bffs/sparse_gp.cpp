@@ -134,7 +134,7 @@ void SparseGP ::add_specific_environments(const Structure &structure,
   // Gather clusters with central atom in the given list.
   std::vector<std::vector<std::vector<int>>> indices_1;
   for (int i = 0; i < n_kernels; i++){
-    sparse_indices[i].push_back(atoms); // here assume that for each kernel the added atoms are the same
+    sparse_indices[i].push_back(atoms); // for each kernel the added atoms are the same
 
     int n_types = structure.descriptors[i].n_types;
     std::vector<std::vector<int>> indices_2;
@@ -214,7 +214,25 @@ void SparseGP ::add_uncertain_environments(const Structure &structure,
   for (int i = 0; i < n_kernels; i++) {
     sparse_descriptors[i].add_clusters(structure.descriptors[i],
                                        n_sorted_indices[i]);
-    sparse_indices[i].push_back(n_sorted_indices[i]);
+
+    // find the atom index of added sparse env
+    std::vector<int> added_indices;
+    for (int k = 0; k < n_sorted_indices[i].size(); k++) {
+      int cluster_val = n_sorted_indices[i][k];
+      int atom_index, val;
+      for (int j = 0; j < structure.descriptors[i].n_types; j++) {
+        int ccount = structure.descriptors[i].cumulative_type_count[j];
+        int ccount_p1 = structure.descriptors[i].cumulative_type_count[j + 1];
+        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)) {
+          val = cluster_val - ccount;
+          atom_index = structure.descriptors[i].atom_indices[j][val];
+          added_indices.push_back(atom_index);
+          break;
+        }
+      }
+    }
+
+    sparse_indices[i].push_back(added_indices);
   }
 }
 
@@ -255,7 +273,24 @@ void SparseGP ::add_random_environments(const Structure &structure,
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
     sparse_descriptors[i].add_clusters(structure.descriptors[i], envs1[i]);
-    sparse_indices[i].push_back(envs1[i]);
+
+    // find the atom index of added sparse env
+    std::vector<int> added_indices;
+    for (int k = 0; k < envs1[i].size(); k++) {
+      int cluster_val = envs1[i][k];
+      int atom_index, val;
+      for (int j = 0; j < structure.descriptors[i].n_types; j++) {
+        int ccount = structure.descriptors[i].cumulative_type_count[j];
+        int ccount_p1 = structure.descriptors[i].cumulative_type_count[j + 1];
+        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)) {
+          val = cluster_val - ccount;
+          atom_index = structure.descriptors[i].atom_indices[j][val];
+          added_indices.push_back(atom_index);
+          break;
+        }
+      }
+    }
+    sparse_indices[i].push_back(added_indices);
   }
 }
 
