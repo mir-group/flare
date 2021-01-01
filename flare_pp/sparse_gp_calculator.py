@@ -72,7 +72,13 @@ class SGP_Calculator(Calculator):
         # single atom-centered descriptor.
         elif (self.gp_model.variance_type == "local"):
             variances = structure_descriptor.local_uncertainties[0]
-            stds = np.sqrt(variances)
+            stds = np.zeros(len(variances))
+            for n in range(len(variances)):
+                var = variances[n]
+                if var > 0:
+                    stds[n] = np.sqrt(var)
+                else:
+                    stds[n] = -np.sqrt(np.abs(var))
             stds_full = np.zeros((len(variances), 3))
             # Divide by the signal std to get a unitless value.
             stds_full[:, 0] = stds / self.gp_model.hyps[0]
