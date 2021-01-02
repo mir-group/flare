@@ -200,7 +200,7 @@ def generic_lammps_input(
             compute_cmd = f"compute std all flare/std/atom {std_string}"
         else:
             raise NotImplementedError
-        c_std = "c_unc"
+        c_std = "c_std"
     else:
         compute_cmd = ""
         c_std = ""

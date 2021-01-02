@@ -173,7 +173,7 @@ class MappedGaussianProcess:
         # write to lammps pair style coefficient file
         self.write_lmp_file(self.lmp_file_name + ".mgp", write_var=False)
         if self.var_map == "simple":
-            self.write_lmp_file(self.lmp_file_name + ".var", write_var=True)
+            self.write_lmp_file(self.lmp_file_name + ".std", write_var=True)
 
     def predict(
         self, atom_env: AtomicEnvironment
