@@ -15,11 +15,11 @@ Reading data file ...
 
 pair_style flare
 pair_coeff * * beta.txt
-Reading potential file beta.txt with DATE: Wed
+Reading potential file beta.txt with DATE: Sat
 
 thermo_style one
 compute std all flare/std/atom beta_var.txt
-Reading potential file beta_var.txt with DATE: Wed
+Reading potential file beta_var.txt with DATE: Sat
 dump 1 all custom 1 tmp.dump id type x y z fx fy fz c_std
 dump_modify 1 sort id
 run 0
@@ -45,9 +45,9 @@ WARNING: Proc sub-domain size < neighbor skin, could lead to lost atoms (../doma
 Per MPI rank memory allocation (min/avg/max) = 59.04 | 59.04 | 59.04 Mbytes
 Step Temp E_pair E_mol TotEng Press 
        0            0 -5.3090707e-14            0 -5.3090707e-14 -3.2824231e-07 
-Loop time of 2.86102e-06 on 1 procs for 0 steps with 4 atoms
+Loop time of 3.09944e-06 on 1 procs for 0 steps with 4 atoms
 
-69.9% CPU use with 1 MPI tasks x no OpenMP threads
+96.8% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -57,7 +57,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 2.861e-06  |            |       |100.00
+Other   |            | 3.099e-06  |            |       |100.00
 
 Nlocal:        4.00000 ave           4 max           4 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
