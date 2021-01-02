@@ -4,6 +4,7 @@ from scipy.optimize import minimize
 from typing import List
 import warnings
 from flare import struc
+from flare.ase.atoms import FLARE_Atoms
 
 class SGP_Wrapper:
     """Wrapper class used to make the C++ sparse GP object compatible with
@@ -104,7 +105,7 @@ class SGP_Wrapper:
     ):
 
         # Convert coded species to 0, 1, 2, etc.
-        if isinstance(structure, struc.Structure):
+        if isinstance(structure, (struc.Structure, FLARE_Atoms)):
             coded_species = []
             for spec in structure.coded_species:
                 coded_species.append(self.species_map[spec])
@@ -213,11 +214,17 @@ class SGP_Wrapper:
             for s in range(len(self.training_data)):
                 custom_range = sparse_indices[0][s] 
                 struc_cpp = self.training_data[s]
+
+                if len(struc_cpp.energy) > 0:
+                    energy = struc_cpp.energy[0]
+                else:
+                    energy = None
+
                 self.update_db(
                     struc_cpp,
                     struc_cpp.forces,
                     custom_range=custom_range,
-                    energy=struc_cpp.energy[0],
+                    energy=energy,
                     stress=struc_cpp.stresses,
                     mode="specific",
                     sgp=self.sgp_var,
