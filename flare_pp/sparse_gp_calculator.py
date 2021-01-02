@@ -33,6 +33,8 @@ class SGP_Calculator(Calculator):
             self.gp_model.sparse_gp.predict_SOR(structure_descriptor)
         elif self.gp_model.variance_type == "DTC":
             self.gp_model.sparse_gp.predict_DTC(structure_descriptor)
+        elif self.gp_model.variance_type == "local":
+            self.gp_model.sparse_gp.predict_local_uncertainties(structure_descriptor)
 
         # Set results.
         self.results["energy"] = structure_descriptor.mean_efs[0]
@@ -52,9 +54,35 @@ class SGP_Calculator(Calculator):
         )
         self.results["stress"] = ase_stress
 
-        self.results["stds"] = np.sqrt(
-            structure_descriptor.variance_efs[1:-6].reshape(-1, 3)
-        )
+        # Report negative variances, which can arise if there are numerical
+        # instabilities.
+        if (self.gp_model.variance_type == "SOR") or (
+            self.gp_model.variance_type == "DTC"
+        ):
+            variances = structure_descriptor.variance_efs[1:-6]
+            stds = np.zeros(len(variances))
+            for n in range(len(variances)):
+                var = variances[n]
+                if var > 0:
+                    stds[n] = np.sqrt(var)
+                else:
+                    stds[n] = -np.sqrt(np.abs(var))
+            self.results["stds"] = stds.reshape(-1, 3)
+        # The "local" variance type should be used only if the model has a
+        # single atom-centered descriptor.
+        elif (self.gp_model.variance_type == "local"):
+            variances = structure_descriptor.local_uncertainties[0]
+            stds = np.zeros(len(variances))
+            for n in range(len(variances)):
+                var = variances[n]
+                if var > 0:
+                    stds[n] = np.sqrt(var)
+                else:
+                    stds[n] = -np.sqrt(np.abs(var))
+            stds_full = np.zeros((len(variances), 3))
+            # Divide by the signal std to get a unitless value.
+            stds_full[:, 0] = stds / self.gp_model.hyps[0]
+            self.results["stds"] = stds_full
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():

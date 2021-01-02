@@ -114,13 +114,12 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
                               kernels[i]->kernel_hyperparameters));
 
     int n_clusters = sparse_descriptors[i].n_clusters;
-    Eigen::MatrixXd Kuu_inverse_block =
-        Kuu_inverse.block(sparse_count, sparse_count, n_clusters, n_clusters);
+    Eigen::MatrixXd L_inverse_block =
+        L_inv.block(sparse_count, sparse_count, n_clusters, n_clusters);
     sparse_count += n_clusters;
 
-    Q_self.push_back(
-        (sparse_kernels[i] * Kuu_inverse_block * sparse_kernels[i].transpose())
-            .diagonal());
+    Eigen::MatrixXd Q1 = L_inverse_block * sparse_kernels[i].transpose();
+    Q_self.push_back((Q1.transpose() * Q1).diagonal());
 
     variances.push_back(K_self[i] - Q_self[i]); // it is sorted by clusters, not the original atomic order 
   }
@@ -541,12 +540,12 @@ void SparseGP ::update_matrices_QR() {
   // Cholesky decompose Kuu.
   Eigen::LLT<Eigen::MatrixXd> chol(
       Kuu + Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols()));
-  Eigen::MatrixXd L_mat = chol.matrixL();
-  L_diag = L_mat.diagonal();
 
-  // Get the inverse from Cholesky decomposition.
+  // Get the inverse of Kuu from Cholesky decomposition.
   Eigen::MatrixXd Kuu_eye = Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-  Kuu_inverse = chol.solve(Kuu_eye);
+  L_inv = chol.matrixL().solve(Kuu_eye);
+  L_diag = L_inv.diagonal();
+  Kuu_inverse = L_inv.transpose() * L_inv;
 
   // Form A matrix.
   Eigen::MatrixXd A =
@@ -562,10 +561,9 @@ void SparseGP ::update_matrices_QR() {
   // QR decompose A.
   Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
   Eigen::VectorXd Q_b = qr.householderQ().transpose() * b;
-  Eigen::MatrixXd R_inv = qr.matrixQR()
-                              .block(0, 0, Kuu.cols(), Kuu.cols())
-                              .triangularView<Eigen::Upper>()
-                              .solve(Kuu_eye);
+  R_inv = qr.matrixQR().block(0, 0, Kuu.cols(), Kuu.cols())
+                       .triangularView<Eigen::Upper>()
+                       .solve(Kuu_eye);
   R_inv_diag = R_inv.diagonal();
   alpha = R_inv * Q_b;
   Sigma = R_inv * R_inv.transpose();
@@ -587,8 +585,9 @@ void SparseGP ::predict_SOR(Structure &test_structure) {
   }
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
+  Eigen::MatrixXd variance_sqrt = kernel_mat.transpose() * R_inv;
   test_structure.variance_efs =
-      (kernel_mat.transpose() * Sigma * kernel_mat).diagonal();
+      (variance_sqrt * variance_sqrt.transpose()).diagonal();
 }
 
 void SparseGP ::predict_DTC(Structure &test_structure) {
@@ -622,6 +621,28 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
   test_structure.variance_efs = K_self - Q_self + V_SOR;
 }
 
+void SparseGP ::predict_local_uncertainties(Structure &test_structure) {
+  int n_atoms = test_structure.noa;
+  int n_out = 1 + 3 * n_atoms + 6;
+
+  Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
+  int count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++) {
+    int size = Kuu_kernels[i].rows();
+    kernel_mat.block(count, 0, size, n_out) = kernels[i]->envs_struc(
+        sparse_descriptors[i], test_structure.descriptors[i],
+        kernels[i]->kernel_hyperparameters);
+    count += size;
+  }
+
+  test_structure.mean_efs = kernel_mat.transpose() * alpha;
+
+  std::vector<Eigen::VectorXd> local_uncertainties =
+    compute_cluster_uncertainties(test_structure);
+  test_structure.local_uncertainties = local_uncertainties;
+
+}
+
 void SparseGP ::compute_likelihood_stable() {
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
@@ -638,7 +659,7 @@ void SparseGP ::compute_likelihood_stable() {
 
   double Kuu_inv_det = 0;
   for (int i = 0; i < L_diag.size(); i++) {
-    Kuu_inv_det += 2 * log(abs(L_diag(i)));
+    Kuu_inv_det -= 2 * log(abs(L_diag(i)));
   }
 
   double sigma_inv_det = 0;

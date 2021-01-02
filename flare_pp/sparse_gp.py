@@ -25,7 +25,8 @@ class SGP_Wrapper:
         force_training=True,
         stress_training=True,
         max_iterations=10,
-        opt_type="all"
+        opt_method="BFGS",
+        bounds=None
     ):
 
         self.sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s)
@@ -39,7 +40,8 @@ class SGP_Wrapper:
         self.force_training = force_training
         self.stress_training = stress_training
         self.max_iterations = max_iterations
-        self.opt_type = opt_type
+        self.opt_method = opt_method
+        self.bounds = bounds
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -180,12 +182,11 @@ class SGP_Wrapper:
         pass
 
     def train(self, logger_name=None):
-        if self.opt_type == "all":
-            optimize_hyperparameters(self.sparse_gp,
-                                     max_iterations=self.max_iterations)
-        elif self.opt_type == "freeze_noise":
-            optimize_kernel_hyperparameters(
-                self.sparse_gp, max_iterations=self.max_iterations)
+        optimize_hyperparameters(self.sparse_gp,
+                                 max_iterations=self.max_iterations,
+                                 method=self.opt_method,
+                                 bounds=self.bounds
+                                 )
 
     def write_mapping_coefficients(self, filename, contributor, kernel_idx):
         self.sparse_gp.write_mapping_coefficients(filename, contributor, kernel_idx)
@@ -255,22 +256,6 @@ def compute_negative_likelihood(hyperparameters, sparse_gp):
     return negative_likelihood
 
 
-def compute_neglike_fixed_noise(hyperparameters, sparse_gp, noise_hyps):
-    """Compute the negative log likelihood and gradient with respect to the
-    hyperparameters."""
-
-    assert len(hyperparameters) == len(sparse_gp.hyperparameters) - 3
-    all_hyps = np.concatenate((hyperparameters, noise_hyps))
-
-    sparse_gp.set_hyperparameters(all_hyps)
-    sparse_gp.compute_likelihood()
-    negative_likelihood = -sparse_gp.log_marginal_likelihood
-
-    print_hyps(hyperparameters, negative_likelihood)
-
-    return negative_likelihood
-
-
 def compute_negative_likelihood_grad(hyperparameters, sparse_gp):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
@@ -279,19 +264,6 @@ def compute_negative_likelihood_grad(hyperparameters, sparse_gp):
 
     negative_likelihood = -sparse_gp.compute_likelihood_gradient(hyperparameters)
     negative_likelihood_gradient = -sparse_gp.likelihood_gradient
-
-    print_hyps_and_grad(hyperparameters, negative_likelihood_gradient,
-                        negative_likelihood)
-
-    return negative_likelihood, negative_likelihood_gradient
-
-
-def compute_neglike_grad_fixed_noise(hyperparameters, sparse_gp, noise_hyps):
-    assert len(hyperparameters) == len(sparse_gp.hyperparameters) - 3
-    all_hyps = np.concatenate((hyperparameters, noise_hyps))
-
-    negative_likelihood = -sparse_gp.compute_likelihood_gradient(all_hyps)
-    negative_likelihood_gradient = -sparse_gp.likelihood_gradient[:-3]
 
     print_hyps_and_grad(hyperparameters, negative_likelihood_gradient,
                         negative_likelihood)
@@ -317,55 +289,9 @@ def print_hyps_and_grad(hyperparameters, neglike_grad, neglike):
     print("\n")
 
 
-def optimize_kernel_hyperparameters(
-    sparse_gp, display_results=True, gradient_tolerance=1e-4,
-    max_iterations=10, method="BFGS"
-):
-    # Optimize the hyperparameters with BFGS.
-    initial_guess = sparse_gp.hyperparameters[:-3]
-    noise_hyps = sparse_gp.hyperparameters[-3:]
-    arguments = (sparse_gp, noise_hyps)
-
-    if method == "BFGS":
-        optimization_result = minimize(
-            compute_neglike_grad_fixed_noise,
-            initial_guess,
-            arguments,
-            method="BFGS",
-            jac=True,
-            options={
-                "disp": display_results,
-                "gtol": gradient_tolerance,
-                "maxiter": max_iterations,
-            },
-        )
-
-        # Assign likelihood gradient.
-        sparse_gp.likelihood_gradient = -optimization_result.jac
-
-    elif method == "nelder-mead":
-        optimization_result = minimize(
-            compute_neglike_fixed_noise,
-            initial_guess,
-            arguments,
-            method="nelder-mead",
-            options={
-                "maxiter": max_iterations,
-            }
-        )
-
-    # Set the hyperparameters to the optimal value.
-    new_hyps = np.copy(sparse_gp.hyperparameters)
-    new_hyps[:-3] = optimization_result.x
-    sparse_gp.set_hyperparameters(new_hyps)
-    sparse_gp.log_marginal_likelihood = -optimization_result.fun
-
-    return optimization_result
-
-
 def optimize_hyperparameters(
     sparse_gp, display_results=True, gradient_tolerance=1e-4,
-    max_iterations=10, method="BFGS"
+    max_iterations=10, bounds=None, method="BFGS"
 ):
     """Optimize the hyperparameters of a sparse GP model."""
 
@@ -383,7 +309,25 @@ def optimize_hyperparameters(
                 "disp": display_results,
                 "gtol": gradient_tolerance,
                 "maxiter": max_iterations,
-            },
+            }
+        )
+
+        # Assign likelihood gradient.
+        sparse_gp.likelihood_gradient = -optimization_result.jac
+
+    elif method == "L-BFGS-B":
+        optimization_result = minimize(
+            compute_negative_likelihood_grad,
+            initial_guess,
+            arguments,
+            method="L-BFGS-B",
+            jac=True,
+            bounds=bounds,
+            options={
+                "disp": display_results,
+                "gtol": gradient_tolerance,
+                "maxiter": max_iterations,
+            }
         )
 
         # Assign likelihood gradient.
@@ -396,6 +340,7 @@ def optimize_hyperparameters(
             arguments,
             method="nelder-mead",
             options={
+                "disp": display_results,
                 "maxiter": max_iterations,
             }
         )

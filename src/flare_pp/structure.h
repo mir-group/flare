@@ -20,7 +20,7 @@ public:
 
   // Make structure labels empty by default.
   Eigen::VectorXd energy, forces, stresses, mean_efs, variance_efs;
-  std::vector<Eigen::VectorXd> mean_contributions;
+  std::vector<Eigen::VectorXd> mean_contributions, local_uncertainties;
 
   Structure();
 
