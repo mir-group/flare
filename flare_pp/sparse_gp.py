@@ -101,6 +101,7 @@ class SGP_Wrapper:
         stress: "ndarray" = None,
         mode: str = "all",
         sgp: SparseGP = None, # for creating sgp_var
+        update_qr = True,
     ):
 
         # Convert coded species to 0, 1, 2, etc.
@@ -172,7 +173,8 @@ class SGP_Wrapper:
         else:
             raise NotImplementedError
 
-        sgp.update_matrices_QR()
+        if update_qr:
+            sgp.update_matrices_QR()
 
     def set_L_alpha(self):
         # Taken care of in the update_db method.
@@ -221,9 +223,11 @@ class SGP_Wrapper:
                     stress=struc_cpp.stresses,
                     mode="specific",
                     sgp=self.sgp_var,
+                    update_qr=False,
                 )
 
             # write var map coefficient file
+            self.sgp_var.update_matrices_QR()
             self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
             return new_kernels
 
