@@ -15,11 +15,11 @@ Reading data file ...
 
 pair_style flare
 pair_coeff * * beta.txt
-Reading potential file beta.txt with DATE: Tue
+Reading potential file beta.txt with DATE: Sat
 
 thermo_style one
 compute std all flare/std/atom beta_var.txt
-Reading potential file beta_var.txt with DATE: Tue
+Reading potential file beta_var.txt with DATE: Sat
 dump 1 all custom 1 tmp.dump id type x y z fx fy fz c_std
 dump_modify 1 sort id
 run 0
@@ -42,12 +42,12 @@ Neighbor list info ...
       stencil: none
       bin: none
 WARNING: Proc sub-domain size < neighbor skin, could lead to lost atoms (../domain.cpp:963)
-Per MPI rank memory allocation (min/avg/max) = 59.05 | 59.05 | 59.05 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 59.04 | 59.04 | 59.04 Mbytes
 Step Temp E_pair E_mol TotEng Press 
-       0            0 7.9137935e-12            0 7.9137935e-12 -4.8234757e-06 
+       0            0 -5.3090707e-14            0 -5.3090707e-14 -3.2824231e-07 
 Loop time of 3.09944e-06 on 1 procs for 0 steps with 4 atoms
 
-64.5% CPU use with 1 MPI tasks x no OpenMP threads
+96.8% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -61,15 +61,15 @@ Other   |            | 3.099e-06  |            |       |100.00
 
 Nlocal:        4.00000 ave           4 max           4 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Nghost:        1732.00 ave        1732 max        1732 min
+Nghost:        1368.00 ave        1368 max        1368 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 Neighs:        0.00000 ave           0 max           0 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-FullNghs:      1807.00 ave        1807 max        1807 min
+FullNghs:      1842.00 ave        1842 max        1842 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 1807
-Ave neighs/atom = 451.75000
+Total # of neighbors = 1842
+Ave neighs/atom = 460.50000
 Neighbor list builds = 0
 Dangerous builds = 0
 Total wall time: 0:00:00

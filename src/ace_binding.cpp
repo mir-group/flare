@@ -42,6 +42,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("stresses", &Structure::stresses)
       .def_readwrite("mean_efs", &Structure::mean_efs)
       .def_readwrite("variance_efs", &Structure::variance_efs)
+      .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
       .def_readonly("descriptors", &Structure::descriptors)
       .def("wrap_positions", &Structure::wrap_positions);
 
@@ -71,6 +72,9 @@ PYBIND11_MODULE(_C_flare, m) {
                      &DescriptorValues::n_clusters_by_type)
       .def_readwrite("n_neighbors_by_type",
                      &DescriptorValues::n_neighbors_by_type);
+
+  py::class_<ClusterDescriptor>(m, "ClusterDescriptor")
+      .def_readonly("descriptors", &ClusterDescriptor::descriptors);
 
   // Descriptor calculators
   py::class_<Descriptor>(m, "Descriptor")
@@ -134,6 +138,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("set_hyperparameters", &SparseGP::set_hyperparameters)
       .def("predict_SOR", &SparseGP::predict_SOR)
       .def("predict_DTC", &SparseGP::predict_DTC)
+      .def("predict_local_uncertainties",
+           &SparseGP::predict_local_uncertainties)
       .def("add_all_environments", &SparseGP::add_all_environments)
       .def("add_specific_environments", &SparseGP::add_specific_environments)
       .def("add_random_environments", &SparseGP::add_random_environments)
@@ -160,6 +166,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("hyperparameters", &SparseGP::hyperparameters)
       .def_readonly("training_structures", &SparseGP::training_structures)
       .def_readonly("sparse_indices", &SparseGP::sparse_indices)
+      .def_readonly("sparse_descriptors", &SparseGP::sparse_descriptors)
       .def_readonly("n_energy_labels", &SparseGP::n_energy_labels)
       .def_readonly("n_force_labels", &SparseGP::n_force_labels)
       .def_readonly("n_stress_labels", &SparseGP::n_stress_labels)

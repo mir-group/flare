@@ -21,7 +21,6 @@ n_atoms = 4
 cell = np.eye(3)
 train_positions = np.random.rand(n_atoms, 3)
 test_positions = np.random.rand(n_atoms, 3)
-test_positions = np.array([[1,0,0], [0,1,0], [0,0,1], [1,0,1]]) * 0.3
 atom_types = [1, 2]
 atom_masses = [2, 4]
 species = [1, 2, 1, 2]
@@ -77,8 +76,12 @@ def test_update_db():
     """Check that the covariance matrices have the correct size after the
     sparse GP is updated."""
 
+#    sgp_py.update_db(
+#        train_structure, forces, custom_range, energy, stress, mode="specific"
+#    )
+
     sgp_py.update_db(
-        train_structure, forces, custom_range, energy, stress, mode="specific"
+        train_structure, forces, [3], energy, stress, mode="uncertain"
     )
 
     n_envs = len(custom_range)
@@ -110,7 +113,24 @@ def test_train():
 )
 def test_lammps():
     sgp_py.write_mapping_coefficients("beta.txt", "A", 0)
-    new_kern = sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0)
+    new_kern = sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0) # here the new kernel needs to be returned, otherwise the kernel won't be found in the current module
+
+    assert sgp_py.sparse_gp.sparse_indices[0] == sgp_py.sgp_var.sparse_indices[0], \
+            "the sparse_gp and sgp_var don't have the same training data"
+
+    for s in range(len(atom_types)):
+        org_desc = sgp_py.sparse_gp.sparse_descriptors[0].descriptors[s]
+        new_desc = sgp_py.sgp_var.sparse_descriptors[0].descriptors[s]
+        if not np.allclose(org_desc, new_desc): # the atomic order might change
+            assert np.allclose(org_desc.shape, new_desc.shape)
+            for i in range(org_desc.shape[0]):
+                flag = False
+                for j in range(new_desc.shape[0]): # seek in new_desc for matching of org_desc
+                    if np.allclose(org_desc[i], new_desc[j]):
+                        flag = True
+                        break
+                assert flag, "the sparse_gp and sgp_var don't have the same descriptors"
+        
 
     # set up input and data files
     data_file_name = "tmp.data"
@@ -146,7 +166,8 @@ def test_lammps():
 #    lmp_var_2 = lmp_dump.get_array("c_std[2]")
 #    lmp_var_3 = lmp_dump.get_array("c_std[3]")
 #    lmp_var = np.hstack([lmp_var_1, lmp_var_2, lmp_var_3])
-    lmp_var = lmp_dump.get_array("c_std")
+    lmp_std = lmp_dump.get_array("c_std")
+    lmp_var = lmp_std ** 2
     print(lmp_var)
 
     # compare with sgp_py prediction
