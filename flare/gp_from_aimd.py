@@ -329,7 +329,10 @@ class TrajectoryTrainer:
                 total_added += n_add
 
             self.update_gp_and_print(
-                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False,
+                frame=frame,
+                train_atoms=train_atoms,
+                uncertainties=[],
+                train=False,
             )
 
         logger = logging.getLogger(self.logger_name)
@@ -666,7 +669,10 @@ class TrajectoryTrainer:
                     atom_count += 1
 
             self.update_gp_and_print(
-                frame=frame, train_atoms=train_atoms, uncertainties=[], train=False,
+                frame=frame,
+                train_atoms=train_atoms,
+                uncertainties=[],
+                train=False,
             )
 
         logger = logging.getLogger(self.logger_name)
