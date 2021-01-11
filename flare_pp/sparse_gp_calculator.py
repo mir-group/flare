@@ -1,4 +1,4 @@
-from ase.calculators.calculator import Calculator
+from ase.calculators.calculator import Calculator, all_changes
 from _C_flare import SparseGP, Structure
 import numpy as np
 import time
