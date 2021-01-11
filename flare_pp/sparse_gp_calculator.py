@@ -5,6 +5,9 @@ import time
 
 
 class SGP_Calculator(Calculator):
+
+    implemented_properties = ["energy", "forces", "stress", "stds"]
+
     def __init__(self, sgp_model):
         super().__init__()
         self.gp_model = sgp_model
@@ -13,7 +16,19 @@ class SGP_Calculator(Calculator):
         self.mgp_model = None
 
     # TODO: Figure out why this is called twice per MD step.
-    def calculate(self, atoms):
+    def calculate(self, atoms=None, properties=None, system_changes=all_changes):
+        """
+        Calculate properties including: energy, local energies, forces,
+            stress, uncertainties.
+        """
+
+        super().calculate(
+            atoms=atoms, properties=properties, system_changes=system_changes
+        )
+
+        if properties is None:
+            properties = self.implemented_properties
+
         # Convert coded species to 0, 1, 2, etc.
         coded_species = []
         for spec in atoms.coded_species:

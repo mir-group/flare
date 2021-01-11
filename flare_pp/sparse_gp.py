@@ -59,9 +59,6 @@ class SGP_Wrapper:
             warnings.warn("kernels[0] should be NormalizedDotProduct for variance mapping")
             self.sgp_var_flag = None
 
-    def __len__(self):
-        return len(self.training_data)
-
     @property
     def training_data(self):
         return self.sparse_gp.training_structures
@@ -88,6 +85,9 @@ class SGP_Wrapper:
 
     def __str__(self):
         return "Sparse GP model"
+
+    def __len__(self):
+        return len(self.training_data)
 
     def check_L_alpha(self):
         pass
