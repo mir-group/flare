@@ -238,7 +238,7 @@ void PairFLARE::read_file(char *filename) {
 
   // Check that the potential file can be opened.
   if (me == 0) {
-    fptr = force->open_potential(filename);
+    fptr = utils::open_potential(filename,lmp,nullptr);
     if (fptr == NULL) {
       char str[128];
       snprintf(str, 128, "Cannot open EAM potential file %s", filename);
