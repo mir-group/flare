@@ -77,6 +77,7 @@ void PairFLARE::compute(int eflag, int vflag) {
   double B2_norm_squared, B2_val_1, B2_val_2;
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+  double empty_thresh = 1e-8;
 
   for (ii = 0; ii < inum; ii++) {
     i = list->ilist[ii];
@@ -109,6 +110,10 @@ void PairFLARE::compute(int eflag, int vflag) {
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max);
+
+    // Continue if the environment is empty.
+    if (B2_norm_squared < empty_thresh)
+      continue;
 
     // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
