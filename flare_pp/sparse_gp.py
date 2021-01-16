@@ -114,8 +114,24 @@ class SGP_Wrapper:
             if key not in ["sparse_gp", "sgp_var", "descriptor_calculators"]:
                 out_dict[key] = getattr(self, key, None)
 
+        # save descriptor_settings
+        desc_calc = self.descriptor_calculators
+        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], B2))
+        b2_calc = desc_calc[0]
+        b2_dict = {
+            "type": "B2",
+            "radial_basis": b2_calc.radial_basis,
+            "cutoff_function": b2_calc.cutoff_function,
+            "radial_hyps": b2_calc.radial_hyps,
+            "cutoff_hyps": b2_calc.cutoff_hyps,
+            "descriptor_settings": b2_calc.descriptor_settings,
+        }
+        out_dict["descriptor_calculators"] = [b2_dict]
+
+        # save hyps
         out_dict["hyps"], out_dict["hyp_labels"] = self.hyps_and_labels
 
+        # only save kernel type and hyps
         kernel_list = []
         for kern in self.sparse_gp.kernels:
             if isinstance(kern, NormalizedDotProduct):
@@ -148,22 +164,49 @@ class SGP_Wrapper:
         return out_dict
 
     @staticmethod
-    def from_dict(init_gp, in_dict):
+    def from_dict(in_dict):
         """
         Need an initialized GP
         """
-        # check the init_gp is consistent with in_dict
+        # recover kernels from checkpoint
         kernel_list = in_dict["kernels"]
-        assert len(kernel_list) == len(init_gp.sparse_gp.kernels)
+        kernels = []
         for k, kern in enumerate(kernel_list):
-            if kern[0] == "NormalizedDotProduct":
-                assert isinstance(init_gp.sparse_gp.kernels[k], NormalizedDotProduct)
-                assert kern[2] == init_gp.sparse_gp.kernels[k].power
-            else:
+            if kern[0] != "NormalizedDotProduct":
                 raise NotImplementedError
+            assert kern[1] == in_dict["hyps"][k]
+            kernels.append(NormalizedDotProduct(kern[1], kern[2]))
+        
+        # recover descriptors from checkpoint
+        desc_calc = in_dict["descriptor_calculators"]
+        assert len(desc_calc) == 1
+        b2_dict = desc_calc[0]
+        assert b2_dict["type"] == "B2"
+        calc = B2(
+            b2_dict["radial_basis"],
+            b2_dict["cutoff_function"],
+            b2_dict["radial_hyps"],
+            b2_dict["cutoff_hyps"],
+            b2_dict["descriptor_settings"],
+        )
 
-        # update gp with the checkpoint hyps
-        init_gp.sparse_gp.set_hyperparameters(in_dict["hyps"])
+        gp = SGP_Wrapper(
+            kernels=kernels,
+            descriptor_calculators=calc,
+            cutoff=in_dict["cutoff"],
+            sigma_e=in_dict["hyps"][-3],
+            sigma_f=in_dict["hyps"][-2],
+            sigma_s=in_dict["hyps"][-1],
+            species_map=in_dict["species_map"],
+            variance_type=in_dict["variance_type"],
+            single_atom_energies=in_dict["single_atom_energies"],
+            energy_training=in_dict["energy_training"],
+            force_training=in_dict["force_training"],
+            stress_training=in_dict["stress_training"],
+            max_iterations=in_dict["max_iterations"],
+            opt_method=in_dict["opt_method"],
+            bounds=in_dict["bounds"],
+        )
 
         # update db
         training_data = in_dict["training_structures"]
@@ -176,7 +219,7 @@ class SGP_Wrapper:
             else:
                 energy = None
 
-            init_gp.update_db(
+            gp.update_db(
                 train_struc,
                 train_struc.forces,
                 custom_range=custom_range,
@@ -186,14 +229,15 @@ class SGP_Wrapper:
                 sgp=None,
                 update_qr=False,
             )
-        init_gp.sparse_gp.update_matrices_QR()
-        return init_gp
+
+        gp.sparse_gp.update_matrices_QR()
+        return gp
 
     @staticmethod
-    def from_file(init_gp, filename: str):
+    def from_file(gp, filename: str):
         with open(filename, "r") as f:
             in_dict = json.loads(f.readline())
-        return SGP_Wrapper.from_dict(init_gp, in_dict)
+        return SGP_Wrapper.from_dict(gp, in_dict)
 
     def update_db(
         self,
@@ -207,6 +251,7 @@ class SGP_Wrapper:
         update_qr=True,
     ):
 
+        print("preparing structures")
         # Convert coded species to 0, 1, 2, etc.
         if isinstance(structure, (struc.Structure, FLARE_Atoms)):
             coded_species = []
@@ -217,6 +262,7 @@ class SGP_Wrapper:
         else:
             raise Exception
 
+        print("building structure descriptors")
         # Convert flare structure to structure descriptor.
         structure_descriptor = Structure(
             structure.cell,
@@ -226,6 +272,7 @@ class SGP_Wrapper:
             self.descriptor_calculators,
         )
 
+        print("adding labels")
         # Add labels to structure descriptor.
         if (energy is not None) and (self.energy_training):
             # Sum up single atom energies.
@@ -248,6 +295,7 @@ class SGP_Wrapper:
         if sgp is None:
             sgp = self.sparse_gp
 
+        print("adding training structures")
         sgp.add_training_structure(structure_descriptor)
         if mode == "all":
             if not custom_range:
@@ -255,6 +303,7 @@ class SGP_Wrapper:
             else:
                 raise Exception("Set mode='specific' for a user-defined custom_range")
         elif mode == "uncertain":
+            print("adding training envs")
             if len(custom_range) == 1:  # custom_range gives n_added
                 n_added = custom_range
                 sgp.add_uncertain_environments(structure_descriptor, n_added)
@@ -281,6 +330,7 @@ class SGP_Wrapper:
         else:
             raise NotImplementedError
 
+        print("updating matrix")
         if update_qr:
             sgp.update_matrices_QR()
 

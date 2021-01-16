@@ -99,7 +99,12 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B2, Descriptor>(m, "B2")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-                    const std::vector<int> &>());
+                    const std::vector<int> &>())
+      .def_readonly("radial_basis", &B2::radial_basis)
+      .def_readonly("cutoff_function", &B2::cutoff_function)
+      .def_readonly("radial_hyps", &B2::radial_hyps)
+      .def_readonly("cutoff_hyps", &B2::cutoff_hyps)
+      .def_readonly("descriptor_settings", &B2::descriptor_settings);
 
   py::class_<B2_Simple, Descriptor>(m, "B2_Simple")
       .def(py::init<const std::string &, const std::string &,
