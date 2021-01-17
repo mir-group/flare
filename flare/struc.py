@@ -329,17 +329,17 @@ class Structure:
         """
         struc = Structure(
             cell=np.array(dictionary.get("_cell", dictionary.get("cell"))),
+            species=dictionary["coded_species"],
             positions=np.array(
                 dictionary.get("_positions", dictionary.get("positions"))
             ),
-            species=dictionary["coded_species"],
-            forces=np.array(dictionary.get("forces")),
             mass_dict=dictionary.get("mass_dict"),
+            prev_positions=dictionary.get("prev_positions", None),
             species_labels=dictionary.get("species_labels"),
+            forces=np.array(dictionary.get("forces")),
+            stds=np.array(dictionary.get("stds")),
             energy=dictionary.get("energy", None),
         )
-
-        struc.stds = np.array(dictionary.get("stds"))
 
         return struc
 
