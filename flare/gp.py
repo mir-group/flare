@@ -758,8 +758,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         energy_vector, force_array, stress_array = efs_kern_vec(
             self.name,
