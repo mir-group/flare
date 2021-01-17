@@ -122,7 +122,8 @@ class SGP_Wrapper:
 
         # Update the sparse GP.
         self.sparse_gp.add_training_structure(structure_descriptor)
-        self.sparse_gp.add_all_environments(structure_descriptor)
+        self.sparse_gp.add_specific_environments(structure_descriptor,
+                                                 custom_range)
         self.sparse_gp.update_matrices_QR()
 
     def set_L_alpha(self):

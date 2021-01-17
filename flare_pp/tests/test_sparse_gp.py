@@ -49,7 +49,7 @@ def test_update_db():
 
     sgp_py.update_db(test_structure, forces, custom_range, energy, stress)
 
-    assert sgp_py.sparse_gp.Kuu.shape[0] == n_atoms
+    assert sgp_py.sparse_gp.Kuu.shape[0] == len(custom_range)
     assert sgp_py.sparse_gp.Kuf.shape[1] == 1 + n_atoms * 3 + 6
 
 
