@@ -73,7 +73,8 @@ def md_params():
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
     md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
-    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
+    md_dict["NPTBerendsen"].update({"pressure": 0.0})
+    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": 1.0})
     md_dict["Langevin"].update({"friction": 0.02})
     md_dict["NoseHoover"].update({"nvt_q": 334.0})
 
