@@ -94,18 +94,19 @@ class ASE_OTF(OTF):
     def __init__(
         self,
         atoms,
-        calculator,
         timestep,
         number_of_steps,
         dft_calc,
         md_engine,
         md_kwargs,
+        calculator=None,
         trajectory=None,
         **otf_kwargs
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
-        self.atoms.set_calculator(calculator)
+        if calculator is not None:
+            self.atoms.set_calculator(calculator)
         self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
