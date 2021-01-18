@@ -901,7 +901,7 @@ class GaussianProcess:
 
         self.check_L_alpha()
 
-        out_dict = deepcopy(dict(vars(self)))
+        out_dict = dict(vars(self))
 
         out_dict["training_data"] = [env.as_dict() for env in self.training_data]
 
