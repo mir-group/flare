@@ -163,15 +163,21 @@ class GaussianProcess:
 
         self.training_data = []  # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
-        self.training_labels_np = np.empty(0,)
+        self.training_labels_np = np.empty(
+            0,
+        )
         self.n_envs_prev = len(self.training_data)
 
         # Attributes to accomodate energy labels:
         self.training_structures = []  # Environments of each structure
         self.energy_labels = []  # Energies of training structures
-        self.energy_labels_np = np.empty(0,)
+        self.energy_labels_np = np.empty(
+            0,
+        )
         self.energy_noise = energy_noise
-        self.all_labels = np.empty(0,)
+        self.all_labels = np.empty(
+            0,
+        )
 
         # Parameters set during training
         self.ky_mat = None
@@ -752,8 +758,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         energy_vector, force_array, stress_array = efs_kern_vec(
             self.name,
@@ -896,7 +901,7 @@ class GaussianProcess:
 
         self.check_L_alpha()
 
-        out_dict = deepcopy(dict(vars(self)))
+        out_dict = dict(vars(self))
 
         out_dict["training_data"] = [env.as_dict() for env in self.training_data]
 
@@ -1310,6 +1315,10 @@ class GaussianProcess:
         """
         return self.parallel
 
+    def __deepcopy__(self, memo):
+        # this way can also deepcopy the training data in _global_training dicts
+        return GaussianProcess.from_dict(self.as_dict())
+
     def __del__(self):
         if self is None:
             return
@@ -1373,11 +1382,15 @@ class GaussianProcess:
             # Environments of each structure
             dictionary["training_structures"] = []
             dictionary["energy_labels"] = []  # Energies of training structures
-            dictionary["energy_labels_np"] = np.empty(0,)
+            dictionary["energy_labels_np"] = np.empty(
+                0,
+            )
 
         if "training_labels" not in dictionary:
             dictionary["training_labels"] = []
-            dictionary["training_labels_np"] = np.empty(0,)
+            dictionary["training_labels_np"] = np.empty(
+                0,
+            )
 
         if "energy_noise" not in dictionary:
             dictionary["energy_noise"] = 0.01

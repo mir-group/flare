@@ -592,7 +592,7 @@ void PairMGP::read_file(char *filename) {
   FILE *fptr;
   char line[MAXLINE];
 
-  fptr = force->open_potential(filename);
+  fptr = utils::open_potential(filename,lmp,nullptr);
   if (fptr == NULL) {
     char str[128];
     snprintf(str, 128, "Cannot open MMF potential file %s", filename);
