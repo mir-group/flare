@@ -14,6 +14,8 @@ def is_std_in_bound(
     noise: float,
     structure: "flare.struc.Structure",
     max_atoms_added: int = inf,
+    update_style: str = "add_n",
+    update_threshold: float = None
 ) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
@@ -34,8 +36,16 @@ def is_std_in_bound(
     :param structure: Input structure
     :type structure: FLARE Structure
     :param max_atoms_added: Maximum # of atoms to add
-    :return: (True,[-1]) if no atoms are above cutoff, (False,[...]) of the
-            top `max_atoms_added` uncertainties
+    :param update_style: A string specifying the desired strategy for
+        adding atoms to the training set. Current options are ``add_n'', which
+        adds the n = max_atoms_added highest-uncertainty atoms, and
+        ``threshold'', which adds all atoms with uncertainty greater than
+        update_threshold.
+    :param update_threshold: A float specifying the update threshold. Ignored
+        if update_style is not set to ``threshold''.
+    :return: (True,[-1]) if no atoms are above cutoff, (False,[...]) if at
+        least one atom is above std_tolerance, with the list indicating
+        which atoms have been selected for the training set.
     """
     # set uncertainty threshold
     if std_tolerance == 0:
@@ -51,7 +61,14 @@ def is_std_in_bound(
     for atom, std in enumerate(structure.stds):
         max_stds[atom] = np.max(std)
     stds_sorted = np.argsort(max_stds)
-    target_atoms = list(stds_sorted[-max_atoms_added:])
+
+    if update_style == "add_n":
+        target_atoms = list(stds_sorted[-max_atoms_added:])
+    elif update_style == "threshold":
+        target_atoms = []
+        for atom_index in stds_sorted:
+            if max_stds[atom_index] > update_threshold:
+                target_atoms.append(atom_index)
 
     # if above threshold, return atom
     if max_stds[stds_sorted[-1]] > threshold:
