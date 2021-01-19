@@ -88,7 +88,7 @@ def super_cell():
 
     from ase.spacegroup import crystal
 
-    a = 10.0
+    a = 5.0
     alpha = 90
     atoms = crystal(
         ["H", "He"],
@@ -208,6 +208,13 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     # TODO: see if there's difference between MD timestep & OTF timestep
 
     test_otf.run()
+
+    # Check that the GP forces change.
+    output_name = f"{md_engine}.out"
+    otf_traj = OtfAnalysis(output_name)
+    comp1 = otf_traj.force_list[0][1, 0]
+    comp2 = otf_traj.force_list[1][1, 0]
+    assert (comp1 != comp2)
 
     for f in glob.glob("scf*.pw*"):
         os.remove(f)
