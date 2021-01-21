@@ -35,8 +35,9 @@ class ASE_OTF(OTF):
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
-        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run,
-            with calculator set as FLARE_Calculator.
+        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run.
+        calculator: ASE calculator. Must have "get_uncertainties" method
+          implemented.
         timestep: the timestep in MD. Please use ASE units, e.g. if the
             timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
@@ -98,11 +99,14 @@ class ASE_OTF(OTF):
         dft_calc,
         md_engine,
         md_kwargs,
+        calculator=None,
         trajectory=None,
         **otf_kwargs
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+        if calculator is not None:
+            self.atoms.set_calculator(calculator)
         self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
@@ -203,9 +207,6 @@ class ASE_OTF(OTF):
 
         # Take MD step.
         self.md.step()
-
-    def write_gp(self):
-        self.flare_calc.write_model(self.flare_name)
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
