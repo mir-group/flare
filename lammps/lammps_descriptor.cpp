@@ -87,6 +87,7 @@ void single_bond(
           single_bond_env_dervs(n_count * 3, descriptor_counter) += bond_x;
           single_bond_env_dervs(n_count * 3 + 1, descriptor_counter) += bond_y;
           single_bond_env_dervs(n_count * 3 + 2, descriptor_counter) += bond_z;
+          //printf("i = %d, j = %d, n = %d, lm = %d, idx = %d, bond = %g %g %g %g\n", i, j, radial_counter, angular_counter, descriptor_counter, bond, bond_x, bond_y, bond_z);
 
           descriptor_counter++;
         }
@@ -94,6 +95,13 @@ void single_bond(
       n_count++;
     }
   }
+  /*
+  printf("i = %d, d =", i);
+  for(int d = 0; d < n_bond; d++){
+    printf(" %g", single_bond_vals(d));
+  }
+  printf("\n");
+  */
 }
 
 void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
@@ -132,6 +140,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
           // Store B2 value.
           B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
 
+
           // Store environment force derivatives.
           for (int atom_index = 0; atom_index < neigh_size; atom_index++) {
             for (int comp = 0; comp < 3; comp++) {
@@ -143,6 +152,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
             }
           }
         }
+        //printf(" | n1 = %d, n2 = %d, l = %d, B2 = %g |\n", n1, n2, l, B2_vals(counter));
       }
     }
   }

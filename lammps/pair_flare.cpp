@@ -106,15 +106,45 @@ void PairFLARE::compute(int eflag, int vflag) {
                 single_bond_env_dervs);
 
     // Compute invariant descriptors.
+    //printf("i = %d, B2 =", i);
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max);
+    //printf("\n");
+    /*
+    int n_descriptors = (n_species*n_max * (n_species*n_max + 1) / 2) * (l_max + 1);
+    printf("i = %d, B2 =", i);
+    for(int d = 0; d < n_descriptors; d++){
+      printf(" %g", B2_vals(d));
+    }
+    printf("\n");
+    for(int jj = 0; jj < jnum; jj++){
+
+      j = jlist[jj];
+      printf("i = %d, j = %d, B2grad =", i, j);
+      for(int d = 0; d < n_descriptors; d++){
+        printf("\n%g %g %g", B2_env_dervs(3*jj+0,d), B2_env_dervs(3*jj+1,d), B2_env_dervs(3*jj+2,d));
+      }
+      for(int d = 0; d < n_species*n_max*(l_max+1)*(l_max+1); d++){
+        //printf("\n%g %g %g", single_bond_env_dervs(3*jj+0,d), single_bond_env_dervs(3*jj+1,d), single_bond_env_dervs(3*jj+2,d));
+      }
+      printf("\n");
+    }
+    printf("\n");
+    */
 
     // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
     evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
+      printf("i = %d, evdwl = %g\n", i, evdwl);
     partial_forces =
         2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
+      printf("Fs = ");
+      for(int jj = 0; jj < jnum; jj++){
+        int j = jlist[jj];
+        printf("%d %g %g %g |", j, partial_forces(3*jj+0), partial_forces(3*jj+1), partial_forces(3*jj+2));
+      }
+      printf("\n");
 
     // Update energy, force and stress arrays.
     n_count = 0;
