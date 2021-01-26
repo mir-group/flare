@@ -141,16 +141,17 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   // build short neighbor list
 
   max_neighs = d_neighbors.extent(1);
-
   // TODO: check inum/ignum here
-  if ((d_neighbors_short.extent(1) != max_neighs) ||
-     (d_neighbors_short.extent(0) != inum)) {
-    d_neighbors_short = Kokkos::View<int**,DeviceType>("FLARE::neighbors_short",inum,max_neighs);
-  }
-  if (d_numneigh_short.extent(0)!=inum)
-    d_numneigh_short = Kokkos::View<int*,DeviceType>("FLARE::numneighs_short",inum);
+  int n_atoms = neighflag == FULL ? inum : inum;
 
-  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType>(0,inum), *this);
+  if ((d_neighbors_short.extent(1) != max_neighs) ||
+     (d_neighbors_short.extent(0) != n_atoms)) {
+    d_neighbors_short = Kokkos::View<int**,DeviceType>("FLARE::neighbors_short",n_atoms,max_neighs);
+  }
+  if (d_numneigh_short.extent(0)!=n_atoms)
+    d_numneigh_short = Kokkos::View<int*,DeviceType>("FLARE::numneighs_short",n_atoms);
+
+  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType>(0,n_atoms), *this);
 
   {
     int gsize = ScratchView3D::shmem_size(max_neighs, n_max, 4);
@@ -164,6 +165,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
     int force_size = ScratchView2D::shmem_size(max_neighs,3);
 
+    //fscatter = ScatterFType(f);
+
 
 //  _                           _                                       _
 // | |    __ _ _   _ _ __   ___| |__     ___ ___  _ __ ___  _ __  _   _| |_ ___
@@ -172,17 +175,24 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 // |_____\__,_|\__,_|_| |_|\___|_| |_|  \___\___/|_| |_| |_| .__/ \__,_|\__\___|
 //                                                         |_|
     // TODO: Check team size for CUDA, maybe figure out how it works
-    auto policy = Kokkos::TeamPolicy<DeviceType>(inum, Kokkos::AUTO, 8).set_scratch_size(
+    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 8).set_scratch_size(
         1, Kokkos::PerTeam(gsize + Ysize + single_bond_size + single_bond_grad_size
                            + 2*B2_size + B2_grad_size + force_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
+    // debugging attempts
+    Kokkos::fence();
+    atomKK->k_f.template modify<DeviceType>();
+    atomKK->k_f.template sync<LMPHostType>();
+    atomKK->modified(execution_space,ALL_MASK);
+    //Kokkos::Experimental::contribute(f, fscatter);
   }
   if (evflag)
     ev_all += ev;
 
+
   if (need_dup)
-    Kokkos::Experimental::contribute(f, dup_f);
+    //Kokkos::Experimental::contribute(f, dup_f);
 
   if (eflag_global) eng_vdwl += ev_all.evdwl;
   if (vflag_global) {
@@ -270,6 +280,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   const X_FLOAT xtmp = x(i,0);
   const X_FLOAT ytmp = x(i,1);
   const X_FLOAT ztmp = x(i,2);
+
 
   // two-body interactions
 
@@ -392,6 +403,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       });
   });
   team_member.team_barrier();
+  /*
   Kokkos::single(Kokkos::PerTeam(team_member), [&](){
       printf("i = %d, evdwl = %g\n", i, evdwl);
       printf("Fs = ");
@@ -402,6 +414,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       }
       printf("\n");
   });
+  */
 
   //printf("atom %d has %d neighs\n", i, jnum);
 
@@ -416,10 +429,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
     */
 
-  //F_FLOAT fsum;
-  //Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, F_FLOAT &ftmp){
-  //Kokkos::Sum<t_scalar3<F_FLOAT>> freducer(fsum);
-
+  //auto a_f = fscatter.access();
   t_scalar3<double> fsum;
 
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, t_scalar3<double> &ftmp){
@@ -434,19 +444,26 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     ftmp.y += fy;
     ftmp.z += fz;
 
-    // TODO: figure out scatterview stuff, avoid atomic on CPU
+    // ScatterView version that gives identical results:
+    // a_f(j,0) -= fx;    // a_f(j,1) -= fy;    // a_f(j,2) -= fz;
+
     Kokkos::atomic_add(&f(j,0), -fx);
     Kokkos::atomic_add(&f(j,1), -fy);
     Kokkos::atomic_add(&f(j,2), -fz);
 
+    printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
+
     // TODO
     //if (vflag_either || eflag_atom) this->template ev_tally<FULL>(ev,i,j,evdwl,fpair,delx,dely,delz);
   }, fsum);
+  team_member.team_barrier();
 
   Kokkos::single(Kokkos::PerTeam(team_member), [&](){
-      Kokkos::atomic_add(&f(i,0),fsum.x);
-      Kokkos::atomic_add(&f(i,1),fsum.y);
-      Kokkos::atomic_add(&f(i,2),fsum.z);
+      //a_f(i,0) += fsum.x;      //a_f(i,1) += fsum.y;      //a_f(i,2) += fsum.z;
+      Kokkos::atomic_add(&f(i,0), fsum.x);
+      Kokkos::atomic_add(&f(i,1), fsum.y);
+      Kokkos::atomic_add(&f(i,2), fsum.z);
+      printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
   });
 }
 
@@ -499,8 +516,9 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
   // always request a full neighbor list
 
-  // if (neighflag == FULL || neighflag == HALF || neighflag == HALFTHREAD) {
-  if (neighflag == FULL) { // TODO: figure this out
+  //if (neighflag == FULL) { // TODO: figure this out
+  //if (neighflag == HALF || neighflag == HALFTHREAD) { // TODO: figure this out
+  if (neighflag == FULL || neighflag == HALF || neighflag == HALFTHREAD) {
     neighbor->requests[irequest]->full = 1;
     neighbor->requests[irequest]->half = 0;
     if (neighflag == FULL)

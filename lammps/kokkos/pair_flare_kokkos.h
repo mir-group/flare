@@ -30,7 +30,7 @@ namespace LAMMPS_NS {
 template<class DeviceType>
 class PairFLAREKokkos : public PairFLARE {
  public:
-  enum {EnabledNeighFlags=FULL};
+  enum {EnabledNeighFlags=FULL|HALFTHREAD|HALF};
   enum {COUL_FLAG=0};
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -76,6 +76,9 @@ class PairFLAREKokkos : public PairFLARE {
   using ScratchView1D = Kokkos::View<F_FLOAT*, typename DeviceType::scratch_memory_space>;
   using ScratchView2D = Kokkos::View<F_FLOAT**, typename DeviceType::scratch_memory_space>;
   using ScratchView3D = Kokkos::View<F_FLOAT***, typename DeviceType::scratch_memory_space>;
+
+  using ScatterFType = Kokkos::Experimental::ScatterView<F_FLOAT*[3], Kokkos::LayoutRight, typename DeviceType::memory_space>;
+  ScatterFType fscatter;
 
   int need_dup;
   Kokkos::Experimental::ScatterView<F_FLOAT*[3], typename DAT::t_f_array::array_layout,typename KKDevice<DeviceType>::value,Kokkos::Experimental::ScatterSum,Kokkos::Experimental::ScatterDuplicated> dup_f;

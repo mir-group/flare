@@ -136,18 +136,21 @@ void PairFLARE::compute(int eflag, int vflag) {
     // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
     evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
-      printf("i = %d, evdwl = %g\n", i, evdwl);
     partial_forces =
         2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
+    /*
+      printf("i = %d, evdwl = %g\n", i, evdwl);
       printf("Fs = ");
       for(int jj = 0; jj < jnum; jj++){
         int j = jlist[jj];
         printf("%d %g %g %g |", j, partial_forces(3*jj+0), partial_forces(3*jj+1), partial_forces(3*jj+2));
       }
       printf("\n");
+      */
 
     // Update energy, force and stress arrays.
     n_count = 0;
+    double fxsum = 0, fysum = 0, fzsum = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       delx = xtmp - x[j][0];
@@ -165,6 +168,10 @@ void PairFLARE::compute(int eflag, int vflag) {
         f[j][0] -= fx;
         f[j][1] -= fy;
         f[j][2] -= fz;
+        fxsum += fx;
+        fysum += fy;
+        fzsum += fz;
+        printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
 
         if (vflag) {
           ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fx, fy, fz, delx,
@@ -173,6 +180,7 @@ void PairFLARE::compute(int eflag, int vflag) {
         n_count++;
       }
     }
+      printf("i = %d, Fsum = %g %g %g\n", i, fxsum, fysum, fzsum);
 
     // Compute local energy.
     if (eflag)

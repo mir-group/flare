@@ -1,51 +1,67 @@
 LAMMPS (24 Dec 2020)
 KOKKOS mode is enabled (src/KOKKOS/kokkos.cpp:92)
   will use up to 1 GPU(s) per node
+WARNING: Turning off GPU-aware MPI since it is not detected, use '-pk kokkos gpu/aware on' to override (src/KOKKOS/kokkos.cpp:261)
   using 1 OpenMP thread(s) per MPI task
 package kokkos
-package kokkos newton on neigh full
-# generic lammps input file
-units metal
-atom_style atomic
-dimension  3
-boundary   p p p
+package kokkos newton on neigh half
+units		metal
+atom_style	atomic
+
+variable L equal 1
+lattice		diamond 5.431
+Lattice spacing in x,y,z = 5.4310000 5.4310000 5.4310000
+region		box block 0 $L 0 $L 0 $L
+region		box block 0 1 0 $L 0 $L
+region		box block 0 1 0 1 0 $L
+region		box block 0 1 0 1 0 1
+create_box	1 box
+Created orthogonal box = (0.0000000 0.0000000 0.0000000) to (5.4310000 5.4310000 5.4310000)
+  1 by 1 by 2 MPI processor grid
+create_atoms	1 box
+Created 8 atoms
+  create_atoms CPU = 0.002 seconds
+
 newton on
-read_data tmp.data
-Reading data file ...
-  triclinic box = (0.0000000 0.0000000 0.0000000) to (100.00000 100.00000 100.00000) with tilt (0.0000000 0.0000000 0.0000000)
-  1 by 1 by 1 MPI processor grid
-  reading atoms ...
-  4 atoms
-  read_data CPU = 0.001 seconds
+pair_style	flare
+pair_coeff	* * Si.txt
+Reading potential file Si.txt with DATE: Mon
+mass            1 28.06
 
-pair_style flare
-pair_coeff * * beta.txt
-Reading potential file beta.txt with DATE: Sun
+velocity	all create 1000.0 376847 loop geom
 
-thermo_style custom pe etotal press pxx pyy pzz pxy pxz pyz
+neighbor	1.0 bin
+neigh_modify    delay 5 every 1
 
-dump 1 all custom 1 tmp.dump id type x y z fx fy fz
+fix		1 all nve
+
+timestep	0.001
+
+displace_atoms all random 0.2 0.2 0.2 654321
+Displacing atoms ...
+
+dump 1 all custom 1 si.dump id type x y z fx fy fz
 dump_modify 1 sort id
-run 0
-WARNING: No fixes defined, atoms won't move (src/verlet.cpp:54)
+
+run		0
 Neighbor list info ...
-  update every 1 steps, delay 10 steps, check yes
+  update every 1 steps, delay 5 steps, check yes
   max neighbors/atom: 2000, page size: 100000
-  master list distance cutoff = 7
-  ghost atom cutoff = 7
-  binsize = 7, bins = 15 15 15
+  master list distance cutoff = 5.2
+  ghost atom cutoff = 5.2
+  binsize = 5.2, bins = 2 2 2
   1 neighbor lists, perpetual/occasional/extra = 1 0 0
   (1) pair flare/kk, perpetual
-      attributes: full, newton on, ghost, kokkos_device
-      pair build: full/bin/ghost/kk/device
-      stencil: full/ghost/bin/3d
+      attributes: full, newton on, kokkos_device
+      pair build: full/bin/kk/device
+      stencil: full/bin/3d
       bin: kk/device
-Per MPI rank memory allocation (min/avg/max) = 1.867 | 1.867 | 1.867 Mbytes
-PotEng TotEng Press Pxx Pyy Pzz Pxy Pxz Pyz 
--0.0035327909 -0.0035327909            0            0            0            0            0            0            0 
-Loop time of 8.2267e-05 on 1 procs for 0 steps with 4 atoms
+Per MPI rank memory allocation (min/avg/max) = 1.978 | 1.979 | 1.980 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0         1000            0            0   0.90482102    191227.69 
+Loop time of 0.000115969 on 2 procs for 0 steps with 8 atoms
 
-54.7% CPU use with 1 MPI tasks x 1 OpenMP threads
+53.0% CPU use with 2 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -55,19 +71,19 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 8.227e-05  |            |       |100.00
+Other   |            | 0.000116   |            |       |100.00
 
-Nlocal:        4.00000 ave           4 max           4 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
-Nghost:        28.0000 ave          28 max          28 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
+Nlocal:        4.00000 ave           5 max           3 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+Nghost:        168.500 ave         175 max         162 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
 Neighs:         0.00000 ave           0 max           0 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
-FullNghs:      12.0000 ave          12 max          12 min
-Histogram: 1 0 0 0 0 0 0 0 0 0
+Histogram: 2 0 0 0 0 0 0 0 0 0
+FullNghs:      106.000 ave         131 max          81 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
 
-Total # of neighbors = 12
-Ave neighs/atom = 3.0000000
+Total # of neighbors = 212
+Ave neighs/atom = 26.500000
 Neighbor list builds = 0
 Dangerous builds = 0
 Total wall time: 0:00:00

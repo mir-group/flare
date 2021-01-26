@@ -46,8 +46,8 @@ void calculate_radial_kokkos(
 
   // Calculate cutoff values.
   double rcut0=0.0, rcut1=0.0;
-  //quadratic_cutoff_kokkos(rcut0, rcut1, r, rcut);
-  cos_cutoff_kokkos(rcut0, rcut1, r, rcut);
+  quadratic_cutoff_kokkos(rcut0, rcut1, r, rcut);
+  //cos_cutoff_kokkos(rcut0, rcut1, r, rcut);
 
   // Calculate radial basis values.
   chebyshev_kokkos(jj, g, r, rcut, N);
