@@ -27,10 +27,10 @@ do
     for mpi in 1 2
     do
         echo "MPI=$mpi, CUDA=no, neigh=$neigh"
-        mpirun -np $mpi ~/lammps/ompbuild/lmp -sf kk -pk kokkos newton on neigh $neigh -k on t 2 -in in.si > /dev/null
+        mpirun -np $mpi ~/buglammps/ompbuild/lmp -sf kk -pk kokkos newton on neigh $neigh -k on t 2 -in in.si > /dev/null
         checkdump && echo correct || echo wrong
         echo "MPI=$mpi, CUDA=yes, neigh=$neigh"
-        CUDA_LAUNCH_BLOCKING=1 mpirun -np $mpi ~/lammps/cudabuild/lmp -k on g 1 -sf kk -pk kokkos newton on neigh $neigh -in in.si > /dev/null
+        CUDA_LAUNCH_BLOCKING=1 mpirun -np $mpi ~/buglammps/cudabuild/lmp -k on g 1 -sf kk -pk kokkos newton on neigh $neigh -in in.si > /dev/null
         checkdump && echo correct || echo wrong
     done
 done

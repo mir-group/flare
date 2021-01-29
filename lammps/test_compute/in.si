@@ -1,7 +1,7 @@
 units		metal
 atom_style	atomic
 
-variable L equal 1
+variable L equal 2
 lattice		diamond 5.431
 region		box block 0 $L 0 $L 0 $L
 create_box	1 box

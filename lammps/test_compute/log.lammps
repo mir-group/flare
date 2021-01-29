@@ -8,18 +8,18 @@ package kokkos newton on neigh half
 units		metal
 atom_style	atomic
 
-variable L equal 1
+variable L equal 2
 lattice		diamond 5.431
 Lattice spacing in x,y,z = 5.4310000 5.4310000 5.4310000
 region		box block 0 $L 0 $L 0 $L
-region		box block 0 1 0 $L 0 $L
-region		box block 0 1 0 1 0 $L
-region		box block 0 1 0 1 0 1
+region		box block 0 2 0 $L 0 $L
+region		box block 0 2 0 2 0 $L
+region		box block 0 2 0 2 0 2
 create_box	1 box
-Created orthogonal box = (0.0000000 0.0000000 0.0000000) to (5.4310000 5.4310000 5.4310000)
+Created orthogonal box = (0.0000000 0.0000000 0.0000000) to (10.862000 10.862000 10.862000)
   1 by 1 by 2 MPI processor grid
 create_atoms	1 box
-Created 8 atoms
+Created 64 atoms
   create_atoms CPU = 0.002 seconds
 
 newton on
@@ -49,19 +49,19 @@ Neighbor list info ...
   max neighbors/atom: 2000, page size: 100000
   master list distance cutoff = 5.2
   ghost atom cutoff = 5.2
-  binsize = 5.2, bins = 2 2 2
+  binsize = 5.2, bins = 3 3 3
   1 neighbor lists, perpetual/occasional/extra = 1 0 0
   (1) pair flare/kk, perpetual
       attributes: full, newton on, kokkos_device
       pair build: full/bin/kk/device
       stencil: full/bin/3d
       bin: kk/device
-Per MPI rank memory allocation (min/avg/max) = 1.978 | 1.979 | 1.980 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 1.937 | 1.938 | 1.939 Mbytes
 Step Temp E_pair E_mol TotEng Press 
-       0         1000            0            0   0.90482102    191227.69 
-Loop time of 0.000115969 on 2 procs for 0 steps with 8 atoms
+       0         1000            0            0    8.1433891    108180.77 
+Loop time of 0.000177849 on 2 procs for 0 steps with 64 atoms
 
-53.0% CPU use with 2 MPI tasks x 1 OpenMP threads
+50.0% CPU use with 2 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -71,19 +71,19 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 0.000116   |            |       |100.00
+Other   |            | 0.0001778  |            |       |100.00
 
-Nlocal:        4.00000 ave           5 max           3 min
+Nlocal:        32.0000 ave          33 max          31 min
 Histogram: 1 0 0 0 0 0 0 0 0 1
-Nghost:        168.500 ave         175 max         162 min
+Nghost:        339.000 ave         343 max         335 min
 Histogram: 1 0 0 0 0 0 0 0 0 1
 Neighs:         0.00000 ave           0 max           0 min
 Histogram: 2 0 0 0 0 0 0 0 0 0
-FullNghs:      106.000 ave         131 max          81 min
+FullNghs:      894.000 ave         925 max         863 min
 Histogram: 1 0 0 0 0 0 0 0 0 1
 
-Total # of neighbors = 212
-Ave neighs/atom = 26.500000
+Total # of neighbors = 1788
+Ave neighs/atom = 27.937500
 Neighbor list builds = 0
 Dangerous builds = 0
 Total wall time: 0:00:00
