@@ -341,8 +341,7 @@ class Structure:
             energy=dictionary.get("energy", None),
         )
 
-        for key in dictionary:
-            setattr(struc, key, dictionary[key])
+        struc.stress = dictionary.get("stress", None) 
 
         return struc
 
