@@ -157,8 +157,16 @@ class SGP_Wrapper:
                 struc_cpp.positions,
             )
             train_struc.forces = struc_cpp.forces
-            train_struc.energy = struc_cpp.energy
             train_struc.stress = struc_cpp.stresses
+
+            # Add back the single atom energies to dump the original energy
+            single_atom_sum = 0
+            if self.single_atom_energies is not None:
+                for spec in struc_cpp.species:
+                    single_atom_sum += self.single_atom_energies[spec]
+
+            train_struc.energy = struc_cpp.energy + single_atom_sum
+
             out_dict["training_structures"].append(train_struc.as_dict())
 
         out_dict["sparse_indice"] = self.sparse_gp.sparse_indices
@@ -191,8 +199,10 @@ class SGP_Wrapper:
             b2_dict["descriptor_settings"],
         )
 
-        # recover the species_map
+        # change the keys of single_atom_energies and species_map to int
+        sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
         species_map = {int(k): v for k, v in in_dict["species_map"].items()}
+
         gp = SGP_Wrapper(
             kernels=kernels,
             descriptor_calculators=[calc],
@@ -202,7 +212,7 @@ class SGP_Wrapper:
             sigma_s=in_dict["hyps"][-1],
             species_map=species_map,
             variance_type=in_dict["variance_type"],
-            single_atom_energies=in_dict["single_atom_energies"],
+            single_atom_energies=sae_dict,
             energy_training=in_dict["energy_training"],
             force_training=in_dict["force_training"],
             stress_training=in_dict["stress_training"],
