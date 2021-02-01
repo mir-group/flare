@@ -39,9 +39,9 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 namespace Kokkos {
   template <>
-  struct reduction_identity<t_scalar3<double>> {
-    KOKKOS_FORCEINLINE_FUNCTION static t_scalar3<double> sum() {
-      return t_scalar3<double>();
+  struct reduction_identity<t_scalar3<F_FLOAT>> {
+    KOKKOS_FORCEINLINE_FUNCTION static t_scalar3<F_FLOAT> sum() {
+      return t_scalar3<F_FLOAT>();
     }
   };
 }
@@ -365,21 +365,21 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   ScratchView2D partial_forces(team_member.team_scratch(1), max_neighs, 3);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &i){
-      double tmp = 0.0;
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &j, double &tmp){
+      F_FLOAT tmp = 0.0;
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &j, F_FLOAT &tmp){
           tmp += beta(itype, i, j)*B2(j);
       }, tmp);
       beta_B2(i) = tmp;
   });
 
-  double B2_norm_squared = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int &i, double &norm2){
+  F_FLOAT B2_norm_squared = 0.0;
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int &i, F_FLOAT &norm2){
       norm2 += B2(i)*B2(i);
   }, B2_norm_squared);
   team_member.team_barrier();
 
-  double evdwl = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int &i, double &evdwl){
+  F_FLOAT evdwl = 0.0;
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int &i, F_FLOAT &evdwl){
       evdwl += B2(i)*beta_B2(i);
   }, evdwl);
   evdwl /= B2_norm_squared;
@@ -387,8 +387,8 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int j = k/3;
       int c = k - 3*j;
-      double tmp = 0.0;
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &d, double &tmp){
+      F_FLOAT tmp = 0.0;
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &d, F_FLOAT &tmp){
           tmp += B2_grad(d, j, c)*beta_B2(d);
       }, tmp);
       partial_forces(j,c) = -tmp;
@@ -397,8 +397,8 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int j = k/3;
       int c = k - 3*j;
-      double tmp = 0.0;
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &d, double &tmp){
+      F_FLOAT tmp = 0.0;
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &d, F_FLOAT &tmp){
           tmp += B2_grad(d, j, c)*B2(d);
       }, tmp);
       Kokkos::single(Kokkos::PerThread(team_member), [&](){
@@ -434,9 +434,9 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     */
 
   //auto a_f = fscatter.access();
-  t_scalar3<double> fsum;
+  t_scalar3<F_FLOAT> fsum;
 
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, t_scalar3<double> &ftmp){
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, t_scalar3<F_FLOAT> &ftmp){
     int j = d_neighbors_short(i,jj);
     j &= NEIGHMASK;
 
