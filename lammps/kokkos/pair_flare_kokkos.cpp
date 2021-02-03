@@ -180,14 +180,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
                            + 2*B2_size + B2_grad_size + force_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
-    Kokkos::fence();
-    atomKK->modified(execution_space,F_MASK);
-    atomKK->sync(Host,F_MASK);
-    /*
-    atomKK->k_f.template modify<DeviceType>();
-    atomKK->k_f.template sync<LMPHostType>();
-    atomKK->modified(execution_space,ALL_MASK);
-    */
     //Kokkos::Experimental::contribute(f, fscatter);
   }
   if (evflag)
@@ -383,6 +375,9 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       evdwl += B2(i)*beta_B2(i);
   }, evdwl);
   evdwl /= B2_norm_squared;
+  if (eflag){
+    ev.evdwl += evdwl;
+  }
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int j = k/3;
@@ -422,9 +417,6 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
 
   //printf("atom %d has %d neighs\n", i, jnum);
 
-  if (eflag){
-    Kokkos::single(Kokkos::PerTeam(team_member), [&](){ev.evdwl += evdwl;});
-  }
 
   /*
     const X_FLOAT delx = xtmp - x(j,0);

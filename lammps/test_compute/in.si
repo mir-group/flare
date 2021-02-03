@@ -26,4 +26,6 @@ displace_atoms all random 0.2 0.2 0.2 654321
 dump 1 all custom 1 si.dump id type x y z fx fy fz
 dump_modify 1 sort id
 
+thermo_style custom step temp pe etotal press pxx pyy pzz pxy pxz pyz
+
 run		0
