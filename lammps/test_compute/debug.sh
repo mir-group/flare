@@ -5,14 +5,17 @@ set -e
 ~/lammps/build/lmp -in in.si > /dev/null
 mv si.dump si_fasit.dump
 
-# loop through all lines, check if there's an atom
-# of the same type in the same place with the same forces
+# loop through all lines, check that there's an atom
+# of the same type in the same place with the same forces etc.
 # in the reference file
 # (MPI reorders atoms, diff doesn't work)
 function checkdump {
     awk '{
     if (NR>9){
-        pattern = sprintf("%s %s %s %s %s %s %s", $2, $3, $4, $5, $6, $7, $8);
+        pattern = $2;
+        for(i = 3; i <= NF; i++){
+            pattern = (pattern " " $i);
+        }
         grepcmd = "grep -q \"" pattern"\" si_fasit.dump";
         ret = system(grepcmd);
         if (ret > 0) {
