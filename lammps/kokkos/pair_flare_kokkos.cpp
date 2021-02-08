@@ -362,8 +362,10 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   }, evdwl);
   evdwl /= B2_norm_squared;
 
-  if (eflag) ev.evdwl += evdwl;
-  if (eflag_atom) d_eatom[i] = evdwl;
+  Kokkos::single(Kokkos::PerTeam(team_member), [&](){
+    if (eflag) ev.evdwl += evdwl;
+    if (eflag_atom) d_eatom[i] = evdwl;
+  });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int j = k/3;
