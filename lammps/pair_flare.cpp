@@ -171,7 +171,7 @@ void PairFLARE::compute(int eflag, int vflag) {
         fxsum += fx;
         fysum += fy;
         fzsum += fz;
-        printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
+        //printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
 
         if (vflag) {
           ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fx, fy, fz, delx,
@@ -180,7 +180,7 @@ void PairFLARE::compute(int eflag, int vflag) {
         n_count++;
       }
     }
-      printf("i = %d, Fsum = %g %g %g\n", i, fxsum, fysum, fzsum);
+      //printf("i = %d, Fsum = %g %g %g\n", i, fxsum, fysum, fzsum);
 
     // Compute local energy.
     if (eflag)

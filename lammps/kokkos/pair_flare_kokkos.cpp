@@ -122,17 +122,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   d_numneigh = k_list->d_numneigh;
   d_neighbors = k_list->d_neighbors;
 
-  need_dup = lmp->kokkos->need_dup<DeviceType>();
-  if (need_dup) {
-    dup_f     = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(f);
-    dup_eatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_eatom);
-    dup_vatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterDuplicated>(d_vatom);
-  } else {
-    ndup_f     = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(f);
-    ndup_eatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_eatom);
-    ndup_vatom = Kokkos::Experimental::create_scatter_view<Kokkos::Experimental::ScatterSum, Kokkos::Experimental::ScatterNonDuplicated>(d_vatom);
-  }
-
   copymode = 1;
 
   EV_FLOAT ev;
@@ -165,6 +154,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
     int force_size = ScratchView2D::shmem_size(max_neighs,3);
 
+    vscatter = ScatterVType(d_vatom);
     //fscatter = ScatterFType(f);
 
 
@@ -180,13 +170,14 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
                            + 2*B2_size + B2_grad_size + force_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
+    Kokkos::Experimental::contribute(d_vatom, vscatter);
     //Kokkos::Experimental::contribute(f, fscatter);
   }
   if (evflag)
     ev_all += ev;
 
 
-  if (need_dup)
+  //if (need_dup)
     //Kokkos::Experimental::contribute(f, dup_f);
 
   if (eflag_global) eng_vdwl += ev_all.evdwl;
@@ -200,15 +191,15 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   }
 
   if (eflag_atom) {
-    if (need_dup)
-      Kokkos::Experimental::contribute(d_eatom, dup_eatom);
+    // if (need_dup)
+    //   Kokkos::Experimental::contribute(d_eatom, dup_eatom);
     k_eatom.template modify<DeviceType>();
     k_eatom.template sync<LMPHostType>();
   }
 
   if (vflag_atom) {
-    if (need_dup)
-      Kokkos::Experimental::contribute(d_vatom, dup_vatom);
+    //if (need_dup)
+      //Kokkos::Experimental::contribute(d_vatom, dup_vatom);
     k_vatom.template modify<DeviceType>();
     k_vatom.template sync<LMPHostType>();
   }
@@ -218,11 +209,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   copymode = 0;
 
   // free duplicated memory
-  if (need_dup) {
-    dup_f            = decltype(dup_f)();
-    dup_eatom        = decltype(dup_eatom)();
-    dup_vatom        = decltype(dup_vatom)();
-  }
 }
 
 
@@ -264,8 +250,8 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
 
   int ii = team_member.league_rank();
 
-  printf("Hello from thread %d of %d on team %d of %d\n", team_member.team_rank(), team_member.team_size(),
-                                                          team_member.league_rank(), team_member.league_size());
+  //printf("Hello from thread %d of %d on team %d of %d\n", team_member.team_rank(), team_member.team_size(),
+                                                          //team_member.league_rank(), team_member.league_size());
 
   F_FLOAT delr1[3],delr2[3],fj[3],fk[3];
   const int i = d_ilist[ii];
@@ -375,9 +361,9 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       evdwl += B2(i)*beta_B2(i);
   }, evdwl);
   evdwl /= B2_norm_squared;
-  if (eflag){
-    ev.evdwl += evdwl;
-  }
+
+  if (eflag) ev.evdwl += evdwl;
+  if (eflag_atom) d_eatom[i] = evdwl;
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int j = k/3;
@@ -418,15 +404,10 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   //printf("atom %d has %d neighs\n", i, jnum);
 
 
-  /*
-    const X_FLOAT delx = xtmp - x(j,0);
-    const X_FLOAT dely = ytmp - x(j,1);
-    const X_FLOAT delz = ztmp - x(j,2);
-    const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
-    */
 
   //auto a_f = fscatter.access();
   t_scalar3<F_FLOAT> fsum;
+
 
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, t_scalar3<F_FLOAT> &ftmp){
     int j = d_neighbors_short(i,jj);
@@ -447,10 +428,13 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     Kokkos::atomic_add(&f(j,1), -fy);
     Kokkos::atomic_add(&f(j,2), -fz);
 
-    printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
+    const X_FLOAT delx = xtmp - x(j,0);
+    const X_FLOAT dely = ytmp - x(j,1);
+    const X_FLOAT delz = ztmp - x(j,2);
 
-    // TODO
-    //if (vflag_either || eflag_atom) this->template ev_tally<FULL>(ev,i,j,evdwl,fpair,delx,dely,delz);
+    //printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
+
+    if (vflag_either) v_tally(ev,i,j,fx,fy,fz,delx,dely,delz);
   }, fsum);
   team_member.team_barrier();
 
@@ -459,7 +443,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       Kokkos::atomic_add(&f(i,0), fsum.x);
       Kokkos::atomic_add(&f(i,1), fsum.y);
       Kokkos::atomic_add(&f(i,2), fsum.z);
-      printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
+      //printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
   });
 }
 
@@ -530,53 +514,32 @@ void PairFLAREKokkos<DeviceType>::init_style()
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-template<int NEIGHFLAG>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::ev_tally(EV_FLOAT &ev, const int &i, const int &j,
-      const F_FLOAT &epair, const F_FLOAT &fpair, const F_FLOAT &delx,
+void PairFLAREKokkos<DeviceType>::v_tally(EV_FLOAT &ev, const int &i, const int &j,
+      const F_FLOAT &fx, const F_FLOAT &fy, const F_FLOAT &fz, const F_FLOAT &delx,
                 const F_FLOAT &dely, const F_FLOAT &delz) const
 {
   const int VFLAG = vflag_either;
 
   // The eatom and vatom arrays are duplicated for OpenMP, atomic for CUDA, and neither for Serial
 
-  auto v_eatom = ScatterViewHelper<typename NeedDup<HALFTHREAD,DeviceType>::value,decltype(dup_eatom),decltype(ndup_eatom)>::get(dup_eatom,ndup_eatom);
-  auto a_eatom = v_eatom.template access<typename AtomicDup<HALFTHREAD,DeviceType>::value>();
-
-  auto v_vatom = ScatterViewHelper<typename NeedDup<HALFTHREAD,DeviceType>::value,decltype(dup_vatom),decltype(ndup_vatom)>::get(dup_vatom,ndup_vatom);
-  auto a_vatom = v_vatom.template access<typename AtomicDup<HALFTHREAD,DeviceType>::value>();
-
-  if (eflag_atom) {
-    const E_FLOAT epairhalf = 0.5 * epair;
-    a_eatom[i] += epairhalf;
-    if (NEIGHFLAG != FULL)
-      a_eatom[j] += epairhalf;
-  }
+  auto a_vatom = vscatter.access();
 
   if (VFLAG) {
-    const E_FLOAT v0 = delx*delx*fpair;
-    const E_FLOAT v1 = dely*dely*fpair;
-    const E_FLOAT v2 = delz*delz*fpair;
-    const E_FLOAT v3 = delx*dely*fpair;
-    const E_FLOAT v4 = delx*delz*fpair;
-    const E_FLOAT v5 = dely*delz*fpair;
+    const E_FLOAT v0 = delx*fx;
+    const E_FLOAT v1 = dely*fy;
+    const E_FLOAT v2 = delz*fz;
+    const E_FLOAT v3 = delx*fy;
+    const E_FLOAT v4 = delx*fz;
+    const E_FLOAT v5 = dely*fz;
 
     if (vflag_global) {
-      if (NEIGHFLAG != FULL) {
         ev.v[0] += v0;
         ev.v[1] += v1;
         ev.v[2] += v2;
         ev.v[3] += v3;
         ev.v[4] += v4;
         ev.v[5] += v5;
-      } else {
-        ev.v[0] += 0.5*v0;
-        ev.v[1] += 0.5*v1;
-        ev.v[2] += 0.5*v2;
-        ev.v[3] += 0.5*v3;
-        ev.v[4] += 0.5*v4;
-        ev.v[5] += 0.5*v5;
-      }
     }
 
     if (vflag_atom) {
@@ -587,14 +550,12 @@ void PairFLAREKokkos<DeviceType>::ev_tally(EV_FLOAT &ev, const int &i, const int
       a_vatom(i,4) += 0.5*v4;
       a_vatom(i,5) += 0.5*v5;
 
-      if (NEIGHFLAG != FULL) {
-        a_vatom(j,0) += 0.5*v0;
-        a_vatom(j,1) += 0.5*v1;
-        a_vatom(j,2) += 0.5*v2;
-        a_vatom(j,3) += 0.5*v3;
-        a_vatom(j,4) += 0.5*v4;
-        a_vatom(j,5) += 0.5*v5;
-      }
+      a_vatom(j,0) += 0.5*v0;
+      a_vatom(j,1) += 0.5*v1;
+      a_vatom(j,2) += 0.5*v2;
+      a_vatom(j,3) += 0.5*v3;
+      a_vatom(j,4) += 0.5*v4;
+      a_vatom(j,5) += 0.5*v5;
     }
   }
 }
