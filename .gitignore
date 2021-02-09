@@ -2,3 +2,7 @@
 __pycache__
 _C_flare*
 *NiTi_AIMD.npz
+**/_build
+**/html
+**/latex
+**/xml
