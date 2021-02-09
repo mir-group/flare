@@ -1,6 +1,6 @@
-## flare++
+# flare++
 
-# Usage
+## Usage
 
 If compiling on Cannon, run the following:
 module load cmake/3.17.3-fasrc01
