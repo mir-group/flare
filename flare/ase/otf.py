@@ -218,10 +218,16 @@ class ASE_OTF(OTF):
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
             rescale_ind = self.rescale_steps.index(self.curr_step)
-            temp_fac = self.rescale_temps[rescale_ind] / self.temperature
+            new_temp = self.rescale_temps[rescale_ind]
+            temp_fac = new_temp / self.temperature
             vel_fac = np.sqrt(temp_fac)
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
+
+            # Reset thermostat parameters.
+            if self.md_engine in ["NVTBerendsen", "NPTBerendsen",
+                                  "NPT", "Langevin"]:
+                self.md.set_temperature(temperature_K=new_temp)
 
     def update_temperature(self):
         self.KE = self.atoms.get_kinetic_energy()
