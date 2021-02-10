@@ -6,21 +6,10 @@
 Welcome to flare_pp's documentation!
 ====================================
 
+Contents
+^^^^^^^^
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-Docs
-====
-
-.. doxygenclass:: Structure
-    :members:
+   flare_pp/flare_pp
