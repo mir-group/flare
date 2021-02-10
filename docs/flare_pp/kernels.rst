@@ -1,0 +1,5 @@
+Kernels
+=======
+
+.. doxygenclass:: NormalizedDotProduct
+    :members:

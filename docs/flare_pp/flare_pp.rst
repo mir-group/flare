@@ -5,3 +5,6 @@ Code Documentation
    :maxdepth: 3
 
    structure
+   bffs
+   descriptors
+   kernels
