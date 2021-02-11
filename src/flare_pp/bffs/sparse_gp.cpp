@@ -61,6 +61,8 @@ void SparseGP ::initialize_sparse_descriptors(const Structure &structure) {
     empty_descriptor.initialize_cluster(structure.descriptors[i].n_types,
                                         structure.descriptors[i].n_descriptors);
     sparse_descriptors.push_back(empty_descriptor);
+    std::vector<std::vector<int>> empty_indices;
+    sparse_indices.push_back(empty_indices); // NOTE: the sparse_indices should be of size n_kernels
   }
 };
 
@@ -87,6 +89,7 @@ SparseGP ::sort_clusters_by_uncertainty(const Structure &structure) {
 
 std::vector<Eigen::VectorXd>
 SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
+  // TODO: this only computes the energy-energy variance, and the Sigma matrix is not considered?
 
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
@@ -118,8 +121,7 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
     Eigen::MatrixXd Q1 = L_inverse_block * sparse_kernels[i].transpose();
     Q_self.push_back((Q1.transpose() * Q1).diagonal());
 
-    variances.push_back(K_self[i] - Q_self[i]);
-
+    variances.push_back(K_self[i] - Q_self[i]); // it is sorted by clusters, not the original atomic order 
     // TODO: If the environment is empty, the assigned uncertainty should be
     // set to zero.
   }
@@ -133,6 +135,8 @@ void SparseGP ::add_specific_environments(const Structure &structure,
   // Gather clusters with central atom in the given list.
   std::vector<std::vector<std::vector<int>>> indices_1;
   for (int i = 0; i < n_kernels; i++){
+    sparse_indices[i].push_back(atoms); // for each kernel the added atoms are the same
+
     int n_types = structure.descriptors[i].n_types;
     std::vector<std::vector<int>> indices_2;
     for (int j = 0; j < n_types; j++){
@@ -211,6 +215,25 @@ void SparseGP ::add_uncertain_environments(const Structure &structure,
   for (int i = 0; i < n_kernels; i++) {
     sparse_descriptors[i].add_clusters(structure.descriptors[i],
                                        n_sorted_indices[i]);
+
+    // find the atom index of added sparse env
+    std::vector<int> added_indices;
+    for (int k = 0; k < n_sorted_indices[i].size(); k++) {
+      int cluster_val = n_sorted_indices[i][k];
+      int atom_index, val;
+      for (int j = 0; j < structure.descriptors[i].n_types; j++) {
+        int ccount = structure.descriptors[i].cumulative_type_count[j];
+        int ccount_p1 = structure.descriptors[i].cumulative_type_count[j + 1];
+        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)) {
+          val = cluster_val - ccount;
+          atom_index = structure.descriptors[i].atom_indices[j][val];
+          added_indices.push_back(atom_index);
+          break;
+        }
+      }
+    }
+
+    sparse_indices[i].push_back(added_indices);
   }
 }
 
@@ -219,7 +242,7 @@ void SparseGP ::add_random_environments(const Structure &structure,
 
   // Randomly select environments without replacement.
   std::vector<std::vector<int>> envs1;
-  for (int i = 0; i < structure.descriptors.size(); i++) {
+  for (int i = 0; i < structure.descriptors.size(); i++) { // NOTE: n_kernels might be diff from descriptors number
     std::vector<int> envs2;
     int n_clusters = structure.descriptors[i].n_clusters;
     std::vector<int> clusters(n_clusters);
@@ -251,6 +274,24 @@ void SparseGP ::add_random_environments(const Structure &structure,
   // Store sparse environments.
   for (int i = 0; i < n_kernels; i++) {
     sparse_descriptors[i].add_clusters(structure.descriptors[i], envs1[i]);
+
+    // find the atom index of added sparse env
+    std::vector<int> added_indices;
+    for (int k = 0; k < envs1[i].size(); k++) {
+      int cluster_val = envs1[i][k];
+      int atom_index, val;
+      for (int j = 0; j < structure.descriptors[i].n_types; j++) {
+        int ccount = structure.descriptors[i].cumulative_type_count[j];
+        int ccount_p1 = structure.descriptors[i].cumulative_type_count[j + 1];
+        if ((cluster_val >= ccount) && (cluster_val < ccount_p1)) {
+          val = cluster_val - ccount;
+          atom_index = structure.descriptors[i].atom_indices[j][val];
+          added_indices.push_back(atom_index);
+          break;
+        }
+      }
+    }
+    sparse_indices[i].push_back(added_indices);
   }
 }
 
@@ -272,8 +313,13 @@ void SparseGP ::add_all_environments(const Structure &structure) {
   stack_Kuf();
 
   // Store sparse environments.
+  std::vector<int> added_indices;
+  for (int j = 0; j < structure.noa; j++) {
+    added_indices.push_back(j);
+  }
   for (int i = 0; i < n_kernels; i++) {
     sparse_descriptors[i].add_all_clusters(structure.descriptors[i]);
+    sparse_indices[i].push_back(added_indices);
   }
 }
 
@@ -888,6 +934,72 @@ void SparseGP::write_mapping_coefficients(std::string file_name,
   int count = 0;
   for (int i = 0; i < mapping_coeffs.rows(); i++) {
     Eigen::VectorXd coeff_vals = mapping_coeffs.row(i);
+
+    // Start a new line for each beta.
+    if (count != 0) {
+      coeff_file << "\n";
+    }
+
+    for (int j = 0; j < coeff_vals.size(); j++) {
+      double coeff_val = coeff_vals[j];
+
+      // Pad with 2 spaces if positive, 1 if negative.
+      if (coeff_val > 0) {
+        coeff_file << "  ";
+      } else {
+        coeff_file << " ";
+      }
+
+      coeff_file << coeff_vals[j];
+      count++;
+
+      // New line if 5 numbers have been added.
+      if (count == 5) {
+        count = 0;
+        coeff_file << "\n";
+      }
+    }
+  }
+
+  coeff_file.close();
+}
+
+void SparseGP::write_varmap_coefficients(
+  std::string file_name, std::string contributor, int kernel_index) {
+
+  // TODO: merge this function with write_mapping_coeff, 
+  // add an option in the function above for mapping "mean" or "var"
+
+  // Compute mapping coefficients.
+  //Eigen::MatrixXd varmap_coeffs =
+  varmap_coeffs =
+    kernels[kernel_index]->compute_varmap_coefficients(*this, kernel_index);
+
+  // Make beta file.
+  std::ofstream coeff_file;
+  coeff_file.open(file_name);
+
+  // Record the date.
+  time_t now = std::time(0);
+  std::string t(ctime(&now));
+  coeff_file << "DATE: ";
+  coeff_file << t.substr(0, t.length() - 1) << " ";
+
+  // Record the contributor.
+  coeff_file << "CONTRIBUTOR: ";
+  coeff_file << contributor << "\n";
+
+  // Write descriptor information to file.
+  int coeff_size = varmap_coeffs.row(0).size();
+  training_structures[0].descriptor_calculators[kernel_index]->
+    write_to_file(coeff_file, coeff_size);
+
+  // Write beta vectors to file.
+  coeff_file << std::scientific << std::setprecision(16);
+
+  int count = 0;
+  for (int i = 0; i < varmap_coeffs.rows(); i++) {
+    Eigen::VectorXd coeff_vals = varmap_coeffs.row(i);
 
     // Start a new line for each beta.
     if (count != 0) {

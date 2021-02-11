@@ -25,6 +25,7 @@ public:
   // Training and sparse points.
   std::vector<ClusterDescriptor> sparse_descriptors;
   std::vector<Structure> training_structures;
+  std::vector<std::vector<std::vector<int>>> sparse_indices;
 
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count;
@@ -75,7 +76,14 @@ public:
   void set_hyperparameters(Eigen::VectorXd hyps);
 
   void write_mapping_coefficients(std::string file_name,
-                                  std::string contributor, int kernel_index);
+                                  std::string contributor,
+                                  int kernel_index);
+
+  Eigen::MatrixXd varmap_coeffs; // for debugging. TODO: remove this line 
+  void write_varmap_coefficients(std::string file_name,
+                                  std::string contributor,
+                                  int kernel_index);
+
 };
 
 #endif

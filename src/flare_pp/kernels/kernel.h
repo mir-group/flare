@@ -43,6 +43,8 @@ public:
 
   virtual Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
                                                        int kernel_index) = 0;
+  virtual Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
+                                                       int kernel_index) = 0;
 
   std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
                                         const Eigen::MatrixXd &Kuu,

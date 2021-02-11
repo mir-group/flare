@@ -56,6 +56,8 @@ public:
 
   Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
+  Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
+                                               int kernel_index);
 };
 
 #endif

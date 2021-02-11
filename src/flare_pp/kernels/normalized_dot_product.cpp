@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 
 NormalizedDotProduct ::NormalizedDotProduct(){};
 
@@ -44,6 +45,8 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
   double empty_thresh = 1e-8;
 
   for (int s = 0; s < n_types; s++) {
+      // Why not do envs1.descriptors[s] / envs1.descriptor_norms[s]
+      // and then multiply them to get norm_dot matrix directly??
     // Compute dot products. (Should be done in parallel with MKL.)
     Eigen::MatrixXd dot_vals =
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
@@ -74,7 +77,6 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
 
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
-        double dval = power * pow(norm_dot, power - 1);
         kern_mat(ind1, ind2) += sig_sq * pow(norm_dot, power);
       }
     }
@@ -688,6 +690,89 @@ NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
           }
 
           beta_count++;
+        }
+      }
+    }
+  }
+
+  return mapping_coeffs;
+}
+
+Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
+    const SparseGP &gp_model, int kernel_index){
+
+  // Assumes there is at least one sparse environment stored in the sparse GP.
+
+  Eigen::MatrixXd mapping_coeffs;
+  if (power != 1){
+      std::cout
+          << "Mapping coefficients of the normalized dot product kernel are "
+             "implemented for power 1 only."
+          << std::endl;
+      return mapping_coeffs;
+  }
+
+  // Initialize beta vector.
+  int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
+  int beta_size = p_size * (p_size + 1) / 2;
+  int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
+  int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
+  //mapping_coeffs = Eigen::MatrixXd::Zero(n_species * n_species, p_size * p_size); // can be reduced by symmetry
+  mapping_coeffs = Eigen::MatrixXd::Zero(n_species, p_size * p_size); // can be reduced by symmetry
+
+  // Get alpha index.
+  
+  int alpha_ind = 0;
+  for (int i = 0; i < kernel_index; i++){
+      alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
+  }
+
+  // Loop over types.
+  for (int s = 0; s < n_species; s++){
+    int n_types = gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[s];
+    int c_types =
+      gp_model.sparse_descriptors[kernel_index].cumulative_type_count[s];
+    int K_ind = alpha_ind + c_types;
+
+    // Loop over clusters within each type.
+    for (int i = 0; i < n_types; i++){
+      Eigen::VectorXd pi_current =
+        gp_model.sparse_descriptors[kernel_index].descriptors[s].row(i);
+      double pi_norm =
+        gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](i);
+
+        // TODO: include symmetry of i & j
+        // Loop over clusters within each type.
+        for (int j = 0; j < n_types; j++){
+          Eigen::VectorXd pj_current =
+            gp_model.sparse_descriptors[kernel_index].descriptors[s].row(j);
+          double pj_norm =
+            gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
+
+          double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
+          double Kuu_inv_ij_normed = Kuu_inv_ij / pi_norm / pj_norm;
+//          double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
+//          double Sigma_ij_normed = Sigma_ij / pi_norm / pj_norm;
+          int beta_count = 0;
+
+          // First loop over descriptor values.
+          for (int k = 0; k < p_size; k++) {
+            double p_ik = pi_current(k);
+    
+            // Second loop over descriptor values.
+            for (int l = 0; l < p_size; l++){
+              double p_jl = pj_current(l);
+    
+              // Update beta vector.
+              double beta_val = sig2 * sig2 * p_ik * p_jl * (- Kuu_inv_ij_normed); // + Sigma_ij_normed); // To match the compute_cluster_uncertainty function
+              mapping_coeffs(s, beta_count) += beta_val;
+
+              if (k == l && i == 0 && j == 0) {
+                mapping_coeffs(s, beta_count) += sig2; // the self kernel term
+              }
+    
+              beta_count++;
+            }
         }
       }
     }

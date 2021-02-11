@@ -73,6 +73,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("n_neighbors_by_type",
                      &DescriptorValues::n_neighbors_by_type);
 
+  py::class_<ClusterDescriptor>(m, "ClusterDescriptor")
+      .def_readonly("descriptors", &ClusterDescriptor::descriptors);
+
   // Descriptor calculators
   py::class_<Descriptor>(m, "Descriptor")
       .def("compute_struc", &Descriptor::compute_struc);
@@ -96,7 +99,12 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B2, Descriptor>(m, "B2")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-                    const std::vector<int> &>());
+                    const std::vector<int> &>())
+      .def_readonly("radial_basis", &B2::radial_basis)
+      .def_readonly("cutoff_function", &B2::cutoff_function)
+      .def_readonly("radial_hyps", &B2::radial_hyps)
+      .def_readonly("cutoff_hyps", &B2::cutoff_hyps)
+      .def_readonly("descriptor_settings", &B2::descriptor_settings);
 
   py::class_<B2_Simple, Descriptor>(m, "B2_Simple")
       .def(py::init<const std::string &, const std::string &,
@@ -118,7 +126,9 @@ PYBIND11_MODULE(_C_flare, m) {
 
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
       .def(py::init<double, double>())
-      .def_readonly("sigma", &NormalizedDotProduct::sigma);
+      .def_readonly("sigma", &NormalizedDotProduct::sigma)
+      .def_readonly("power", &NormalizedDotProduct::power)
+      .def_readonly("kernel_hyperparameters", &NormalizedDotProduct::kernel_hyperparameters);
 
   py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
       .def(py::init<double, double, Eigen::MatrixXd>());
@@ -147,6 +157,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("compute_likelihood_gradient",
            &SparseGP::compute_likelihood_gradient)
       .def("write_mapping_coefficients", &SparseGP::write_mapping_coefficients)
+      .def_readonly("varmap_coeffs", &SparseGP::varmap_coeffs) // for debugging and unit test
+      .def("compute_cluster_uncertainties", &SparseGP::compute_cluster_uncertainties) // for debugging and unit test
+      .def("write_varmap_coefficients", &SparseGP::write_varmap_coefficients)
       .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
       .def_readonly("complexity_penalty", &SparseGP::complexity_penalty)
       .def_readonly("data_fit", &SparseGP::data_fit)
@@ -157,6 +170,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("kernels", &SparseGP::kernels)
       .def_readonly("hyperparameters", &SparseGP::hyperparameters)
       .def_readonly("training_structures", &SparseGP::training_structures)
+      .def_readonly("sparse_indices", &SparseGP::sparse_indices)
+      .def_readonly("sparse_descriptors", &SparseGP::sparse_descriptors)
       .def_readonly("n_energy_labels", &SparseGP::n_energy_labels)
       .def_readonly("n_force_labels", &SparseGP::n_force_labels)
       .def_readonly("n_stress_labels", &SparseGP::n_stress_labels)
