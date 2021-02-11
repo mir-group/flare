@@ -312,6 +312,7 @@ class ASE_OTF(OTF):
     @staticmethod
     def from_dict(dct):
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        flare_calc.reset()
         dct["atoms"] = read(dct["atoms"])
         dct["atoms"].calc = flare_calc
         dct.pop("gp")

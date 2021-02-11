@@ -48,7 +48,7 @@ def read_qe_results(self):
 
 md_list = [
     "VelocityVerlet",
-    "NVTBerendsen",
+    "NVTBerendsen", 
     "NPTBerendsen",
     "NPT",
     "Langevin",
@@ -237,7 +237,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
 def test_load_checkpoint(md_engine):
     new_otf = ASE_OTF.from_checkpoint(md_engine + "_checkpt.json")
     assert new_otf.curr_step == number_of_steps
-    new_otf.number_of_steps = new_otf.number_of_steps + 2
+    new_otf.number_of_steps = new_otf.number_of_steps + 3
     new_otf.run()
 
 
@@ -252,6 +252,10 @@ def test_otf_parser(md_engine):
         replicated_gp = otf_traj.make_gp(init_gp=init_flare.gp_model)
 
     print("ase otf traj parsed")
+    # Check that the GP forces change.
+    comp1 = otf_traj.force_list[0][1, 0]
+    comp2 = otf_traj.force_list[1][1, 0]
+    assert (comp1 != comp2)
 
-    for f in glob.glob(md_engine + "*"):
+    for f in glob.glob(md_engine + "*"): 
         os.remove(f)
