@@ -22,8 +22,22 @@ public:
   Eigen::VectorXd energy, forces, stresses, mean_efs, variance_efs;
   std::vector<Eigen::VectorXd> mean_contributions, local_uncertainties;
 
+  /**
+   Default structure constructor.
+   */
   Structure();
 
+  /**
+   Basic structure constructor. Holds the cell, species, and positions of a
+   periodic structure of atoms.
+
+   @param cell 3x3 array whose rows are the Bravais lattice vectors of the
+        periodic cell.
+   @param species List of integers denoting the chemical species of each
+        atom. Must lie between 0 and s-1 (inclusive), where s is the number of
+        species in the system.
+   @param positions Nx3 array of atomic coordinates.
+   */
   Structure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
             const Eigen::MatrixXd &positions);
 

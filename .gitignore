@@ -4,3 +4,7 @@ _C_flare*
 *NiTi_AIMD.npz
 *log.lammps
 *tmp.*
+**/_build
+**/html
+**/latex
+**/xml

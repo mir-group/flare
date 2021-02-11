@@ -644,6 +644,7 @@ NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
   int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
   int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
   mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
+  double empty_thresh = 1e-8;
 
   // Get alpha index.
   int alpha_ind = 0;
@@ -664,6 +665,11 @@ NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
           gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
       double p_norm =
           gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
+      
+      // Skip empty environments.
+      if (p_norm < empty_thresh)
+        continue;
+
       double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
       int beta_count = 0;
 

@@ -122,6 +122,8 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
     Q_self.push_back((Q1.transpose() * Q1).diagonal());
 
     variances.push_back(K_self[i] - Q_self[i]); // it is sorted by clusters, not the original atomic order 
+    // TODO: If the environment is empty, the assigned uncertainty should be
+    // set to zero.
   }
 
   return variances;
