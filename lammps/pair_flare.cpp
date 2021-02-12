@@ -92,11 +92,14 @@ void PairFLARE::compute(int eflag, int vflag) {
     n_inner = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
+      int s = type[j] - 1;
+      double cutoff_val = cutoff_matrix(itype-1, s);
+
       delx = x[j][0] - xtmp;
       dely = x[j][1] - ytmp;
       delz = x[j][2] - ztmp;
       rsq = delx * delx + dely * dely + delz * delz;
-      if (rsq < (cutoff * cutoff))
+      if (rsq < (cutoff_val * cutoff_val))
         n_inner++;
     }
 
@@ -126,12 +129,14 @@ void PairFLARE::compute(int eflag, int vflag) {
     n_count = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
+      int s = type[j] - 1;
+      double cutoff_val = cutoff_matrix(itype-1, s);
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
       delz = ztmp - x[j][2];
       rsq = delx * delx + dely * dely + delz * delz;
 
-      if (rsq < (cutoff * cutoff)) {
+      if (rsq < (cutoff_val * cutoff_val)) {
         double fx = -partial_forces(n_count * 3);
         double fy = -partial_forces(n_count * 3 + 1);
         double fz = -partial_forces(n_count * 3 + 2);
@@ -283,14 +288,20 @@ void PairFLARE::read_file(char *filename) {
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
   // Fill in the cutoff matrix.
+  cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
   int cutoff_count = 0;
   for (int i = 0; i < n_species; i++){
     for (int j = 0; j < n_species; j++){
-      cutoff_matrix(i, j) = cutoffs[cutoff_count];
+      double cutoff_val = cutoffs[cutoff_count];
+      cutoff_matrix(i, j) = cutoff_val;
+      if (cutoff_val > cutoff) cutoff = val;
       cutoff_count ++;
     }
   }
+
+  std::cout << cutoff_matrix << std::endl;
+  std::cout << cutoff << std::endl;
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
