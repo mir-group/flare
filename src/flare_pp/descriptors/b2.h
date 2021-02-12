@@ -19,12 +19,26 @@ public:
   std::vector<double> radial_hyps, cutoff_hyps;
   std::vector<int> descriptor_settings;
 
+  /** Matrix of cutoff values, with element (i, j) corresponding to the cutoff
+   * assigned to the species pair (i, j).
+   */
+  Eigen::MatrixXd cutoffs;
+
   B2();
 
   B2(const std::string &radial_basis, const std::string &cutoff_function,
      const std::vector<double> &radial_hyps,
      const std::vector<double> &cutoff_hyps,
      const std::vector<int> &descriptor_settings);
+
+  /**
+   * Construct the B2 descriptor with distinct cutoffs for each pair of species.
+   */
+  B2(const std::string &radial_basis, const std::string &cutoff_function,
+     const std::vector<double> &radial_hyps,
+     const std::vector<double> &cutoff_hyps,
+     const std::vector<int> &descriptor_settings,
+     const Eigen::MatrixXd &cutoffs);
 
   DescriptorValues compute_struc(Structure &structure);
 

@@ -23,6 +23,11 @@ B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
 
   set_radial_basis(radial_basis, this->radial_pointer);
   set_cutoff(cutoff_function, this->cutoff_pointer);
+
+  // Create cutoff matrix.
+  int n_species = descriptor_settings[0];
+  double cutoff_val = radial_hyps[1];
+  cutoffs = Eigen::MatrixXd::Constant(n_species, n_species, cutoff_val);
 }
 
 void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
