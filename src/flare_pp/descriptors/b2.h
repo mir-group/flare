@@ -74,6 +74,10 @@ void single_bond_multiple_cutoffs(
     const std::vector<double> &cutoff_hyps, const Structure &structure,
     const Eigen::MatrixXd &cutoffs);
 
+/**
+ * TODO: Update other descriptors to call the multi-cutoff version
+ * instead, and then remove this function.
+ */
 void compute_single_bond(
     Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
     Eigen::MatrixXd &neighbor_coordinates, Eigen::VectorXi &neighbor_count,
