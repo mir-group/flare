@@ -262,8 +262,6 @@ void PairFLARE::read_file(char *filename) {
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%lg", &cutoff); // Cutoff
   }
 
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
@@ -275,6 +273,23 @@ void PairFLARE::read_file(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+  // Parse the cutoffs.
+  int n_cutoffs = n_species * n_species;
+  memory->create(cutoffs, n_cutoffs, "pair:cutoffs");
+  if (me == 0)
+    grab(fptr, n_cutoffs, cutoffs);
+  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Fill in the cutoff matrix.
+  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
+  int cutoff_count = 0;
+  for (int i = 0; i < n_species; i++){
+    for (int j = 0; j < n_species; j++){
+      cutoff_matrix(i, j) = cutoffs[cutoff_count];
+      cutoff_count ++;
+    }
+  }
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
