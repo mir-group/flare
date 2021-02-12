@@ -20,7 +20,8 @@ public:
   std::vector<int> descriptor_settings;
 
   /** Matrix of cutoff values, with element (i, j) corresponding to the cutoff
-   * assigned to the species pair (i, j).
+   * assigned to the species pair (i, j), where i is the central species
+   * and j is the environment species.
    */
   Eigen::MatrixXd cutoffs;
 
