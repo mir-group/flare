@@ -101,10 +101,11 @@ void PairFLARE::compute(int eflag, int vflag) {
     }
 
     // Compute covariant descriptors.
-    single_bond(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
-                basis_function, cutoff_function, cutoff, n_species, n_max,
-                l_max, radial_hyps, cutoff_hyps, single_bond_vals,
-                single_bond_env_dervs);
+    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
+                                 jlist, basis_function, cutoff_function,
+                                 n_species, n_max, l_max, radial_hyps,
+                                 cutoff_hyps, single_bond_vals,
+                                 single_bond_env_dervs, cutoff_matrix);
 
     // Compute invariant descriptors.
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
