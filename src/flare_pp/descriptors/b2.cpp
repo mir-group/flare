@@ -63,9 +63,14 @@ void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   coeff_file << coeff_size << "\n";
   coeff_file << cutoff_function << "\n";
 
-  // Report cutoff to 2 decimal places.
+  // Report cutoffs to 2 decimal places.
   coeff_file << std::fixed << std::setprecision(2);
-  coeff_file << cutoff << "\n";
+  for (int i = 0; i < n_species; i ++){
+    for (int j = 0; j < n_species; j ++){
+      coeff_file << cutoffs(i, j) << " ";
+    }
+  }
+  coeff_file << "\n";
 }
 
 DescriptorValues B2 ::compute_struc(Structure &structure) {
