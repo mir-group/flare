@@ -317,6 +317,9 @@ void single_bond_multiple_cutoffs(
     int neighbor_index = cumulative_neighbor_count(i);
     int central_species = structure.species[i];
 
+    // Initialize radial hyperparameters.
+    std::vector<double> new_radial_hyps = radial_hyps;
+
     // Initialize radial and spherical harmonic vectors.
     std::vector<double> g = std::vector<double>(N, 0);
     std::vector<double> gx = std::vector<double>(N, 0);
@@ -343,6 +346,9 @@ void single_bond_multiple_cutoffs(
       z = structure.relative_positions(neigh_index, 3);
       s = structure.neighbor_species(neigh_index);
 
+      // Reset the endpoint of the radial basis set.
+      new_radial_hyps[1] = rcut;
+
       // Store neighbor coordinates.
       neighbor_coordinates(neighbor_index, 0) = x;
       neighbor_coordinates(neighbor_index, 1) = y;
@@ -350,7 +356,7 @@ void single_bond_multiple_cutoffs(
 
       // Compute radial basis values and spherical harmonics.
       calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
-                       r, rcut, N, radial_hyps, cutoff_hyps);
+                       r, rcut, N, new_radial_hyps, cutoff_hyps);
       get_Y(h, hx, hy, hz, x, y, z, lmax);
 
       // Store the products and their derivatives.

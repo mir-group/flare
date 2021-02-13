@@ -60,6 +60,9 @@ void single_bond_multiple_cutoffs(
     double cutforcesq = cutoff * cutoff;
 
     if (rsq < cutforcesq) { // minus a small value to prevent numerial error
+      // Reset endpoint of the radial basis set.
+      radial_hyps[1] = cutoff;
+
       calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, delx,
                        dely, delz, r, cutoff, N, radial_hyps, cutoff_hyps);
       get_Y(h, hx, hy, hz, delx, dely, delz, lmax);
