@@ -43,6 +43,9 @@ void single_bond_multiple_cutoffs(
   single_bond_vals = Eigen::VectorXd::Zero(n_bond);
   single_bond_env_dervs = Eigen::MatrixXd::Zero(n_inner * 3, n_bond);
 
+  // Initialize radial hyperparameters.
+  std::vector<double> new_radial_hyps = radial_hyps;
+
   // Loop over neighbors.
   int n_count = 0;
   for (int jj = 0; jj < jnum; jj++) {
@@ -61,10 +64,10 @@ void single_bond_multiple_cutoffs(
 
     if (rsq < cutforcesq) { // minus a small value to prevent numerial error
       // Reset endpoint of the radial basis set.
-      radial_hyps[1] = cutoff;
+      new_radial_hyps[1] = cutoff;
 
       calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, delx,
-                       dely, delz, r, cutoff, N, radial_hyps, cutoff_hyps);
+                       dely, delz, r, cutoff, N, new_radial_hyps, cutoff_hyps);
       get_Y(h, hx, hy, hz, delx, dely, delz, lmax);
 
       // Store the products and their derivatives.
