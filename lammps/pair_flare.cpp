@@ -295,13 +295,10 @@ void PairFLARE::read_file(char *filename) {
     for (int j = 0; j < n_species; j++){
       double cutoff_val = cutoffs[cutoff_count];
       cutoff_matrix(i, j) = cutoff_val;
-      if (cutoff_val > cutoff) cutoff = val;
+      if (cutoff_val > cutoff) cutoff = cutoff_val;
       cutoff_count ++;
     }
   }
-
-  std::cout << cutoff_matrix << std::endl;
-  std::cout << cutoff << std::endl;
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;

@@ -56,7 +56,7 @@ void single_bond_multiple_cutoffs(
 
     // Retrieve the cutoff.
     int s = type[j] - 1;
-    double cutoff = cutoff_matrix(central_species, j);
+    double cutoff = cutoff_matrix(central_species, s);
     double cutforcesq = cutoff * cutoff;
 
     if (rsq < cutforcesq) { // minus a small value to prevent numerial error
