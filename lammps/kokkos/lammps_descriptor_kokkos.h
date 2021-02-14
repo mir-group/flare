@@ -105,7 +105,7 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 3*n_neighs), [&] (int &k){
         int j = k / 3;
         int c = k - 3*j;
-        B2_env_dervs(d,j,c) = 0.0;
+        B2_env_dervs(j,c,d) = 0.0;
     });
   });
   team_member.team_barrier();
@@ -134,7 +134,7 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
           int atom_index = jjc/3;
           int comp = jjc - 3*atom_index;
 
-          B2_env_dervs(nnl, atom_index, comp) = 0;
+          B2_env_dervs(atom_index, comp,nnl) = 0;
       });
 
       // TODO: Check if ThreadVector launch is bad
@@ -150,7 +150,7 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
               int atom_index = jjc/3;
               int comp = jjc - 3*atom_index;
 
-              B2_env_dervs(nnl, atom_index, comp) +=
+              B2_env_dervs(atom_index, comp, nnl) +=
                 single_1 * single_bond_env_dervs(n2_l, atom_index, comp)
                 + single_bond_env_dervs(n1_l, atom_index, comp) * single_2;
           });
