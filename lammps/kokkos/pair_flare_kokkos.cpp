@@ -155,7 +155,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     int force_size = ScratchView2D::shmem_size(max_neighs,3);
 
     vscatter = ScatterVType(d_vatom);
-    //fscatter = ScatterFType(f);
+    fscatter = ScatterFType(f);
 
 
 //  _                           _                                       _
@@ -171,7 +171,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
     Kokkos::Experimental::contribute(d_vatom, vscatter);
-    //Kokkos::Experimental::contribute(f, fscatter);
+    Kokkos::Experimental::contribute(f, fscatter);
   }
   if (evflag)
     ev_all += ev;
@@ -407,7 +407,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
 
 
 
-  //auto a_f = fscatter.access();
+  auto a_f = fscatter.access();
   t_scalar3<F_FLOAT> fsum;
 
 
@@ -424,11 +424,13 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     ftmp.z += fz;
 
     // ScatterView version that gives identical results:
-    // a_f(j,0) -= fx;    // a_f(j,1) -= fy;    // a_f(j,2) -= fz;
+    a_f(j,0) -= fx;
+    a_f(j,1) -= fy;
+    a_f(j,2) -= fz;
 
-    Kokkos::atomic_add(&f(j,0), -fx);
-    Kokkos::atomic_add(&f(j,1), -fy);
-    Kokkos::atomic_add(&f(j,2), -fz);
+    //Kokkos::atomic_add(&f(j,0), -fx);
+    //Kokkos::atomic_add(&f(j,1), -fy);
+    //Kokkos::atomic_add(&f(j,2), -fz);
 
     const X_FLOAT delx = xtmp - x(j,0);
     const X_FLOAT dely = ytmp - x(j,1);
@@ -441,10 +443,12 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   team_member.team_barrier();
 
   Kokkos::single(Kokkos::PerTeam(team_member), [&](){
-      //a_f(i,0) += fsum.x;      //a_f(i,1) += fsum.y;      //a_f(i,2) += fsum.z;
-      Kokkos::atomic_add(&f(i,0), fsum.x);
-      Kokkos::atomic_add(&f(i,1), fsum.y);
-      Kokkos::atomic_add(&f(i,2), fsum.z);
+      a_f(i,0) += fsum.x;
+      a_f(i,1) += fsum.y;
+      a_f(i,2) += fsum.z;
+      //Kokkos::atomic_add(&f(i,0), fsum.x);
+      //Kokkos::atomic_add(&f(i,1), fsum.y);
+      //Kokkos::atomic_add(&f(i,2), fsum.z);
       //printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
   });
 }
