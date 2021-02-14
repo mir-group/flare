@@ -259,7 +259,7 @@ class SGP_Wrapper:
         custom_range=(),
         energy: float = None,
         stress: "ndarray" = None,
-        mode: str = "all",
+        mode: str = "specific",
         sgp: SparseGP = None,  # for creating sgp_var
         update_qr=True,
     ):
