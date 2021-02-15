@@ -129,32 +129,39 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
 
       //printf(" | n1 = %d, n2 = %d, l = %d, B2 = %g |\n", n1, n2, l, B2_val);
       B2_vals(nnl) = B2_val;
+  });
 
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 3*n_neighs), [&] (int &jjc){
-          int atom_index = jjc/3;
-          int comp = jjc - 3*atom_index;
-
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*n_neighs), [&] (int &jjc){
+      int atom_index = jjc/3;
+      int comp = jjc - 3*atom_index;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&] (int &nnl){
           B2_env_dervs(atom_index, comp,nnl) = 0;
       });
+      });
 
-      // TODO: Check if ThreadVector launch is bad
-      // (I think this approach does better w.r.t. memory access
-      for(int m = 0; m < 2*l+1; m++){
-          int n1_l = n1 * n_harmonics + (l * l + m);
-          int n2_l = n2 * n_harmonics + (l * l + m);
 
-          double single_1 = single_bond_vals(n1_l);
-          double single_2 = single_bond_vals(n2_l);
+  // TODO: maybe precreate nnl->n1l mapping
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*n_neighs), [&] (int &jjc){
+      int atom_index = jjc/3;
+      int comp = jjc - 3*atom_index;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&] (int &nnl){
+          int x = nnl/(l_max+1);
+          int l = nnl-x*(l_max+1);
 
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 3*n_neighs), [&] (int &jjc){
-              int atom_index = jjc/3;
-              int comp = jjc - 3*atom_index;
+          int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
+          int n2 = x - n1*(np12 - 1 - 0.5*n1);
 
-              B2_env_dervs(atom_index, comp, nnl) +=
-                single_1 * single_bond_env_dervs(n2_l, atom_index, comp)
-                + single_bond_env_dervs(n1_l, atom_index, comp) * single_2;
+          for(int m = 0; m < 2*l+1; m++){
+            int n1_l = n1 * n_harmonics + (l * l + m);
+            int n2_l = n2 * n_harmonics + (l * l + m);
+            double single_1 = single_bond_vals(n1_l);
+            double single_2 = single_bond_vals(n2_l);
+
+            B2_env_dervs(atom_index, comp, nnl) +=
+            single_1 * single_bond_env_dervs(n2_l, atom_index, comp)
+            + single_bond_env_dervs(n1_l, atom_index, comp) * single_2;
+          }
           });
-      }
   });
 }
 
