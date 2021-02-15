@@ -176,7 +176,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 // |_____\__,_|\__,_|_| |_|\___|_| |_|  \___\___/|_| |_| |_| .__/ \__,_|\__\___|
 //                                                         |_|
     // TODO: Check team size for CUDA, maybe figure out how it works
-    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 32).set_scratch_size(
+    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 8).set_scratch_size(
         1, Kokkos::PerTeam(single_bond_size + single_bond_grad_size
                            + 2*nnlmap_size + 2*B2_size + B2_grad_size + force_size));
     // compute forces and energy
