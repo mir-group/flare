@@ -37,17 +37,17 @@ void single_bond_kokkos(
   });
   team_member.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_max*n_harmonics), [&](int &nlm){
 
+  // TODO: parallelize over components
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_neighs), [&] (int &jj){
+      int j = d_neighbors_short(i,jj);
+      j &= neighmask;
+      int s = type[j] - 1;
 
-      int radial_counter = nlm/n_harmonics;
-      int angular_counter = nlm - n_harmonics*radial_counter;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int &nlm){
 
-      // TODO: parallelize over components
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_neighs), [&] (int &jj){
-          int j = d_neighbors_short(i,jj);
-          j &= neighmask;
-          int s = type[j] - 1;
+          int radial_counter = nlm/n_harmonics;
+          int angular_counter = nlm - n_harmonics*radial_counter;
           int descriptor_counter = s * n_max * n_harmonics + nlm;
 
           // Retrieve radial values.
@@ -78,9 +78,9 @@ void single_bond_kokkos(
       });
   });
   /*
-  Kokkos::single(Kokkos::PerTeam(team_member), [&](){
-    printf("i = %d, d =", i);
-    for(int d = 0; d < n_bond; d++){
+     Kokkos::single(Kokkos::PerTeam(team_member), [&](){
+     printf("i = %d, d =", i);
+     for(int d = 0; d < n_bond; d++){
       printf(" %g", single_bond_vals(d));
     }
     printf("\n");
