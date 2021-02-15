@@ -148,7 +148,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     int Ysize = ScratchView3D::shmem_size(max_neighs, n_harmonics, 4);
 
     int single_bond_size = ScratchView1D::shmem_size(n_bond);
-    int single_bond_grad_size = ScratchView3D::shmem_size(n_bond, max_neighs, 3);
+    int single_bond_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_bond);
     int B2_size = ScratchView1D::shmem_size(n_descriptors);
     int B2_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_descriptors);
 
@@ -292,7 +292,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   team_member.team_barrier();
 
   ScratchView1D single_bond(team_member.team_scratch(1), n_bond);
-  ScratchView3D single_bond_grad(team_member.team_scratch(1), n_bond, max_neighs, 3);
+  ScratchView3D single_bond_grad(team_member.team_scratch(1), max_neighs, 3, n_bond);
 
   single_bond_kokkos(
     i,

@@ -32,7 +32,7 @@ void single_bond_kokkos(
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 3*n_neighs), [&] (int &k){
         int j = k / 3;
         int c = k - 3*j;
-        single_bond_env_dervs(d,j,c) = 0.0;
+        single_bond_env_dervs(j,c,d) = 0.0;
     });
   });
   team_member.team_barrier();
@@ -71,9 +71,9 @@ void single_bond_kokkos(
           Kokkos::atomic_add(&single_bond_vals(descriptor_counter),bond); // TODO: bad
           //single_bond_vals(descriptor_counter) += bond;
 
-          single_bond_env_dervs(descriptor_counter,jj,0) = bond_x;
-          single_bond_env_dervs(descriptor_counter,jj,1) = bond_y;
-          single_bond_env_dervs(descriptor_counter,jj,2) = bond_z;
+          single_bond_env_dervs(jj,0,descriptor_counter) = bond_x;
+          single_bond_env_dervs(jj,1,descriptor_counter) = bond_y;
+          single_bond_env_dervs(jj,2,descriptor_counter) = bond_z;
           //printf("i = %d, j = %d, n = %d, lm = %d, idx = %d, bond = %g %g %g %g\n", i, j, radial_counter, angular_counter, descriptor_counter, bond, bond_x, bond_y, bond_z);
       });
   });
@@ -158,8 +158,8 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
             double single_2 = single_bond_vals(n2_l);
 
             B2_env_dervs(atom_index, comp, nnl) +=
-            single_1 * single_bond_env_dervs(n2_l, atom_index, comp)
-            + single_bond_env_dervs(n1_l, atom_index, comp) * single_2;
+            single_1 * single_bond_env_dervs(atom_index, comp, n2_l)
+            + single_bond_env_dervs(atom_index, comp, n1_l) * single_2;
           }
           });
   });
