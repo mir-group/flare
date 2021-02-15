@@ -7,14 +7,14 @@
 #include <Kokkos_Core.hpp>
 
 // TODO: Change types if memory layouts change for some tensors
-template<class MemberType, class ViewType1D, class ViewType3D, class TypeType, class NeighType>
+template<class MemberType, class ViewType1D, class ViewType3D, class ViewType4D, class TypeType, class NeighType>
 KOKKOS_INLINE_FUNCTION
 void single_bond_kokkos(
-    int i,
+    int ii, int i,
     MemberType &team_member,
     ViewType1D &single_bond_vals,
     ViewType3D &single_bond_env_dervs,
-    ViewType3D &g, ViewType3D &Y,
+    ViewType4D &g, ViewType4D &Y,
     TypeType &type,
     int n_species, int n_max, int n_harmonics, NeighType d_neighbors_short, int n_neighs, int neighmask
     ) {
@@ -51,16 +51,16 @@ void single_bond_kokkos(
           int descriptor_counter = s * n_max * n_harmonics + nlm;
 
           // Retrieve radial values.
-          double g_val = g(jj,radial_counter,0);
-          double gx_val = g(jj,radial_counter,1);
-          double gy_val = g(jj,radial_counter,2);
-          double gz_val = g(jj,radial_counter,3);
+          double g_val = g(ii,jj,radial_counter,0);
+          double gx_val = g(ii,jj,radial_counter,1);
+          double gy_val = g(ii,jj,radial_counter,2);
+          double gz_val = g(ii,jj,radial_counter,3);
 
 
-          double h_val = Y(jj,angular_counter,0);
-          double hx_val = Y(jj,angular_counter,1);
-          double hy_val = Y(jj,angular_counter,2);
-          double hz_val = Y(jj,angular_counter,3);
+          double h_val = Y(ii,jj,angular_counter,0);
+          double hx_val = Y(ii,jj,angular_counter,1);
+          double hy_val = Y(ii,jj,angular_counter,2);
+          double hz_val = Y(ii,jj,angular_counter,3);
 
           double bond = g_val * h_val;
           double bond_x = gx_val * h_val + g_val * hx_val;

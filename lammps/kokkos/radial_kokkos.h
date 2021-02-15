@@ -9,7 +9,7 @@
 
 template<class ViewType>
 KOKKOS_INLINE_FUNCTION
-void chebyshev_kokkos(int jj, ViewType g, double r, double rcut, int N) {
+void chebyshev_kokkos(int ii, int jj, ViewType g, double r, double rcut, int N) {
 
   const double r1 = 0.0;
   const double r2 = rcut;
@@ -24,16 +24,16 @@ void chebyshev_kokkos(int jj, ViewType g, double r, double rcut, int N) {
 
   for (int n = 0; n < N; n++) {
     if (n == 0) {
-      g(jj,n,0) = 1;
-      g(jj,n,1) = 0;
+      g(ii,jj,n,0) = 1;
+      g(ii,jj,n,1) = 0;
     } else if (n == 1) {
-      g(jj,n,0) = x;
-      g(jj,n,1) = c;
+      g(ii,jj,n,0) = x;
+      g(ii,jj,n,1) = c;
     }
     else {
-      g(jj,n,0) = 2 * x * g(jj,n - 1,0) - g(jj,n - 2,0);
-      g(jj,n,1) = 2 * g(jj,n - 1,0) * c +
-                        2 * x * g(jj,n - 1,1) - g(jj,n - 2,1);
+      g(ii,jj,n,0) = 2 * x * g(ii,jj,n - 1,0) - g(ii,jj,n - 2,0);
+      g(ii,jj,n,1) = 2 * g(ii,jj,n - 1,0) * c +
+                        2 * x * g(ii,jj,n - 1,1) - g(ii,jj,n - 2,1);
     }
   }
 }
@@ -41,7 +41,7 @@ void chebyshev_kokkos(int jj, ViewType g, double r, double rcut, int N) {
 template<class ViewType3D>
 KOKKOS_INLINE_FUNCTION
 void calculate_radial_kokkos(
-    int jj, ViewType3D g,
+    int ii, int jj, ViewType3D g,
     double x, double y, double z, double r, double rcut, int N) {
 
   // Calculate cutoff values.
@@ -50,7 +50,7 @@ void calculate_radial_kokkos(
   //cos_cutoff_kokkos(rcut0, rcut1, r, rcut);
 
   // Calculate radial basis values.
-  chebyshev_kokkos(jj, g, r, rcut, N);
+  chebyshev_kokkos(ii,jj, g, r, rcut, N);
 
   // Store the product.
   double xrel = x / r;
@@ -58,14 +58,14 @@ void calculate_radial_kokkos(
   double zrel = z / r;
 
   for (int n = 0; n < N; n++) {
-    double basis_val = g(jj,n,0);
-    double basis_deriv = g(jj,n,1);
-    g(jj,n,0) = basis_val * rcut0;
-    g(jj,n,1) = basis_deriv * xrel * rcut0 +
+    double basis_val = g(ii,jj,n,0);
+    double basis_deriv = g(ii,jj,n,1);
+    g(ii,jj,n,0) = basis_val * rcut0;
+    g(ii,jj,n,1) = basis_deriv * xrel * rcut0 +
                  basis_val * xrel * rcut1;
-    g(jj,n,2) = basis_deriv * yrel * rcut0 +
+    g(ii,jj,n,2) = basis_deriv * yrel * rcut0 +
                   basis_val * yrel * rcut1;
-    g(jj,n,3) = basis_deriv * zrel * rcut0 +
+    g(ii,jj,n,3) = basis_deriv * zrel * rcut0 +
                 basis_val * zrel * rcut1;
   }
 }

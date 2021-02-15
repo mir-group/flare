@@ -142,10 +142,20 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType>(0,n_atoms), *this);
 
+  // precompute basis functions, reduce register usage
   {
-    int gsize = ScratchView3D::shmem_size(max_neighs, n_max, 4);
+    Kokkos::realloc(g, n_atoms, max_neighs, n_max, 4);
+    Kokkos::realloc(Y, n_atoms, max_neighs, n_harmonics, 4);
+    Kokkos::parallel_for(
+        Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
+                        {0,0}, {inum, max_neighs}),
+        *this
+    );
+  }
 
-    int Ysize = ScratchView3D::shmem_size(max_neighs, n_harmonics, 4);
+  {
+    //int gsize = ScratchView3D::shmem_size(max_neighs, n_max, 4);
+    //int Ysize = ScratchView3D::shmem_size(max_neighs, n_harmonics, 4);
 
     int single_bond_size = ScratchView1D::shmem_size(n_bond);
     int single_bond_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_bond);
@@ -165,8 +175,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 // |_____\__,_|\__,_|_| |_|\___|_| |_|  \___\___/|_| |_| |_| .__/ \__,_|\__\___|
 //                                                         |_|
     // TODO: Check team size for CUDA, maybe figure out how it works
-    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, 4, 32).set_scratch_size(
-        1, Kokkos::PerTeam(gsize + Ysize + single_bond_size + single_bond_grad_size
+    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 32).set_scratch_size(
+        1, Kokkos::PerTeam(single_bond_size + single_bond_grad_size
                            + 2*B2_size + B2_grad_size + force_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
@@ -267,34 +277,12 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
 
   const int jnum = d_numneigh_short[i];
 
-  ScratchView3D g(team_member.team_scratch(1), max_neighs, n_max, 4);
-  ScratchView3D Y(team_member.team_scratch(1), max_neighs, n_harmonics, 4);
-
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, jnum), [&] (int& jj){
-    int j = d_neighbors_short(i,jj);
-    j &= NEIGHMASK;
-
-    const X_FLOAT delx = x(j,0) - xtmp;
-    const X_FLOAT dely = x(j,1) - ytmp;
-    const X_FLOAT delz = x(j,2) - ztmp;
-    const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
-
-    calculate_radial_kokkos(jj, g, delx, dely, delz, sqrt(rsq), cutoff, n_max);
-    get_Y_kokkos(jj, Y, delx, dely, delz, l_max);
-    /*
-    printf("i = %d, j = %d, Y =", i, j);
-    for(int h = 0; h < n_harmonics; h++){
-      printf(" %g", Y(jj, h, 0));
-    }
-    printf("\n");
-    */
-  });
-  team_member.team_barrier();
 
   ScratchView1D single_bond(team_member.team_scratch(1), n_bond);
   ScratchView3D single_bond_grad(team_member.team_scratch(1), max_neighs, 3, n_bond);
 
   single_bond_kokkos(
+    ii,
     i,
     team_member,
     single_bond,
@@ -451,6 +439,30 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       //Kokkos::atomic_add(&f(i,2), fsum.z);
       //printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
   });
+}
+
+template<class DeviceType>
+KOKKOS_INLINE_FUNCTION
+void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
+
+  const int i = d_ilist[ii];
+  int j = d_neighbors_short(i,jj);
+  j &= NEIGHMASK;
+
+  const X_FLOAT delx = x(j,0) - x(i,0);
+  const X_FLOAT dely = x(j,1) - x(i,1);
+  const X_FLOAT delz = x(j,2) - x(i,2);
+  const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
+
+  calculate_radial_kokkos(ii, jj, g, delx, dely, delz, sqrt(rsq), cutoff, n_max);
+  get_Y_kokkos(ii, jj, Y, delx, dely, delz, l_max);
+  /*
+  printf("i = %d, j = %d, Y =", i, j);
+  for(int h = 0; h < n_harmonics; h++){
+    printf(" %g", Y(jj, h, 0));
+  }
+  printf("\n");
+  */
 }
 
 

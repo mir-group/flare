@@ -50,6 +50,10 @@ class PairFLAREKokkos : public PairFLARE {
   KOKKOS_INLINE_FUNCTION
   void operator()(const int&) const;
 
+  // precompute g and Y
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int, const int) const;
+
   KOKKOS_INLINE_FUNCTION
   void v_tally(EV_FLOAT &ev, const int &i, const int &j,
       const F_FLOAT &fx, const F_FLOAT &fy, const F_FLOAT &fz, const F_FLOAT &delx,
@@ -71,6 +75,7 @@ class PairFLAREKokkos : public PairFLARE {
   typename AT::t_virial_array d_vatom;
 
   Kokkos::View<F_FLOAT***,Kokkos::LayoutRight,DeviceType> beta;
+  Kokkos::View<F_FLOAT****,Kokkos::LayoutRight,DeviceType> g, Y;
 
   using ScratchView1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
   using ScratchView2D = Kokkos::View<F_FLOAT**, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;

@@ -1,3 +1,5 @@
+perf.data
+*.nvprof
 *.plist
 log.lammps
 *.gdb
