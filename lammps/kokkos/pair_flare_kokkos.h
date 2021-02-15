@@ -77,6 +77,7 @@ class PairFLAREKokkos : public PairFLARE {
   Kokkos::View<F_FLOAT***,Kokkos::LayoutRight,DeviceType> beta;
   Kokkos::View<F_FLOAT****,Kokkos::LayoutRight,DeviceType> g, Y;
 
+  using ScratchViewInt2D = Kokkos::View<int**, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
   using ScratchView1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
   using ScratchView2D = Kokkos::View<F_FLOAT**, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
   using ScratchView3D = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;

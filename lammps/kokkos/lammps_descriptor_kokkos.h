@@ -88,17 +88,28 @@ void single_bond_kokkos(
   */
 }
 
-template<class MemberType, class ScratchView1D, class ScratchView3D>
+template<class MemberType, class ScratchView1D, class ScratchView3D, class ScratchViewInt2D>
 KOKKOS_INLINE_FUNCTION
 void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, ScratchView3D &B2_env_dervs,
                    const ScratchView1D &single_bond_vals,
                    const ScratchView3D &single_bond_env_dervs, int n_species,
-                   int n_max, int l_max, int n_neighs) {
+                   int n_max, int l_max, int n_neighs, ScratchViewInt2D nnlmap) {
 
   int n_radial = n_species * n_max;
   int n_harmonics = (l_max + 1) * (l_max + 1);
   int n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
   double np12 = n_radial + 0.5;
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
+      int x = nnl/(l_max+1);
+      int l = nnl-x*(l_max+1);
+
+      int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
+      int n2 = x - n1*(np12 - 1 - 0.5*n1);
+      nnlmap(nnl,0) = n1;
+      nnlmap(nnl,1) = n2;
+  });
+
 
   //Kokkos::deep_copy(B2_env_dervs,0.0);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &d){
@@ -115,8 +126,8 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
       int x = nnl/(l_max+1);
       int l = nnl-x*(l_max+1);
 
-      int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
-      int n2 = x - n1*(np12 - 1 - 0.5*n1);
+      int n1 = nnlmap(nnl,0);
+      int n2 = nnlmap(nnl,1);
 
       double B2_val = 0.0;
 
@@ -147,9 +158,8 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&] (int &nnl){
           int x = nnl/(l_max+1);
           int l = nnl-x*(l_max+1);
-
-          int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
-          int n2 = x - n1*(np12 - 1 - 0.5*n1);
+          int n1 = nnlmap(nnl,0);
+          int n2 = nnlmap(nnl,1);
 
           for(int m = 0; m < 2*l+1; m++){
             int n1_l = n1 * n_harmonics + (l * l + m);

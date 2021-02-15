@@ -159,6 +159,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
     int single_bond_size = ScratchView1D::shmem_size(n_bond);
     int single_bond_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_bond);
+    int nnlmap_size = ScratchViewInt2D::shmem_size(n_descriptors, 2);
     int B2_size = ScratchView1D::shmem_size(n_descriptors);
     int B2_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_descriptors);
 
@@ -177,7 +178,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     // TODO: Check team size for CUDA, maybe figure out how it works
     auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 32).set_scratch_size(
         1, Kokkos::PerTeam(single_bond_size + single_bond_grad_size
-                           + 2*B2_size + B2_grad_size + force_size));
+                           + 2*nnlmap_size + 2*B2_size + B2_grad_size + force_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
     Kokkos::Experimental::contribute(d_vatom, vscatter);
@@ -292,6 +293,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     n_species, n_max, n_harmonics, d_neighbors_short, jnum, NEIGHMASK);
   team_member.team_barrier();
 
+  ScratchViewInt2D nnlmap(team_member.team_scratch(1), n_descriptors, 2);
   ScratchView1D B2(team_member.team_scratch(1), n_descriptors);
   ScratchView3D B2_grad(team_member.team_scratch(1), max_neighs, 3, n_descriptors);
 
@@ -299,7 +301,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   B2_descriptor_kokkos(team_member, B2, B2_grad,
                    single_bond,
                    single_bond_grad, n_species,
-                   n_max, l_max, jnum);
+                   n_max, l_max, jnum, nnlmap);
   team_member.team_barrier();
   //printf("\n");
   /*
