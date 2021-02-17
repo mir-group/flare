@@ -4,6 +4,7 @@
 #include "descriptor.h"
 #include <vector>
 
+#include "json.h"
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 
@@ -53,7 +54,10 @@ public:
   void compute_neighbors();
   void compute_descriptors();
 
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, cutoff, single_sweep_cutoff, volume)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, cutoff, single_sweep_cutoff, volume, neighbor_count,
+		                 cumulative_neighbor_count, structure_indices, neighbor_species,
+				 cell, cell_transpose, cell_transpose_inverse, cell_dot,
+                                 cell_dot_inverse, positions, wrapped_positions, relative_positions)
 };
 
 #endif
