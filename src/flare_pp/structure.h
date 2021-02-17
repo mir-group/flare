@@ -4,6 +4,9 @@
 #include "descriptor.h"
 #include <vector>
 
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+
 class Structure {
 public:
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
@@ -49,6 +52,8 @@ public:
   double get_single_sweep_cutoff();
   void compute_neighbors();
   void compute_descriptors();
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, cutoff, single_sweep_cutoff, volume)
 };
 
 #endif
