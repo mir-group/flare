@@ -64,6 +64,7 @@ class Structure:
         forces=None,
         stds=None,
         energy: float = None,
+        stress=None,
     ):
 
         # Define cell (each row is a Bravais lattice vector).
@@ -110,7 +111,7 @@ class Structure:
         self.local_energy_stds = None
         self.partial_stresses = None
         self.partial_stress_stds = None
-        self.stress = None
+        self.stress = stress
         self.stress_stds = None
 
         # Potential energy attribute needed to mirror ASE atoms object.
@@ -337,6 +338,7 @@ class Structure:
             mass_dict=dictionary.get("mass_dict"),
             species_labels=dictionary.get("species_labels"),
             energy=dictionary.get("energy", None),
+            stress=dictionary.get("stress", None),
         )
 
         struc.stds = np.array(dictionary.get("stds"))
