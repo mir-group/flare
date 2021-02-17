@@ -51,6 +51,12 @@ class Structure:
     :type species_labels: List[str]
     :param stds: Uncertainty associated with forces
     :type stds: np.ndarray
+    :param forces: Forces associated with each atom in structure.
+    :type forces: np.ndarray
+    :param energy: Energy associated with structure.
+    :type energy: float
+    :param stress: Stress tensor associated with structure.
+    :type stress: np.ndarray
     """
 
     def __init__(
@@ -61,10 +67,10 @@ class Structure:
         mass_dict: dict = None,
         prev_positions: "ndarray" = None,
         species_labels: List[str] = None,
-        forces=None,
+        forces: "ndarray" = None,
         stds=None,
         energy: float = None,
-        stress=None,
+        stress: "ndarray" = None,
     ):
 
         # Define cell (each row is a Bravais lattice vector).
