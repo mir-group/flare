@@ -37,6 +37,19 @@ FetchContent_Declare(googletest
 )
 FetchContent_MakeAvailable(googletest)
 
+# Json
+################################################################################
+
+FetchContent_Declare(json
+    GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/json
+    GIT_TAG v3.9.1)
+
+FetchContent_GetProperties(json)
+FetchContent_Populate(json)
+add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
+include_directories(${json_SOURCE_DIR})
+
 # Kokkos
 ################################################################################
 
@@ -136,6 +149,9 @@ include_directories(
 # Create flare library.
 add_library(flare SHARED ${FLARE_SOURCES})
 add_dependencies(flare eigen_project)
+
+# Link to json.
+target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
 
 # Link to OpenMP.
 if (DEFINED ENV{OMP_LOC})
