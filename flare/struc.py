@@ -337,6 +337,7 @@ class Structure:
             mass_dict=dictionary.get("mass_dict"),
             species_labels=dictionary.get("species_labels"),
             energy=dictionary.get("energy", None),
+            stress=dictionary.get("stress", None),
         )
 
         struc.stds = np.array(dictionary.get("stds"))
