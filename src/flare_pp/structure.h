@@ -54,10 +54,18 @@ public:
   void compute_neighbors();
   void compute_descriptors();
 
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, cutoff, single_sweep_cutoff, volume, neighbor_count,
-		                 cumulative_neighbor_count, structure_indices, neighbor_species,
-				 cell, cell_transpose, cell_transpose_inverse, cell_dot,
-                                 cell_dot_inverse, positions, wrapped_positions, relative_positions)
+  // TODO: Make the Descriptor classes jsonable.
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure,
+    // VectorXi:
+    cutoff, cumulative_neighbor_count, structure_indices, neighbor_species,
+    // MatrixXd:
+    cell, cell_transpose, cell_transpose_inverse, cell_dot, cell_dot_inverse,
+    positions, wrapped_positions, relative_positions,
+    // Double:
+    cutoff, single_sweep_cutoff, volume,
+    // Other:
+    sweep, n_neighbors, species, noa, energy, forces, stresses, mean_efs, variance_efs,
+    mean_contributions, local_uncertainties)
 };
 
 #endif
