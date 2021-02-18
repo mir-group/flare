@@ -94,8 +94,6 @@ def varied_test_struc():
         positions=np.array([np.random.uniform(-1, 1, 3) for i in range(10)]),
     )
     struc.forces = np.array([np.random.uniform(-1, 1, 3) for _ in range(10)])
-    struc.stress = np.random.uniform(-1, 1, 9).reshape((3, 3))
-    struc.energy = np.random.uniform(-1, 1, 1)
     return struc
 
 
@@ -111,8 +109,7 @@ def test_to_from_methods(varied_test_struc):
 
     assert isinstance(test_dict, dict)
     assert (test_dict["forces"] == varied_test_struc.forces).all()
-    assert test_dict["energy"] == varied_test_struc.energy
-    assert (test_dict["stress"] == varied_test_struc.stress).all()
+
     new_struc_1 = Structure.from_dict(test_dict)
     new_struc_2 = Structure.from_dict(loads(varied_test_struc.as_str()))
 
