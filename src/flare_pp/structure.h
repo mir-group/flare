@@ -3,10 +3,8 @@
 
 #include "descriptor.h"
 #include <vector>
-
-#include "json.h"
 #include <nlohmann/json.hpp>
-using nlohmann::json;
+#include "json.h"
 
 class Structure {
 public:
@@ -56,16 +54,12 @@ public:
 
   // TODO: Make the Descriptor classes jsonable.
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure,
-    // VectorXi:
     cutoff, cumulative_neighbor_count, structure_indices, neighbor_species,
-    // MatrixXd:
     cell, cell_transpose, cell_transpose_inverse, cell_dot, cell_dot_inverse,
-    positions, wrapped_positions, relative_positions,
-    // Double:
-    cutoff, single_sweep_cutoff, volume,
-    // Other:
-    sweep, n_neighbors, species, noa, energy, forces, stresses, mean_efs, variance_efs,
-    mean_contributions, local_uncertainties)
+    positions, wrapped_positions, relative_positions, cutoff,
+    single_sweep_cutoff, volume, sweep, n_neighbors, species, noa,
+    energy, forces, stresses, mean_efs, variance_efs, mean_contributions, 
+    local_uncertainties)
 };
 
 #endif

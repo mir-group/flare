@@ -1,3 +1,6 @@
+#ifndef JSON_H
+#define JSON_H
+
 #include <nlohmann/json.hpp>
 
 // Cf. the Simox library on Gitlab.
@@ -71,3 +74,5 @@ namespace nlohmann {
     }
   };
 }
+
+#endif

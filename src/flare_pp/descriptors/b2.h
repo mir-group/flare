@@ -4,6 +4,8 @@
 #include "descriptor.h"
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include "json.h"
 
 class Structure;
 
@@ -44,6 +46,13 @@ public:
   DescriptorValues compute_struc(Structure &structure);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);
+
+// TODO: Manually write to/from json methods to set the radial and cutoff
+// functions.
+//   NLOHMANN_DEFINE_TYPE_INTRUSIVE(B2,
+//     radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
+//     descriptor_settings, cutoffs
+//   )
 };
 
 void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
