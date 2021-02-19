@@ -62,4 +62,8 @@ public:
     local_uncertainties, descriptor_calculators)
 };
 
+  // TODO: Test these methods and add to Python binding.
+  static void to_json_file(std::string file_name, const Structure & struc);
+  static Structure from_json_file(std::string file_name);
+
 #endif
