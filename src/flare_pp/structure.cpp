@@ -162,13 +162,13 @@ double Structure ::get_single_sweep_cutoff() {
 }
 
 
-static void to_json_file(std::string file_name, const Structure & struc){
+void Structure ::to_json(std::string file_name, const Structure & struc){
   std::ofstream struc_file(file_name);
   nlohmann::json j = struc;
   struc_file << j;
 }
 
-static Structure from_json_file(std::string file_name){
+Structure Structure ::from_json(std::string file_name){
   std::ifstream struc_file(file_name);
   nlohmann::json j;
   struc_file >> j;

@@ -60,10 +60,10 @@ public:
     single_sweep_cutoff, volume, sweep, n_neighbors, species, noa,
     energy, forces, stresses, mean_efs, variance_efs, mean_contributions, 
     local_uncertainties, descriptor_calculators)
-};
 
-  // TODO: Test these methods and add to Python binding.
-  static void to_json_file(std::string file_name, const Structure & struc);
-  static Structure from_json_file(std::string file_name);
+  // TODO: Test these methods.
+  static void to_json(std::string file_name, const Structure & struc);
+  static Structure from_json(std::string file_name);
+};
 
 #endif

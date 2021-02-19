@@ -44,7 +44,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("variance_efs", &Structure::variance_efs)
       .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
       .def_readonly("descriptors", &Structure::descriptors)
-      .def("wrap_positions", &Structure::wrap_positions);
+      .def("wrap_positions", &Structure::wrap_positions)
+      .def_static("to_json", &Structure::to_json)
+      .def_static("from_json", &Structure::from_json);
 
   // Descriptor values
   py::class_<DescriptorValues>(m, "DescriptorValues")
