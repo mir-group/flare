@@ -12,6 +12,14 @@ void Descriptor::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   return;
 }
 
+void to_json(nlohmann::json& j, const std::vector<Descriptor*> & p){
+
+}
+
+void from_json(const nlohmann::json& j, std::vector<Descriptor*> & p){
+
+}
+
 DescriptorValues::DescriptorValues() {}
 
 ClusterDescriptor::ClusterDescriptor() {}

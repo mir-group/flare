@@ -20,6 +20,9 @@ public:
   virtual void write_to_file(std::ofstream &coeff_file, int coeff_size);
 };
 
+void to_json(nlohmann::json& j, const std::vector<Descriptor*> & p);
+void from_json(const nlohmann::json& j, std::vector<Descriptor*> & p);
+
 // DescriptorValues holds the descriptor values for a single structure.
 class DescriptorValues {
 public:

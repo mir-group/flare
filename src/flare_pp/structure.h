@@ -59,7 +59,7 @@ public:
     positions, wrapped_positions, relative_positions, cutoff,
     single_sweep_cutoff, volume, sweep, n_neighbors, species, noa,
     energy, forces, stresses, mean_efs, variance_efs, mean_contributions, 
-    local_uncertainties)
+    local_uncertainties, descriptor_calculators)
 };
 
 #endif
