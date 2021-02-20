@@ -25,9 +25,9 @@ jobs:
 
     - name: Install Sphinx and Breathe
       run: |
-        sudo apt install python3-pip
-        sudo apt-get install python3-sphinx
-        pip3 install sphinx_rtd_theme breathe
+        #sudo apt install python3-pip
+        sudo apt-get install python3-sphinx python3-sphinx_rtd_theme python3-breathe
+        #pip3 install sphinx_rtd_theme breathe
 
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
