@@ -37,7 +37,10 @@ jobs:
         working-directory: "./docs" # default is .
 
     - name: Run Sphinx
-      run: make html
+      run: |
+        pwd
+        ls
+        make html
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
