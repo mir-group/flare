@@ -254,7 +254,7 @@ def test_otf_parser(md_engine):
     print("ase otf traj parsed")
     # Check that the GP forces change.
     comp1 = otf_traj.force_list[0][1, 0]
-    comp2 = otf_traj.force_list[1][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
     assert (comp1 != comp2)
 
     for f in glob.glob(md_engine + "*"): 
