@@ -6,16 +6,26 @@
 
 class Structure {
 public:
-  /** @name Neighbors
-   * Attributes storing neighbor information.
+  /** @name Neighbor attributes
    */
   ///@{
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, neighbor_species;
   ///@}
 
   Eigen::VectorXi structure_indices;
+
+  /** @name The periodic box
+   */
+  ///@{
   Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse, cell_dot,
-      cell_dot_inverse, positions, wrapped_positions, relative_positions;
+      cell_dot_inverse;
+  ///@}
+
+  /** @name Atom coordinates */
+  ///@{
+  Eigen::MatrixXd positions, wrapped_positions, relative_positions;
+  ///@}
+
   double cutoff, single_sweep_cutoff, volume;
   int sweep, n_neighbors;
 
@@ -32,9 +42,16 @@ public:
   std::vector<Descriptor *> descriptor_calculators;
   std::vector<DescriptorValues> descriptors;
 
-  // Make structure labels empty by default.
-  Eigen::VectorXd energy, forces, stresses, mean_efs, variance_efs;
+  /** @name Structure labels */
+  ///@{
+  Eigen::VectorXd energy, forces, stresses;
+  ///@}
+  
+  /** @name Mean and variance predictions */
+  ///@{
+  Eigen::VectorXd mean_efs, variance_efs;
   std::vector<Eigen::VectorXd> mean_contributions, local_uncertainties;
+  ///@}
 
   /**
    Default structure constructor.
