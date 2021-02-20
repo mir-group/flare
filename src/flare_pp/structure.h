@@ -9,15 +9,17 @@ public:
   /** @name Neighbor attributes
    */
   ///@{
-  /** Test 1
+  /** Neighbor count for each atom.
    */
   Eigen::VectorXi neighbor_count;
   
-  /** Test 2
+  /** Cumulative neighbor count. The vector has length N+1, where N is the
+   *  number of atoms in the structure, with first entry 0.
    */
   Eigen::VectorXi cumulative_neighbor_count;
   
-  /** Test 3
+  /** Species of each neighbor. The vector has length equal to the total
+   * number of neighbors in the structure.
    */
   Eigen::VectorXi neighbor_species;
   ///@}
