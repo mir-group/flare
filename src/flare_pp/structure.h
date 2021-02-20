@@ -6,10 +6,11 @@
 
 class Structure {
 public:
-  /**
-   * Attributes storing neighbor information.
+  ///@{
+  /** Attributes storing neighbor information.
    */
   Eigen::VectorXi neighbor_count, cumulative_neighbor_count, neighbor_species;
+  ///@}
 
   Eigen::VectorXi structure_indices;
   Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse, cell_dot,
