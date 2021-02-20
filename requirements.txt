@@ -2,7 +2,7 @@ numpy>=1.16.0
 scipy
 memory_profiler
 numba
-ase==3.21.0
+ase
 pymatgen
 nptyping
 nbsphinx
