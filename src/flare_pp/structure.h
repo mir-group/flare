@@ -6,13 +6,25 @@
 
 class Structure {
 public:
-  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, structure_indices,
-      neighbor_species;
+  /**
+   * Attributes storing neighbor information.
+   */
+  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, neighbor_species;
+
+  Eigen::VectorXi structure_indices;
   Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse, cell_dot,
       cell_dot_inverse, positions, wrapped_positions, relative_positions;
   double cutoff, single_sweep_cutoff, volume;
   int sweep, n_neighbors;
+
+  /**
+   * Species of each atom.
+   */
   std::vector<int> species;
+
+  /**
+   * Number of atoms in the structure.
+   */
   int noa;
 
   std::vector<Descriptor *> descriptor_calculators;
