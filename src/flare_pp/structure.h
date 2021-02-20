@@ -10,12 +10,7 @@ public:
    * Attributes storing neighbor information.
    */
   ///@{
-  /** Neighbor count for each atom. */
-  Eigen::VectorXi neighbor_count
-  /** Cumulative neighbor count for each atom. */
-  Eigen::VectorXi cumulative_neighbor_count
-  /** Species of each neighbor. */
-  Eigen::VectorXi neighbor_species;
+  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, neighbor_species;
   ///@}
 
   Eigen::VectorXi structure_indices;
