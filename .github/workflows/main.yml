@@ -38,8 +38,8 @@ jobs:
 
     - name: Run Sphinx
       run: |
+        cd docs
         pwd
-        ls
         make html
 
     - name: Deploy
