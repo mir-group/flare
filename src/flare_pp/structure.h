@@ -9,7 +9,17 @@ public:
   /** @name Neighbor attributes
    */
   ///@{
-  Eigen::VectorXi neighbor_count, cumulative_neighbor_count, neighbor_species;
+  /** Test 1
+   */
+  Eigen::VectorXi neighbor_count;
+  
+  /** Test 2
+   */
+  Eigen::VectorXi cumulative_neighbor_count;
+  
+  /** Test 3
+   */
+  Eigen::VectorXi neighbor_species;
   ///@}
 
   Eigen::VectorXi structure_indices;
