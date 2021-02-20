@@ -197,5 +197,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("Kuu_inverse", &SparseGP::Kuu_inverse)
       .def_readonly("n_sparse", &SparseGP::n_sparse)
       .def_readonly("n_labels", &SparseGP::n_labels)
-      .def_readonly("y", &SparseGP::y);
+      .def_readonly("y", &SparseGP::y)
+      .def_static("to_json", &SparseGP::to_json)
+      .def_static("from_json", &SparseGP::from_json);
 }

@@ -21,7 +21,6 @@ void to_json(nlohmann::json& j, const std::vector<Descriptor*> & p){
 }
 
 void from_json(const nlohmann::json& j, std::vector<Descriptor*> & p){
-  p.clear();
   int n_desc = j.size();
   for (int i = 0; i < n_desc; i++){
     nlohmann::json j_desc = j[i];

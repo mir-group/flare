@@ -13,6 +13,8 @@ class Descriptor {
 public:
   Descriptor();
 
+  std::string descriptor_name;
+
   virtual DescriptorValues compute_struc(Structure &structure) = 0;
 
   virtual ~Descriptor() = default;
@@ -20,8 +22,6 @@ public:
   virtual void write_to_file(std::ofstream &coeff_file, int coeff_size);
 
   virtual nlohmann::json return_json() = 0;
-
-  std::string descriptor_name;
 };
 
 void to_json(nlohmann::json& j, const std::vector<Descriptor*> & p);

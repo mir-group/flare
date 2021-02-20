@@ -5,6 +5,8 @@
 #include "structure.h"
 #include <Eigen/Dense>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include "json.h"
 
 class DescriptorValues;
 class ClusterDescriptor;
@@ -13,6 +15,7 @@ class SparseGP;
 class Kernel {
 public:
   Eigen::VectorXd kernel_hyperparameters;
+  std::string kernel_name;
 
   Kernel();
 
@@ -59,6 +62,11 @@ public:
   virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;
 
   virtual ~Kernel() = default;
+
+  virtual nlohmann::json return_json() = 0;
 };
+
+void to_json(nlohmann::json& j, const std::vector<Kernel*> & kernels);
+void from_json(const nlohmann::json& j, std::vector<Kernel*> & kernels);
 
 #endif
