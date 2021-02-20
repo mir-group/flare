@@ -1,4 +1,5 @@
 # flare++
+Documentation can be accessed [here](https://mir-group.github.io/flare_pp/).
 
 ## Usage
 
