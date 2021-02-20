@@ -52,7 +52,6 @@ public:
   void compute_neighbors();
   void compute_descriptors();
 
-  // TODO: Make the Descriptor classes jsonable.
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, neighbor_count,
     cutoff, cumulative_neighbor_count, structure_indices, neighbor_species,
     cell, cell_transpose, cell_transpose_inverse, cell_dot, cell_dot_inverse,
@@ -61,7 +60,6 @@ public:
     energy, forces, stresses, mean_efs, variance_efs, mean_contributions, 
     local_uncertainties, descriptor_calculators)
 
-  // TODO: Test these methods.
   static void to_json(std::string file_name, const Structure & struc);
   static Structure from_json(std::string file_name);
 };
