@@ -40,8 +40,12 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
   cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
 
   compute_neighbors();
+  compute_descriptors();
+}
 
-  for (int i = 0; i < descriptor_calculators.size(); i++) {
+void Structure ::compute_descriptors(){
+  descriptors.clear();
+  for (int i = 0; i < descriptor_calculators.size(); i++){
     descriptors.push_back(descriptor_calculators[i]->compute_struc(*this));
   }
 }

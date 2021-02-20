@@ -18,6 +18,10 @@ public:
   virtual ~Descriptor() = default;
 
   virtual void write_to_file(std::ofstream &coeff_file, int coeff_size);
+
+  virtual nlohmann::json return_json() = 0;
+
+  std::string descriptor_name;
 };
 
 void to_json(nlohmann::json& j, const std::vector<Descriptor*> & p);

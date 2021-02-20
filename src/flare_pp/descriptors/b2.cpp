@@ -542,3 +542,32 @@ void compute_single_bond(
     }
   }
 }
+
+void to_json(nlohmann::json& j, const B2 & p){
+  j = nlohmann::json{
+    {"radial_basis", p.radial_basis},
+    {"cutoff_function", p.cutoff_function},
+    {"radial_hyps", p.radial_hyps},
+    {"cutoff_hyps", p.cutoff_hyps},
+    {"descriptor_settings", p.descriptor_settings},
+    {"cutoffs", p.cutoffs},
+    {"descriptor_name", p.descriptor_name}
+  };
+}
+
+void from_json(const nlohmann::json& j, B2 & p){
+  p = B2(
+    j.at("radial_basis"),
+    j.at("cutoff_function"),
+    j.at("radial_hyps"),
+    j.at("radial_hyps"),
+    j.at("descriptor_settings"),
+    j.at("cutoffs")
+  );
+}
+
+nlohmann::json B2 ::return_json(){
+  nlohmann::json j;
+  to_json(j, *this);
+  return j;
+}

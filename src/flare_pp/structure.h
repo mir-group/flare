@@ -53,7 +53,7 @@ public:
   void compute_descriptors();
 
   // TODO: Make the Descriptor classes jsonable.
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure,
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, neighbor_count,
     cutoff, cumulative_neighbor_count, structure_indices, neighbor_species,
     cell, cell_transpose, cell_transpose_inverse, cell_dot, cell_dot_inverse,
     positions, wrapped_positions, relative_positions, cutoff,

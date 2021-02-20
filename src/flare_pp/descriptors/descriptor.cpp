@@ -2,6 +2,7 @@
 #include "cutoffs.h"
 #include "radial.h"
 #include "structure.h"
+#include "b2.h"
 #include <cmath>
 #include <iostream>
 
@@ -13,11 +14,29 @@ void Descriptor::write_to_file(std::ofstream &coeff_file, int coeff_size) {
 }
 
 void to_json(nlohmann::json& j, const std::vector<Descriptor*> & p){
-
+  int n_desc = p.size();
+  for (int i = 0; i < n_desc; i++){
+    j.push_back(p[i]->return_json());
+  }
 }
 
 void from_json(const nlohmann::json& j, std::vector<Descriptor*> & p){
-
+  p.clear();
+  int n_desc = j.size();
+  for (int i = 0; i < n_desc; i++){
+    nlohmann::json j_desc = j[i];
+    std::string descriptor_name = j_desc.at("descriptor_name");
+    if (descriptor_name == "B2"){
+      // Consider using smart pointers instead to handle deallocation.
+      B2* b2_pointer = new B2;
+      *b2_pointer = j_desc;
+      p.push_back(b2_pointer);
+    }
+    // TODO: Implement to/from json methods for remaining descriptors.
+    else{
+      p.push_back(nullptr);
+    }
+  }
 }
 
 DescriptorValues::DescriptorValues() {}

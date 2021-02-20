@@ -17,3 +17,16 @@ TEST(JsonTest, MatTest){
   }
 };
 
+TEST(JsonTest, SizeTest){
+  nlohmann::json j;
+  std::cout << j.size() << std::endl;
+
+  int test = 1;
+  j.push_back({"test", test});
+  j.push_back({"test2", test});
+
+  std::cout << j.size() << std::endl;
+  std::cout << j[0] << std::endl;
+  std::cout << j[1] << std::endl;
+}
+
