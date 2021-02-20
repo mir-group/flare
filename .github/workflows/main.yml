@@ -22,19 +22,27 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-        
-    - name: Doxygen Action
+
+    - name: Install Sphinx and Breathe
+      run: |
+        sudo apt install python3-pip
+        pip3 install sphinx sphinx_rtd_theme breathe
+
+    - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
         # Path to Doxyfile
         doxyfile-path: "./Doxyfile" # default is ./Doxyfile
         # Working directory
         working-directory: "./docs" # default is .
-    
+
+    - name: Run Sphinx
+      run: make html
+
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         # Default Doxyfile build documentation to html directory. 
         # Change the directory if changes in Doxyfile
-        publish_dir: ./docs/html
+        publish_dir: ./docs/_Build/html
