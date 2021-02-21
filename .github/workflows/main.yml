@@ -23,17 +23,21 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: |
-        sudo apt install -y libopenblas-dev liblapack-dev
+    #- name: Install dependencies
+    #  run: |
+    #    sudo apt install -y libopenblas-dev liblapack-dev
+
+    #- name: Checkout
+    #  uses: actions/checkout@v2
+    #  with:
+    #    submodules: true
     
-    - name: Checkout
-      #uses: actions/checkout@v2
-      #with:
-      #  submodules: true
+    - name: Build
       run: |
-        pwd
-        ls
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . -j
 
     - name: Install Sphinx and Breathe
       run: |
