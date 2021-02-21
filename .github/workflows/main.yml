@@ -23,11 +23,21 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    - name: Install dependencies
+      run: |
+        sudo apt install -y libopenblas-dev liblapack-dev
+    
+    - name: Checkout
+      #uses: actions/checkout@v2
+      #with:
+      #  submodules: true
+      run: |
+        pwd
+        ls
+
     - name: Install Sphinx and Breathe
       run: |
-        #sudo apt install python3-pip
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe
-        #pip3 install sphinx sphinx_rtd_theme breathe
 
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
@@ -44,7 +54,7 @@ jobs:
         ls
         make html
 
-    - name: Deploy
+    - name: Publish the docs
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
