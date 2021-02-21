@@ -175,6 +175,13 @@ if (DEFINED ENV{MKL_LIBS})
 else()
   find_package(LAPACK REQUIRED)
   target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
+
+  find_package(LAPACKE)
+  if(LAPACKE_FOUND)
+    message("Found LAPACKE.")
+    target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
+  endif()
+
   if (LAPACK_LIBRARIES MATCHES mkl)
     message(STATUS "Linking Eigen to MKL.")
     target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
