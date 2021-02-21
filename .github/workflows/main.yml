@@ -25,8 +25,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        sudo apt remove liblapack
-        sudo apt install gcc-9 g++-9 libopenblas-dev liblapacke liblapacke-dev liblapack liblapack-dev
+        sudo apt remove liblapack-dev
+        sudo apt install gcc-9 g++-9 libopenblas-dev liblapacke liblapacke-dev liblapack-dev
  
     - name: Build
       env:
