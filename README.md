@@ -1,4 +1,4 @@
-![build](https://github.com/mir-group/flare_pp/docs/actions/workflows/main.yaml/badge.svg)
+![build](https://github.com/jonpvandermause/flare_pp/workflows/build/badge.svg)
 
 # flare++
 Documentation can be accessed [here](https://mir-group.github.io/flare_pp/).
