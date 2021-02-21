@@ -20,6 +20,8 @@ public:
   std::vector<int> descriptor_settings;
   Eigen::VectorXd wigner3j_coeffs;
 
+  std::string descriptor_name = "B3";
+
   B3();
 
   B3(const std::string &radial_basis, const std::string &cutoff_function,
@@ -28,6 +30,8 @@ public:
      const std::vector<int> &descriptor_settings);
 
   DescriptorValues compute_struc(Structure &structure);
+
+  nlohmann::json return_json();
 };
 
 void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,

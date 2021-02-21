@@ -1029,3 +1029,16 @@ void SparseGP::write_varmap_coefficients(
 
   coeff_file.close();
 }
+
+void SparseGP ::to_json(std::string file_name, const SparseGP & sgp){
+  std::ofstream sgp_file(file_name);
+  nlohmann::json j = sgp;
+  sgp_file << j;
+}
+
+SparseGP SparseGP ::from_json(std::string file_name){
+  std::ifstream sgp_file(file_name);
+  nlohmann::json j;
+  sgp_file >> j;
+  return j;
+}

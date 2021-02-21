@@ -279,3 +279,9 @@ DescriptorValues FourBody ::compute_struc(Structure &structure) {
 
   return desc;
 }
+
+// TODO: Implement.
+nlohmann::json FourBody ::return_json(){
+  nlohmann::json j;
+  return j;
+}

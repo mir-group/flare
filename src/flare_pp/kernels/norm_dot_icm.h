@@ -13,6 +13,7 @@ public:
   double sigma, sig2, power;
   int no_types, n_icm_coeffs;
   Eigen::MatrixXd icm_coeffs;
+  std::string kernel_name = "NormalizedDotProduct_ICM";
 
   NormalizedDotProduct_ICM();
 
@@ -48,6 +49,11 @@ public:
                                                int kernel_index);
   Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct_ICM,
+    sigma, sig2, power, no_types, n_icm_coeffs, icm_coeffs, kernel_name)
+
+  nlohmann::json return_json();
 };
 
 int get_icm_index(int s1, int s2, int n_types);

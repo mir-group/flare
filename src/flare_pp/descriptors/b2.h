@@ -4,6 +4,8 @@
 #include "descriptor.h"
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include "json.h"
 
 class Structure;
 
@@ -18,6 +20,8 @@ public:
   std::string radial_basis, cutoff_function;
   std::vector<double> radial_hyps, cutoff_hyps;
   std::vector<int> descriptor_settings;
+
+  std::string descriptor_name = "B2";
 
   /** Matrix of cutoff values, with element (i, j) corresponding to the cutoff
    * assigned to the species pair (i, j), where i is the central species
@@ -44,6 +48,8 @@ public:
   DescriptorValues compute_struc(Structure &structure);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);
+
+  nlohmann::json return_json();
 };
 
 void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
@@ -91,5 +97,8 @@ void compute_single_bond(
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps, const Structure &structure);
+
+void to_json(nlohmann::json& j, const B2 & p);
+void from_json(const nlohmann::json& j, B2 & p);
 
 #endif

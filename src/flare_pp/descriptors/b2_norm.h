@@ -18,6 +18,8 @@ public:
      const std::vector<int> &descriptor_settings);
 
   DescriptorValues compute_struc(Structure &structure);
+
+  nlohmann::json return_json();
 };
 
 void compute_b2_norm(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,

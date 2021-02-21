@@ -11,6 +11,7 @@ class ClusterDescriptor;
 class SquaredExponential : public Kernel {
 public:
   double sigma, ls, sig2, ls2;
+  std::string kernel_name = "SquaredExponential";
 
   SquaredExponential();
 
@@ -46,6 +47,10 @@ public:
   Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
 
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SquaredExponential, sigma, ls, sig2, ls2,
+    kernel_name)
+
+  nlohmann::json return_json();
 };
 
 #endif

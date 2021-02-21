@@ -686,3 +686,8 @@ int get_icm_index(int s1, int s2, int n_types) {
   return icm_index;
 }
 
+nlohmann::json NormalizedDotProduct_ICM ::return_json(){
+  nlohmann::json j;
+  to_json(j, *this);
+  return j;
+}

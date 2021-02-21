@@ -44,7 +44,12 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("variance_efs", &Structure::variance_efs)
       .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
       .def_readonly("descriptors", &Structure::descriptors)
-      .def("wrap_positions", &Structure::wrap_positions);
+      .def_readonly("descriptor_calculators",
+                    &Structure::descriptor_calculators)
+      .def("compute_descriptors", &Structure::compute_descriptors)
+      .def("wrap_positions", &Structure::wrap_positions)
+      .def_static("to_json", &Structure::to_json)
+      .def_static("from_json", &Structure::from_json);
 
   // Descriptor values
   py::class_<DescriptorValues>(m, "DescriptorValues")
@@ -192,5 +197,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("Kuu_inverse", &SparseGP::Kuu_inverse)
       .def_readonly("n_sparse", &SparseGP::n_sparse)
       .def_readonly("n_labels", &SparseGP::n_labels)
-      .def_readonly("y", &SparseGP::y);
+      .def_readonly("y", &SparseGP::y)
+      .def_static("to_json", &SparseGP::to_json)
+      .def_static("from_json", &SparseGP::from_json);
 }

@@ -780,3 +780,9 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
 
   return mapping_coeffs;
 }
+
+nlohmann::json NormalizedDotProduct ::return_json(){
+  nlohmann::json j;
+  to_json(j, *this);
+  return j;
+}

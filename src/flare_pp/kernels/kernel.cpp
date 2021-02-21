@@ -2,6 +2,9 @@
 #include "cutoffs.h"
 #include <cmath>
 #include <iostream>
+#include "normalized_dot_product.h"
+#include "norm_dot_icm.h"
+#include "squared_exponential.h"
 
 Kernel ::Kernel(){};
 Kernel ::Kernel(Eigen::VectorXd kernel_hyperparameters) {
@@ -83,4 +86,38 @@ Kernel ::Kuf_grad(const ClusterDescriptor &envs,
   }
 
   return Kuf_grad;
+}
+
+void to_json(nlohmann::json& j, const std::vector<Kernel*> & kernels){
+  int n_kernels = kernels.size();
+  for (int i = 0; i < n_kernels; i++){
+    j.push_back(kernels[i]->return_json());
+  }
+}
+
+void from_json(const nlohmann::json& j, std::vector<Kernel*> & kernels){
+  int n_kernels = j.size();
+  for (int i = 0; i < n_kernels; i++){
+    nlohmann::json j_kernel = j[i];
+    std::string kernel_name = j_kernel.at("kernel_name");
+    // Consider using smart pointers instead to handle deallocation.
+    if (kernel_name == "NormalizedDotProduct"){
+      NormalizedDotProduct* norm_dot = new NormalizedDotProduct;
+      *norm_dot = j_kernel;
+      kernels.push_back(norm_dot);
+    }
+    else if (kernel_name == "NormalizedDotProduct_ICM"){
+      NormalizedDotProduct_ICM* norm_dot_icm = new NormalizedDotProduct_ICM;
+      *norm_dot_icm = j_kernel;
+      kernels.push_back(norm_dot_icm);
+    }
+    else if (kernel_name == "SquaredExponential"){
+      SquaredExponential* sq_exp = new SquaredExponential;
+      *sq_exp = j_kernel;
+      kernels.push_back(sq_exp);
+    }
+    else{
+      kernels.push_back(nullptr);
+    }
+  }
 }

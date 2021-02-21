@@ -215,3 +215,9 @@ DescriptorValues ThreeBody ::compute_struc(Structure &structure) {
 
   return desc;
 }
+
+// TODO: Implement.
+nlohmann::json ThreeBody ::return_json(){
+  nlohmann::json j;
+  return j;
+}

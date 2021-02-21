@@ -137,3 +137,9 @@ DescriptorValues TwoBody ::compute_struc(Structure &structure) {
 
   return desc;
 }
+
+// TODO: Implement.
+nlohmann::json TwoBody ::return_json(){
+  nlohmann::json j;
+  return j;
+}

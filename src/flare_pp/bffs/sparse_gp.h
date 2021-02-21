@@ -6,6 +6,8 @@
 #include "structure.h"
 #include <Eigen/Dense>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include "json.h"
 
 class SparseGP {
 public:
@@ -84,6 +86,18 @@ public:
                                   std::string contributor,
                                   int kernel_index);
 
+  // TODO: Make kernels jsonable.
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(SparseGP, hyperparameters, kernels,    
+    Kuu_kernels, Kuf_kernels, Kuu, Kuf, n_kernels, Kuu_jitter, Sigma,
+    Kuu_inverse, R_inv, L_inv, alpha, R_inv_diag, L_diag, sparse_descriptors,
+    training_structures, sparse_indices, noise_vector, y, label_count,
+    n_energy_labels, n_force_labels, n_stress_labels, n_sparse, n_labels,
+    n_strucs, energy_noise, force_noise, stress_noise, log_marginal_likelihood,
+    data_fit, complexity_penalty, trace_term, constant_term,
+    likelihood_gradient)
+
+  static void to_json(std::string file_name, const SparseGP & sgp);
+  static SparseGP from_json(std::string file_name);
 };
 
 #endif
