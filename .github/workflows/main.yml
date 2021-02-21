@@ -26,11 +26,11 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt install gcc-9 g++-9 libopenblas-dev liblapack-dev liblapacke-dev
-        cd usr/include
+        cd usr
         ls
-        cd openblas
-        ls
-        cp usr/include/lapacke.h usr/include/openblas
+        #cd openblas
+        #ls
+        #cp usr/include/lapacke.h usr/include/openblas
         
  
     - name: Build
