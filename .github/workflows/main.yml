@@ -25,12 +25,12 @@ jobs:
     
     - name: Install gcc compiler
       run: |
-        sudo apt install gcc-10 g++-10
+        sudo apt install gcc-9 g++-9
  
     - name: Build
       env:
-        CC: gcc-10
-        CXX: g++-10
+        CC: gcc-9
+        CXX: g++-9
       run: |
         mkdir build
         cd build
