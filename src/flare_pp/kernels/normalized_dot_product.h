@@ -61,7 +61,7 @@ public:
                                                int kernel_index);
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct,
-    sigma, sig2, power, kernel_name)
+    sigma, sig2, power, kernel_name, kernel_hyperparameters)
 
   nlohmann::json return_json();
 };
