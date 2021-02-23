@@ -24,9 +24,12 @@ public:
    * number of neighbors in the structure.
    */
   Eigen::VectorXi neighbor_species;
-  ///@}
 
+  /** ID of each neighbor, where the ID is determined by the initial order
+   * of atoms used when the structure was constructed.
+   */
   Eigen::VectorXi structure_indices;
+  ///@}
 
   /** @name The periodic box
    */
@@ -53,8 +56,11 @@ public:
    */
   int noa;
 
+  /** @name Descriptors */
+  ///@{
   std::vector<Descriptor *> descriptor_calculators;
   std::vector<DescriptorValues> descriptors;
+  ///@}
 
   /** @name Structure labels */
   ///@{
