@@ -107,7 +107,7 @@ public:
     positions, wrapped_positions, relative_positions, cutoff,
     single_sweep_cutoff, volume, sweep, n_neighbors, species, noa,
     energy, forces, stresses, mean_efs, variance_efs, mean_contributions, 
-    local_uncertainties, descriptor_calculators)
+    local_uncertainties, descriptor_calculators, descriptors)
 
   static void to_json(std::string file_name, const Structure & struc);
   static Structure from_json(std::string file_name);
