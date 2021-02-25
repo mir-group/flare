@@ -35,8 +35,9 @@ class ASE_OTF(OTF):
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
-        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run,
-            with calculator set as FLARE_Calculator.
+        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run.
+        calculator: ASE calculator. Must have "get_uncertainties" method
+          implemented.
         timestep: the timestep in MD. Please use ASE units, e.g. if the
             timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
@@ -98,11 +99,14 @@ class ASE_OTF(OTF):
         dft_calc,
         md_engine,
         md_kwargs,
+        calculator=None,
         trajectory=None,
         **otf_kwargs
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+        if calculator is not None:
+            self.atoms.set_calculator(calculator)
         self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
@@ -207,9 +211,6 @@ class ASE_OTF(OTF):
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
 
-    def write_gp(self):
-        self.flare_calc.write_model(self.flare_name)
-
     def rescale_temperature(self, new_pos):
         # call OTF method
         super().rescale_temperature(new_pos)
@@ -217,10 +218,16 @@ class ASE_OTF(OTF):
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
             rescale_ind = self.rescale_steps.index(self.curr_step)
-            temp_fac = self.rescale_temps[rescale_ind] / self.temperature
+            new_temp = self.rescale_temps[rescale_ind]
+            temp_fac = new_temp / self.temperature
             vel_fac = np.sqrt(temp_fac)
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
+
+            # Reset thermostat parameters.
+            if self.md_engine in ["NVTBerendsen", "NPTBerendsen",
+                                  "NPT", "Langevin"]:
+                self.md.set_temperature(temperature_K=new_temp)
 
     def update_temperature(self):
         self.KE = self.atoms.get_kinetic_energy()
@@ -311,6 +318,7 @@ class ASE_OTF(OTF):
     @staticmethod
     def from_dict(dct):
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        flare_calc.reset()
         dct["atoms"] = read(dct["atoms"])
         dct["atoms"].calc = flare_calc
         dct.pop("gp")

@@ -178,7 +178,13 @@ def write_text(file, text):
 
 
 def generic_lammps_input(
-    dat_file, style_string, coeff_string, dump_file, newton=False, std_string=""
+    dat_file,
+    style_string,
+    coeff_string,
+    dump_file,
+    newton=False,
+    std_string="",
+    std_style=None,
 ):
     """Create text for generic LAMMPS input file."""
 
@@ -187,8 +193,13 @@ def generic_lammps_input(
     else:
         ntn = "off"
 
-    if std_string != "":
-        compute_cmd = f"compute std all uncertainty/atom {std_string}"
+    if std_string != "" and std_style is not None:
+        if std_style == "flare":
+            compute_cmd = f"compute std all uncertainty/atom {std_string}"
+        elif std_style == "flare_pp":
+            compute_cmd = f"compute std all flare/std/atom {std_string}"
+        else:
+            raise NotImplementedError
         c_std = "c_std"
     else:
         compute_cmd = ""

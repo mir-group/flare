@@ -118,6 +118,8 @@ class OTF:
         max_atoms_added: int = 1,
         freeze_hyps: int = 10,
         min_steps_with_model: int = 0,
+        update_style: str = "add_n",
+        update_threshold: float = None,
         # dft args
         force_source: str = "qe",
         npool: int = None,
@@ -169,6 +171,8 @@ class OTF:
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
             self.init_atoms = init_atoms
+        self.update_style = update_style
+        self.update_threshold = update_threshold
 
         self.n_cpus = n_cpus  # set number of cpus and npool for DFT runs
         self.npool = npool
@@ -256,7 +260,9 @@ class OTF:
                     self.std_tolerance,
                     self.gp.force_noise,
                     self.structure,
-                    self.max_atoms_added,
+                    max_atoms_added=self.max_atoms_added,
+                    update_style=self.update_style,
+                    update_threshold=self.update_threshold
                 )
 
                 if (not std_in_bound) and (

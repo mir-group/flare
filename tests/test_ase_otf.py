@@ -48,7 +48,7 @@ def read_qe_results(self):
 
 md_list = [
     "VelocityVerlet",
-    "NVTBerendsen",
+    "NVTBerendsen", 
     "NPTBerendsen",
     "NPT",
     "Langevin",
@@ -73,7 +73,9 @@ def md_params():
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
     md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
-    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
+    md_dict["NPTBerendsen"].update({"pressure": 0.0,
+                                    "compressibility_au": 1.0})
+    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": 1.0})
     md_dict["Langevin"].update({"friction": 0.02})
     md_dict["NoseHoover"].update({"nvt_q": 334.0})
 
@@ -86,7 +88,7 @@ def super_cell():
 
     from ase.spacegroup import crystal
 
-    a = 10.0
+    a = 5.0
     alpha = 90
     atoms = crystal(
         ["H", "He"],
@@ -207,6 +209,13 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
 
     test_otf.run()
 
+    # Check that the GP forces change.
+    output_name = f"{md_engine}.out"
+    otf_traj = OtfAnalysis(output_name)
+    comp1 = otf_traj.force_list[0][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
+    assert (comp1 != comp2)
+
     for f in glob.glob("scf*.pw*"):
         os.remove(f)
     for f in glob.glob("*.npy"):
@@ -228,7 +237,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
 def test_load_checkpoint(md_engine):
     new_otf = ASE_OTF.from_checkpoint(md_engine + "_checkpt.json")
     assert new_otf.curr_step == number_of_steps
-    new_otf.number_of_steps = new_otf.number_of_steps + 2
+    new_otf.number_of_steps = new_otf.number_of_steps + 3
     new_otf.run()
 
 
@@ -243,6 +252,10 @@ def test_otf_parser(md_engine):
         replicated_gp = otf_traj.make_gp(init_gp=init_flare.gp_model)
 
     print("ase otf traj parsed")
+    # Check that the GP forces change.
+    comp1 = otf_traj.force_list[0][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
+    assert (comp1 != comp2)
 
-    for f in glob.glob(md_engine + "*"):
+    for f in glob.glob(md_engine + "*"): 
         os.remove(f)
