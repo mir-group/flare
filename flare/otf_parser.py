@@ -267,10 +267,17 @@ def parse_header_information(lines) -> dict:
             assert "hyperparameter" in new_line.lower()
 
             hyps_array = new_line[new_line.find(":") + 1 :].split()
-            if len(hyps_array) < n_hyps:
-                next_new_line = lines[i + 2].replace("[", "")
+            extra_line = 2
+            while len(hyps_array) < n_hyps:
+                next_new_line = lines[i + extra_line].replace("[", "")
                 next_new_line = next_new_line.replace("]", "")
                 hyps_array += next_new_line.split()
+                extra_line += 1
+                #if len(hyps_array) < n_hyps:
+                #    next_new_line = lines[i + 2].replace("[", "")
+                #    next_new_line = next_new_line.replace("]", "")
+                #    hyps_array += next_new_line.split()   
+            # print(extra_line,hyps_array, n_hyps) 
             assert len(hyps_array) == n_hyps
 
             hyps_array = [float(h.strip()) for h in hyps_array]
@@ -444,7 +451,7 @@ def extract_global_info(
             cell_list.append(vectors)
         if "Stress" in line:
             vectors = []
-            stress_line = block[ind + 2].split()
+            stress_line = block[ind + 2].replace('-',' -').split()
             vectors = [float(s) for s in stress_line]
             stress_list.append(vectors)
 
