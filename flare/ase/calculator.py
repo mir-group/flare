@@ -82,6 +82,13 @@ class FLARE_Calculator(Calculator):
         Args:
             atoms (FLARE_Atoms): FLARE_Atoms object
         """
+        # https://github.com/smheidrich/flare/commit/b3883e4df2e6bd67d8b6777e8378315962501ddb       
+        # system_change = super().check_state(atoms)
+        # print(system_change)
+        # if system_change:
+        #     print(atoms.calc)
+        #     atoms.calc.reset()  
+        super().calculate(atoms=atoms, properties=properties, system_changes=system_changes)
 
         if properties is None:
             properties = self.implemented_properties
