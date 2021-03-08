@@ -533,6 +533,7 @@ class OTF:
         new_otf.structure = in_dict["structure"]
         new_otf.dft_count = in_dict["dft_count"]
         new_otf.curr_step = in_dict["curr_step"]
+        new_otf.std_tolerance = in_dict["std_tolerance"]
         return new_otf
 
     def checkpoint(self):
