@@ -310,6 +310,8 @@ class ASE_OTF(OTF):
     @staticmethod
     def from_dict(dct):
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        # https://github.com/mir-group/flare/commit/88efe67e28f2b6a9cb5c6662675aad0209af134d
+        flare_calc.reset()
         dct["atoms"] = read(dct["atoms"])
         dct["atoms"].calc = flare_calc
         dct.pop("gp")
@@ -323,6 +325,7 @@ class ASE_OTF(OTF):
         new_otf = ASE_OTF(**dct)
         new_otf.dft_count = dct["dft_count"]
         new_otf.curr_step = dct["curr_step"]
+        new_otf.std_tolerance = dct["std_tolerance"]
 
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:
