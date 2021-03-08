@@ -410,12 +410,13 @@ class Parameters:
 
         if f"{kernel_name}_cutoff_list" in param_dict:
 
-            specie_mask = param_dict["species_mask"]
+            specie_mask = param_dict["specie_mask"]
             cutoff_list = param_dict[f"{kernel_name}_cutoff_list"]
 
             if kernel_name not in Parameters.cutoff_types_values:
                 mask_id = 0
-                for ele in coded_specie:
+                nspecie = param_dict["nspecie"]
+                for ele in coded_species:
                     mask_id += specie_mask[ele]
                     mask_id *= nspecie
                 mask_id = mask_id // nspecie
