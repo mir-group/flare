@@ -337,9 +337,12 @@ class Structure:
             mass_dict=dictionary.get("mass_dict"),
             species_labels=dictionary.get("species_labels"),
             energy=dictionary.get("energy", None),
+            prev_positions=dictionary.get("prev_positions", None),
+            stds=np.array(dictionary.get("stds")),
         )
-
-        struc.stds = np.array(dictionary.get("stds"))
+        # 2021-01-19
+        # add prev_positions, move std to Structure() call
+        # struc.stds = np.array(dictionary.get("stds"))
 
         return struc
 
