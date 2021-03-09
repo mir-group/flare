@@ -167,16 +167,19 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
           int n1 = nnlmap(nnl,0);
           int n2 = nnlmap(nnl,1);
 
+          double B2_grad_tmp = 0.0;
+
           for(int m = 0; m < 2*l+1; m++){
             int n1_l = n1 * n_harmonics + (l * l + m);
             int n2_l = n2 * n_harmonics + (l * l + m);
             double single_1 = single_bond_vals(n1_l);
             double single_2 = single_bond_vals(n2_l);
 
-            B2_env_dervs(atom_index, comp, nnl) +=
+            B2_grad_tmp +=
             single_1 * single_grad(n2_l)
             + single_grad(n1_l) * single_2;
           }
+          B2_env_dervs(atom_index, comp, nnl) = B2_grad_tmp;
           });
   });
 }
