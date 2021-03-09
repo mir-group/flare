@@ -77,6 +77,7 @@ void PairFLARE::compute(int eflag, int vflag) {
   double B2_norm_squared, B2_val_1, B2_val_2;
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+  double empty_thresh = 1e-8;
 
   for (ii = 0; ii < inum; ii++) {
     i = list->ilist[ii];
@@ -91,19 +92,23 @@ void PairFLARE::compute(int eflag, int vflag) {
     n_inner = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
+      int s = type[j] - 1;
+      double cutoff_val = cutoff_matrix(itype-1, s);
+
       delx = x[j][0] - xtmp;
       dely = x[j][1] - ytmp;
       delz = x[j][2] - ztmp;
       rsq = delx * delx + dely * dely + delz * delz;
-      if (rsq < (cutoff * cutoff))
+      if (rsq < (cutoff_val * cutoff_val))
         n_inner++;
     }
 
     // Compute covariant descriptors.
-    single_bond(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
-                basis_function, cutoff_function, cutoff, n_species, n_max,
-                l_max, radial_hyps, cutoff_hyps, single_bond_vals,
-                single_bond_env_dervs);
+    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
+                                 jlist, basis_function, cutoff_function,
+                                 n_species, n_max, l_max, radial_hyps,
+                                 cutoff_hyps, single_bond_vals,
+                                 single_bond_env_dervs, cutoff_matrix);
 
     // Compute invariant descriptors.
     //printf("i = %d, B2 =", i);
@@ -133,6 +138,10 @@ void PairFLARE::compute(int eflag, int vflag) {
     printf("\n");
     */
 
+    // Continue if the environment is empty.
+    if (B2_norm_squared < empty_thresh)
+      continue;
+
     // Compute local energy and partial forces.
     beta_p = beta_matrices[itype - 1] * B2_vals;
     evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
@@ -153,12 +162,14 @@ void PairFLARE::compute(int eflag, int vflag) {
     double fxsum = 0, fysum = 0, fzsum = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
+      int s = type[j] - 1;
+      double cutoff_val = cutoff_matrix(itype-1, s);
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
       delz = ztmp - x[j][2];
       rsq = delx * delx + dely * dely + delz * delz;
 
-      if (rsq < (cutoff * cutoff)) {
+      if (rsq < (cutoff_val * cutoff_val)) {
         double fx = -partial_forces(n_count * 3);
         double fy = -partial_forces(n_count * 3 + 1);
         double fz = -partial_forces(n_count * 3 + 2);
@@ -279,7 +290,7 @@ void PairFLARE::read_file(char *filename) {
     fptr = utils::open_potential(filename,lmp,nullptr);
     if (fptr == NULL) {
       char str[128];
-      snprintf(str, 128, "Cannot open EAM potential file %s", filename);
+      snprintf(str, 128, "Cannot open potential file %s", filename);
       error->one(FLERR, str);
     }
   }
@@ -295,8 +306,6 @@ void PairFLARE::read_file(char *filename) {
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%lg", &cutoff); // Cutoff
   }
 
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
@@ -308,6 +317,26 @@ void PairFLARE::read_file(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+  // Parse the cutoffs.
+  int n_cutoffs = n_species * n_species;
+  memory->create(cutoffs, n_cutoffs, "pair:cutoffs");
+  if (me == 0)
+    grab(fptr, n_cutoffs, cutoffs);
+  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Fill in the cutoff matrix.
+  cutoff = -1;
+  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
+  int cutoff_count = 0;
+  for (int i = 0; i < n_species; i++){
+    for (int j = 0; j < n_species; j++){
+      double cutoff_val = cutoffs[cutoff_count];
+      cutoff_matrix(i, j) = cutoff_val;
+      if (cutoff_val > cutoff) cutoff = cutoff_val;
+      cutoff_count ++;
+    }
+  }
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;

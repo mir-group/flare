@@ -30,6 +30,8 @@ public:
   DescriptorValues compute_struc(Structure &structure);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);
+
+  nlohmann::json return_json();
 };
 
 void compute_b2_simple(Eigen::MatrixXd &B2_vals,

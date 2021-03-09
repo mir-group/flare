@@ -1,5 +1,6 @@
 #include "structure.h"
 #include "omp.h"
+#include <fstream> // File operations
 #include <iostream>
 
 Structure ::Structure() {}
@@ -39,8 +40,12 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
   cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
 
   compute_neighbors();
+  compute_descriptors();
+}
 
-  for (int i = 0; i < descriptor_calculators.size(); i++) {
+void Structure ::compute_descriptors(){
+  descriptors.clear();
+  for (int i = 0; i < descriptor_calculators.size(); i++){
     descriptors.push_back(descriptor_calculators[i]->compute_struc(*this));
   }
 }
@@ -158,4 +163,18 @@ double Structure ::get_single_sweep_cutoff() {
   }
 
   return single_sweep_cutoff;
+}
+
+
+void Structure ::to_json(std::string file_name, const Structure & struc){
+  std::ofstream struc_file(file_name);
+  nlohmann::json j = struc;
+  struc_file << j;
+}
+
+Structure Structure ::from_json(std::string file_name){
+  std::ifstream struc_file(file_name);
+  nlohmann::json j;
+  struc_file >> j;
+  return j;
 }

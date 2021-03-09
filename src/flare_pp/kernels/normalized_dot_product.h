@@ -11,6 +11,7 @@ class ClusterDescriptor;
 class NormalizedDotProduct : public Kernel {
 public:
   double sigma, sig2, power;
+  std::string kernel_name = "NormalizedDotProduct";
 
   NormalizedDotProduct();
 
@@ -56,6 +57,13 @@ public:
 
   Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
+  Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
+                                               int kernel_index);
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct,
+    sigma, sig2, power, kernel_name, kernel_hyperparameters)
+
+  nlohmann::json return_json();
 };
 
 #endif

@@ -171,3 +171,9 @@ void compute_b2_norm(
       B2_vals.row(i).transpose();
   }
 }
+
+// TODO: Implement.
+nlohmann::json B2_Norm ::return_json(){
+  nlohmann::json j;
+  return j;
+}

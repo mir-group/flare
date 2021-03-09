@@ -45,9 +45,10 @@ public:
 
   double sigma = 2.0;
   double ls = 0.9;
-  int power = 2;
+  int power = 1;
   SquaredExponential kernel_3;
   SquaredExponential kernel;
+  NormalizedDotProduct kernel_norm, kernel_3_norm;
   Eigen::MatrixXd icm_coeffs;
 
   StructureTest() {
@@ -74,6 +75,9 @@ public:
 
     dc.push_back(&ps_norm);
 
+    species[0] = 0; // for debug
+    species[1] = 1;
+    species[2] = 2;
     test_struc = Structure(cell, species, positions, cutoff, dc);
     test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
     test_struc_3 = Structure(cell_3, species_3, positions_3, cutoff, dc);
@@ -81,12 +85,13 @@ public:
     struc_desc = test_struc.descriptors[0];
 
     kernel = SquaredExponential(sigma, ls);
+    kernel_norm = NormalizedDotProduct(sigma, power);
 
     icm_coeffs = Eigen::MatrixXd::Zero(3, 3);
     // icm_coeffs << 1, 2, 3, 2, 3, 4, 3, 4, 5;
     icm_coeffs << 1, 0.001, 0.001, 0.001, 1, 0.001, 0.001, 0.001, 1;
     // kernel_3 = NormalizedDotProduct_ICM(sigma, power, icm_coeffs);
-    // kernel_3 = NormalizedDotProduct(sigma, power);
+    kernel_3_norm = NormalizedDotProduct(sigma, power);
     kernel_3 = SquaredExponential(sigma, ls);
   }
 };

@@ -207,3 +207,8 @@ void compute_b2_simple(Eigen::MatrixXd &B2_vals,
         B2_vals.row(atom).transpose();
   }
 }
+
+nlohmann::json B2_Simple ::return_json(){
+  nlohmann::json j;
+  return j;
+}

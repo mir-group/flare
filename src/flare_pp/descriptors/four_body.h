@@ -17,11 +17,15 @@ public:
   std::string cutoff_name;
   std::vector<double> cutoff_hyps;
 
+  std::string descriptor_name = "FourBody";
+
   FourBody();
   FourBody(double cutoff, int n_species, const std::string &cutoff_name,
            const std::vector<double> &cutoff_hyps);
 
   DescriptorValues compute_struc(Structure &structure);
+
+  nlohmann::json return_json();
 };
 
 #endif
