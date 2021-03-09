@@ -8,3 +8,5 @@ _C_flare*
 **/html
 **/latex
 **/xml
+**/dist
+**egg-info
