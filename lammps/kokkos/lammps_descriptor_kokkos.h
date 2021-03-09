@@ -149,14 +149,14 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
  });
 
 
-  ScratchView1D single_grad(team_member.thread_scratch(0), n_bond);
+  //ScratchView1D single_grad(team_member.thread_scratch(0), n_bond);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*n_neighs), [&] (int &jjc){
       int atom_index = jjc/3;
       int comp = jjc - 3*atom_index;
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_bond), [&] (int idx){
-          single_grad(idx) = single_bond_env_dervs(atom_index, comp, idx);
-      });
+      //Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_bond), [&] (int idx){
+      //    single_grad(idx) = single_bond_env_dervs(atom_index, comp, idx);
+      //});
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors*(l_max+1)), [&] (int &nnlm){
           int nnl = nnlm/(l_max+1);
           int x = nnlm/n_harmonics;
@@ -171,15 +171,19 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
           double B2_grad_tmp = 0.0;
 
           //for(int m = 0; m < 2*l+1; m++){
-            int n1_l = n1 * n_harmonics + (l * l + m);
-            int n2_l = n2 * n_harmonics + (l * l + m);
+            int n1_l = n1 * n_harmonics + lm;
+            int n2_l = n2 * n_harmonics + lm;
+            //int n1_l = n1 * n_harmonics + (l * l + m);
+            //int n2_l = n2 * n_harmonics + (l * l + m);
             //printf("hello x=%d nnl=%d lm=%d l=%d m=%d n1=%d n2=%d n1l=%d n2l=%d\n", x,nnl, lm, l, m,n1,n2,n1_l,n2_l);
             double single_1 = single_bond_vals(n1_l);
             double single_2 = single_bond_vals(n2_l);
 
             B2_grad_tmp +=
-            single_1 * single_grad(n2_l)
-            + single_grad(n1_l) * single_2;
+            single_1 * single_bond_env_dervs(atom_index, comp, n2_l)
+            + single_bond_env_dervs(atom_index, comp, n1_l) * single_2;
+            //single_1 * single_grad(n2_l)
+            //+ single_grad(n1_l) * single_2;
           //
           //B2_env_dervs(atom_index, comp, nnl) = B2_grad_tmp;
           Kokkos::atomic_add(&B2_env_dervs(atom_index, comp, nnl),B2_grad_tmp);
