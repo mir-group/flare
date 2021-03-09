@@ -87,26 +87,22 @@ void single_bond_kokkos(
   */
 }
 
-template<class MemberType, class ScratchView1D, class ScratchView3D, class ScratchViewInt2D, class ScratchViewInt1D>
+template<class MemberType, class ScratchView1D, class ScratchView3D, class ScratchViewInt2D>
 KOKKOS_INLINE_FUNCTION
 void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, ScratchView3D &B2_env_dervs,
                    const ScratchView1D &single_bond_vals,
                    const ScratchView3D &single_bond_env_dervs, int n_species,
-                   int n_max, int l_max, int n_neighs, ScratchViewInt2D nnlmap, ScratchViewInt1D lmmap) {
+                   int n_max, int l_max, int n_neighs, ScratchViewInt2D nnlmap) {
 
   int n_radial = n_species * n_max;
   int n_harmonics = (l_max + 1) * (l_max + 1);
-  int n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  int n_symm_radial = (n_radial * (n_radial + 1) / 2);
+  int n_descriptors = n_symm_radial * (l_max + 1);
   int n_bond = n_radial * n_harmonics;
   double np12 = n_radial + 0.5;
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_harmonics), [&] (int x){
-      int l = std::sqrt(1.0*x);
-      lmmap(x) = l;
-  });
 
-
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors/(l_max+1)), [&] (int x){
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_symm_radial), [&] (int x){
       int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
       int n2 = x - n1*(np12 - 1 - 0.5*n1);
       nnlmap(x,0) = n1;
@@ -151,7 +147,7 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&] (int &nnl){
           B2_env_dervs(atom_index, comp,nnl) = 0;
       });
- });
+      });
 
 
   ScratchView1D single_grad(team_member.thread_scratch(0), n_bond);
@@ -162,33 +158,25 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_bond), [&] (int idx){
           single_grad(idx) = single_bond_env_dervs(atom_index, comp, idx);
       });
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors*(l_max+1)), [&] (int &nnlm){
-          int nnl = nnlm/(l_max+1);
-          int x = nnlm/n_harmonics;
-          int lm = nnlm-x*n_harmonics;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&] (int &nnl){
+          int x = nnl/(l_max+1);
+          int l = nnl-x*(l_max+1);
           int n1 = nnlmap(x,0);
           int n2 = nnlmap(x,1);
-          //printf("hi nnlm=%d x=%d lm=%d n1=%d n2=%d\n",nnlm,x,lm,n1,n2);
-
-          int l = lmmap(lm);
-          //int l = std::sqrt(1.0*lm);
-          int m = lm - l*l;
 
           double B2_grad_tmp = 0.0;
 
-          //for(int m = 0; m < 2*l+1; m++){
+          for(int m = 0; m < 2*l+1; m++){
             int n1_l = n1 * n_harmonics + (l * l + m);
             int n2_l = n2 * n_harmonics + (l * l + m);
-            //printf("hello x=%d nnl=%d lm=%d l=%d m=%d n1=%d n2=%d n1l=%d n2l=%d\n", x,nnl, lm, l, m,n1,n2,n1_l,n2_l);
             double single_1 = single_bond_vals(n1_l);
             double single_2 = single_bond_vals(n2_l);
 
             B2_grad_tmp +=
             single_1 * single_grad(n2_l)
             + single_grad(n1_l) * single_2;
-          //
-          //B2_env_dervs(atom_index, comp, nnl) = B2_grad_tmp;
-          Kokkos::atomic_add(&B2_env_dervs(atom_index, comp, nnl),B2_grad_tmp);
+          }
+          B2_env_dervs(atom_index, comp, nnl) = B2_grad_tmp;
           });
   });
 }

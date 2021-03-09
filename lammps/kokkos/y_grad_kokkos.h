@@ -1,6 +1,7 @@
 #ifndef Y_GRAD_KOKKOS_H
 #define Y_GRAD_KOKKOS_H
 
+#include <Eigen/Dense>
 #include <vector>
 #include <complex>
 #include <Kokkos_Core.hpp>
