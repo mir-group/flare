@@ -176,7 +176,11 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 // |_____\__,_|\__,_|_| |_|\___|_| |_|  \___\___/|_| |_| |_| .__/ \__,_|\__\___|
 //                                                         |_|
     // TODO: Check team size for CUDA, maybe figure out how it works
+#ifdef LMP_KOKKOS_GPU
     auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, 4, 32).set_scratch_size(
+#else
+    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 8).set_scratch_size(
+#endif
         1, Kokkos::PerTeam(single_bond_grad_size
                            + nnlmap_size + 2*B2_size + B2_grad_size + force_size)).set_scratch_size(
         0, Kokkos::PerTeam(single_bond_size), Kokkos::PerThread(single_bond_size));
