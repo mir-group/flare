@@ -169,7 +169,7 @@ setuptools.setup(
     cmdclass=dict(build_ext=CMakeBuild),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/mir-group/flare",
+    url="https://github.com/mir-group/flare_pp",
     python_requires=">=3.6",
     install_requires=dependencies,
     license="MIT",
