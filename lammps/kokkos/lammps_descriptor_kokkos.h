@@ -98,7 +98,9 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
   int n_radial = n_species * n_max;
   int n_harmonics = (l_max + 1) * (l_max + 1);
   int n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  int n_bond = n_radial * n_harmonics;
   double np12 = n_radial + 0.5;
+
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
       int x = nnl/(l_max+1);
@@ -151,10 +153,14 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
       });
 
 
-  // TODO: maybe precreate nnl->n1l mapping
+  ScratchView1D single_grad(team_member.thread_scratch(0), n_bond);
+
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*n_neighs), [&] (int &jjc){
       int atom_index = jjc/3;
       int comp = jjc - 3*atom_index;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_bond), [&] (int idx){
+          single_grad(idx) = single_bond_env_dervs(atom_index, comp, idx);
+      });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&] (int &nnl){
           int x = nnl/(l_max+1);
           int l = nnl-x*(l_max+1);
@@ -168,8 +174,8 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
             double single_2 = single_bond_vals(n2_l);
 
             B2_env_dervs(atom_index, comp, nnl) +=
-            single_1 * single_bond_env_dervs(atom_index, comp, n2_l)
-            + single_bond_env_dervs(atom_index, comp, n1_l) * single_2;
+            single_1 * single_grad(n2_l)
+            + single_grad(n1_l) * single_2;
           }
           });
   });

@@ -176,9 +176,10 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 // |_____\__,_|\__,_|_| |_|\___|_| |_|  \___\___/|_| |_| |_| .__/ \__,_|\__\___|
 //                                                         |_|
     // TODO: Check team size for CUDA, maybe figure out how it works
-    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 8).set_scratch_size(
-        1, Kokkos::PerTeam(single_bond_size + single_bond_grad_size
-                           + 2*nnlmap_size + 2*B2_size + B2_grad_size + force_size));
+    auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, 4, 32).set_scratch_size(
+        1, Kokkos::PerTeam(single_bond_grad_size
+                           + 2*nnlmap_size + 2*B2_size + B2_grad_size + force_size)).set_scratch_size(
+        0, Kokkos::PerTeam(single_bond_size), Kokkos::PerThread(single_bond_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
     Kokkos::Experimental::contribute(d_vatom, vscatter);
@@ -279,7 +280,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
   const int jnum = d_numneigh_short[i];
 
 
-  ScratchView1D single_bond(team_member.team_scratch(1), n_bond);
+  ScratchView1D single_bond(team_member.team_scratch(0), n_bond);
   ScratchView3D single_bond_grad(team_member.team_scratch(1), max_neighs, 3, n_bond);
 
   single_bond_kokkos(
