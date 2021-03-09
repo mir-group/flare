@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <vector>
+#include <string>
 
 // Radial basis sets.
 void fourier(std::vector<double> &basis_vals,
