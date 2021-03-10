@@ -147,7 +147,9 @@ include_directories(
   src/flare_pp/bffs)
 
 # Create flare library.
-add_library(flare SHARED ${FLARE_SOURCES})
+# Should be static, see: https://github.com/pybind/cmake_example/issues/11
+add_library(flare STATIC ${FLARE_SOURCES})
+set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_dependencies(flare eigen_project)
 
 # Link to json.
@@ -180,6 +182,13 @@ else()
   if(LAPACKE_FOUND)
     message("Found LAPACKE.")
     target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
+  endif()
+
+  find_package(MKL)
+  if(MKL_FOUND)
+    message("Found MKL.")
+    message(${MKL_INCLUDE_DIR})
+    include_directories(${MKL_INCLUDE_DIR})
   endif()
 
   if (LAPACK_LIBRARIES MATCHES mkl)

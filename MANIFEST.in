@@ -1,1 +1,4 @@
-include requirements.txt
+include requirements.txt CMakeLists.txt
+graft src
+graft tests
+graft CMakeModules
