@@ -147,7 +147,8 @@ include_directories(
   src/flare_pp/bffs)
 
 # Create flare library.
-# Should be static, see: https://github.com/pybind/cmake_example/issues/11
+# Should be static to avoid issues with pip installation.
+# See: https://github.com/pybind/cmake_example/issues/11
 add_library(flare STATIC ${FLARE_SOURCES})
 set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_dependencies(flare eigen_project)
@@ -165,36 +166,28 @@ else()
     endif()
 endif()
 
-# Link to MKL.
-if (DEFINED ENV{MKL_INCLUDE})
-  include_directories($ENV{MKL_INCLUDE})
-endif()
-
-if (DEFINED ENV{MKL_LIBS})
+# Check for user-specified MKL package.
+if (DEFINED ENV{MKL_INCLUDE} AND DEFINED ENV{MKL_LIBS})
   message(STATUS "Linking Eigen to user-specified MKL libraries.")
+  include_directories($ENV{MKL_INCLUDE})
   target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
   target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
 else()
-  find_package(LAPACK REQUIRED)
-  target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
-
-  find_package(LAPACKE)
-  if(LAPACKE_FOUND)
-    message("Found LAPACKE.")
-    target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
-  endif()
-
+  # Try linking to MKL.
   find_package(MKL)
   if(MKL_FOUND)
-    message("Found MKL.")
-    message(${MKL_INCLUDE_DIR})
-    include_directories(${MKL_INCLUDE_DIR})
-  endif()
-
-  if (LAPACK_LIBRARIES MATCHES mkl)
     message(STATUS "Linking Eigen to MKL.")
+    include_directories(${MKL_INCLUDE_DIR})
+    target_link_libraries(flare PUBLIC ${MKL_LIBRARIES})
     target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
+  # Otherwise use LAPACK/LAPACKE.
   else()
+    find_package(LAPACK REQUIRED)
+    target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
+
+    find_package(LAPACKE REQUIRED)
+    target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
+
     message(STATUS "Linking Eigen to LAPACKE.")
     target_compile_definitions(flare PUBLIC EIGEN_USE_LAPACKE=1)
   endif()
