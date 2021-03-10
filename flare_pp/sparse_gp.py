@@ -1,7 +1,7 @@
 import json
 import numpy as np
-import _C_flare
-from _C_flare import SparseGP, Structure, NormalizedDotProduct
+from flare_pp import _C_flare
+from flare_pp._C_flare import SparseGP, Structure, NormalizedDotProduct
 from scipy.optimize import minimize
 from typing import List
 import warnings
