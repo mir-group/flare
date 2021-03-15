@@ -41,6 +41,7 @@ jobs:
 
     - name: Install Sphinx and Breathe
       run: |
+        sudo apt-get dist-upgrade
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe
 
     - name: Run Doxygen
