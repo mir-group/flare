@@ -14,6 +14,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <sys/time.h>
 
 // flare++ modules
 #include "cutoffs.h"
@@ -24,6 +25,18 @@
 using namespace LAMMPS_NS;
 
 #define MAXLINE 1024
+
+typedef unsigned long long timestamp_t;
+
+static timestamp_t
+get_timestamp ()
+{
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  return  now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
+}
+
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -104,16 +117,25 @@ void PairFLARE::compute(int eflag, int vflag) {
     }
 
     // Compute covariant descriptors.
+    double secs;
+    timestamp_t t0 = get_timestamp();
     single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
                                  jlist, basis_function, cutoff_function,
                                  n_species, n_max, l_max, radial_hyps,
                                  cutoff_hyps, single_bond_vals,
                                  single_bond_env_dervs, cutoff_matrix);
+    timestamp_t t1 = get_timestamp();
+    secs = (t1 - t0) / 1000000.0L;
+    std::cout << "single_bond " << secs << std::endl;
 
     // Compute invariant descriptors.
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max);
+    timestamp_t t2 = get_timestamp();
+    secs = (t2 - t1) / 1000000.0L;
+    std::cout << "b2_desc " << secs << std::endl;
+
 
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
@@ -124,6 +146,10 @@ void PairFLARE::compute(int eflag, int vflag) {
     evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
     partial_forces =
         2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
+    timestamp_t t3 = get_timestamp();
+    secs = (t3 - t2) / 1000000.0L;
+    std::cout << "innerprod " << secs << std::endl;
+
 
     // Update energy, force and stress arrays.
     n_count = 0;
@@ -302,7 +328,7 @@ void PairFLARE::read_file(char *filename) {
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
-  n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  n_descriptors = (n_radial * (n_radial + 1)) * (l_max + 1);
 
   // Check the relationship between the power spectrum and beta.
   int beta_check = n_descriptors * (n_descriptors + 1) / 2;

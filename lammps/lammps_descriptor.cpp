@@ -208,7 +208,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   int neigh_size = env_derv_size / 3;
   int n_radial = n_species * N;
   int n_harmonics = (lmax + 1) * (lmax + 1);
-  int n_descriptors = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
+  int n_descriptors = (n_radial * (n_radial + 1)) * (lmax + 1);
 
   int n1_l, n2_l, counter, n1_count, n2_count;
 
@@ -218,14 +218,16 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   B2_env_dot = Eigen::VectorXd::Zero(env_derv_size);
 
   // Compute the descriptor.
-  for (int n1 = n_radial - 1; n1 >= 0; n1--) {
-    n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
+  //for (int n1 = n_radial - 1; n1 >= 0; n1--) {
+  counter = 0;
+  for (int n1 = 0; n1 < n_radial; n1++) {
+//    n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
 
-    for (int n2 = n1; n2 < n_radial; n2++) {
-      n2_count = n2 - n1;
+    for (int n2 = 0; n2 < n_radial; n2++) {
+//      n2_count = n2 - n1;
 
       for (int l = 0; l < (lmax + 1); l++) {
-        counter = l + (n1_count + n2_count) * (lmax + 1);
+//        counter = l + (n1_count + n2_count) * (lmax + 1);
 
         for (int m = 0; m < (2 * l + 1); m++) {
           n1_l = n1 * n_harmonics + (l * l + m);
@@ -245,6 +247,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
             }
           }
         }
+        counter++;
       }
     }
   }
