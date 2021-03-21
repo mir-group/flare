@@ -213,7 +213,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
     comp1 = otf_traj.force_list[0][1, 0]
-    comp2 = otf_traj.force_list[1][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
     assert (comp1 != comp2)
 
     for f in glob.glob("scf*.pw*"):
@@ -254,7 +254,7 @@ def test_otf_parser(md_engine):
     print("ase otf traj parsed")
     # Check that the GP forces change.
     comp1 = otf_traj.force_list[0][1, 0]
-    comp2 = otf_traj.force_list[1][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
     assert (comp1 != comp2)
 
     for f in glob.glob(md_engine + "*"): 
