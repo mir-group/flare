@@ -374,7 +374,7 @@ class Structure:
             energy = None
 
         try:
-            stress = atoms.get_stress()
+            stress = atoms.get_stress() # TODO: check the stress order here
         except:
             stress = None
 
