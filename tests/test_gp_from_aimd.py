@@ -466,7 +466,7 @@ def test_active_learning_simple_run():
     )
     assert len(the_gp) == prev_gp_len
     # Try on a frame where the Carbon atom is guaranteed to trip the
-    # abs. force tolerance contition.
+    # abs. force tolerance condition.
     # Turn off include energies so that the number of training structures
     # does not change.
     tt.include_energies = False
