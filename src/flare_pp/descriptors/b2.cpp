@@ -192,7 +192,7 @@ void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
   int n_radial = nos * N;
   int n_harmonics = (lmax + 1) * (lmax + 1);
   int n_bond = n_radial * n_harmonics;
-  int n_d = (n_radial * (n_radial + 1)) * (lmax + 1);
+  int n_d = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
 
   // Initialize arrays.
   B2_vals = Eigen::MatrixXd::Zero(n_atoms, n_d);
@@ -207,7 +207,7 @@ void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
     int n1, n2, l, m, n1_l, n2_l;
     int counter = 0;
     for (int n1 = 0; n1 < n_radial; n1++) {
-      for (int n2 = 0; n2 < n_radial; n2++) { // can be simplified
+      for (int n2 = n1; n2 < n_radial; n2++) { // can be simplified
         for (int l = 0; l < (lmax + 1); l++) {
           for (int m = 0; m < (2 * l + 1); m++) {
             n1_l = n1 * n_harmonics + (l * l + m);

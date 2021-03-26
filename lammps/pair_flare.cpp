@@ -88,7 +88,7 @@ void PairFLARE::compute(int eflag, int vflag) {
 
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
-  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
+  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, u;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
   double empty_thresh = 1e-8;
 
@@ -131,25 +131,14 @@ void PairFLARE::compute(int eflag, int vflag) {
     // Compute invariant descriptors.
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
-                  l_max);
+                  l_max, beta_matrices[itype - 1], u, &evdwl);
     timestamp_t t2 = get_timestamp();
     secs = (t2 - t1) / 1000000.0L;
     std::cout << "b2_desc " << secs << std::endl;
 
-
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
       continue;
-
-    // Compute local energy and partial forces.
-    beta_p = beta_matrices[itype - 1] * B2_vals;
-    evdwl = B2_vals.dot(beta_p) / B2_norm_squared;
-    partial_forces =
-        2 * (-B2_env_dervs * beta_p + evdwl * B2_env_dot) / B2_norm_squared;
-    timestamp_t t3 = get_timestamp();
-    secs = (t3 - t2) / 1000000.0L;
-    std::cout << "innerprod " << secs << std::endl;
-
 
     // Update energy, force and stress arrays.
     n_count = 0;
@@ -163,9 +152,15 @@ void PairFLARE::compute(int eflag, int vflag) {
       rsq = delx * delx + dely * dely + delz * delz;
 
       if (rsq < (cutoff_val * cutoff_val)) {
-        double fx = -partial_forces(n_count * 3);
-        double fy = -partial_forces(n_count * 3 + 1);
-        double fz = -partial_forces(n_count * 3 + 2);
+        // Compute partial force f_ij = u * dA/dr_ij
+        double fx = single_bond_env_dervs.row(n_count * 3).dot(u);
+        double fy = single_bond_env_dervs.row(n_count * 3 + 1).dot(u);
+        double fz = single_bond_env_dervs.row(n_count * 3 + 2).dot(u);
+        // Compute local energy and partial forces.
+        timestamp_t t3 = get_timestamp();
+        secs = (t3 - t2) / 1000000.0L;
+        std::cout << "innerprod " << secs << std::endl;
+
         f[i][0] += fx;
         f[i][1] += fy;
         f[i][2] += fz;
@@ -328,7 +323,7 @@ void PairFLARE::read_file(char *filename) {
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
-  n_descriptors = (n_radial * (n_radial + 1)) * (l_max + 1);
+  n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
 
   // Check the relationship between the power spectrum and beta.
   int beta_check = n_descriptors * (n_descriptors + 1) / 2;
