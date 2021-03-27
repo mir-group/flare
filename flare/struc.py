@@ -51,12 +51,6 @@ class Structure:
     :type species_labels: List[str]
     :param stds: Uncertainty associated with forces
     :type stds: np.ndarray
-    :param forces: Forces associated with each atom in structure.
-    :type forces: np.ndarray
-    :param energy: Energy associated with structure.
-    :type energy: float
-    :param stress: Stress tensor associated with structure.
-    :type stress: np.ndarray
     """
 
     def __init__(
@@ -67,10 +61,9 @@ class Structure:
         mass_dict: dict = None,
         prev_positions: "ndarray" = None,
         species_labels: List[str] = None,
-        forces: "ndarray" = None,
+        forces=None,
         stds=None,
         energy: float = None,
-        stress: "ndarray" = None,
     ):
 
         # Define cell (each row is a Bravais lattice vector).
@@ -117,7 +110,7 @@ class Structure:
         self.local_energy_stds = None
         self.partial_stresses = None
         self.partial_stress_stds = None
-        self.stress = stress
+        self.stress = None
         self.stress_stds = None
 
         # Potential energy attribute needed to mirror ASE atoms object.
@@ -346,7 +339,6 @@ class Structure:
             forces=np.array(dictionary.get("forces")),
             stds=np.array(dictionary.get("stds")),
             energy=dictionary.get("energy", None),
-            stress=dictionary.get("stress", None),
         )
 
         struc.stress = dictionary.get("stress", None) 
