@@ -1,5 +1,5 @@
 from ase.calculators.calculator import Calculator, all_changes
-from _C_flare import SparseGP, Structure
+from flare_pp._C_flare import SparseGP, Structure
 import numpy as np
 import time
 

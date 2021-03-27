@@ -1,6 +1,6 @@
 import json
 import numpy as np
-import flare_pp._C_flare
+from flare_pp import _C_flare
 from flare_pp._C_flare import SparseGP, Structure, NormalizedDotProduct
 from scipy.optimize import minimize
 from typing import List
@@ -92,7 +92,19 @@ class SGP_Wrapper:
         return self.sparse_gp.force_noise
 
     def __str__(self):
-        return "Sparse GP model"
+        gp_str = ""
+        gp_str += f"Number of hyperparameters: {len(self.hyps)}\n"
+        gp_str += f"Hyperparameter array: {str(self.hyps)}\n"
+
+        if self.hyp_labels is None:
+            # Put unlabeled hyperparameters on one line
+            gp_str = gp_str[:-1]
+            gp_str += str(self.hyps) + "\n"
+        else:
+            for hyp, label in zip(self.hyps, self.hyp_labels):
+                gp_str += f"{label}: {hyp} \n"
+
+        return gp_str
 
     def __len__(self):
         return len(self.training_data)
