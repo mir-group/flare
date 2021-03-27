@@ -117,7 +117,7 @@ class FLARE_Calculator(Calculator):
         # Set the energy, force, and stress attributes of the calculator.
         self.results["local_energies"] = res[0]
         self.results["forces"] = res[1]
-        self.results["partial_stresses"] = - res[2][:, [0, 3, 5, 4, 2, 1]]
+        self.results["partial_stresses"] = -res[2][:, [0, 3, 5, 4, 2, 1]]
         self.results["local_energy_stds"] = res[3]
         self.results["stds"] = res[4]
         self.results["partial_stress_stds"] = res[5][:, [0, 3, 5, 4, 2, 1]]

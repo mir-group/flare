@@ -440,7 +440,12 @@ class SingleMapXbody:
                 fj_chunk = fj[gs:ge, :]
                 fdj_chunk = fdj[gs:ge, :]
                 kv_chunk = self.get_grid_kernel(
-                    kern_type, data, kernel_info, grid_chunk, fj_chunk, fdj_chunk,
+                    kern_type,
+                    data,
+                    kernel_info,
+                    grid_chunk,
+                    fj_chunk,
+                    fdj_chunk,
                 )
                 kern_vec.append(kv_chunk)
             kern_vec = np.hstack(kern_vec)
@@ -496,7 +501,10 @@ class SingleMapXbody:
 
             elif isinstance(self.svd_rank, int):
                 self.var = PCASplines(
-                    bounds[0], bounds[1], orders=self.grid_num, svd_rank=self.svd_rank,
+                    bounds[0],
+                    bounds[1],
+                    orders=self.grid_num,
+                    svd_rank=self.svd_rank,
                 )
 
         if self.var_map == "simple":
