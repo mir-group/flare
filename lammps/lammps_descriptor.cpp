@@ -242,8 +242,8 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
   // Compute w(n1, n2, l), where f_ik = w * dB/dr_ik
   norm_squared = B2_vals.dot(B2_vals);
   Eigen::VectorXd beta_p = beta_matrix * B2_vals;
-  *evdwl = B2_vals * beta_p / B2_norm_squared;
-  Eigen::VectorXd w = 2 * (beta_p - evdwl * B2_vals) / norm_squared; 
+  *evdwl = B2_vals.dot(beta_p) / norm_squared;
+  Eigen::VectorXd w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared; 
 
   // Compute u(n1, l, m), where f_ik = u * dA/dr_ik
   u = Eigen::VectorXd::Zero(single_bond_vals.size());
