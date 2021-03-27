@@ -152,13 +152,15 @@ void PairFLARE::compute(int eflag, int vflag) {
       rsq = delx * delx + dely * dely + delz * delz;
 
       if (rsq < (cutoff_val * cutoff_val)) {
+        timestamp_t t30 = get_timestamp();
+
         // Compute partial force f_ij = u * dA/dr_ij
         double fx = single_bond_env_dervs.row(n_count * 3).dot(u);
         double fy = single_bond_env_dervs.row(n_count * 3 + 1).dot(u);
         double fz = single_bond_env_dervs.row(n_count * 3 + 2).dot(u);
         // Compute local energy and partial forces.
         timestamp_t t3 = get_timestamp();
-        secs = (t3 - t2) / 1000000.0L;
+        secs = (t3 - t30) / 1000000.0L;
         std::cout << "innerprod " << secs << std::endl;
 
         f[i][0] += fx;
