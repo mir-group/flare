@@ -118,23 +118,16 @@ void PairFLARE::compute(int eflag, int vflag) {
 
     // Compute covariant descriptors.
     double secs;
-    timestamp_t t0 = get_timestamp();
     single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
                                  jlist, basis_function, cutoff_function,
                                  n_species, n_max, l_max, radial_hyps,
                                  cutoff_hyps, single_bond_vals,
                                  single_bond_env_dervs, cutoff_matrix);
-    timestamp_t t1 = get_timestamp();
-    secs = (t1 - t0) / 1000000.0L;
-    std::cout << "single_bond " << secs << std::endl;
 
     // Compute invariant descriptors.
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max, beta_matrices[itype - 1], u, &evdwl);
-    timestamp_t t2 = get_timestamp();
-    secs = (t2 - t1) / 1000000.0L;
-    std::cout << "b2_desc " << secs << std::endl;
 
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
@@ -152,16 +145,11 @@ void PairFLARE::compute(int eflag, int vflag) {
       rsq = delx * delx + dely * dely + delz * delz;
 
       if (rsq < (cutoff_val * cutoff_val)) {
-        timestamp_t t30 = get_timestamp();
-
         // Compute partial force f_ij = u * dA/dr_ij
         double fx = single_bond_env_dervs.row(n_count * 3).dot(u);
         double fy = single_bond_env_dervs.row(n_count * 3 + 1).dot(u);
         double fz = single_bond_env_dervs.row(n_count * 3 + 2).dot(u);
         // Compute local energy and partial forces.
-        timestamp_t t3 = get_timestamp();
-        secs = (t3 - t30) / 1000000.0L;
-        std::cout << "innerprod " << secs << std::endl;
 
         f[i][0] += fx;
         f[i][1] += fy;
