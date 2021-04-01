@@ -77,6 +77,7 @@ class TrajectoryTrainer:
         skip: int = 1,
         validate_ratio: float = 0.0,
         calculate_energy: bool = False,
+        include_energies: bool = False,
         output_name: str = "gp_from_aimd",
         print_as_xyz: bool = False,
         pre_train_max_iter: int = 50,
@@ -115,6 +116,7 @@ class TrajectoryTrainer:
         :param validate_ratio: Fraction of frames used for validation
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
+        :param include_energies: Add energies associated with individual frames
         :param output_name: Write output of training to this file
         :param print_as_xyz: If True, print the configurations in xyz format
         :param max_atoms_from_frame: Largest # of atoms added from one frame
@@ -179,6 +181,7 @@ class TrajectoryTrainer:
         self.train_count = 0
         self.calculate_energy = calculate_energy
         self.n_cpus = n_cpus
+        self.include_energies = include_energies
 
         if parallel is True:
             warnings.warn(
@@ -454,7 +457,7 @@ class TrajectoryTrainer:
             # Get Error
             dft_forces = cur_frame.forces
             dft_energy = cur_frame.energy
-            error = np.abs(pred_forces - dft_forces)
+            force_error = np.abs(pred_forces - dft_forces)
 
             # Create dummy frame with the predicted forces written
             dummy_frame = deepcopy(cur_frame)
@@ -468,7 +471,7 @@ class TrajectoryTrainer:
                 start_time=frame_start_time,
                 dft_forces=dft_forces,
                 dft_energy=dft_energy,
-                error=error,
+                error=force_error,
                 local_energies=local_energies,
                 KE=0,
                 cell=cur_frame.cell,
@@ -960,7 +963,10 @@ class TrajectoryTrainer:
 
         # update gp model; handling differently if it's an MGP
         if not self.gp_is_mapped:
-            self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
+            frame_energy = frame.energy if self.include_energies else None
+            self.gp.update_db(
+                frame, frame.forces, custom_range=train_atoms, energy=frame_energy
+            )
 
             if train:
                 self.train_gp()
