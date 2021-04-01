@@ -7,6 +7,6 @@ If you use FLARE in your research, or any part of this repo (such as the GP impl
 
 If you use MGP or LAMMPS pair style, please cite the following paper:
 
-[2] Xie, Y., Vandermause, J., Sun, L., Cepellotti, A. & Kozinsky, B. *Fast bayesian force fields from active learning: study of inter-dimensional transformation of stanene.* arXiv:2008.11796 [cond-mat, physics:physics] (2020). at <http://arxiv.org/abs/2008.11796>
+[2] Xie, Y., Vandermause, J., Sun, L. et al. *Bayesian force fields from active learning for simulation of inter-dimensional transformation of stanene.* npj Comput Mater 7, 40 (2021). https://doi.org/10.1038/s41524-021-00510-y
 
 Thank you for using FLARE!

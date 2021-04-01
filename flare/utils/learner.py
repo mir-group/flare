@@ -15,7 +15,7 @@ def is_std_in_bound(
     structure: "flare.struc.Structure",
     max_atoms_added: int = inf,
     update_style: str = "add_n",
-    update_threshold: float = None
+    update_threshold: float = None,
 ) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,

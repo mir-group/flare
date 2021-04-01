@@ -262,7 +262,7 @@ class OTF:
                     self.structure,
                     max_atoms_added=self.max_atoms_added,
                     update_style=self.update_style,
-                    update_threshold=self.update_threshold
+                    update_threshold=self.update_threshold,
                 )
 
                 if (not std_in_bound) and (

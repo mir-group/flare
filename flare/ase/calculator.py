@@ -115,26 +115,12 @@ class FLARE_Calculator(Calculator):
             )
 
         # Set the energy, force, and stress attributes of the calculator.
-        res_name = [
-            "local_energies",
-            "forces",
-            "partial_stresses",
-            "local_energy_stds",
-            "stds",
-            "partial_stress_stds",
-        ]
-        res_dims = [1, 3, 6, 1, 3, 6]
-        for i in range(len(res_name)):
-            if len(res[i].shape) == 2:
-                assert (
-                    res[i].shape[1] == res_dims[i],
-                    f"{res_name[i]} shape doesn't match, "
-                    f"{res[i].shape[1]} and {res_dims[i]}",
-                )
-            elif len(res[i].shape) == 1:
-                assert res_dims[i] == 1
-
-            self.results[res_name[i]] = res[i]
+        self.results["local_energies"] = res[0]
+        self.results["forces"] = res[1]
+        self.results["partial_stresses"] = -res[2][:, [0, 3, 5, 4, 2, 1]]
+        self.results["local_energy_stds"] = res[3]
+        self.results["stds"] = res[4]
+        self.results["partial_stress_stds"] = res[5][:, [0, 3, 5, 4, 2, 1]]
 
     def calculate_mgp(self, atoms):
         nat = len(atoms)
@@ -181,7 +167,7 @@ class FLARE_Calculator(Calculator):
                 n, chemenv = ra
                 f, v, vir, e = self.mgp_model.predict(chemenv)
                 self.results["forces"][n] = f
-                self.results["partial_stresses"][n] = vir
+                self.results["partial_stresses"][n] = -vir[[0, 3, 5, 4, 2, 1]]
                 self.results["stds"][n][0] = np.sqrt(np.absolute(v))
                 self.results["local_energies"][n] = e
 

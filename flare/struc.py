@@ -341,7 +341,7 @@ class Structure:
             energy=dictionary.get("energy", None),
         )
 
-        struc.stress = dictionary.get("stress", None) 
+        struc.stress = dictionary.get("stress", None)
 
         return struc
 
@@ -374,7 +374,7 @@ class Structure:
             energy = None
 
         try:
-            stress = atoms.get_stress()
+            stress = atoms.get_stress()  # TODO: what stress order should we use?
         except:
             stress = None
 

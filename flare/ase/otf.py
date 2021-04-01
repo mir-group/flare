@@ -225,8 +225,7 @@ class ASE_OTF(OTF):
             self.atoms.set_velocities(curr_velocities * vel_fac)
 
             # Reset thermostat parameters.
-            if self.md_engine in ["NVTBerendsen", "NPTBerendsen",
-                                  "NPT", "Langevin"]:
+            if self.md_engine in ["NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]:
                 self.md.set_temperature(temperature_K=new_temp)
 
     def update_temperature(self):
