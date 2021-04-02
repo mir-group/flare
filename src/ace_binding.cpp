@@ -200,6 +200,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("Kuf_kernels", &SparseGP::Kuf_kernels)
       .def_readonly("alpha", &SparseGP::alpha)
       .def_readonly("Kuu_inverse", &SparseGP::Kuu_inverse)
+      .def_readonly("Sigma", &SparseGP::Sigma)
       .def_readonly("n_sparse", &SparseGP::n_sparse)
       .def_readonly("n_labels", &SparseGP::n_labels)
       .def_readonly("y", &SparseGP::y)
