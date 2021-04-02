@@ -139,7 +139,11 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<double, double>())
       .def_readonly("sigma", &NormalizedDotProduct::sigma)
       .def_readonly("power", &NormalizedDotProduct::power)
-      .def_readonly("kernel_hyperparameters", &NormalizedDotProduct::kernel_hyperparameters);
+      .def_readonly("kernel_hyperparameters",
+                    &NormalizedDotProduct::kernel_hyperparameters)
+      .def("envs_envs", &NormalizedDotProduct::envs_envs)
+      .def("envs_struc", &NormalizedDotProduct::envs_struc)
+      .def("struc_struc", &NormalizedDotProduct::struc_struc);
 
   py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
       .def(py::init<double, double, Eigen::MatrixXd>());
