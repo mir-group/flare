@@ -6,7 +6,7 @@
   <img width="659" height="303" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
 </p>
 
-FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code can be accessed here: https://flare.readthedocs.io/
+FLARE is an open-source Python package for creating fast and accurate interatomic potentials. Documentation of the code can be accessed here: https://flare.readthedocs.io/
 
 We have an introductory tutorial in Google Colab available [here](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
 
@@ -28,9 +28,12 @@ We have an introductory tutorial in Google Colab available [here](https://colab.
 
 * Module for training GPs from AIMD trajectories
 
+## Many-body extension
+
+If you want to train a more accurate many-body potential on the fly, check out our many-body extension [flare++](https://github.com/mir-group/flare_pp), with an introductory tutorial available [here](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv).
 
 ## Prerequisites
-1. To train a potential on the fly, you need a working installation of [Quantum ESPRESSO](https://www.quantum-espresso.org) or [CP2K](https://www.cp2k.org).
+1. To train a potential on the fly, you need a working installation of a DFT code compatible with ASE (e.g. [Quantum ESPRESSO](https://www.quantum-espresso.org), [CP2K](https://www.cp2k.org), or [VASP](https://www.vasp.at/)).
 2. FLARE requires Python 3 with the packages specified in `requirements.txt`. This is taken care of by `pip`.
 
 ## Installation
