@@ -156,6 +156,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<>())
       .def(py::init<std::vector<Kernel *>, double, double, double>())
       .def("set_hyperparameters", &SparseGP::set_hyperparameters)
+      .def("predict_mean", &SparseGP::predict_mean)
       .def("predict_SOR", &SparseGP::predict_SOR)
       .def("predict_DTC", &SparseGP::predict_DTC)
       .def("predict_local_uncertainties",

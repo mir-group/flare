@@ -67,6 +67,7 @@ public:
 
   void update_matrices_QR();
 
+  void predict_mean(Structure &structure);
   void predict_SOR(Structure &structure);
   void predict_DTC(Structure &structure);
   void predict_local_uncertainties(Structure &structure);
