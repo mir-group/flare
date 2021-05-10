@@ -59,6 +59,7 @@ class SGP_Wrapper:
         ):  # TODO: adapt this to multiple kernels
             if kernels[0].power == 1:
                 self.sgp_var_flag = "self"
+                self.sgp_var = self.sparse_gp
             else:
                 self.sgp_var_flag = "new"
         else:
@@ -197,7 +198,7 @@ class SGP_Wrapper:
                 raise NotImplementedError
             assert kern[1] == in_dict["hyps"][k]
             kernels.append(NormalizedDotProduct(kern[1], kern[2]))
-        
+
         # recover descriptors from checkpoint
         desc_calc = in_dict["descriptor_calculators"]
         assert len(desc_calc) == 1
@@ -374,52 +375,82 @@ class SGP_Wrapper:
             kernel_idx == 0
         ), "Not support multiple kernels"
 
-        if self.sgp_var_flag == "new":
-            # change to power 1 kernel
-            power = 1
-            new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
+        power = 1
+        new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
 
-            self.sgp_var = SparseGP(
-                new_kernels,
-                self.sparse_gp.energy_noise,
-                self.sparse_gp.force_noise,
-                self.sparse_gp.stress_noise,
+        # Build a power=1 SGP from scratch
+        if self.sgp_var is None:
+            print("Build a new SGP with power = 1")
+            self.sgp_var, new_kernels = self.duplicate(new_kernels=new_kernels)
+
+        # Check hyperparameters and training data, if not match, construct a new SGP
+        assert len(self.sgp_var.kernels) == 1
+        assert np.allclose(self.sgp_var.kernels[0].power, 1.0)
+        is_same_hyps = np.allclose(
+            self.sgp_var.hyperparameters, self.sparse_gp.hyperparameters
+        )
+        is_same_data = len(self.training_data) == len(self.sgp_var.training_structures)
+        if (not is_same_hyps) or (not is_same_data):
+            print("Build a new SGP with power = 1")
+            self.sgp_var, new_kernels = self.duplicate(new_kernels=new_kernels)
+        else:
+            print("Map with current sgp_var")
+
+        self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
+        return new_kernels
+
+    def duplicate(self, new_hyps=None, new_kernels=None, new_powers=None):
+        # TODO: change to __copy__ method
+        # TODO: add compatibility with other kernels
+
+        if new_hyps is None:
+            hyps = self.sparse_gp.hyperparameters
+        else:
+            hyps = new_hyps
+
+        if new_kernels is None:
+            assert len(hyps) == len(self.sparse_gp.kernels) + 3
+            kernels = []
+            for k, kern in enumerate(self.sparse_gp.kernels):
+                assert isinstance(kern, NormalizedDotProduct)
+                if new_powers is not None:
+                    power = new_powers[k]
+                else:
+                    power = kern.power
+                kernels.append(NormalizedDotProduct(hyps[k], power))
+        else:
+            kernels = new_kernels
+
+        n_kern = len(kernels)
+        new_gp = SparseGP(kernels, hyps[n_kern], hyps[n_kern + 1], hyps[n_kern + 2])
+
+        # add training data
+        sparse_indices = self.sparse_gp.sparse_indices
+        assert len(sparse_indices) == len(kernels)
+        assert len(sparse_indices[0]) == len(self.training_data)
+
+        for s in range(len(self.training_data)):
+            custom_range = sparse_indices[0][s]
+            struc_cpp = self.training_data[s]
+
+            if len(struc_cpp.energy) > 0:
+                energy = struc_cpp.energy[0]
+            else:
+                energy = None
+
+            self.update_db(
+                struc_cpp,
+                struc_cpp.forces,
+                custom_range=custom_range,
+                energy=energy,
+                stress=struc_cpp.stresses,
+                mode="specific",
+                sgp=new_gp,
+                update_qr=False,
             )
 
-            # add training data
-            sparse_indices = self.sparse_gp.sparse_indices
-            assert len(sparse_indices) == len(old_kernels)
-            assert len(sparse_indices[0]) == len(self.training_data)
-
-            for s in range(len(self.training_data)):
-                custom_range = sparse_indices[0][s]
-                struc_cpp = self.training_data[s]
-
-                if len(struc_cpp.energy) > 0:
-                    energy = struc_cpp.energy[0]
-                else:
-                    energy = None
-
-                self.update_db(
-                    struc_cpp,
-                    struc_cpp.forces,
-                    custom_range=custom_range,
-                    energy=energy,
-                    stress=struc_cpp.stresses,
-                    mode="specific",
-                    sgp=self.sgp_var,
-                    update_qr=False,
-                )
-
-            # write var map coefficient file
-            self.sgp_var.update_matrices_QR()
-            self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
-            return new_kernels
-
-        elif self.sgp_var_flag == "self":
-            self.sparse_gp.write_varmap_coefficients(filename, contributor, kernel_idx)
-            self.sgp_var = self.sparse_gp
-            return old_kernels
+        new_gp.update_matrices_QR()
+        return new_gp, kernels
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):
