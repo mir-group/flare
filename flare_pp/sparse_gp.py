@@ -394,6 +394,7 @@ class SGP_Wrapper:
             print("Build a new SGP with power = 1")
             self.sgp_var, new_kernels = self.duplicate(new_kernels=new_kernels)
         else:
+            new_kernels = self.sgp_var.kernels
             print("Map with current sgp_var")
 
         self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
