@@ -154,6 +154,15 @@ class SGP_Wrapper:
                 raise NotImplementedError
         out_dict["kernels"] = kernel_list
 
+        kernel_list = []
+        if getattr(self, "sgp_var_kernels", None):
+            for kern in self.sgp_var_kernels:
+                if isinstance(kern, NormalizedDotProduct):
+                    kernel_list.append(("NormalizedDotProduct", kern.sigma, kern.power))
+                else:
+                    raise NotImplementedError
+            out_dict["sgp_var_kernels"] = kernel_list
+
         out_dict["training_structures"] = []
         for s in range(len(self.training_data)):
             custom_range = self.sparse_gp.sparse_indices[0][s]
@@ -213,7 +222,10 @@ class SGP_Wrapper:
         )
 
         # change the keys of single_atom_energies and species_map to int
-        sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
+        if in_dict["single_atom_energies"] is not None:
+            sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
+        else:
+            sae_dict = None
         species_map = {int(k): v for k, v in in_dict["species_map"].items()}
 
         gp = SGP_Wrapper(
@@ -383,6 +395,7 @@ class SGP_Wrapper:
         if self.sgp_var is None:
             print("Build a new SGP with power = 1")
             self.sgp_var, new_kernels = self.duplicate(new_kernels=new_kernels)
+            self.sgp_var_kernels = new_kernels
 
         # Check hyperparameters and training data, if not match, construct a new SGP
         assert len(self.sgp_var.kernels) == 1
@@ -422,6 +435,7 @@ class SGP_Wrapper:
 
         if not is_same_hyps:
             self.sgp_var.set_hyperparameters(self.sparse_gp.hyperparameters)
+            self.sgp_var_kernels = self.sgp_var.kernels
 
         new_kernels = self.sgp_var.kernels
         print("Map with current sgp_var")
