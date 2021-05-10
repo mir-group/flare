@@ -374,6 +374,7 @@ class SGP_Wrapper:
         assert (len(old_kernels) == 1) and (
             kernel_idx == 0
         ), "Not support multiple kernels"
+        assert isinstance(old_kernels[0], NormalizedDotProduct)
 
         power = 1
         new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
@@ -389,13 +390,41 @@ class SGP_Wrapper:
         is_same_hyps = np.allclose(
             self.sgp_var.hyperparameters, self.sparse_gp.hyperparameters
         )
-        is_same_data = len(self.training_data) == len(self.sgp_var.training_structures)
-        if (not is_same_hyps) or (not is_same_data):
-            print("Build a new SGP with power = 1")
-            self.sgp_var, new_kernels = self.duplicate(new_kernels=new_kernels)
-        else:
-            new_kernels = self.sgp_var.kernels
-            print("Map with current sgp_var")
+        n_sgp = len(self.training_data)
+        n_sgp_var = len(self.sgp_var.training_structures)
+        is_same_data = n_sgp == n_sgp_var 
+
+        # Add new data if sparse_gp has more data than sgp_var
+        if not is_same_data:
+            n_add = n_sgp - n_sgp_var
+            assert n_add > 0, "sgp_var has more training data than sgp"
+            for s in range(n_add):
+                custom_range = self.sparse_gp.sparse_indices[0][s + n_sgp_var]
+                struc_cpp = self.training_data[s + n_sgp_var]
+    
+                if len(struc_cpp.energy) > 0:
+                    energy = struc_cpp.energy[0]
+                else:
+                    energy = None
+    
+                self.update_db(
+                    struc_cpp,
+                    struc_cpp.forces,
+                    custom_range=custom_range,
+                    energy=energy,
+                    stress=struc_cpp.stresses,
+                    mode="specific",
+                    sgp=self.sgp_var,
+                    update_qr=False,
+                )
+    
+            self.sgp_var.update_matrices_QR()
+
+        if not is_same_hyps:
+            self.sgp_var.set_hyperparameters(self.sparse_gp.hyperparameters)
+
+        new_kernels = self.sgp_var.kernels
+        print("Map with current sgp_var")
 
         self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
         return new_kernels
