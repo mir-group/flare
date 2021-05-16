@@ -571,6 +571,24 @@ void SparseGP ::update_matrices_QR() {
   Sigma = R_inv * R_inv.transpose();
 }
 
+void SparseGP ::predict_mean(Structure &test_structure) {
+
+  int n_atoms = test_structure.noa;
+  int n_out = 1 + 3 * n_atoms + 6;
+
+  Eigen::MatrixXd kernel_mat = Eigen::MatrixXd::Zero(n_sparse, n_out);
+  int count = 0;
+  for (int i = 0; i < Kuu_kernels.size(); i++) {
+    int size = Kuu_kernels[i].rows();
+    kernel_mat.block(count, 0, size, n_out) = kernels[i]->envs_struc(
+        sparse_descriptors[i], test_structure.descriptors[i],
+        kernels[i]->kernel_hyperparameters);
+    count += size;
+  }
+
+  test_structure.mean_efs = kernel_mat.transpose() * alpha;
+}
+
 void SparseGP ::predict_SOR(Structure &test_structure) {
 
   int n_atoms = test_structure.noa;
