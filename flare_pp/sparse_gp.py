@@ -1,4 +1,5 @@
 import json
+from time import time
 import numpy as np
 from flare_pp import _C_flare
 from flare_pp._C_flare import SparseGP, Structure, NormalizedDotProduct
@@ -411,6 +412,7 @@ class SGP_Wrapper:
         if not is_same_data:
             n_add = n_sgp - n_sgp_var
             assert n_add > 0, "sgp_var has more training data than sgp"
+            print("Training data not match, adding", n_add, "structures")
             for s in range(n_add):
                 custom_range = self.sparse_gp.sparse_indices[0][s + n_sgp_var]
                 struc_cpp = self.training_data[s + n_sgp_var]
@@ -432,15 +434,17 @@ class SGP_Wrapper:
                 )
     
             self.sgp_var.update_matrices_QR()
-
+      
         if not is_same_hyps:
+            print("Hyps not match, set hyperparameters")
             self.sgp_var.set_hyperparameters(self.sparse_gp.hyperparameters)
             self.sgp_var_kernels = self.sgp_var.kernels
 
         new_kernels = self.sgp_var.kernels
         print("Map with current sgp_var")
-
+       
         self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
+        
         return new_kernels
 
     def duplicate(self, new_hyps=None, new_kernels=None, new_powers=None):
