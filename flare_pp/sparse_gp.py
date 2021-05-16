@@ -229,6 +229,7 @@ class SGP_Wrapper:
             sae_dict = None
         species_map = {int(k): v for k, v in in_dict["species_map"].items()}
 
+
         gp = SGP_Wrapper(
             kernels=kernels,
             descriptor_calculators=[calc],
