@@ -60,6 +60,7 @@ TEST_F(StructureTest, TestEnvsEnvs) {
       kern_sum += kern_mat(i, j);
     }
   }
+  kern_sum /= envs.n_clusters * envs.n_clusters;
 
   EXPECT_NEAR(kern_sum, kernel_matrix(0, 0), 1e-8);
 }
@@ -79,6 +80,7 @@ TEST_F(StructureTest, TestEnvsStruc) {
       kern_sum(i) += kern_mat(j, i);
     }
   }
+  kern_sum /= envs.n_clusters;
 
   for (int i = 0; i < kern_sum.size(); i++) {
     EXPECT_NEAR(kern_sum(i), kernel_matrix.row(0)(i), 1e-8);
@@ -193,7 +195,7 @@ TEST_F(StructureTest, StrucStrucFull) {
                                      kernel.kernel_hyperparameters);
       kern_pert_2 = kernel.struc_struc(struc_desc, test_struc_4.descriptors[0],
                                        kernel.kernel_hyperparameters);
-      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta) * test_struc_3.noa;
       exact_val = kernel_matrix(0, 1 + 3 * p + m);
 
       EXPECT_NEAR(fin_val, exact_val, thresh);
@@ -216,7 +218,7 @@ TEST_F(StructureTest, StrucStrucFull) {
       kern_pert_2 = kernel.struc_struc(test_struc_2.descriptors[0],
                                        test_struc_4.descriptors[0],
                                        kernel.kernel_hyperparameters);
-      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta) * test_struc_4.noa;
       exact_val = kernel_matrix(1 + 3 * p + m, 0);
 
       EXPECT_NEAR(fin_val, exact_val, thresh);
@@ -253,7 +255,7 @@ TEST_F(StructureTest, StrucStrucFull) {
                                      kernel.kernel_hyperparameters);
       kern_pert_2 = kernel.struc_struc(struc_desc, test_struc_4.descriptors[0],
                                        kernel.kernel_hyperparameters);
-      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta) * test_struc_3.noa;
       exact_val = kernel_matrix(0, 1 + 3 * test_struc_2.noa + stress_ind_1) *
                   test_struc_2.volume;
 
@@ -293,7 +295,7 @@ TEST_F(StructureTest, StrucStrucFull) {
       kern_pert_2 = kernel.struc_struc(test_struc_2.descriptors[0],
                                        test_struc_4.descriptors[0],
                                        kernel.kernel_hyperparameters);
-      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta);
+      fin_val = -(kern_pert(0, 0) - kern_pert_2(0, 0)) / (2 * delta) * test_struc_4.noa;
       exact_val = kernel_matrix(1 + 3 * test_struc.noa + stress_ind_1, 0) *
                   test_struc.volume;
 
@@ -341,7 +343,7 @@ TEST_F(StructureTest, StrucStrucFull) {
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) - kern_pert_3(0, 0) -
                      kern_pert_4(0, 0)) /
-                    (4 * delta * delta);
+                    (4 * delta * delta) * test_struc_5.noa * test_struc_6.noa;
           exact_val = kernel_matrix(1 + 3 * m + n, 1 + 3 * p + q);
 
           EXPECT_NEAR(fin_val, exact_val, thresh);
@@ -401,7 +403,7 @@ TEST_F(StructureTest, StrucStrucFull) {
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) - kern_pert_3(0, 0) -
                      kern_pert_4(0, 0)) /
-                    (4 * delta * delta);
+                    (4 * delta * delta) * test_struc_5.noa * test_struc_6.noa;
           exact_val = kernel_matrix(1 + 3 * m + n,
                                     1 + 3 * test_struc_2.noa + stress_count) *
                       test_struc_2.volume;
@@ -467,7 +469,7 @@ TEST_F(StructureTest, StrucStrucFull) {
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) - kern_pert_3(0, 0) -
                      kern_pert_4(0, 0)) /
-                    (4 * delta * delta);
+                    (4 * delta * delta) * test_struc_5.noa * test_struc_6.noa;
           exact_val = kernel_matrix(1 + 3 * test_struc.noa + stress_count,
                                     1 + 3 * m + n) *
                       test_struc.volume;
@@ -544,7 +546,7 @@ TEST_F(StructureTest, StrucStrucFull) {
 
           fin_val = (kern_pert(0, 0) + kern_pert_2(0, 0) - kern_pert_3(0, 0) -
                      kern_pert_4(0, 0)) /
-                    (4 * delta * delta);
+                    (4 * delta * delta) * test_struc_5.noa * test_struc_6.noa;
 
           exact_val = kernel_matrix(1 + 3 * test_struc.noa + stress_ind_1,
                                     1 + 3 * test_struc_2.noa + stress_ind_2) *

@@ -202,7 +202,7 @@ Eigen::MatrixXd SquaredExponential ::envs_struc(const ClusterDescriptor &envs,
         double exp_arg = (norm_i2 + norm_j2 - 2 * dot_vals(i, j)) / (2 * ls2);
         double exp_val = exp(-exp_arg);
         double en_kern = sig2 * exp_val * cut_i * cut_j;
-        kern_mat(sparse_index, 0) += en_kern;
+        kern_mat(sparse_index, 0) += en_kern / struc.n_atoms;
 
         // Force kernel.
         int n_neigh = struc.neighbor_counts[s](j);
@@ -306,9 +306,9 @@ SquaredExponential ::envs_struc_grad(const ClusterDescriptor &envs,
         double en_kern = sig2_new * exp_val * cut_i * cut_j;
         double sig_derv = 2 * en_kern / sig_new;
         double ls_derv = 2 * en_kern * exp_arg / ls_new;
-        kern_mat(sparse_index, 0) += en_kern;
-        sig_mat(sparse_index, 0) += sig_derv;
-        ls_mat(sparse_index, 0) += ls_derv;
+        kern_mat(sparse_index, 0) += en_kern / struc.n_atoms;
+        sig_mat(sparse_index, 0) += sig_derv / struc.n_atoms;
+        ls_mat(sparse_index, 0) += ls_derv / struc.n_atoms;
 
         // Force kernel.
         int n_neigh = struc.neighbor_counts[s](j);
@@ -583,6 +583,11 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(const DescriptorValues &struc1,
         }
       }
     }
+  }
+  kernel_matrix(0, 0) /= struc1.n_atoms * struc2.n_atoms;
+  for (int p = 1; p < kernel_matrix.rows(); p++) {
+    kernel_matrix(0, p) /= struc1.n_atoms;
+    kernel_matrix(p, 0) /= struc2.n_atoms;
   }
 
   return kernel_matrix;
