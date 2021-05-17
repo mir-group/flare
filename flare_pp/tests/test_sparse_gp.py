@@ -10,7 +10,7 @@ from flare.lammps import lammps_calculator
 from flare_pp.sparse_gp import SGP_Wrapper
 from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 
-
+print("loaded modules")
 np.random.seed(10)
 
 # Make random structure.
@@ -37,6 +37,8 @@ np.savez(
     forces=forces,
     stress=stress,
 )
+
+print("built structures")
 
 # Create sparse GP model.
 sigma = 1.0
@@ -67,6 +69,7 @@ sgp_py = SGP_Wrapper(
     species_map,
     max_iterations=max_iterations,
 )
+print("built GP")
 
 
 def test_update_db():
@@ -77,9 +80,12 @@ def test_update_db():
 #        train_structure, forces, custom_range, energy, stress, mode="specific"
 #    )
 
+    print("begin updating db")
+    print("do something")
     sgp_py.update_db(
         train_structure, forces, [3], energy, stress, mode="uncertain"
     )
+    print("updated db")
 
     n_envs = len(custom_range)
     assert sgp_py.sparse_gp.Kuu.shape[0] == n_envs
@@ -96,6 +102,7 @@ def test_train():
 
     assert hyps_init != hyps_post
     assert sgp_py.likelihood != 0.0
+    print("trained gp")
 
 
 
