@@ -346,7 +346,7 @@ NormalizedDotProduct_ICM ::envs_struc(const ClusterDescriptor &envs,
           // Energy kernel.
           double norm_dot = dot_vals(i, j) / norm_ij;
           double dval = power * pow(norm_dot, power - 1);
-          kern_mat(sparse_index, 0) += sig_sq * icm_val * pow(norm_dot, power) / struc.n_atoms;
+          kern_mat(sparse_index, 0) += sig_sq * icm_val * pow(norm_dot, power);
 
           // Force kernel.
           int n_neigh = struc.neighbor_counts[s2](j);
@@ -619,11 +619,6 @@ NormalizedDotProduct_ICM ::struc_struc(const DescriptorValues &struc1,
         }
       }
     }
-  }
-  kernel_matrix(0, 0) /= struc1.n_atoms * struc2.n_atoms;
-  for (int p = 1; p < kernel_matrix.rows(); p++) {
-    kernel_matrix(0, p) /= struc1.n_atoms;
-    kernel_matrix(p, 0) /= struc2.n_atoms;
   }
 
   return kernel_matrix;

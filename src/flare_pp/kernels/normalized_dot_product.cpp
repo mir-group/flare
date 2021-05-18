@@ -433,11 +433,6 @@ NormalizedDotProduct ::struc_struc(const DescriptorValues &struc1,
       }
     }
   }
-  kernel_matrix(0, 0) /= struc1.n_atoms * struc2.n_atoms;
-  for (int p = 1; p < kernel_matrix.rows(); p++) {
-    kernel_matrix(0, p) /= struc1.n_atoms;
-    kernel_matrix(p, 0) /= struc2.n_atoms;
-  }
 
   return kernel_matrix;
 }
