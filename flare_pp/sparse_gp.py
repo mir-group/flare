@@ -302,7 +302,6 @@ class SGP_Wrapper:
             raise Exception
 
         # Convert flare structure to structure descriptor.
-        print("begin built structure")
         structure_descriptor = Structure(
             structure.cell,
             coded_species,
@@ -310,7 +309,6 @@ class SGP_Wrapper:
             self.cutoff,
             self.descriptor_calculators,
         )
-        print("built structure")
 
         # Add labels to structure descriptor.
         if (energy is not None) and (self.energy_training):
@@ -335,7 +333,6 @@ class SGP_Wrapper:
             sgp = self.sparse_gp
 
         sgp.add_training_structure(structure_descriptor)
-        print("added structure")
         if mode == "all":
             if not custom_range:
                 sgp.add_all_environments(structure_descriptor)
@@ -368,11 +365,8 @@ class SGP_Wrapper:
         else:
             raise NotImplementedError
 
-        print("added envs")
-
         if update_qr:
             sgp.update_matrices_QR()
-        print("update matrices")
 
     def set_L_alpha(self):
         # Taken care of in the update_db method.
