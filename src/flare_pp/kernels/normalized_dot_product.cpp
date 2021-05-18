@@ -168,7 +168,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
         double dval = power * pow(norm_dot, power - 1);
-        kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power) / struc.n_atoms;
+        kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power);
 
         // Force kernel.
         int n_neigh = struc.neighbor_counts[s](j);

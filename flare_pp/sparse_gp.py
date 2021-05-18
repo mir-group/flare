@@ -223,12 +223,8 @@ class SGP_Wrapper:
         )
 
         # change the keys of single_atom_energies and species_map to int
-        if in_dict["single_atom_energies"] is not None:
-            sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
-        else:
-            sae_dict = None
+        sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
         species_map = {int(k): v for k, v in in_dict["species_map"].items()}
-
 
         gp = SGP_Wrapper(
             kernels=kernels,

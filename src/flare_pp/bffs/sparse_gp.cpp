@@ -486,7 +486,7 @@ void SparseGP ::add_training_structure(const Structure &structure) {
   label_count.conservativeResize(training_structures.size() + 2);
   label_count(training_structures.size() + 1) = n_labels + n_struc_labels;
   y.conservativeResize(n_labels + n_struc_labels);
-  y.segment(n_labels, n_energy) = structure.energy / n_atoms;
+  y.segment(n_labels, n_energy) = structure.energy;
   y.segment(n_labels + n_energy, n_force) = structure.forces;
   y.segment(n_labels + n_energy + n_force, n_stress) = structure.stresses;
 
@@ -605,7 +605,6 @@ void SparseGP ::predict_SOR(Structure &test_structure) {
   }
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
-  test_structure.mean_efs[0] *= n_atoms;
   Eigen::MatrixXd variance_sqrt = kernel_mat.transpose() * R_inv;
   test_structure.variance_efs =
       (variance_sqrt * variance_sqrt.transpose()).diagonal();
@@ -627,7 +626,6 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
   }
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
-  test_structure.mean_efs[0] *= n_atoms;
 
   // Compute variances.
   Eigen::VectorXd V_SOR, Q_self, K_self = Eigen::VectorXd::Zero(n_out);
@@ -658,7 +656,6 @@ void SparseGP ::predict_local_uncertainties(Structure &test_structure) {
   }
 
   test_structure.mean_efs = kernel_mat.transpose() * alpha;
-  test_structure.mean_efs[0] *= n_atoms;
 
   std::vector<Eigen::VectorXd> local_uncertainties =
     compute_cluster_uncertainties(test_structure);
