@@ -32,6 +32,7 @@ jobs:
         CC: gcc-9
         CXX: g++-9
       run: |
+        export NO_LAPACK=1
         mkdir build
         cd build
         cmake ..
