@@ -22,10 +22,10 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    
+
     - name: Install dependencies
       run: |
-        sudo apt install gcc-9 g++-9 liblapacke liblapacke-dev
+        sudo apt install gcc-9 g++-9
  
     - name: Build
       env:
