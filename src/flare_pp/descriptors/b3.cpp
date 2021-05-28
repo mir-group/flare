@@ -1,7 +1,6 @@
 #include "b3.h"
 #include "cutoffs.h"
 #include "descriptor.h"
-#include "omp.h"
 #include "radial.h"
 #include "structure.h"
 #include "wigner3j.h"
