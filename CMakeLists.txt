@@ -173,7 +173,7 @@ if (DEFINED ENV{MKL_INCLUDE} AND DEFINED ENV{MKL_LIBS})
   target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
   target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
 # Give the option to do a "bare-bones" build without Lapack/Lapacke.
-elseif(NOT DEFINED ENV{NO_LAPACK})
+elseif(DEFINED ENV{NO_LAPACK})
   message(STATUS "Building without Lapack.")
 else()
   find_package(LAPACK REQUIRED)
