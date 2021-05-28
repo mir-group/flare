@@ -23,10 +23,6 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: |
-        sudo apt install gcc-9 g++-9
- 
     - name: Build
       env:
         CC: gcc-9
