@@ -445,7 +445,11 @@ def test_active_learning_simple_run():
 
     frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
 
-    tt = TrajectoryTrainer(gp=the_gp)
+    # Assign fake energies to structures
+    for frame in frames:
+        frame.energy = np.random.random()
+
+    tt = TrajectoryTrainer(gp=the_gp, include_energies=True)
 
     tt.run_passive_learning(
         frames=frames[:1],
@@ -454,6 +458,7 @@ def test_active_learning_simple_run():
         post_build_matrices=True,
     )
 
+    assert len(the_gp.training_structures) == 1
     prev_gp_len = len(the_gp)
     prev_gp_stats = the_gp.training_statistics
     tt.run_active_learning(
@@ -461,7 +466,10 @@ def test_active_learning_simple_run():
     )
     assert len(the_gp) == prev_gp_len
     # Try on a frame where the Carbon atom is guaranteed to trip the
-    # abs. force tolerance contition
+    # abs. force tolerance condition.
+    # Turn off include energies so that the number of training structures
+    # does not change.
+    tt.include_energies = False
     tt.run_active_learning(
         frames[1:2],
         rel_std_tolerance=0,
@@ -471,6 +479,7 @@ def test_active_learning_simple_run():
         max_model_elts={"C": 2},
     )
     assert len(the_gp) == prev_gp_len + 1
+    assert len(the_gp.training_structures) == 1
     prev_carbon_atoms = prev_gp_stats["envs_by_species"]["C"]
     assert the_gp.training_statistics["envs_by_species"]["C"] == prev_carbon_atoms + 1
 
