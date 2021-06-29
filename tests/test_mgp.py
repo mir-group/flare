@@ -372,10 +372,10 @@ def test_lmp_predict(all_lmp, all_gp, all_mgp, bodies, multihyps):
     # build ase atom from struc
     ase_atoms_flare = struc_test.to_ase_atoms()
     ase_atoms_flare = FLARE_Atoms.from_ase_atoms(ase_atoms_flare)
-    ase_atoms_flare.set_calculator(ase_calculator)
+    ase_atoms_flare.calc = ase_calculator
 
     ase_atoms_lmp = deepcopy(struc_test).to_ase_atoms()
-    ase_atoms_lmp.set_calculator(lmp_calculator)
+    ase_atoms_lmp.calc = lmp_calculator
 
     try:
         lmp_en = ase_atoms_lmp.get_potential_energy()
