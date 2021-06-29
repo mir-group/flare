@@ -488,7 +488,10 @@ def get_thermostat(thermostat, kw, line):
     kw = kw.lower()
     line = line.lower()
     if kw in line:
-        value = float(line.split()[-2])
+        try:
+            value = float(line.split()[-2]) # old style
+        except:
+            value = float(line.split()[-1]) # new style
         if kw in thermostat:
             thermostat[kw].append(value)
         else:
