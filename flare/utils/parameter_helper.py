@@ -831,7 +831,7 @@ class ParameterHelper:
         if group_type == "specie":
 
             self.nspecie = nspecie
-            self.species_mask = np.ones(118, dtype=np.int) * (nspecie - 1)
+            self.species_mask = np.ones(118, dtype=int) * (nspecie - 1)
 
             # mark the species_mask with atom type
             # default is nspecie-1
@@ -860,7 +860,7 @@ class ParameterHelper:
                 self.kernels.append(group_type)
 
             self.mask[group_type] = np.ones(
-                nspecie ** ParameterHelper.ndim[group_type], dtype=np.int
+                nspecie ** ParameterHelper.ndim[group_type], dtype=int
             ) * (self.n[group_type] - 1)
 
             self.hyps_sig[group_type] = []
@@ -1082,7 +1082,7 @@ class ParameterHelper:
                     mapping += [i]
                     new_labels += [hyp_labels[i]]
             newhyps = hyps[mapping]
-            hyps_mask["map"] = np.array(mapping, dtype=np.int)
+            hyps_mask["map"] = np.array(mapping, dtype=int)
         elif opt.any():
             newhyps = hyps
             new_labels = hyp_labels

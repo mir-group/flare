@@ -165,7 +165,7 @@ class Parameters:
                 "species_mask" in param_dict
             ), "species_mask key missing in param_dict dictionary"
             param_dict["species_mask"] = nparray(
-                param_dict["species_mask"], dtype=np.int
+                param_dict["species_mask"], dtype=int
             )
 
         # for each kernel, check whether it is defined
