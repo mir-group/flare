@@ -52,7 +52,7 @@ class OtfAnalysis:
         self.parse_pos_otf(blocks[1:])
 
         if self.calculate_energy:
-            self.energies = energies
+            self.energies = self.thermostat["potential energy"]
 
     def make_gp(
         self,
@@ -200,20 +200,44 @@ class OtfAnalysis:
         :return:
         """
 
-        positions = self.position_list
         structures = []
         cell = self.header["cell"]
         species = self.header["species"]
-        forces = self.force_list
-        stds = self.uncertainty_list
-        for i in range(len(positions)):
+        for i in range(len(self.position_list)):
+            if not self.calculate_energy:
+                energy = 0
+            else:
+                energy = self.energies[i]
+ 
             cur_struc = struc.Structure(
-                cell=cell, species=species, positions=positions[i]
+                cell=cell, 
+                species=species, 
+                positions=self.position_list[i],
+                forces=self.force_list[i],
+                stds=self.uncertainty_list[i],
             )
-            cur_struc.forces = forces[i]
-            cur_struc.stds = stds[i]
+            cur_struc.energy = energy
+            #cur_struc.stress = self.stress_list[i]
             structures.append(cur_struc)
         return structures
+
+
+    def to_xyz(self, xyz_file):
+        """
+        Convert OTF trajectory from log file to .xyz file.
+        Args:
+            xyz_file (str): the file name of the .xyz file to output
+
+        Return:
+            A list of `ASE Atoms` objects. 
+        """
+        from ase.io import write
+        struc_trj = self.output_md_structures()
+        trj = []
+        for s in struc_trj:
+            trj.append(s.to_ase_atoms())
+        write(xyz_file, trj, format="extxyz")
+        return trj
 
 
 def split_blocks(filename):
@@ -461,9 +485,10 @@ def extract_global_info(
 
 
 def get_thermostat(thermostat, kw, line):
+    kw = kw.lower()
+    line = line.lower()
     if kw in line:
-        value = float(line.split()[-1])
-        kw = kw.lower()
+        value = float(line.split()[-2])
         if kw in thermostat:
             thermostat[kw].append(value)
         else:
