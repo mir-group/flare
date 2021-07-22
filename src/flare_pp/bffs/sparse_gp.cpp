@@ -691,6 +691,35 @@ void SparseGP ::compute_likelihood_stable() {
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
+void SparseGP ::compute_likelihood_gradient_stable() {
+
+  // Compute inverse of Qff from Sigma.
+  Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
+
+  data_fit =
+      -(1. / 2.) * y.transpose() * noise_diag * (y - Kuf.transpose() * alpha);
+  constant_term = -(1. / 2.) * n_labels * log(2 * M_PI);
+
+  // Compute complexity penalty.
+  double noise_det = 0;
+  for (int i = 0; i < noise_vector.size(); i++) {
+    noise_det += log(noise_vector(i));
+  }
+
+  double Kuu_inv_det = 0;
+  for (int i = 0; i < L_diag.size(); i++) {
+    Kuu_inv_det -= 2 * log(abs(L_diag(i)));
+  }
+
+  double sigma_inv_det = 0;
+  for (int i = 0; i < R_inv_diag.size(); i++) {
+    sigma_inv_det += 2 * log(abs(R_inv_diag(i)));
+  }
+
+  complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
+  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+}
+
 void SparseGP ::compute_likelihood() {
   if (n_labels == 0) {
     std::cout << "Warning: The likelihood is being computed without any "

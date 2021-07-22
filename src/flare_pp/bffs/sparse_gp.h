@@ -73,6 +73,7 @@ public:
   void predict_local_uncertainties(Structure &structure);
 
   void compute_likelihood_stable();
+  void compute_likelihood_gradient_stable();
   void compute_likelihood();
 
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
