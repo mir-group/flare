@@ -521,7 +521,6 @@ void SparseGP ::add_training_structure(const Structure &structure) {
 
   // Update Kuf.
   stack_Kuf();
-
 }
 
 void SparseGP ::stack_Kuu() {
@@ -706,9 +705,13 @@ void SparseGP ::compute_likelihood_gradient_stable() {
 
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
+  Eigen::MatrixXd e_noise_one_diag = e_noise_one.asDiagonal();
+  Eigen::MatrixXd f_noise_one_diag = f_noise_one.asDiagonal();
+  Eigen::MatrixXd s_noise_one_diag = s_noise_one.asDiagonal();
 
+  Eigen::VectorXd K_alpha = Kuf.transpose() * alpha;
   data_fit =
-      -(1. / 2.) * y.transpose() * noise_diag * (y - Kuf.transpose() * alpha);
+      -(1. / 2.) * y.transpose() * noise_diag * (y - K_alpha);
   constant_term = -(1. / 2.) * n_labels * log(2 * M_PI);
 
   // Compute complexity penalty.
@@ -729,6 +732,48 @@ void SparseGP ::compute_likelihood_gradient_stable() {
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+
+  // Compute Kuu and Kuf matrices and gradients.
+  int n_hyps_total = hyperparameters.size();
+
+  Eigen::MatrixXd Kuu_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+  Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+
+  Eigen::MatrixXd Pi_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+
+  std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad, Kuu_grads, Kuf_grads;
+
+  int n_hyps, hyp_index = 0, grad_index = 0;
+  Eigen::VectorXd hyps_curr;
+
+  int count = 0;
+  for (int i = 0; i < n_kernels; i++) {
+    n_hyps = kernels[i]->kernel_hyperparameters.size();
+    hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
+    int size = Kuu_kernels[i].rows();
+
+    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, hyps_curr);
+    Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
+                                    i, Kuf, hyps_curr);
+
+    Kuu_mat.block(count, count, size, size) = Kuu_grad[0];
+    Kuf_mat.block(count, 0, size, n_labels) = Kuf_grad[0];
+
+    for (int j = 0; j < n_hyps; j++) {
+      Kuu_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_sparse));
+      Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
+
+      Kuu_grads[hyp_index + j].block(count, count, size, size) =
+          Kuu_grad[j + 1];
+      Kuf_grads[hyp_index + j].block(count, 0, size, n_labels) =
+          Kuf_grad[j + 1];
+    }
+
+    count += size;
+    hyp_index += n_hyps;
+  }
+
+
 }
 
 void SparseGP ::compute_likelihood() {

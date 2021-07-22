@@ -579,16 +579,11 @@ NormalizedDotProduct ::Kuu_grad(const ClusterDescriptor &envs,
   std::vector<Eigen::MatrixXd> kernel_gradients;
 
   // Compute Kuu.
-  Eigen::MatrixXd Kuu_new = Kuu;
-  Kuu_new /= sig2;
-  Kuu_new *= new_hyps(0) * new_hyps(0);
+  Eigen::MatrixXd Kuu_new = Kuu * (new_hyps(0) * new_hyps(0) / sig2);
+  kernel_gradients.push_back(Kuu_new);
 
   // Compute sigma gradient.
-  Eigen::MatrixXd sigma_gradient = Kuu;
-  sigma_gradient /= sig2;
-  sigma_gradient *= 2 * new_hyps(0);
-
-  kernel_gradients.push_back(Kuu_new);
+  Eigen::MatrixXd sigma_gradient = Kuu * (2 * new_hyps(0) / sig2);
   kernel_gradients.push_back(sigma_gradient);
 
   return kernel_gradients;
@@ -603,15 +598,11 @@ NormalizedDotProduct ::Kuf_grad(const ClusterDescriptor &envs,
   std::vector<Eigen::MatrixXd> kernel_gradients;
 
   // Compute Kuf.
-  Eigen::MatrixXd Kuf_new = Kuf;
-  Kuf_new /= sig2;
-  Kuf_new *= new_hyps(0) * new_hyps(0);
+  Eigen::MatrixXd Kuf_new = Kuf * (new_hyps(0) * new_hyps(0) / sig2);
   kernel_gradients.push_back(Kuf_new);
 
   // Compute sigma gradient.
-  Eigen::MatrixXd sigma_gradient = Kuf;
-  sigma_gradient /= sig2;
-  sigma_gradient *= 2 * new_hyps(0);
+  Eigen::MatrixXd sigma_gradient = Kuf * (2 * new_hyps(0) / sig2);
   kernel_gradients.push_back(sigma_gradient);
 
   return kernel_gradients;
