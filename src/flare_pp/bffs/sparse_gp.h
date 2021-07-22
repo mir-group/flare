@@ -30,7 +30,7 @@ public:
   std::vector<std::vector<std::vector<int>>> sparse_indices;
 
   // Label attributes.
-  Eigen::VectorXd noise_vector, y, label_count;
+  Eigen::VectorXd noise_vector, y, label_count, e_noise_one, f_noise_one, s_noise_one;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
       n_sparse = 0, n_labels = 0, n_strucs = 0;
   double energy_noise, force_noise, stress_noise;
