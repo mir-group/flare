@@ -701,7 +701,7 @@ void SparseGP ::compute_likelihood_stable() {
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
-void SparseGP ::compute_likelihood_gradient_stable() {
+double SparseGP ::compute_likelihood_gradient_stable() {
 
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
@@ -732,14 +732,15 @@ void SparseGP ::compute_likelihood_gradient_stable() {
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+  std::cout << "computed likelihood" << std::endl;
 
   // Compute Kuu and Kuf matrices and gradients.
   int n_hyps_total = hyperparameters.size();
 
-  Eigen::MatrixXd Kuu_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
-  Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+  //Eigen::MatrixXd Kuu_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+  //Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(n_sparse, n_labels);
 
-  Eigen::MatrixXd Pi_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+  std::vector<Eigen::MatrixXd> Pi_grads;
 
   std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad, Kuu_grads, Kuf_grads;
 
@@ -747,6 +748,10 @@ void SparseGP ::compute_likelihood_gradient_stable() {
   Eigen::VectorXd hyps_curr;
 
   int count = 0;
+  Eigen::VectorXd complexity_grad = Eigen::VectorXd::Zero(n_hyps_total);
+  Eigen::VectorXd datafit_grad = Eigen::VectorXd::Zero(n_hyps_total);
+  likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
+  std::cout << "enter for loop" << std::endl;
   for (int i = 0; i < n_kernels; i++) {
     n_hyps = kernels[i]->kernel_hyperparameters.size();
     hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
@@ -756,9 +761,11 @@ void SparseGP ::compute_likelihood_gradient_stable() {
     Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
                                     i, Kuf, hyps_curr);
 
-    Kuu_mat.block(count, count, size, size) = Kuu_grad[0];
-    Kuf_mat.block(count, 0, size, n_labels) = Kuf_grad[0];
+    //Kuu_mat.block(count, count, size, size) = Kuu_grad[0];
+    //Kuf_mat.block(count, 0, size, n_labels) = Kuf_grad[0];
+    Eigen::MatrixXd Kuu_i = Kuu_grad[0];
 
+    std::cout << "enter for loop" << std::endl;
     for (int j = 0; j < n_hyps; j++) {
       Kuu_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_sparse));
       Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
@@ -767,12 +774,34 @@ void SparseGP ::compute_likelihood_gradient_stable() {
           Kuu_grad[j + 1];
       Kuf_grads[hyp_index + j].block(count, 0, size, n_labels) =
           Kuf_grad[j + 1];
+
+      std::cout << "computed Kuu_grad Kuf_grad" << std::endl;
+
+      // Compute Pi matrix and save as an intermediate variable
+      Eigen::MatrixXd Pi_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+      Eigen::MatrixXd dK_noise_K = Kuf_grads[hyp_index + j] * noise_diag * Kuf.transpose();
+      Pi_mat.block(count, count, size, size) = dK_noise_K + dK_noise_K.transpose() + Kuu_grads[hyp_index + j]; 
+      Pi_grads.push_back(Pi_mat);
+      std::cout << "computed Pi_mat" << std::endl;
+      std::cout << "alpha=" << alpha << std::endl;
+      std::cout << "Pi_mat=" << Pi_mat << std::endl;
+
+      // Derivative of complexity over sigma
+      complexity_grad(j) += - 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
+      std::cout << "computed complexity_grad " << complexity_grad(j) << " " << (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() << " " << (Pi_mat * Sigma).trace() << std::endl;
+      datafit_grad(j) += y.transpose() * noise_diag * Kuf_grads[hyp_index + j].transpose() * alpha;
+      std::cout << "datafit_grad 1st term=" << datafit_grad(j) << std::endl;
+      datafit_grad(j) += - 1./2. * alpha.transpose() * Pi_mat * alpha;
+      std::cout << "computed datafit_grad " << datafit_grad(j) << " " << Pi_mat * alpha << std::endl;
+      likelihood_gradient(j) += datafit_grad(j); // complexity_grad(j) + datafit_grad(j); 
+      std::cout << "computed grad" << std::endl;
     }
 
     count += size;
     hyp_index += n_hyps;
-  }
 
+  }
+  return log_marginal_likelihood;
 
 }
 

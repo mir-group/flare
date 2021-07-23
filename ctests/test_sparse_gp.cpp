@@ -199,6 +199,79 @@ TEST_F(StructureTest, LikeGrad) {
   }
 }
 
+TEST_F(StructureTest, LikeGradStable) {
+  // Check that the DTC likelihood gradient is correctly computed.
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  std::vector<Kernel *> kernels;
+  kernels.push_back(&kernel_3_norm);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+
+  std::vector<Descriptor *> dc;
+
+  descriptor_settings = {n_species, 1, N, 0};
+  Bk b1(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+          descriptor_settings);
+  dc.push_back(&b1);
+//  descriptor_settings = {n_species, 2, N, L};
+//  Bk b2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+//          descriptor_settings);
+//  dc.push_back(&b2);
+
+  test_struc = Structure(cell, species, positions, cutoff, dc);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+  test_struc.forces = forces;
+  test_struc.stresses = stresses;
+
+  sparse_gp.add_training_structure(test_struc, {0, 1, 3, 5});
+  sparse_gp.add_specific_environments(test_struc, {0, 1, 3}); 
+
+  EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
+  EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
+
+  sparse_gp.update_matrices_QR();
+
+  // Check the likelihood function.
+  Eigen::VectorXd hyps = sparse_gp.hyperparameters;
+  sparse_gp.set_hyperparameters(hyps);
+  sparse_gp.compute_likelihood_gradient_stable();
+  Eigen::VectorXd like_grad = sparse_gp.likelihood_gradient;
+
+  int n_hyps = hyps.size();
+  Eigen::VectorXd hyps_up, hyps_down;
+  double pert = 1e-4, like_up, like_down, fin_diff;
+
+  for (int i = 0; i < n_hyps - 3; i++) { //n_hyps; i++) {
+    hyps_up = hyps;
+    hyps_down = hyps;
+    hyps_up(i) += pert;
+    hyps_down(i) -= pert;
+
+    sparse_gp.set_hyperparameters(hyps_up);
+    like_up = sparse_gp.compute_likelihood_gradient_stable();
+    // for debug
+    like_up = sparse_gp.complexity_penalty; 
+    like_up = sparse_gp.data_fit; 
+
+    sparse_gp.set_hyperparameters(hyps_down);
+    like_down = sparse_gp.compute_likelihood_gradient_stable();
+    // for debug
+    like_down = sparse_gp.complexity_penalty; 
+    like_down = sparse_gp.data_fit; 
+
+    fin_diff = (like_up - like_down) / (2 * pert);
+
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
+  }
+}
+
+
 TEST_F(StructureTest, Set_Hyps) {
   // Check the reset hyperparameters method.
 
