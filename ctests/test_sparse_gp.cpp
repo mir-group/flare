@@ -206,6 +206,7 @@ TEST_F(StructureTest, LikeGradStable) {
   double sigma_s = 3;
 
   std::vector<Kernel *> kernels;
+  kernels.push_back(&kernel_norm);
   kernels.push_back(&kernel_3_norm);
   SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
@@ -215,10 +216,10 @@ TEST_F(StructureTest, LikeGradStable) {
   Bk b1(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
           descriptor_settings);
   dc.push_back(&b1);
-//  descriptor_settings = {n_species, 2, N, L};
-//  Bk b2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
-//          descriptor_settings);
-//  dc.push_back(&b2);
+  descriptor_settings = {n_species, 2, N, L};
+  Bk b2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+          descriptor_settings);
+  dc.push_back(&b2);
 
   test_struc = Structure(cell, species, positions, cutoff, dc);
 
@@ -247,6 +248,7 @@ TEST_F(StructureTest, LikeGradStable) {
   Eigen::VectorXd hyps_up, hyps_down;
   double pert = 1e-4, like_up, like_down, fin_diff;
 
+  std::cout << "*************************" << std::endl;
   for (int i = 0; i < n_hyps - 3; i++) { //n_hyps; i++) {
     hyps_up = hyps;
     hyps_down = hyps;
@@ -255,15 +257,16 @@ TEST_F(StructureTest, LikeGradStable) {
 
     sparse_gp.set_hyperparameters(hyps_up);
     like_up = sparse_gp.compute_likelihood_gradient_stable();
-    // for debug
-    like_up = sparse_gp.complexity_penalty; 
+//    // for debug
+//    like_up = sparse_gp.complexity_penalty; 
 
     sparse_gp.set_hyperparameters(hyps_down);
     like_down = sparse_gp.compute_likelihood_gradient_stable();
-    // for debug
-    like_down = sparse_gp.complexity_penalty; 
+//    // for debug
+//    like_down = sparse_gp.complexity_penalty; 
 
     fin_diff = (like_up - like_down) / (2 * pert);
+    std::cout << "* compare grad " << like_grad(i) << " " << fin_diff << std::endl;
 
     EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
   }

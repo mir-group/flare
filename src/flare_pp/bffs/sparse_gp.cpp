@@ -778,22 +778,27 @@ double SparseGP ::compute_likelihood_gradient_stable() {
       std::cout << "computed Kuu_grad Kuf_grad" << std::endl;
 
       // Compute Pi matrix and save as an intermediate variable
-      Eigen::MatrixXd Pi_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+      //Eigen::MatrixXd Pi_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
       Eigen::MatrixXd dK_noise_K = Kuf_grads[hyp_index + j] * noise_diag * Kuf.transpose();
-      Pi_mat.block(count, count, size, size) = dK_noise_K + dK_noise_K.transpose() + Kuu_grads[hyp_index + j]; 
+      //std::cout << hyp_index+j << " Kuf_grads[hyp_index + j]=" << Kuf_grads[hyp_index + j] << std::endl;
+      //std::cout << "Kuf" << Kuf << std::endl;
+      //std::cout << "dK_noise_K=" << dK_noise_K << std::endl;
+      //std::cout << "Kuu_grads[hyp_index + j]=" << Kuu_grads[hyp_index + j] << std::endl;
+      //Pi_mat.block(count, count, size, size) = dK_noise_K + dK_noise_K.transpose() + Kuu_grads[hyp_index + j]; 
+      Eigen::MatrixXd Pi_mat = dK_noise_K + dK_noise_K.transpose() + Kuu_grads[hyp_index + j]; 
       Pi_grads.push_back(Pi_mat);
       std::cout << "computed Pi_mat" << std::endl;
       std::cout << "alpha=" << alpha << std::endl;
       std::cout << "Pi_mat=" << Pi_mat << std::endl;
 
       // Derivative of complexity over sigma
-      complexity_grad(j) += 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
+      complexity_grad(hyp_index + j) += 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
       std::cout << "computed complexity_grad " << complexity_grad(j) << " " << (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() << " " << (Pi_mat * Sigma).trace() << std::endl;
-      datafit_grad(j) += y.transpose() * noise_diag * Kuf_grads[hyp_index + j].transpose() * alpha;
+      datafit_grad(hyp_index + j) += y.transpose() * noise_diag * Kuf_grads[hyp_index + j].transpose() * alpha;
       std::cout << "datafit_grad 1st term=" << datafit_grad(j) << std::endl;
-      datafit_grad(j) += - 1./2. * alpha.transpose() * Pi_mat * alpha;
+      datafit_grad(hyp_index + j) += - 1./2. * alpha.transpose() * Pi_mat * alpha;
       std::cout << "computed datafit_grad " << datafit_grad(j) << " " << Pi_mat * alpha << std::endl;
-      likelihood_gradient(j) += complexity_grad(j); // complexity_grad(j) + datafit_grad(j); 
+      likelihood_gradient(hyp_index + j) += complexity_grad(hyp_index + j) + datafit_grad(hyp_index + j); 
       std::cout << "computed grad" << std::endl;
     }
 
