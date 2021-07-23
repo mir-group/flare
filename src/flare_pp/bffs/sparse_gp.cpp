@@ -737,7 +737,6 @@ double SparseGP ::compute_likelihood_gradient_stable() {
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
-  std::cout << "computed likelihood" << std::endl;
 
   // Compute Kuu and Kuf matrices and gradients.
   int n_hyps_total = hyperparameters.size();
@@ -756,7 +755,6 @@ double SparseGP ::compute_likelihood_gradient_stable() {
   Eigen::VectorXd complexity_grad = Eigen::VectorXd::Zero(n_hyps_total);
   Eigen::VectorXd datafit_grad = Eigen::VectorXd::Zero(n_hyps_total);
   likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
-  std::cout << "enter for loop" << std::endl;
   for (int i = 0; i < n_kernels; i++) {
     n_hyps = kernels[i]->kernel_hyperparameters.size();
     hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
@@ -770,7 +768,6 @@ double SparseGP ::compute_likelihood_gradient_stable() {
     //Kuf_mat.block(count, 0, size, n_labels) = Kuf_grad[0];
     Eigen::MatrixXd Kuu_i = Kuu_grad[0];
 
-    std::cout << "enter for loop" << std::endl;
     for (int j = 0; j < n_hyps; j++) {
       Kuu_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_sparse));
       Kuf_grads.push_back(Eigen::MatrixXd::Zero(n_sparse, n_labels));
@@ -780,7 +777,6 @@ double SparseGP ::compute_likelihood_gradient_stable() {
       Kuf_grads[hyp_index + j].block(count, 0, size, n_labels) =
           Kuf_grad[j + 1];
 
-      std::cout << "computed Kuu_grad Kuf_grad" << std::endl;
 
       // Compute Pi matrix and save as an intermediate variable
       Eigen::MatrixXd dK_noise_K = Kuf_grads[hyp_index + j] * noise_diag * Kuf.transpose();
@@ -800,19 +796,27 @@ double SparseGP ::compute_likelihood_gradient_stable() {
     hyp_index += n_hyps;
   }
 
-  // Derivative of complexity over noise  
+  // Derivative of complexity over noise
+  // TODO: Kuf * I_S * Kfu might be stored in advance for inner product kernel
+  double en3 = energy_noise * energy_noise * energy_noise;
+  double fn3 = force_noise * force_noise * force_noise;
+  double sn3 = stress_noise * stress_noise * stress_noise;
+
+  complexity_grad(hyp_index + 0) = - e_noise_one.sum() / energy_noise + (Kuf * e_noise_one_diag * Kuf.transpose() * Sigma).trace() / en3;
+  complexity_grad(hyp_index + 1) = - f_noise_one.sum() / force_noise + (Kuf * f_noise_one_diag * Kuf.transpose() * Sigma).trace() / fn3;
+  complexity_grad(hyp_index + 2) = - s_noise_one.sum() / stress_noise + (Kuf * s_noise_one_diag * Kuf.transpose() * Sigma).trace() / sn3;
 
   // Derivative of data_fit over noise  
   datafit_grad(hyp_index + 0) = y_K_alpha.transpose() * e_noise_one_diag * y_K_alpha;
+  datafit_grad(hyp_index + 0) /= en3;
   datafit_grad(hyp_index + 1) = y_K_alpha.transpose() * f_noise_one_diag * y_K_alpha;
+  datafit_grad(hyp_index + 1) /= fn3;
   datafit_grad(hyp_index + 2) = y_K_alpha.transpose() * s_noise_one_diag * y_K_alpha;
-  datafit_grad(hyp_index + 0) /= energy_noise * energy_noise * energy_noise;
-  datafit_grad(hyp_index + 1) /= force_noise * force_noise * force_noise;
-  datafit_grad(hyp_index + 2) /= stress_noise * stress_noise * stress_noise;
+  datafit_grad(hyp_index + 2) /= sn3;
 
-  likelihood_gradient(hyp_index + 0) += datafit_grad(hyp_index + 0);
-  likelihood_gradient(hyp_index + 1) += datafit_grad(hyp_index + 1);
-  likelihood_gradient(hyp_index + 2) += datafit_grad(hyp_index + 2);
+  likelihood_gradient(hyp_index + 0) += complexity_grad(hyp_index + 0) + datafit_grad(hyp_index + 0);
+  likelihood_gradient(hyp_index + 1) += complexity_grad(hyp_index + 1) + datafit_grad(hyp_index + 1);
+  likelihood_gradient(hyp_index + 2) += complexity_grad(hyp_index + 2) + datafit_grad(hyp_index + 2);
 
   return log_marginal_likelihood;
 

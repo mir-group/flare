@@ -248,7 +248,6 @@ TEST_F(StructureTest, LikeGradStable) {
   Eigen::VectorXd hyps_up, hyps_down;
   double pert = 1e-4, like_up, like_down, fin_diff;
 
-  std::cout << "*************************" << std::endl;
   for (int i = 0; i < n_hyps; i++) {
     hyps_up = hyps;
     hyps_down = hyps;
@@ -257,22 +256,15 @@ TEST_F(StructureTest, LikeGradStable) {
 
     sparse_gp.set_hyperparameters(hyps_up);
     like_up = sparse_gp.compute_likelihood_gradient_stable();
-//    // for debug
-//    like_up = sparse_gp.complexity_penalty; 
     double datafit_up = sparse_gp.data_fit; 
+    double complexity_up = sparse_gp.complexity_penalty;
 
     sparse_gp.set_hyperparameters(hyps_down);
     like_down = sparse_gp.compute_likelihood_gradient_stable();
-//    // for debug
-//    like_down = sparse_gp.complexity_penalty; 
     double datafit_down = sparse_gp.data_fit; 
+    double complexity_down = sparse_gp.complexity_penalty;
 
-    if (i < n_hyps - 3) {
-      fin_diff = (like_up - like_down) / (2 * pert);
-    } else {
-      fin_diff = (datafit_up - datafit_down) / (2 * pert);
-    }
-    std::cout << "* compare grad " << like_grad(i) << " " << fin_diff << std::endl;
+    fin_diff = (like_up - like_down) / (2 * pert);
 
     EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
   }
