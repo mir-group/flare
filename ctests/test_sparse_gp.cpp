@@ -201,9 +201,9 @@ TEST_F(StructureTest, LikeGrad) {
 
 TEST_F(StructureTest, LikeGradStable) {
   // Check that the DTC likelihood gradient is correctly computed.
-  double sigma_e = 1;
+  double sigma_e = 3;
   double sigma_f = 2;
-  double sigma_s = 3;
+  double sigma_s = 1;
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel_norm);
@@ -249,7 +249,7 @@ TEST_F(StructureTest, LikeGradStable) {
   double pert = 1e-4, like_up, like_down, fin_diff;
 
   std::cout << "*************************" << std::endl;
-  for (int i = 0; i < n_hyps - 3; i++) { //n_hyps; i++) {
+  for (int i = 0; i < n_hyps; i++) {
     hyps_up = hyps;
     hyps_down = hyps;
     hyps_up(i) += pert;
@@ -259,13 +259,19 @@ TEST_F(StructureTest, LikeGradStable) {
     like_up = sparse_gp.compute_likelihood_gradient_stable();
 //    // for debug
 //    like_up = sparse_gp.complexity_penalty; 
+    double datafit_up = sparse_gp.data_fit; 
 
     sparse_gp.set_hyperparameters(hyps_down);
     like_down = sparse_gp.compute_likelihood_gradient_stable();
 //    // for debug
 //    like_down = sparse_gp.complexity_penalty; 
+    double datafit_down = sparse_gp.data_fit; 
 
-    fin_diff = (like_up - like_down) / (2 * pert);
+    if (i < n_hyps - 3) {
+      fin_diff = (like_up - like_down) / (2 * pert);
+    } else {
+      fin_diff = (datafit_up - datafit_down) / (2 * pert);
+    }
     std::cout << "* compare grad " << like_grad(i) << " " << fin_diff << std::endl;
 
     EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
@@ -304,16 +310,19 @@ TEST_F(StructureTest, Set_Hyps) {
   test_struc_2.stresses = stresses_2;
 
   // Add sparse environments and training structures.
+  std::cout << "adding training structure" << std::endl;
   sparse_gp_1.add_training_structure(test_struc);
   sparse_gp_1.add_training_structure(test_struc_2);
   sparse_gp_1.add_all_environments(test_struc);
   sparse_gp_1.add_all_environments(test_struc_2);
 
+  std::cout << "adding training structure" << std::endl;
   sparse_gp_2.add_training_structure(test_struc);
   sparse_gp_2.add_training_structure(test_struc_2);
   sparse_gp_2.add_all_environments(test_struc);
   sparse_gp_2.add_all_environments(test_struc_2);
 
+  std::cout << "updating matrices" << std::endl;
   sparse_gp_1.update_matrices_QR();
   sparse_gp_2.update_matrices_QR();
 
