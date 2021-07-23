@@ -787,13 +787,13 @@ double SparseGP ::compute_likelihood_gradient_stable() {
       std::cout << "Pi_mat=" << Pi_mat << std::endl;
 
       // Derivative of complexity over sigma
-      complexity_grad(j) += - 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
+      complexity_grad(j) += 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
       std::cout << "computed complexity_grad " << complexity_grad(j) << " " << (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() << " " << (Pi_mat * Sigma).trace() << std::endl;
       datafit_grad(j) += y.transpose() * noise_diag * Kuf_grads[hyp_index + j].transpose() * alpha;
       std::cout << "datafit_grad 1st term=" << datafit_grad(j) << std::endl;
       datafit_grad(j) += - 1./2. * alpha.transpose() * Pi_mat * alpha;
       std::cout << "computed datafit_grad " << datafit_grad(j) << " " << Pi_mat * alpha << std::endl;
-      likelihood_gradient(j) += datafit_grad(j); // complexity_grad(j) + datafit_grad(j); 
+      likelihood_gradient(j) += complexity_grad(j); // complexity_grad(j) + datafit_grad(j); 
       std::cout << "computed grad" << std::endl;
     }
 

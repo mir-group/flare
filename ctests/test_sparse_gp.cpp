@@ -257,13 +257,11 @@ TEST_F(StructureTest, LikeGradStable) {
     like_up = sparse_gp.compute_likelihood_gradient_stable();
     // for debug
     like_up = sparse_gp.complexity_penalty; 
-    like_up = sparse_gp.data_fit; 
 
     sparse_gp.set_hyperparameters(hyps_down);
     like_down = sparse_gp.compute_likelihood_gradient_stable();
     // for debug
     like_down = sparse_gp.complexity_penalty; 
-    like_down = sparse_gp.data_fit; 
 
     fin_diff = (like_up - like_down) / (2 * pert);
 
