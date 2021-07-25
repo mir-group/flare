@@ -809,16 +809,17 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
       // Compute Pi matrix and save as an intermediate variable
       Eigen::MatrixXd dK_noise_K;
-      if (precomputed_KnK && kernels[i]->kernel_name == "NormalizedDotProduct" && 
-        // For dot product kernel, the matrix multiplication can be avoided
-              Kuf_e_noise_Kfu[i].rows() == Kuu_kernels[i].rows() &&
-              Kuf_f_noise_Kfu[i].rows() == Kuu_kernels[i].rows() &&
-              Kuf_s_noise_Kfu[i].rows() == Kuu_kernels[i].rows()) {
-        double twosig3 = 2 * hyps_curr(j) * hyps_curr(j) * hyps_curr(j);
-        dK_noise_K = (Kuf_e_noise_Kfu[i] + Kuf_f_noise_Kfu[i] + Kuf_s_noise_Kfu[i]) * twosig3;
-      } else {
-        dK_noise_K = Kuf_grads[hyp_index + j] * noise_diag * Kuf.transpose();
-      }
+//      if (precomputed_KnK && kernels[i]->kernel_name == "NormalizedDotProduct" && 
+//        // For dot product kernel, the matrix multiplication can be avoided
+//              Kuf_e_noise_Kfu[i].rows() == Kuu_kernels[i].rows() &&
+//              Kuf_f_noise_Kfu[i].rows() == Kuu_kernels[i].rows() &&
+//              Kuf_s_noise_Kfu[i].rows() == Kuu_kernels[i].rows()) {
+//        double twosig3 = 2 * hyps_curr(j) * hyps_curr(j) * hyps_curr(j);
+//        dK_noise_K = (Kuf_e_noise_Kfu + Kuf_f_noise_Kfu + Kuf_s_noise_Kfu) * twosig3;
+//      } else {
+//        dK_noise_K = Kuf_grads[hyp_index + j] * noise_diag * Kuf.transpose();
+//      }
+      dK_noise_K = Kuf_grads[hyp_index + j] * noise_diag * Kuf.transpose();
       Eigen::MatrixXd Pi_mat = dK_noise_K + dK_noise_K.transpose() + Kuu_grads[hyp_index + j]; 
       Pi_grads.push_back(Pi_mat);
 
@@ -857,10 +858,14 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   double en3 = energy_noise * energy_noise * energy_noise;
   double fn3 = force_noise * force_noise * force_noise;
   double sn3 = stress_noise * stress_noise * stress_noise;
-
-  complexity_grad(hyp_index + 0) = - e_noise_one.sum() / energy_noise + (Kuf * e_noise_one_diag * Kuf.transpose() * Sigma).trace() / en3;
-  complexity_grad(hyp_index + 1) = - f_noise_one.sum() / force_noise + (Kuf * f_noise_one_diag * Kuf.transpose() * Sigma).trace() / fn3;
-  complexity_grad(hyp_index + 2) = - s_noise_one.sum() / stress_noise + (Kuf * s_noise_one_diag * Kuf.transpose() * Sigma).trace() / sn3;
+  
+  compute_KnK(precomputed_KnK);
+  complexity_grad(hyp_index + 0) = - e_noise_one.sum() / energy_noise 
+      + (KnK_e * Sigma).trace() / en3;
+  complexity_grad(hyp_index + 1) = - f_noise_one.sum() / force_noise 
+      + (KnK_f * Sigma).trace() / fn3;
+  complexity_grad(hyp_index + 2) = - s_noise_one.sum() / stress_noise 
+      + (KnK_s * Sigma).trace() / sn3;
 
   t2 = std::chrono::high_resolution_clock::now();
   duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
@@ -888,6 +893,43 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
   return log_marginal_likelihood;
 
+}
+
+void SparseGP ::precompute_KnK() {
+  for (int i = 0; i < n_kernels; i++) {
+    if (kernels[i]->kernel_name == "NormalizedDotProduct") {
+      Eigen::VectorXd hyps_curr = kernels[i]->kernel_hyperparameters;
+      assert(hyps_curr.size() == 1);
+      double sig4 = hyps_curr(0) * hyps_curr(0) * hyps_curr(0) * hyps_curr(0);
+
+      Kuf_e_noise_Kfu[i] = Kuf_kernels[i] * e_noise_one.asDiagonal() * Kuf_kernels[i].transpose() / sig4;
+      Kuf_f_noise_Kfu[i] = Kuf_kernels[i] * f_noise_one.asDiagonal() * Kuf_kernels[i].transpose() / sig4;
+      Kuf_s_noise_Kfu[i] = Kuf_kernels[i] * s_noise_one.asDiagonal() * Kuf_kernels[i].transpose() / sig4;
+    }
+  }
+}
+
+void SparseGP ::compute_KnK(bool precomputed) {
+  if (precomputed) {
+    KnK_e = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
+    KnK_f = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
+    KnK_s = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
+
+    for (int i = 0; i < n_kernels; i++) {
+      assert(kernels[i]->kernel_name == "NormalizedDotProduct");
+      Eigen::VectorXd hyps_curr = kernels[i]->kernel_hyperparameters;
+      assert(hyps_curr.size() == 1);
+      double sig4 = hyps_curr(0) * hyps_curr(0) * hyps_curr(0) * hyps_curr(0);
+  
+      KnK_e += Kuf_e_noise_Kfu[i] * sig4;
+      KnK_f += Kuf_f_noise_Kfu[i] * sig4;
+      KnK_s += Kuf_s_noise_Kfu[i] * sig4;
+    }
+  } else {
+    KnK_e = Kuf * e_noise_one.asDiagonal() * Kuf.transpose();
+    KnK_f = Kuf * f_noise_one.asDiagonal() * Kuf.transpose();
+    KnK_s = Kuf * s_noise_one.asDiagonal() * Kuf.transpose();
+  }
 }
 
 void SparseGP ::compute_likelihood() {
