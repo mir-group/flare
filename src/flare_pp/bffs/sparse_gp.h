@@ -17,6 +17,7 @@ public:
   std::vector<Kernel *> kernels;
   std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels;
   Eigen::MatrixXd Kuu, Kuf;
+  std::vector<Eigen::MatrixXd> Kuf_e_noise_Kfu, Kuf_f_noise_Kfu, Kuf_s_noise_Kfu;
   int n_kernels = 0;
   double Kuu_jitter;
 
@@ -73,7 +74,7 @@ public:
   void predict_local_uncertainties(Structure &structure);
 
   void compute_likelihood_stable();
-  double compute_likelihood_gradient_stable();
+  double compute_likelihood_gradient_stable(bool precomputed_KnK = false);
   void compute_likelihood();
 
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
