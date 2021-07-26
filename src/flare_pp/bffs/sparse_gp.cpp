@@ -731,21 +731,29 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
   // Compute inverse of Qff from Sigma.
   Eigen::MatrixXd noise_diag = noise_vector.asDiagonal();
-  Eigen::MatrixXd e_noise_one_diag = e_noise_one.asDiagonal();
-  Eigen::MatrixXd f_noise_one_diag = f_noise_one.asDiagonal();
-  Eigen::MatrixXd s_noise_one_diag = s_noise_one.asDiagonal();
+//  Eigen::MatrixXd e_noise_one_diag = e_noise_one.asDiagonal();
+//  Eigen::MatrixXd f_noise_one_diag = f_noise_one.asDiagonal();
+//  Eigen::MatrixXd s_noise_one_diag = s_noise_one.asDiagonal();
+
+  t2 = std::chrono::high_resolution_clock::now();
+  duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+  std::cout << "Time: likelihood diag " << duration << std::endl;
+  t1 = std::chrono::high_resolution_clock::now();
 
   Eigen::VectorXd y_K_alpha = y - Kuf.transpose() * alpha;
   data_fit =
-      -(1. / 2.) * y.transpose() * noise_diag * y_K_alpha;
+      -(1. / 2.) * y.transpose() * noise_vector.cwiseProduct(y_K_alpha);
   constant_term = -(1. / 2.) * n_labels * log(2 * M_PI);
 
+  t2 = std::chrono::high_resolution_clock::now();
+  duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+  std::cout << "Time: likelihood datafit " << duration << std::endl;
+  t1 = std::chrono::high_resolution_clock::now();
+
   // Compute complexity penalty.
-  double noise_det = 0;
-//#pragma omp parallel for
-  for (int i = 0; i < noise_vector.size(); i++) {
-    noise_det += log(noise_vector(i));
-  }
+  double noise_det = - 2 * (n_energy_labels * log(abs(energy_noise))
+          + n_force_labels * log(abs(force_noise))
+          + n_stress_labels * log(abs(stress_noise)));
 
   assert(L_diag.size() == R_inv_diag.size());
   double Kuu_inv_det = 0;
@@ -766,7 +774,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
   t2 = std::chrono::high_resolution_clock::now();
   duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
-  std::cout << "Time: likelihood " << duration << std::endl;
+  std::cout << "Time: likelihood complexity " << duration << std::endl;
   t1 = std::chrono::high_resolution_clock::now();
 
   // Compute Kuu and Kuf matrices and gradients.
@@ -844,7 +852,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
 
       // Derivative of data_fit over sigma
-      datafit_grad(hyp_index + j) += y.transpose() * noise_diag * Kuf_grads[hyp_index + j].transpose() * alpha;
+      datafit_grad(hyp_index + j) += y.cwiseProduct(noise_vector).transpose() * Kuf_grads[hyp_index + j].transpose() * alpha;
       datafit_grad(hyp_index + j) += - 1./2. * alpha.transpose() * Pi_mat * alpha;
       t2 = std::chrono::high_resolution_clock::now();
       duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
@@ -879,11 +887,11 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   t1 = std::chrono::high_resolution_clock::now();
 
   // Derivative of data_fit over noise  
-  datafit_grad(hyp_index + 0) = y_K_alpha.transpose() * e_noise_one_diag * y_K_alpha;
+  datafit_grad(hyp_index + 0) = y_K_alpha.transpose() * e_noise_one.cwiseProduct(y_K_alpha);
   datafit_grad(hyp_index + 0) /= en3;
-  datafit_grad(hyp_index + 1) = y_K_alpha.transpose() * f_noise_one_diag * y_K_alpha;
+  datafit_grad(hyp_index + 1) = y_K_alpha.transpose() * f_noise_one.cwiseProduct(y_K_alpha);
   datafit_grad(hyp_index + 1) /= fn3;
-  datafit_grad(hyp_index + 2) = y_K_alpha.transpose() * s_noise_one_diag * y_K_alpha;
+  datafit_grad(hyp_index + 2) = y_K_alpha.transpose() * s_noise_one.cwiseProduct(y_K_alpha);
   datafit_grad(hyp_index + 2) /= sn3;
 
   t2 = std::chrono::high_resolution_clock::now();
@@ -1131,6 +1139,11 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
   int n_hyps, hyp_index = 0;
   Eigen::VectorXd new_hyps;
 
+  double duration = 0;
+  std::chrono::high_resolution_clock::time_point t1, t2;
+  t1 = std::chrono::high_resolution_clock::now();
+
+
   std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad;
   for (int i = 0; i < n_kernels; i++) {
     n_hyps = kernels[i]->kernel_hyperparameters.size();
@@ -1147,8 +1160,19 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
     hyp_index += n_hyps;
   }
 
+  t2 = std::chrono::high_resolution_clock::now();
+  duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+  std::cout << "Time: set_hyp: update Kuf Kuu " << duration << std::endl;
+  t1 = std::chrono::high_resolution_clock::now();
+
   stack_Kuu();
   stack_Kuf();
+
+  t2 = std::chrono::high_resolution_clock::now();
+  duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+  std::cout << "Time: set_hyp: stack Kuf Kuu " << duration << std::endl;
+  t1 = std::chrono::high_resolution_clock::now();
+
 
   hyperparameters = hyps;
   energy_noise = hyps(hyp_index);
@@ -1178,8 +1202,22 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
     }
   }
 
+  t2 = std::chrono::high_resolution_clock::now();
+  duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+  std::cout << "Time: set_hyp: update noise " << duration << std::endl;
+  t1 = std::chrono::high_resolution_clock::now();
+
+
   // Update remaining matrices.
   update_matrices_QR();
+
+  t2 = std::chrono::high_resolution_clock::now();
+  duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+  std::cout << "Time: set_hyp: update qr " << duration << std::endl;
+  t1 = std::chrono::high_resolution_clock::now();
+
+
+
 }
 
 void SparseGP::write_mapping_coefficients(std::string file_name,
