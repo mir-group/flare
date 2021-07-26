@@ -241,7 +241,17 @@ TEST_F(StructureTest, LikeGradStable) {
   // Check the likelihood function.
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;
   sparse_gp.set_hyperparameters(hyps);
-  sparse_gp.compute_likelihood_gradient_stable();
+  sparse_gp.precompute_KnK();
+  sparse_gp.compute_likelihood_gradient_stable(true);
+
+  // Debug: check KnK
+  Eigen::MatrixXd KnK_e = sparse_gp.Kuf * sparse_gp.e_noise_one.asDiagonal() * sparse_gp.Kuf.transpose();
+  for (int i = 0; i < KnK_e.rows(); i++) {
+    for (int j = 0; j < KnK_e.rows(); j++) {
+      EXPECT_NEAR(KnK_e(i, j), sparse_gp.KnK_e(i, j), 1e-8);
+    }
+  }
+
   Eigen::VectorXd like_grad = sparse_gp.likelihood_gradient;
 
   int n_hyps = hyps.size();

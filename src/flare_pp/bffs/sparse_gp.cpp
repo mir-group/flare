@@ -5,6 +5,7 @@
 #include <iomanip> // setprecision
 #include <iostream>
 #include <numeric> // Iota
+#include <assert.h> 
 
 SparseGP ::SparseGP() {}
 
@@ -741,19 +742,24 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
   // Compute complexity penalty.
   double noise_det = 0;
+//#pragma omp parallel for
   for (int i = 0; i < noise_vector.size(); i++) {
     noise_det += log(noise_vector(i));
   }
 
+  assert(L_diag.size() == R_inv_diag.size());
   double Kuu_inv_det = 0;
+  double sigma_inv_det = 0;
+//#pragma omp parallel for
   for (int i = 0; i < L_diag.size(); i++) {
     Kuu_inv_det -= 2 * log(abs(L_diag(i)));
-  }
-
-  double sigma_inv_det = 0;
-  for (int i = 0; i < R_inv_diag.size(); i++) {
     sigma_inv_det += 2 * log(abs(R_inv_diag(i)));
   }
+
+//  double sigma_inv_det = 0;
+//  for (int i = 0; i < R_inv_diag.size(); i++) {
+//    sigma_inv_det += 2 * log(abs(R_inv_diag(i)));
+//  }
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
@@ -872,7 +878,6 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   std::cout << "Time: dC/dnoise " << duration << std::endl;
   t1 = std::chrono::high_resolution_clock::now();
 
-
   // Derivative of data_fit over noise  
   datafit_grad(hyp_index + 0) = y_K_alpha.transpose() * e_noise_one_diag * y_K_alpha;
   datafit_grad(hyp_index + 0) /= en3;
@@ -886,7 +891,6 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   std::cout << "Time: dD/dnoise " << duration << std::endl;
   t1 = std::chrono::high_resolution_clock::now();
 
-
   likelihood_gradient(hyp_index + 0) += complexity_grad(hyp_index + 0) + datafit_grad(hyp_index + 0);
   likelihood_gradient(hyp_index + 1) += complexity_grad(hyp_index + 1) + datafit_grad(hyp_index + 1);
   likelihood_gradient(hyp_index + 2) += complexity_grad(hyp_index + 2) + datafit_grad(hyp_index + 2);
@@ -897,14 +901,18 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 
 void SparseGP ::precompute_KnK() {
   for (int i = 0; i < n_kernels; i++) {
-    if (kernels[i]->kernel_name == "NormalizedDotProduct") {
-      Eigen::VectorXd hyps_curr = kernels[i]->kernel_hyperparameters;
-      assert(hyps_curr.size() == 1);
-      double sig4 = hyps_curr(0) * hyps_curr(0) * hyps_curr(0) * hyps_curr(0);
+    Eigen::VectorXd hyps_i = kernels[i]->kernel_hyperparameters;
+    assert(hyps_i.size() == 1);
 
-      Kuf_e_noise_Kfu[i] = Kuf_kernels[i] * e_noise_one.asDiagonal() * Kuf_kernels[i].transpose() / sig4;
-      Kuf_f_noise_Kfu[i] = Kuf_kernels[i] * f_noise_one.asDiagonal() * Kuf_kernels[i].transpose() / sig4;
-      Kuf_s_noise_Kfu[i] = Kuf_kernels[i] * s_noise_one.asDiagonal() * Kuf_kernels[i].transpose() / sig4;
+    for (int j = 0; j < n_kernels; j++) {
+      Eigen::VectorXd hyps_j = kernels[j]->kernel_hyperparameters;
+      assert(hyps_j.size() == 1);
+ 
+      double sig4 = hyps_i(0) * hyps_i(0) * hyps_j(0) * hyps_j(0);
+  
+      Kuf_e_noise_Kfu.push_back(Kuf_kernels[i] * e_noise_one.asDiagonal() * Kuf_kernels[j].transpose() / sig4);
+      Kuf_f_noise_Kfu.push_back(Kuf_kernels[i] * f_noise_one.asDiagonal() * Kuf_kernels[j].transpose() / sig4);
+      Kuf_s_noise_Kfu.push_back(Kuf_kernels[i] * s_noise_one.asDiagonal() * Kuf_kernels[j].transpose() / sig4);
     }
   }
 }
@@ -915,15 +923,27 @@ void SparseGP ::compute_KnK(bool precomputed) {
     KnK_f = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
     KnK_s = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
 
+    int count_i = 0, count_ij = 0;
     for (int i = 0; i < n_kernels; i++) {
-      assert(kernels[i]->kernel_name == "NormalizedDotProduct");
-      Eigen::VectorXd hyps_curr = kernels[i]->kernel_hyperparameters;
-      assert(hyps_curr.size() == 1);
-      double sig4 = hyps_curr(0) * hyps_curr(0) * hyps_curr(0) * hyps_curr(0);
-  
-      KnK_e += Kuf_e_noise_Kfu[i] * sig4;
-      KnK_f += Kuf_f_noise_Kfu[i] * sig4;
-      KnK_s += Kuf_s_noise_Kfu[i] * sig4;
+      Eigen::VectorXd hyps_i = kernels[i]->kernel_hyperparameters;
+      assert(hyps_i.size() == 1);
+      int size_i = Kuu_kernels[i].rows();
+      int count_j = 0; 
+      for (int j = 0; j < n_kernels; j++) {
+        Eigen::VectorXd hyps_j = kernels[j]->kernel_hyperparameters;
+        assert(hyps_j.size() == 1);
+        int size_j = Kuu_kernels[i].rows();
+   
+        double sig4 = hyps_i(0) * hyps_i(0) * hyps_j(0) * hyps_j(0);
+    
+        KnK_e.block(count_i, count_j, size_i, size_j) += Kuf_e_noise_Kfu[count_ij] * sig4;
+        KnK_f.block(count_i, count_j, size_i, size_j) += Kuf_f_noise_Kfu[count_ij] * sig4;
+        KnK_s.block(count_i, count_j, size_i, size_j) += Kuf_s_noise_Kfu[count_ij] * sig4;
+
+        count_ij += 1;
+        count_j += size_j;
+      }
+      count_i += size_i;
     }
   } else {
     KnK_e = Kuf * e_noise_one.asDiagonal() * Kuf.transpose();
@@ -1021,6 +1041,7 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
   double sigma_s = hyperparameters(hyp_index + 2);
 
   int current_count = 0;
+#pragma omp parallel for
   for (int i = 0; i < training_structures.size(); i++) {
     int n_atoms = training_structures[i].noa;
 
@@ -1080,6 +1101,7 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
 
   // Compute log determinant from the diagonal of U.
   complexity_penalty = 0;
+#pragma omp parallel for
   for (int i = 0; i < Qff_plus_lambda.rows(); i++) {
     complexity_penalty += -log(abs(Qff_plus_lambda(i, i)));
   }
