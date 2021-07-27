@@ -78,6 +78,7 @@ public:
   double compute_likelihood_gradient_stable(bool precomputed_KnK = false);
   void precompute_KnK();
   void compute_KnK(bool precomputed = false);
+  Eigen::MatrixXd compute_dKnK(int i);
 
   void compute_likelihood();
 
