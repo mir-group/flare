@@ -864,7 +864,6 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
       std::cout << "Time: dD/dsigma " << duration << std::endl;
       t1 = std::chrono::high_resolution_clock::now();
 
-
       likelihood_gradient(hyp_index + j) += complexity_grad(hyp_index + j) + datafit_grad(hyp_index + j); 
     }
 
@@ -1079,42 +1078,14 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
           .inverse();
 
   // Construct updated noise vector and gradients.
-  Eigen::VectorXd noise_vec = Eigen::VectorXd::Zero(n_labels);
-  Eigen::VectorXd e_noise_grad = Eigen::VectorXd::Zero(n_labels);
-  Eigen::VectorXd f_noise_grad = Eigen::VectorXd::Zero(n_labels);
-  Eigen::VectorXd s_noise_grad = Eigen::VectorXd::Zero(n_labels);
-
   double sigma_e = hyperparameters(hyp_index);
   double sigma_f = hyperparameters(hyp_index + 1);
   double sigma_s = hyperparameters(hyp_index + 2);
 
-  int current_count = 0;
-#pragma omp parallel for
-  for (int i = 0; i < training_structures.size(); i++) {
-    int n_atoms = training_structures[i].noa;
-
-    if (training_structures[i].energy.size() != 0) {
-      noise_vec(current_count) = sigma_e * sigma_e;
-      e_noise_grad(current_count) = 2 * sigma_e;
-      current_count += 1;
-    }
-
-    if (training_structures[i].forces.size() != 0) {
-      noise_vec.segment(current_count, n_atoms * 3) =
-          Eigen::VectorXd::Constant(n_atoms * 3, sigma_f * sigma_f);
-      f_noise_grad.segment(current_count, n_atoms * 3) =
-          Eigen::VectorXd::Constant(n_atoms * 3, 2 * sigma_f);
-      current_count += n_atoms * 3;
-    }
-
-    if (training_structures[i].stresses.size() != 0) {
-      noise_vec.segment(current_count, 6) =
-          Eigen::VectorXd::Constant(6, sigma_s * sigma_s);
-      s_noise_grad.segment(current_count, 6) =
-          Eigen::VectorXd::Constant(6, 2 * sigma_s);
-      current_count += 6;
-    }
-  }
+  Eigen::VectorXd noise_vec = sigma_e * sigma_e * e_noise_one + sigma_f * sigma_f * f_noise_one + sigma_s * sigma_s * s_noise_one; 
+  Eigen::VectorXd e_noise_grad = 2 * sigma_e * e_noise_one;
+  Eigen::VectorXd f_noise_grad = 2 * sigma_f * f_noise_one;
+  Eigen::VectorXd s_noise_grad = 2 * sigma_s * s_noise_one;
 
   // Compute Qff and Qff grads.
   Eigen::MatrixXd Qff_plus_lambda =
@@ -1149,7 +1120,7 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
 
   // Compute log determinant from the diagonal of U.
   complexity_penalty = 0;
-#pragma omp parallel for
+#pragma omp parallel for reduction(+:complexity_penalty)
   for (int i = 0; i < Qff_plus_lambda.rows(); i++) {
     complexity_penalty += -log(abs(Qff_plus_lambda(i, i)));
   }
