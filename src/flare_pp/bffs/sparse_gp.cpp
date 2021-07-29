@@ -799,10 +799,10 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
     hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
     int size = Kuu_kernels[i].rows();
 
-    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, hyps_curr);
+    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu_kernels[i], hyps_curr);
     if (!precomputed_KnK) { 
       Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
-                                      i, Kuf, hyps_curr);
+                                      i, Kuf_kernels[i], hyps_curr);
     }
 
     //Kuu_mat.block(count, count, size, size) = Kuu_grad[0];
@@ -1160,9 +1160,9 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
     n_hyps = kernels[i]->kernel_hyperparameters.size();
     new_hyps = hyps.segment(hyp_index, n_hyps);
 
-    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, new_hyps);
+    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu_kernels[i], new_hyps);
     Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
-                                    i, Kuf, new_hyps);
+                                    i, Kuf_kernels[i], new_hyps);
 
     Kuu_kernels[i] = Kuu_grad[0];
     Kuf_kernels[i] = Kuf_grad[0];
