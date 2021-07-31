@@ -1027,9 +1027,9 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
     hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
     int size = Kuu_kernels[i].rows();
 
-    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu, hyps_curr);
+    Kuu_grad = kernels[i]->Kuu_grad(sparse_descriptors[i], Kuu_kernels[i], hyps_curr);
     Kuf_grad = kernels[i]->Kuf_grad(sparse_descriptors[i], training_structures,
-                                    i, Kuf, hyps_curr);
+                                    i, Kuf_kernels[i], hyps_curr);
 
     Kuu_mat.block(count, count, size, size) = Kuu_grad[0];
     Kuf_mat.block(count, 0, size, n_labels) = Kuf_grad[0];
