@@ -810,8 +810,6 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
       // Derivative of complexity over sigma
       // TODO: the 2nd term is not very stable numerically, because dK_noise_K is very large, and Kuu_grads is small
       complexity_grad(hyp_index + j) += 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
-      std::cout << "stable complexity_grad 1 " << (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() << std::endl;
-      std::cout << "stable complexity_grad 2 " << (Pi_mat * Sigma).trace() << std::endl;
 
       t2 = std::chrono::high_resolution_clock::now();
       duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
@@ -829,10 +827,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
       }
 
       datafit_grad(hyp_index + j) += dK_alpha.transpose() * noise_vector.cwiseProduct(y_K_alpha);
-      std::cout << "datafit_grad 2 " << dK_alpha.transpose() * noise_vector.cwiseProduct(y_K_alpha) << std::endl;
       datafit_grad(hyp_index + j) += - 1./2. * alpha.transpose() * Kuu_grads[hyp_index + j] * alpha;
-      std::cout << "datafit_grad 3 " << - 1./2. * alpha.transpose() * Kuu_grads[hyp_index + j] * alpha << std::endl;
-      std::cout << "stable datafit_grad=" << datafit_grad(hyp_index + j) << std::endl;
 
       t2 = std::chrono::high_resolution_clock::now();
       duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
@@ -847,7 +842,6 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   }
 
   // Derivative of complexity over noise
-  // TODO: Kuf * I_S * Kfu might be stored in advance for inner product kernel
   double en3 = energy_noise * energy_noise * energy_noise;
   double fn3 = force_noise * force_noise * force_noise;
   double sn3 = stress_noise * stress_noise * stress_noise;
@@ -887,6 +881,9 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 }
 
 void SparseGP ::precompute_KnK() {
+  Kuf_e_noise_Kfu = {};
+  Kuf_f_noise_Kfu = {};
+  Kuf_s_noise_Kfu = {};
   for (int i = 0; i < n_kernels; i++) {
     Eigen::VectorXd hyps_i = kernels[i]->kernel_hyperparameters;
     assert(hyps_i.size() == 1);
@@ -1111,9 +1108,9 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
   Eigen::MatrixXd Qff_inv_grad;
   for (int i = 0; i < n_hyps_total; i++) {
     Qff_inv_grad = Qff_inverse * Qff_grads[i];
-    likelihood_gradient(i) =
-        -Qff_inv_grad.trace() + y.transpose() * Qff_inv_grad * Q_inv_y;
-    likelihood_gradient(i) /= 2;
+    double complexity_grad = - Qff_inv_grad.trace();
+    double datafit_grad = y.transpose() * Qff_inv_grad * Q_inv_y;
+    likelihood_gradient(i) = (complexity_grad + datafit_grad) / 2.;
   }
 
   return log_marginal_likelihood;
