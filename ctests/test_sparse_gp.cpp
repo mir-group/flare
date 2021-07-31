@@ -149,8 +149,8 @@ TEST_F(StructureTest, TestAdd){
 TEST_F(StructureTest, LikeGrad) {
   // Check that the DTC likelihood gradient is correctly computed.
   double sigma_e = 0.1;
-  double sigma_f = 0.05;
-  double sigma_s = 0.001;
+  double sigma_f = 0.1;
+  double sigma_s = 0.1;
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel_3);
@@ -202,8 +202,8 @@ TEST_F(StructureTest, LikeGrad) {
 TEST_F(StructureTest, LikeGradStable) {
   // Check that the DTC likelihood gradient is correctly computed.
   double sigma_e = 0.1;
-  double sigma_f = 0.05;
-  double sigma_s = 0.001;
+  double sigma_f = 0.1;
+  double sigma_s = 0.1;
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel_norm);
@@ -242,7 +242,7 @@ TEST_F(StructureTest, LikeGradStable) {
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;
   sparse_gp.set_hyperparameters(hyps);
   sparse_gp.precompute_KnK();
-  sparse_gp.compute_likelihood_gradient_stable(true);
+  double like = sparse_gp.compute_likelihood_gradient_stable(true);
 
   // Debug: check KnK
   Eigen::MatrixXd KnK_e = sparse_gp.Kuf * sparse_gp.e_noise_one.asDiagonal() * sparse_gp.Kuf.transpose();
@@ -253,6 +253,11 @@ TEST_F(StructureTest, LikeGradStable) {
   }
 
   Eigen::VectorXd like_grad = sparse_gp.likelihood_gradient;
+
+  // Check the likelihood function.
+  double like_original = sparse_gp.compute_likelihood_gradient(hyps);
+  Eigen::VectorXd like_grad_original = sparse_gp.likelihood_gradient;
+  EXPECT_NEAR(like, like_original, 1e-7);
 
   int n_hyps = hyps.size();
   Eigen::VectorXd hyps_up, hyps_down;
@@ -278,6 +283,7 @@ TEST_F(StructureTest, LikeGradStable) {
 
     std::cout << like_grad(i) << " " << fin_diff << std::endl;
     EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
+    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-7);
   }
 }
 
