@@ -710,6 +710,8 @@ void SparseGP ::compute_likelihood_stable() {
   }
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
+  std::cout << "like comp data " << complexity_penalty << " " << data_fit << std::endl;
+  std::cout << "noise_det Kuu_inv_det sigma_inv_det " << noise_det << " " << Kuu_inv_det << " " << sigma_inv_det << std::endl;
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
@@ -745,6 +747,8 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   }
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
+  std::cout << "like_grad comp data " << complexity_penalty << " " << data_fit << std::endl;
+  std::cout << "noise_det Kuu_inv_det sigma_inv_det " << noise_det << " " << Kuu_inv_det << " " << sigma_inv_det << std::endl;
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 
   t2 = std::chrono::high_resolution_clock::now();
@@ -1125,7 +1129,6 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
   std::chrono::high_resolution_clock::time_point t1, t2;
   t1 = std::chrono::high_resolution_clock::now();
 
-
   std::vector<Eigen::MatrixXd> Kuu_grad, Kuf_grad;
   for (int i = 0; i < n_kernels; i++) {
     n_hyps = kernels[i]->kernel_hyperparameters.size();
@@ -1161,34 +1164,14 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
   force_noise = hyps(hyp_index + 1);
   stress_noise = hyps(hyp_index + 2);
 
-  int current_count = 0;
-  for (int i = 0; i < training_structures.size(); i++) {
-    int n_atoms = training_structures[i].noa;
-
-    if (training_structures[i].energy.size() != 0) {
-      noise_vector(current_count) = 1 / (energy_noise * energy_noise);
-      current_count += 1;
-    }
-
-    if (training_structures[i].forces.size() != 0) {
-      noise_vector.segment(current_count, n_atoms * 3) =
-          Eigen::VectorXd::Constant(n_atoms * 3,
-                                    1 / (force_noise * force_noise));
-      current_count += n_atoms * 3;
-    }
-
-    if (training_structures[i].stresses.size() != 0) {
-      noise_vector.segment(current_count, 6) =
-          Eigen::VectorXd::Constant(6, 1 / (stress_noise * stress_noise));
-      current_count += 6;
-    }
-  }
+  noise_vector = 1 / (energy_noise * energy_noise) * e_noise_one 
+               + 1 / (force_noise * force_noise) * f_noise_one 
+               + 1 / (stress_noise * stress_noise) * s_noise_one; 
 
   t2 = std::chrono::high_resolution_clock::now();
   duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
   std::cout << "Time: set_hyp: update noise " << duration << std::endl;
   t1 = std::chrono::high_resolution_clock::now();
-
 
   // Update remaining matrices.
   update_matrices_QR();
@@ -1197,8 +1180,6 @@ void SparseGP ::set_hyperparameters(Eigen::VectorXd hyps) {
   duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
   std::cout << "Time: set_hyp: update qr " << duration << std::endl;
   t1 = std::chrono::high_resolution_clock::now();
-
-
 
 }
 
