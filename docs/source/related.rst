@@ -8,4 +8,8 @@ We will list the applications of FLARE here.
 
 - Jin Soo Lim, Jonathan Vandermause, Matthijs A. Van Spronsen, Albert Musaelian, Yu Xie, Lixin Sun, Christopher R. O'Connor, Tobias Egle, Nicola Molinari, Jacob Florian, Kaining Duanmu, Robert J. Madix, Philippe Sautet, Cynthia M. Friend, and Boris Kozinsky. "Evolution of Metastable Structures at Bimetallic Surfaces from Microscopy and Machine-Learning Molecular Dynamics." Journal of the American Chemical Society (2020). (`ChemRxiv <https://chemrxiv.org/articles/preprint/Evolution_of_Metastable_Structures_in_Bimetallic_Catalysts_from_Microscopy_and_Machine-Learning_Molecular_Dynamics/11811660/4>`_) (`published version <https://pubs.acs.org/doi/abs/10.1021/jacs.0c06401>`_)
 
-- Xie, Y., Vandermause, J., Sun, L., Cepellotti, A. & Kozinsky, B. "Fast bayesian force fields from active learning: study of inter-dimensional transformation of stanene." arXiv:2008.11796 [cond-mat, physics:physics] (2020). at <http://arxiv.org/abs/2008.11796>
+- Yu Xie, Jonathan Vandermause, Lixin Sun, Andrea Cepellotti, and Boris Kozinsky. "Bayesian force fields from active learning for simulation of inter-dimensional transformation of stanene." npj Computational Materials 7, no. 1 (2021): 1-10. (`arXiv <https://arxiv.org/abs/2008.11796>`_) (`published version <https://www.nature.com/articles/s41524-021-00510-y>`_)
+
+- Jonathan Vandermause, Yu Xie, Jin Soo Lim, Cameron J. Owen, and Boris Kozinsky. "Active learning of reactive Bayesian force fields: Application to heterogeneous hydrogen-platinum catalysis dynamics." arXiv preprint arXiv:2106.01949 (2021). (`arXiv <https://arxiv.org/abs/2106.01949>`_)
+
+- Claudio Zeni, Kevin Rossi, Theodore Pavloudis, Joseph Kioseoglou, Stefano de Gironcoli, Richard Palmer, and Francesca Baletto. "Data-driven simulation and characterization of gold nanoparticles melting." (2021). (`arXiv <https://arxiv.org/abs/2107.00330>`_)
