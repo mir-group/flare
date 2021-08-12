@@ -161,7 +161,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     int single_bond_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_bond);
     int nnlmap_size = ScratchViewInt2D::shmem_size(n_descriptors/(l_max+1), 2);
     int B2_size = ScratchView1D::shmem_size(n_descriptors);
-    int B2_grad_size = ScratchView3D::shmem_size(max_neighs, 3, n_descriptors);
 
     int force_size = ScratchView2D::shmem_size(max_neighs,3);
 
@@ -181,9 +180,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 #else
     auto policy = Kokkos::TeamPolicy<DeviceType>(n_atoms, Kokkos::AUTO(), 8).set_scratch_size(
 #endif
-        1, Kokkos::PerTeam(single_bond_grad_size
-                           + nnlmap_size + 2*B2_size + B2_grad_size + force_size)).set_scratch_size(
-        0, Kokkos::PerTeam(single_bond_size), Kokkos::PerThread(single_bond_size));
+        1, Kokkos::PerTeam(single_bond_grad_size + single_bond_size
+                           + nnlmap_size + 2*B2_size + force_size)).set_scratch_size(
+        0, Kokkos::PerTeam(single_bond_size + B2_size));
     // compute forces and energy
     Kokkos::parallel_reduce(policy, *this, ev);
     Kokkos::Experimental::contribute(d_vatom, vscatter);
@@ -300,12 +299,11 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
 
   ScratchViewInt2D nnlmap(team_member.team_scratch(1), n_descriptors/(l_max+1), 2);
   ScratchView1D B2(team_member.team_scratch(1), n_descriptors);
-  ScratchView3D B2_grad(team_member.team_scratch(1), max_neighs, 3, n_descriptors);
 
   //printf("i = %d, B2 =", i);
-  B2_descriptor_kokkos(team_member, B2, B2_grad,
+  B2_descriptor_kokkos(team_member, B2,
                    single_bond,
-                   single_bond_grad, n_species,
+                   n_species,
                    n_max, l_max, jnum, nnlmap);
   team_member.team_barrier();
   //printf("\n");
@@ -321,20 +319,17 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
 
       int j = d_neighbors_short(i,jj);
       j &= NEIGHMASK;
-      printf("i = %d, j = %d, B2grad =", i, j);
-      for(int d = 0; d < n_descriptors; d++){
-        printf("\n%g %g %g", B2_grad(d,jj,0), B2_grad(d,jj,1), B2_grad(d,jj,2));
-      }
       for(int d = 0; d < n_bond; d++){
-        //printf("\n%g %g %g", single_bond_grad(d,jj,0), single_bond_grad(d,jj,1), single_bond_grad(d,jj,2));
+        printf("\n %d %d %g %g %g", i, j, single_bond_grad(jj,0,d), single_bond_grad(jj,1,d), single_bond_grad(jj,2,d));
       }
-      printf("\n");
     }
     printf("\n");
   });
   */
 
-  ScratchView1D beta_B2(team_member.team_scratch(1), n_descriptors);
+  ScratchView1D beta_B2(team_member.team_scratch(1), n_descriptors),
+                w(team_member.team_scratch(0), n_descriptors),
+                u(team_member.team_scratch(1), n_bond);
   ScratchView2D partial_forces(team_member.team_scratch(1), max_neighs, 3);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &i){
@@ -362,6 +357,45 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
     if (eflag_atom) d_eatom[i] = evdwl;
   });
 
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int &i){
+      w(i) = 2*(evdwl*B2(i) - beta_B2(i))/B2_norm_squared;
+  });
+  team_member.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_bond), [&] (int n1lm){
+      //printf("START %d %d\n", n1lm, n_bond);
+      int n1 = n1lm / n_harmonics;
+      int lm = n1lm - n1*n_harmonics;
+      int l = Kokkos::Experimental::sqrt(lm);
+      int m = lm - l*l;
+      F_FLOAT un1lm = 0.0;
+      //printf("MIDDLE %d %d\n", n1lm, n_bond);
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_radial), [&] (int n2, F_FLOAT &tmp){
+          int i = n2 > n1 ? n1 : n2;
+          int j = n2 > n1 ? n2 : n1;
+          int n1n2 = j + i*(n_radial - 0.5*(i+1));
+          int n1n2l = n1n2*(l_max+1)+l;
+
+          tmp += single_bond(n2*n_harmonics + lm) * w(n1n2l) * (1 + (n1 == n2 ? 1 : 0));
+      }, un1lm);
+      u(n1lm) = un1lm;
+      //printf("END %d %g\n", n1lm, un1lm);
+  });
+  team_member.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
+      int j = k/3;
+      int c = k - 3*j;
+      F_FLOAT tmp = 0.0;
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_bond), [&](int nlm, F_FLOAT &tmp){
+          tmp += single_bond_grad(j, c, nlm)*u(nlm);
+      }, tmp);
+      partial_forces(j,c) = tmp;
+  });
+  team_member.team_barrier();
+
+
+  /*
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int j = k/3;
       int c = k - 3*j;
@@ -384,6 +418,7 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
           partial_forces(j,c) *= 2/B2_norm_squared;
       });
   });
+  */
   team_member.team_barrier();
   /*
   Kokkos::single(Kokkos::PerTeam(team_member), [&](){

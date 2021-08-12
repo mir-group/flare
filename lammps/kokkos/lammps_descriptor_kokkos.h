@@ -87,11 +87,11 @@ void single_bond_kokkos(
   */
 }
 
-template<class MemberType, class ScratchView1D, class ScratchView3D, class ScratchViewInt2D>
+template<class MemberType, class ScratchView1D, class ScratchViewInt2D>
 KOKKOS_INLINE_FUNCTION
-void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, ScratchView3D &B2_env_dervs,
+void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals,
                    const ScratchView1D &single_bond_vals,
-                   const ScratchView3D &single_bond_env_dervs, int n_species,
+                   int n_species,
                    int n_max, int l_max, int n_neighs, ScratchViewInt2D nnlmap) {
 
   int n_radial = n_species * n_max;
@@ -110,14 +110,6 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
   });
 
 
-  //Kokkos::deep_copy(B2_env_dervs,0.0);
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &d){
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 3*n_neighs), [&] (int &k){
-        int j = k / 3;
-        int c = k - 3*j;
-        B2_env_dervs(j,c,d) = 0.0;
-    });
-  });
   team_member.team_barrier();
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &nnl){
@@ -141,6 +133,15 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
       B2_vals(nnl) = B2_val;
   });
 
+  /*
+  //Kokkos::deep_copy(B2_env_dervs,0.0);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &d){
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 3*n_neighs), [&] (int &k){
+        int j = k / 3;
+        int c = k - 3*j;
+        B2_env_dervs(j,c,d) = 0.0;
+    });
+  });
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*n_neighs), [&] (int &jjc){
       int atom_index = jjc/3;
       int comp = jjc - 3*atom_index;
@@ -179,6 +180,7 @@ void B2_descriptor_kokkos(MemberType &team_member, ScratchView1D &B2_vals, Scrat
           B2_env_dervs(atom_index, comp, nnl) = B2_grad_tmp;
           });
   });
+  */
 }
 
 #endif

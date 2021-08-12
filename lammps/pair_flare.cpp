@@ -116,8 +116,8 @@ void PairFLARE::compute(int eflag, int vflag) {
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max);
     //printf("\n");
-    /*
     int n_descriptors = (n_species*n_max * (n_species*n_max + 1) / 2) * (l_max + 1);
+    /*
     printf("i = %d, B2 =", i);
     for(int d = 0; d < n_descriptors; d++){
       printf(" %g", B2_vals(d));
@@ -126,14 +126,9 @@ void PairFLARE::compute(int eflag, int vflag) {
     for(int jj = 0; jj < jnum; jj++){
 
       j = jlist[jj];
-      printf("i = %d, j = %d, B2grad =", i, j);
-      for(int d = 0; d < n_descriptors; d++){
-        printf("\n%g %g %g", B2_env_dervs(3*jj+0,d), B2_env_dervs(3*jj+1,d), B2_env_dervs(3*jj+2,d));
-      }
       for(int d = 0; d < n_species*n_max*(l_max+1)*(l_max+1); d++){
-        //printf("\n%g %g %g", single_bond_env_dervs(3*jj+0,d), single_bond_env_dervs(3*jj+1,d), single_bond_env_dervs(3*jj+2,d));
+        printf("\n %d %d %g %g %g", i, j, single_bond_env_dervs(3*jj+0,d), single_bond_env_dervs(3*jj+1,d), single_bond_env_dervs(3*jj+2,d));
       }
-      printf("\n");
     }
     printf("\n");
     */
