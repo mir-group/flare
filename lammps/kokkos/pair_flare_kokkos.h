@@ -25,11 +25,23 @@ PairStyle(flare/kk/host,PairFLAREKokkos<LMPHostType>)
 #include "pair_flare.h"
 #include <pair_kokkos.h>
 
+struct TagSingleBond{};
+struct TagSingleBondGrad{};
+struct TagB2{};
+struct TagBetaB2{};
+struct TagNorm2{};
+struct TagEvdwl{};
+struct Tagw{};
+struct Tagu{};
+struct TagF{};
+struct TagStoreF{};
+
 namespace LAMMPS_NS {
 
 template<class DeviceType>
 class PairFLAREKokkos : public PairFLARE {
  public:
+  using MemberType = typename Kokkos::TeamPolicy<DeviceType>::member_type;
   enum {EnabledNeighFlags=FULL|HALFTHREAD|HALF};
   enum {COUL_FLAG=0};
   typedef DeviceType device_type;
@@ -41,6 +53,27 @@ class PairFLAREKokkos : public PairFLARE {
   virtual void compute(int, int);
   virtual void coeff(int, char **);
   virtual void init_style();
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagSingleBond, const int, const int, const int, const int) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagB2, const int, const int) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagBetaB2, const MemberType) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagNorm2, const MemberType) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(Tagu, const int, const int, const int) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagF, const MemberType) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagStoreF, const MemberType, EV_FLOAT&) const;
 
   // pair compute
   KOKKOS_INLINE_FUNCTION
@@ -74,8 +107,12 @@ class PairFLAREKokkos : public PairFLARE {
   typename AT::t_efloat_1d d_eatom;
   typename AT::t_virial_array d_vatom;
 
-  Kokkos::View<F_FLOAT***,Kokkos::LayoutRight,DeviceType> beta;
-  Kokkos::View<F_FLOAT****,Kokkos::LayoutRight,DeviceType> g, Y;
+
+  using View1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, DeviceType>;
+  using View2D = Kokkos::View<F_FLOAT**, Kokkos::LayoutRight, DeviceType>;
+  using View3D = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, DeviceType>;
+  using View4D = Kokkos::View<F_FLOAT****, Kokkos::LayoutRight, DeviceType>;
+  using View5D = Kokkos::View<F_FLOAT*****, Kokkos::LayoutRight, DeviceType>;
 
   using ScratchViewInt2D = Kokkos::View<int**, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
   using ScratchView1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
@@ -88,6 +125,12 @@ class PairFLAREKokkos : public PairFLARE {
   ScatterVType vscatter;
 
   int need_dup;
+
+  View1D B2_norm2s, evdwls;
+  View2D B2, beta_B2, w;
+  View3D beta, single_bond, u, partial_forces;
+  View4D g, Y;
+  View5D single_bond_grad;
 
   typename AT::t_int_1d_randomread d_type2frho;
   typename AT::t_int_2d_randomread d_type2rhor;
