@@ -146,7 +146,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   {
     Kokkos::realloc(g, n_atoms, max_neighs, n_max, 4);
     Kokkos::realloc(Y, n_atoms, max_neighs, n_harmonics, 4);
-    Kokkos::parallel_for(
+    Kokkos::parallel_for("FLARE: R and Y",
         Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
                         {0,0}, {inum, max_neighs}),
         *this
@@ -184,7 +184,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
                            + nnlmap_size + 2*B2_size + force_size)).set_scratch_size(
         0, Kokkos::PerTeam(single_bond_size + B2_size));
     // compute forces and energy
-    Kokkos::parallel_reduce(policy, *this, ev);
+    Kokkos::parallel_reduce("FLARE: compute", policy, *this, ev);
     Kokkos::Experimental::contribute(d_vatom, vscatter);
     Kokkos::Experimental::contribute(f, fscatter);
   }
@@ -366,7 +366,8 @@ void PairFLAREKokkos<DeviceType>::operator()(typename Kokkos::TeamPolicy<DeviceT
       //printf("START %d %d\n", n1lm, n_bond);
       int n1 = n1lm / n_harmonics;
       int lm = n1lm - n1*n_harmonics;
-      int l = Kokkos::Experimental::sqrt(lm);
+      int l = sqrt(1.0*lm);
+      //int l = Kokkos::Experimental::sqrt(lm);
       int m = lm - l*l;
       F_FLOAT un1lm = 0.0;
       //printf("MIDDLE %d %d\n", n1lm, n_bond);
