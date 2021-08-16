@@ -163,13 +163,24 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   {
     Kokkos::realloc(single_bond, n_atoms, n_radial, n_harmonics);
     Kokkos::realloc(single_bond_grad, n_atoms, max_neighs, 3, n_radial, n_harmonics);
+
+    int g_size = ScratchView2D::shmem_size(n_max, 4);
+    int Y_size = ScratchView2D::shmem_size(n_harmonics, 4);
+    auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(inum, Kokkos::AUTO(), vector_length).set_scratch_size(
+        0, Kokkos::PerThread(g_size + Y_size));
     Kokkos::deep_copy(single_bond, 0.0);
     Kokkos::deep_copy(single_bond_grad, 0.0);
+    Kokkos::parallel_for("FLARE: single bond",
+        policy,
+        *this
+    );
+    /*
     Kokkos::parallel_for("FLARE: single bond",
         Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagSingleBond>(
                         {0,0,0,0}, {inum, max_neighs, n_max, n_harmonics}),
         *this
     );
+    */
   }
 
   // compute B2
@@ -311,38 +322,62 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const int ii, const int jj, const int n, const int lm) const{
+void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType team_member) const{
+  int ii = team_member.league_rank();
   const int i = d_ilist[ii];
 
   const int jnum = d_numneigh_short[i];
-  int j = d_neighbors_short(i,jj);
-  j &= NEIGHMASK;
-  int s = type[j] - 1;
 
-  int radial_index = s*n_max + n;
+  ScratchView2D gscratch(team_member.thread_scratch(0), n_max, 4);
+  ScratchView2D Yscratch(team_member.thread_scratch(0), n_harmonics, 4);
 
-  double g_val = g(ii,jj,radial_index,0);
-  double gx_val = g(ii,jj,radial_index,1);
-  double gy_val = g(ii,jj,radial_index,2);
-  double gz_val = g(ii,jj,radial_index,3);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int jj){
+
+      int j = d_neighbors_short(i,jj);
+      j &= NEIGHMASK;
+      int s = type[j] - 1;
 
 
-  double h_val = Y(ii,jj,lm,0);
-  double hx_val = Y(ii,jj,lm,1);
-  double hy_val = Y(ii,jj,lm,2);
-  double hz_val = Y(ii,jj,lm,3);
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
+          int n = nc / 4;
+          int c = nc - 4*n;
+          gscratch(n, c) = g(ii, jj, n, c);
+      });
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
+          int lm = lmc / 4;
+          int c = lmc - 4*lm;
+          Yscratch(lm, c) = Y(ii, jj, lm, c);
+      });
 
-  double bond = g_val * h_val;
-  double bond_x = gx_val * h_val + g_val * hx_val;
-  double bond_y = gy_val * h_val + g_val * hy_val;
-  double bond_z = gz_val * h_val + g_val * hz_val;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&] (int nlm){
+          int n = nlm / n_harmonics;
+          int lm = nlm - n_harmonics*n;
 
-  // Update single bond basis arrays.
-  if(jj < jnum) Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad
+          int radial_index = s*n_max + n;
+          double g_val = gscratch(n,0);
+          double gx_val = gscratch(n,1);
+          double gy_val = gscratch(n,2);
+          double gz_val = gscratch(n,3);
 
-  single_bond_grad(ii,jj,0,radial_index,lm) = bond_x;
-  single_bond_grad(ii,jj,1,radial_index,lm) = bond_y;
-  single_bond_grad(ii,jj,2,radial_index,lm) = bond_z;
+
+          double h_val = Yscratch(lm,0);
+          double hx_val = Yscratch(lm,1);
+          double hy_val = Yscratch(lm,2);
+          double hz_val = Yscratch(lm,3);
+
+          double bond = g_val * h_val;
+          double bond_x = gx_val * h_val + g_val * hx_val;
+          double bond_y = gy_val * h_val + g_val * hy_val;
+          double bond_z = gz_val * h_val + g_val * hz_val;
+
+          // Update single bond basis arrays.
+          if(jj < jnum) Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad
+
+          single_bond_grad(ii,jj,0,radial_index,lm) = bond_x;
+          single_bond_grad(ii,jj,1,radial_index,lm) = bond_y;
+          single_bond_grad(ii,jj,2,radial_index,lm) = bond_z;
+      });
+  });
 }
 
 template <class DeviceType>

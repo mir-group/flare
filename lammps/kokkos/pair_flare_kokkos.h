@@ -55,7 +55,7 @@ class PairFLAREKokkos : public PairFLARE {
   virtual void init_style();
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagSingleBond, const int, const int, const int, const int) const;
+  void operator()(TagSingleBond, const MemberType) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagB2, const int, const int) const;
