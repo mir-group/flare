@@ -283,7 +283,7 @@ def test_lammps():
 #                    py_var[i, comp] += desc[i, comp, s1].dot(desc[i, comp, s2].dot(beta_matr))
 ##                    py_var[i, comp] += np.sum(desc[i, comp, s1]) #np.sum(beta_matr[:, comp]) #np.sum(desc[i, comp, s1])
     print(py_var)
-    os.system("rm -r tmp*)
+    os.system("rm -r tmp* *.txt lmp.flare *.json")
 
     #for i in range(4):
     #    print([sgp_py.sparse_gp.varmap_coeffs[0, n_descriptors * i + j] for j in range(3)])
