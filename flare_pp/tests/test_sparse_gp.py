@@ -11,7 +11,7 @@ from flare import struc
 from flare.lammps import lammps_calculator
 
 from flare_pp.sparse_gp import SGP_Wrapper
-from _C_flare import NormalizedDotProduct, B2, SparseGP, Structure
+from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 
 
 np.random.seed(10)
@@ -100,7 +100,28 @@ def test_train():
     assert hyps_init != hyps_post
     assert sgp_py.likelihood != 0.0
 
+def test_dict():
+    """
+    Check the method from_dict and as_dict
+    """
 
+    out_dict = sgp_py.as_dict()
+    assert len(sgp_py) == len(out_dict["training_structures"])
+    new_sgp, _ = SGP_Wrapper.from_dict(out_dict)
+    assert len(sgp_py) == len(new_sgp)
+    assert len(sgp_py.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
+    assert np.allclose(sgp_py.hyps, new_sgp.hyps)
+
+def test_dump():
+    """
+    Check the method from_dict and as_dict
+    """
+
+    sgp_py.write_model("sgp.json")
+    new_sgp, _ = SGP_Wrapper.from_file("sgp.json")
+    assert len(sgp_py) == len(new_sgp)
+    assert len(sgp_py.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
+    assert np.allclose(sgp_py.hyps, new_sgp.hyps)
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -262,6 +283,7 @@ def test_lammps():
 #                    py_var[i, comp] += desc[i, comp, s1].dot(desc[i, comp, s2].dot(beta_matr))
 ##                    py_var[i, comp] += np.sum(desc[i, comp, s1]) #np.sum(beta_matr[:, comp]) #np.sum(desc[i, comp, s1])
     print(py_var)
+    os.system("rm -r tmp*)
 
     #for i in range(4):
     #    print([sgp_py.sparse_gp.varmap_coeffs[0, n_descriptors * i + j] for j in range(3)])
