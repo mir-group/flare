@@ -150,8 +150,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // precompute basis functions, reduce register usage
   {
-    Kokkos::realloc(g, n_atoms, max_neighs, n_max, 4);
-    Kokkos::realloc(Y, n_atoms, max_neighs, n_harmonics, 4);
+    g = View4D(); Y = View4D();
+    g = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), n_atoms, max_neighs, n_max, 4);
+    Y = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), n_atoms, max_neighs, n_harmonics, 4);
     Kokkos::parallel_for("FLARE: R and Y",
         Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
                         {0,0}, {inum, max_neighs}),
@@ -161,8 +162,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // compute single bond and its gradient
   {
-    Kokkos::realloc(single_bond, n_atoms, n_radial, n_harmonics);
-    Kokkos::realloc(single_bond_grad, n_atoms, max_neighs, 3, n_radial, n_harmonics);
+    single_bond = View3D(); single_bond_grad = View5D();
+    single_bond = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond"), n_atoms, n_radial, n_harmonics);
+    single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), n_atoms, max_neighs, 3, n_radial, n_harmonics);
 
     int g_size = ScratchView2D::shmem_size(n_max, 4);
     int Y_size = ScratchView2D::shmem_size(n_harmonics, 4);
@@ -185,7 +187,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // compute B2
   {
-    Kokkos::realloc(B2, inum, n_descriptors);
+    B2 = View2D();
+    B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2"), inum, n_descriptors);
     Kokkos::parallel_for("FLARE: B2",
         Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagB2>(
                         {0,0}, {inum, n_descriptors}),
@@ -195,7 +198,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // compute beta*B2
   {
-    Kokkos::realloc(beta_B2, inum, n_descriptors);
+    beta_B2 = View2D();
+    beta_B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: beta*B2"), inum, n_descriptors);
     Kokkos::parallel_for("FLARE: beta*B2",
         Kokkos::TeamPolicy<DeviceType, TagBetaB2>(inum, Kokkos::AUTO(), vector_length),
         *this
@@ -204,9 +208,10 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // compute B2 squared norms and evdwls and w
   {
-    Kokkos::realloc(B2_norm2s, inum);
-    Kokkos::realloc(evdwls, inum);
-    Kokkos::realloc(w, inum, n_descriptors);
+    B2_norm2s = View1D(); evdwls = View1D(); w = View2D();
+    B2_norm2s = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2_norm2s"), inum);
+    evdwls = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: evdwls"), inum);
+    w = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: w"), inum, n_descriptors);
     Kokkos::parallel_for("FLARE: B2 norm2 evdwl w",
         Kokkos::TeamPolicy<DeviceType, TagNorm2>(inum, Kokkos::AUTO()),
         *this
@@ -215,7 +220,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // compute u
   {
-    Kokkos::realloc(u, inum, n_radial, n_harmonics);
+    u = View3D();
+    u = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: u"), inum, n_radial, n_harmonics);
     Kokkos::parallel_for("FLARE: u",
         Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, Tagu>(
                         {0,0,0}, {inum, n_radial, n_harmonics}),
@@ -225,7 +231,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
   // compute partial forces
   {
-    Kokkos::realloc(partial_forces, inum, max_neighs, 3);
+    partial_forces = View3D();
+    partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), inum, max_neighs, 3);
     Kokkos::parallel_for("FLARE: partial forces",
         Kokkos::TeamPolicy<DeviceType, TagF>(inum, Kokkos::AUTO(), vector_length),
         *this
@@ -371,7 +378,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
           double bond_z = gz_val * h_val + g_val * hz_val;
 
           // Update single bond basis arrays.
-          if(jj < jnum) Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad
+          if(jj < jnum) Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad?
 
           single_bond_grad(ii,jj,0,radial_index,lm) = bond_x;
           single_bond_grad(ii,jj,1,radial_index,lm) = bond_y;
