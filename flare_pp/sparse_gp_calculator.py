@@ -125,6 +125,11 @@ class SGP_Calculator(Calculator):
         with open(name, "w") as f:
             json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
+    @staticmethod
+    def from_file(name):
+        with open(name, "r") as f:
+            calc = SGP_Calculator.from_dict(json.loads(f.readline()))
+
 
 def sort_variances(structure_descriptor, variances):
     # Check that the variance length matches the number of atoms.
