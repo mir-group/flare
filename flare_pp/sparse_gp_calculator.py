@@ -1,7 +1,9 @@
 from ase.calculators.calculator import Calculator, all_changes
-from flare_pp._C_flare import SparseGP, Structure
+from flare.utils.element_coder import NumpyEncoder
+from flare_pp._C_flare import Structure
+from flare_pp.sparse_gp import SGP_Wrapper
 import numpy as np
-import time
+import time, json
 
 
 class SGP_Calculator(Calculator):
@@ -111,11 +113,13 @@ class SGP_Calculator(Calculator):
     def as_dict(self):
         out_dict = dict(vars(self))
         out_dict["gp_model"] = self.gp_model.as_dict()
+        out_dict.pop("get_spin_polarized")
         return out_dict
 
     @staticmethod
     def from_dict(dct):
-        calc = SGP_Calculator(dct["gp_model"])
+        sgp, _ = SGP_Wrapper.from_dict(dct["gp_model"])
+        calc = SGP_Calculator(sgp)
         calc.results = dct["results"]
         return calc
 
@@ -129,6 +133,7 @@ class SGP_Calculator(Calculator):
     def from_file(name):
         with open(name, "r") as f:
             calc = SGP_Calculator.from_dict(json.loads(f.readline()))
+        return calc
 
 
 def sort_variances(structure_descriptor, variances):

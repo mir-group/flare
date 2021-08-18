@@ -11,6 +11,7 @@ from flare import struc
 from flare.lammps import lammps_calculator
 
 from flare_pp.sparse_gp import SGP_Wrapper
+from flare_pp.sparse_gp_calculator import SGP_Calculator
 from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 
 
@@ -114,7 +115,7 @@ def test_dict():
 
 def test_dump():
     """
-    Check the method from_dict and as_dict
+    Check the method from_file and write_model of SGP_Wrapper
     """
 
     sgp_py.write_model("sgp.json")
@@ -122,6 +123,16 @@ def test_dump():
     assert len(sgp_py) == len(new_sgp)
     assert len(sgp_py.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
     assert np.allclose(sgp_py.hyps, new_sgp.hyps)
+
+def test_calc():
+    """
+    Check the method from_file and write_model of SGP_Calculator
+    """
+
+    calc = SGP_Calculator(sgp_py)
+    calc.write_model("sgp_calc.json")
+    new_calc = SGP_Calculator.from_file("sgp_calc.json")
+    assert len(calc.gp_model) == len(new_calc.gp_model)
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
