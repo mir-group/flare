@@ -108,6 +108,23 @@ class SGP_Calculator(Calculator):
     def calculation_required(self, atoms, quantities):
         return True
 
+    def as_dict(self):
+        out_dict = dict(vars(self))
+        out_dict["gp_model"] = self.gp_model.as_dict()
+        return out_dict
+
+    @staticmethod
+    def from_dict(dct):
+        calc = SGP_Calculator(dct["gp_model"])
+        calc.results = dct["results"]
+        return calc
+
+    def write_model(self, name):
+        if ".json" != name[-5:]:
+            name += ".json"
+        with open(name, "w") as f:
+            json.dump(self.as_dict(), f, cls=NumpyEncoder)
+
 
 def sort_variances(structure_descriptor, variances):
     # Check that the variance length matches the number of atoms.
