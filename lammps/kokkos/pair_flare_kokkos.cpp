@@ -143,113 +143,109 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
 #ifdef LMP_KOKKOS_GPU
   int vector_length = 32;
+#define TEAM_SIZE 4
 #else
   int vector_length = 8;
+#define TEAM_SIZE Kokkos::AUTO()
 #endif
 
-  // precompute basis functions, reduce register usage
-  {
+  // reallocate per-atom views
+  if (single_bond.extent(0) < inum){
+    single_bond = View3D();
+    single_bond = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond"), inum, n_radial, n_harmonics);
+    B2 = View2D();
+    B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2"), inum, n_descriptors);
+    beta_B2 = View2D();
+    beta_B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: beta*B2"), inum, n_descriptors);
+    B2_norm2s = View1D(); evdwls = View1D(); w = View2D();
+    B2_norm2s = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2_norm2s"), inum);
+    evdwls = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: evdwls"), inum);
+    w = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: w"), inum, n_descriptors);
+    u = View3D();
+    u = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: u"), inum, n_radial, n_harmonics);
+  }
+
+  // reallocate per-neighbor views
+  if(g.extent(0) < inum || g.extent(1) < max_neighs){
     g = View4D(); Y = View4D();
-    g = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), n_atoms, max_neighs, n_max, 4);
-    Y = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), n_atoms, max_neighs, n_harmonics, 4);
+    g = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), inum, max_neighs, n_max, 4);
+    Y = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), inum, max_neighs, n_harmonics, 4);
+    single_bond_grad = View5D();
+    single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), inum, max_neighs, 3, n_max, n_harmonics);
+    partial_forces = View3D();
+    partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), inum, max_neighs, 3);
+  }
+
+  // compute basis functions Rn and Ylm
     Kokkos::parallel_for("FLARE: R and Y",
         Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
                         {0,0}, {inum, max_neighs}),
         *this
     );
-  }
 
   // compute single bond and its gradient
-  {
-    single_bond = View3D(); single_bond_grad = View5D();
-    single_bond = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond"), n_atoms, n_radial, n_harmonics);
-    single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), n_atoms, max_neighs, 3, n_radial, n_harmonics);
-
+  // dnlm, dnlmj
     int g_size = ScratchView2D::shmem_size(n_max, 4);
     int Y_size = ScratchView2D::shmem_size(n_harmonics, 4);
-    auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(inum, Kokkos::AUTO(), vector_length).set_scratch_size(
+    auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(inum, TEAM_SIZE, vector_length).set_scratch_size(
         0, Kokkos::PerThread(g_size + Y_size));
     Kokkos::deep_copy(single_bond, 0.0);
-    Kokkos::deep_copy(single_bond_grad, 0.0);
+    //Kokkos::deep_copy(single_bond_grad, 0.0);
     Kokkos::parallel_for("FLARE: single bond",
         policy,
         *this
     );
-    /*
-    Kokkos::parallel_for("FLARE: single bond",
-        Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagSingleBond>(
-                        {0,0,0,0}, {inum, max_neighs, n_max, n_harmonics}),
-        *this
-    );
-    */
-  }
 
   // compute B2
-  {
-    B2 = View2D();
-    B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2"), inum, n_descriptors);
+  // pn1n2l = dn1lm dn2lm
     Kokkos::parallel_for("FLARE: B2",
         Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagB2>(
                         {0,0}, {inum, n_descriptors}),
         *this
     );
-  }
 
   // compute beta*B2
-  {
-    beta_B2 = View2D();
-    beta_B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: beta*B2"), inum, n_descriptors);
+    int B2_size = ScratchView1D::shmem_size(n_descriptors);
     Kokkos::parallel_for("FLARE: beta*B2",
-        Kokkos::TeamPolicy<DeviceType, TagBetaB2>(inum, Kokkos::AUTO(), vector_length),
+        Kokkos::TeamPolicy<DeviceType, TagBetaB2>(inum, TEAM_SIZE, vector_length).set_scratch_size(
+          0, Kokkos::PerTeam(B2_size)
+        ),
         *this
     );
-  }
 
   // compute B2 squared norms and evdwls and w
-  {
-    B2_norm2s = View1D(); evdwls = View1D(); w = View2D();
-    B2_norm2s = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2_norm2s"), inum);
-    evdwls = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: evdwls"), inum);
-    w = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: w"), inum, n_descriptors);
     Kokkos::parallel_for("FLARE: B2 norm2 evdwl w",
-        Kokkos::TeamPolicy<DeviceType, TagNorm2>(inum, Kokkos::AUTO()),
+        Kokkos::TeamPolicy<DeviceType, TagNorm2>(inum, TEAM_SIZE, vector_length),
         *this
     );
-  }
 
   // compute u
-  {
-    u = View3D();
-    u = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: u"), inum, n_radial, n_harmonics);
+  // un1lm = dn2lm(wn1n2l + wn2n1l) ~ 2*dn2lm*wn1n2l
     Kokkos::parallel_for("FLARE: u",
         Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, Tagu>(
                         {0,0,0}, {inum, n_radial, n_harmonics}),
         *this
     );
-  }
 
   // compute partial forces
-  {
-    partial_forces = View3D();
-    partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), inum, max_neighs, 3);
+    int u_size = ScratchView2D::shmem_size(n_radial, n_harmonics);
     Kokkos::parallel_for("FLARE: partial forces",
-        Kokkos::TeamPolicy<DeviceType, TagF>(inum, Kokkos::AUTO(), vector_length),
+        Kokkos::TeamPolicy<DeviceType, TagF>(inum, TEAM_SIZE, vector_length).set_scratch_size(
+          0, Kokkos::PerTeam(u_size)
+        ),
         *this
     );
-  }
 
   // sum and store total forces, ev_tally
-  {
     vscatter = ScatterVType(d_vatom);
     fscatter = ScatterFType(f);
     Kokkos::parallel_reduce("FLARE: total forces, ev_tally",
-        Kokkos::TeamPolicy<DeviceType, TagStoreF>(inum, Kokkos::AUTO()),
+        Kokkos::TeamPolicy<DeviceType, TagStoreF>(inum, TEAM_SIZE, vector_length),
         *this,
         ev
     );
     Kokkos::Experimental::contribute(d_vatom, vscatter);
     Kokkos::Experimental::contribute(f, fscatter);
-  }
 
   if (evflag)
     ev_all += ev;
@@ -361,9 +357,9 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
           // Update single bond basis arrays.
           if(jj < jnum) Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad?
 
-          single_bond_grad(ii,jj,0,radial_index,lm) = bond_x;
-          single_bond_grad(ii,jj,1,radial_index,lm) = bond_y;
-          single_bond_grad(ii,jj,2,radial_index,lm) = bond_z;
+          single_bond_grad(ii,jj,0,n,lm) = bond_x;
+          single_bond_grad(ii,jj,1,n,lm) = bond_y;
+          single_bond_grad(ii,jj,2,n,lm) = bond_z;
       });
   });
 }
@@ -393,11 +389,17 @@ void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_me
 
   const int itype = type[i] - 1;
 
+  ScratchView1D B2scratch(team_member.team_scratch(0), n_descriptors);
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
+      B2scratch(nnl) = B2(ii, nnl);
+  });
+  team_member.team_barrier();
+
   // TODO: B2 shared if bottleneck, team-wise GEMV?
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &x){
       F_FLOAT tmp = 0.0;
       Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &y, F_FLOAT &tmp){
-          tmp += beta(itype, x, y)*B2(ii, y);
+          tmp += beta(itype, x, y)*B2scratch(y);
       }, tmp);
       beta_B2(ii, x) = tmp;
   });
@@ -454,14 +456,28 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
   const int i = d_ilist[ii];
   const int jnum = d_numneigh_short[i];
 
+  ScratchView2D uscratch(team_member.team_scratch(0), n_radial, n_harmonics);
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_bond), [&] (int nlm){
+      int n = nlm / n_harmonics;
+      int lm = nlm - n*n_harmonics;
+      uscratch(n, lm) = u(ii, n, lm);
+  });
+  team_member.team_barrier();
+
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int jj = k/3;
       int c = k - 3*jj;
+
+      int j = d_neighbors_short(i,jj);
+      j &= NEIGHMASK;
+      int s = type[j] - 1;
+
       F_FLOAT tmp = 0.0;
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_bond), [&](int nlm, F_FLOAT &tmp){
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &tmp){
           int n = nlm / n_harmonics;
           int lm = nlm - n*n_harmonics;
-          tmp += single_bond_grad(ii, jj, c, n, lm)*u(ii, n, lm);
+          int radial_index = s*n_max + n;
+          tmp += single_bond_grad(ii, jj, c, n, lm)*uscratch(radial_index, lm);
       }, tmp);
       partial_forces(ii,jj,c) = tmp;
   });
