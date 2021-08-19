@@ -26,11 +26,9 @@ PairStyle(flare/kk/host,PairFLAREKokkos<LMPHostType>)
 #include <pair_kokkos.h>
 
 struct TagSingleBond{};
-struct TagSingleBondGrad{};
 struct TagB2{};
 struct TagBetaB2{};
 struct TagNorm2{};
-struct TagEvdwl{};
 struct Tagw{};
 struct Tagu{};
 struct TagF{};
@@ -74,10 +72,6 @@ class PairFLAREKokkos : public PairFLARE {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagStoreF, const MemberType, EV_FLOAT&) const;
-
-  // pair compute
-  KOKKOS_INLINE_FUNCTION
-  void operator()(typename Kokkos::TeamPolicy<DeviceType>::member_type, EV_FLOAT&) const;
 
   // short neigh list
   KOKKOS_INLINE_FUNCTION
