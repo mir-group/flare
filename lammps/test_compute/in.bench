@@ -32,5 +32,5 @@ thermo 10
 thermo_style custom step temp pe etotal press pxx pyy pzz pxy pxz pyz
 
 if "$L > 5" then "variable nsteps equal 10" else "variable nsteps equal 100"
-#variable nsteps equal 100
+#variable nsteps equal 2000
 run		${nsteps}

@@ -220,7 +220,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     // compute basis functions Rn and Ylm
       Kokkos::parallel_for("FLARE: R and Y",
           Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-                          {0,0}, {batch_size, max_neighs}),
+                          {0,0}, {batch_size, max_neighs}, {1,8}),
           *this
       );
 
