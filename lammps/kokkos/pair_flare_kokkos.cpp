@@ -407,7 +407,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
           double bond_z = gz_val * h_val + g_val * hz_val;
 
           // Update single bond basis arrays.
-          if(jj < jnum) Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad?
+          Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad?
 
           single_bond_grad(ii,jj,0,n,lm) = bond_x;
           single_bond_grad(ii,jj,1,n,lm) = bond_y;
