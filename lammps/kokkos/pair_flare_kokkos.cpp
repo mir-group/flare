@@ -150,7 +150,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
 #ifdef LMP_KOKKOS_GPU
   int vector_length = 32;
-#define TEAM_SIZE 8
+#define TEAM_SIZE 4
 #define SINGLE_BOND_TEAM_SIZE 16
 #else
   int vector_length = 8;

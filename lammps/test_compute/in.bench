@@ -29,7 +29,7 @@ compute stressatom all stress/atom NULL virial
 #dump_modify 1 sort id
 
 thermo 10
-thermo_style custom step temp pe etotal press pxx pyy pzz pxy pxz pyz
+thermo_style custom step temp pe etotal press pxx pyy pzz pxy pxz pyz spcpu
 
 if "$L > 5" then "variable nsteps equal 10" else "variable nsteps equal 100"
 #variable nsteps equal 2000
