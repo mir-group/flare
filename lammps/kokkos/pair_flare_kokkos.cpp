@@ -150,10 +150,12 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
 #ifdef LMP_KOKKOS_GPU
   int vector_length = 32;
-#define TEAM_SIZE 4
+#define TEAM_SIZE 8
+#define SINGLE_BOND_TEAM_SIZE 16
 #else
   int vector_length = 8;
 #define TEAM_SIZE Kokkos::AUTO()
+#define SINGLE_BOND_TEAM_SIZE Kokkos::AUTO()
 #endif
 
   // Divide the atoms into batches.
@@ -238,7 +240,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     // dnlm, dnlmj
       int g_size = ScratchView2D::shmem_size(n_max, 4);
       int Y_size = ScratchView2D::shmem_size(n_harmonics, 4);
-      auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
+      auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(batch_size, SINGLE_BOND_TEAM_SIZE, vector_length).set_scratch_size(
           0, Kokkos::PerThread(g_size + Y_size));
       Kokkos::deep_copy(single_bond, 0.0);
       //Kokkos::deep_copy(single_bond_grad, 0.0);
@@ -377,12 +379,12 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
           int n = nc / 4;
           int c = nc - 4*n;
-          gscratch(n, c) = g_ra(ii, jj, n, c);
+          gscratch(n, c) = g(ii, jj, n, c);
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
           int lm = lmc / 4;
           int c = lmc - 4*lm;
-          Yscratch(lm, c) = Y_ra(ii, jj, lm, c);
+          Yscratch(lm, c) = Y(ii, jj, lm, c);
       });
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&] (int nlm){
@@ -447,7 +449,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_me
   });
   team_member.team_barrier();
 
-  // TODO: B2 shared if bottleneck, team-wise GEMV?
+  // TODO: team-wise GEMV?
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &x){
       F_FLOAT tmp = 0.0;
       Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &y, F_FLOAT &tmp){
