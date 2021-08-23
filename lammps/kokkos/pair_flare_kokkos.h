@@ -110,6 +110,8 @@ class PairFLAREKokkos : public PairFLARE {
   using View3D = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, DeviceType>;
   using View4D = Kokkos::View<F_FLOAT****, Kokkos::LayoutRight, DeviceType>;
   using View5D = Kokkos::View<F_FLOAT*****, Kokkos::LayoutRight, DeviceType>;
+  using gYView4D = Kokkos::View<F_FLOAT****, Kokkos::LayoutStride, DeviceType>;
+  using gYView4DRA = Kokkos::View<const F_FLOAT****, Kokkos::LayoutStride, DeviceType, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 
   using ScratchViewInt2D = Kokkos::View<int**, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
   using ScratchView1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, typename DeviceType::scratch_memory_space>;
@@ -126,7 +128,8 @@ class PairFLAREKokkos : public PairFLARE {
   View1D B2_norm2s, evdwls;
   View2D B2, beta_B2, w;
   View3D beta, single_bond, u, partial_forces;
-  View4D g, Y;
+  gYView4D g, Y;
+  gYView4DRA g_ra, Y_ra;
   View5D single_bond_grad;
 
   typename AT::t_int_1d_randomread d_type2frho;

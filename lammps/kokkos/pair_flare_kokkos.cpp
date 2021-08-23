@@ -208,9 +208,19 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
     // reallocate per-neighbor views
     if(g.extent(0) < batch_size || g.extent(1) < max_neighs){
-      g = View4D(); Y = View4D();
-      g = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), batch_size, max_neighs, n_max, 4);
-      Y = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), batch_size, max_neighs, n_harmonics, 4);
+      Kokkos::LayoutStride glayout(batch_size, max_neighs*n_max*4,
+                                   max_neighs, 1,
+                                   n_max, 4*max_neighs,
+                                   4, max_neighs);
+      Kokkos::LayoutStride Ylayout(batch_size, max_neighs*n_harmonics*4,
+                                   max_neighs, 1,
+                                   n_harmonics, 4*max_neighs,
+                                   4, max_neighs);
+      g = gYView4D(); Y = gYView4D();
+      g = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), glayout);
+      Y = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), Ylayout);
+      g_ra = g;
+      Y_ra = Y;
       single_bond_grad = View5D();
       single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), batch_size, max_neighs, 3, n_max, n_harmonics);
       partial_forces = View3D();
@@ -220,7 +230,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     // compute basis functions Rn and Ylm
       Kokkos::parallel_for("FLARE: R and Y",
           Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-                          {0,0}, {batch_size, max_neighs}, {1,8}),
+                          {0,0}, {batch_size, max_neighs}, {1,max_neighs}),
           *this
       );
 
@@ -367,12 +377,12 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
           int n = nc / 4;
           int c = nc - 4*n;
-          gscratch(n, c) = g(ii, jj, n, c);
+          gscratch(n, c) = g_ra(ii, jj, n, c);
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
           int lm = lmc / 4;
           int c = lmc - 4*lm;
-          Yscratch(lm, c) = Y(ii, jj, lm, c);
+          Yscratch(lm, c) = Y_ra(ii, jj, lm, c);
       });
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&] (int nlm){
