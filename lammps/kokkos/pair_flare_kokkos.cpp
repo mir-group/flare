@@ -162,6 +162,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   // Goal: First batch needs to be biggest to avoid extra allocs.
   {
     double beta_mem = n_species * n_descriptors * n_descriptors * 8;
+    double neigh_mem = n_atoms * max_neighs * 4;
     double mem_per_atom = 8 * (
         2*n_bond // single_bond, u
         + 3*n_descriptors // B2, betaB2, w
@@ -173,12 +174,12 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
             + 3 // partial_forces
           )
         );
-    approx_batch_size = std::min<int>((maxmem - beta_mem) / mem_per_atom, n_atoms);
+    approx_batch_size = std::min<int>((maxmem - beta_mem - neigh_mem) / mem_per_atom, n_atoms);
     if(approx_batch_size < 1) error->all(FLERR,"Not enough memory for even a single atom!");
 
     n_batches = std::ceil(1.0*n_atoms / approx_batch_size);
     approx_batch_size = n_atoms / n_batches;
-    //printf("maxmem = %g | betamem = %g | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
+    //printf("maxmem = %g | betamem = %g | neighmem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
   }
   int remainder = n_atoms - n_batches*approx_batch_size;
 
