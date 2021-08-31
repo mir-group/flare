@@ -82,7 +82,7 @@ class PairFLAREKokkos : public PairFLARE {
   void operator()(const int, const int) const;
 
   KOKKOS_INLINE_FUNCTION
-  void v_tally(EV_FLOAT &ev, const int &i, const int &j,
+  void v_tally(E_FLOAT (&v)[6], const int &i, const int &j,
       const F_FLOAT &fx, const F_FLOAT &fy, const F_FLOAT &fz, const F_FLOAT &delx,
                   const F_FLOAT &dely, const F_FLOAT &delz) const;
 

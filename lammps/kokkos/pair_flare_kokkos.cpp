@@ -38,9 +38,9 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 namespace Kokkos {
   template <>
-  struct reduction_identity<t_scalar3<F_FLOAT>> {
-    KOKKOS_FORCEINLINE_FUNCTION static t_scalar3<F_FLOAT> sum() {
-      return t_scalar3<F_FLOAT>();
+  struct reduction_identity<s_FEV_FLOAT> {
+    KOKKOS_FORCEINLINE_FUNCTION static s_FEV_FLOAT sum() {
+      return s_FEV_FLOAT();
     }
   };
 }
@@ -302,15 +302,15 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
     startatom = stopatom;
   }
-      if (eflag_global) eng_vdwl += ev_all.evdwl;
-      if (vflag_global) {
-        virial[0] += ev_all.v[0];
-        virial[1] += ev_all.v[1];
-        virial[2] += ev_all.v[2];
-        virial[3] += ev_all.v[3];
-        virial[4] += ev_all.v[4];
-        virial[5] += ev_all.v[5];
-      }
+  if (eflag_global) eng_vdwl += ev_all.evdwl;
+  if (vflag_global) {
+    virial[0] += ev_all.v[0];
+    virial[1] += ev_all.v[1];
+    virial[2] += ev_all.v[2];
+    virial[3] += ev_all.v[3];
+    virial[4] += ev_all.v[4];
+    virial[5] += ev_all.v[5];
+  }
   Kokkos::Experimental::contribute(d_vatom, vscatter);
   Kokkos::Experimental::contribute(f, fscatter);
 
@@ -549,9 +549,9 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
   const X_FLOAT ztmp = x(i,2);
 
   auto a_f = fscatter.access();
-  t_scalar3<F_FLOAT> fsum;
+  s_FEV_FLOAT fvsum;
 
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, t_scalar3<F_FLOAT> &ftmp){
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, s_FEV_FLOAT &fvtmp){
       int j = d_neighbors_short(i,jj);
       j &= NEIGHMASK;
 
@@ -559,9 +559,9 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
       const F_FLOAT fy = -partial_forces(ii,jj,1);
       const F_FLOAT fz = -partial_forces(ii,jj,2);
 
-      ftmp.x += fx;
-      ftmp.y += fy;
-      ftmp.z += fz;
+      fvtmp.f[0] += fx;
+      fvtmp.f[1] += fy;
+      fvtmp.f[2] += fz;
 
       a_f(j,0) -= fx;
       a_f(j,1) -= fy;
@@ -573,15 +573,23 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
 
       //printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
 
-      if (vflag_either) v_tally(ev,i,j,fx,fy,fz,delx,dely,delz);
-  }, fsum);
+      if (vflag_either) v_tally(fvtmp.v,i,j,fx,fy,fz,delx,dely,delz);
+  }, fvsum);
   team_member.team_barrier();
 
   Kokkos::single(Kokkos::PerTeam(team_member), [&](){
-      a_f(i,0) += fsum.x;
-      a_f(i,1) += fsum.y;
-      a_f(i,2) += fsum.z;
+      a_f(i,0) += fvsum.f[0];
+      a_f(i,1) += fvsum.f[1];
+      a_f(i,2) += fvsum.f[2];
       if(eflag) ev.evdwl += evdwls(ii);
+      if(vflag_global){
+        ev.v[0] += fvsum.v[0];
+        ev.v[1] += fvsum.v[1];
+        ev.v[2] += fvsum.v[2];
+        ev.v[3] += fvsum.v[3];
+        ev.v[4] += fvsum.v[4];
+        ev.v[5] += fvsum.v[5];
+      }
       //printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
   });
 }
@@ -670,15 +678,10 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
   // always request a full neighbor list
 
-  //if (neighflag == FULL) { // TODO: figure this out
-  //if (neighflag == HALF || neighflag == HALFTHREAD) { // TODO: figure this out
-  if (neighflag == FULL || neighflag == HALF || neighflag == HALFTHREAD) {
+  if (neighflag == FULL) { // TODO: figure this out
     neighbor->requests[irequest]->full = 1;
     neighbor->requests[irequest]->half = 0;
-    if (neighflag == FULL)
-      neighbor->requests[irequest]->ghost = 1;
-    else
-      neighbor->requests[irequest]->ghost = 0;
+    neighbor->requests[irequest]->ghost = 0;
   } else {
     error->all(FLERR,"Cannot use chosen neighbor list style with pair flare/kk");
   }
@@ -689,7 +692,7 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::v_tally(EV_FLOAT &ev, const int &i, const int &j,
+void PairFLAREKokkos<DeviceType>::v_tally(E_FLOAT (&v)[6], const int &i, const int &j,
       const F_FLOAT &fx, const F_FLOAT &fy, const F_FLOAT &fz, const F_FLOAT &delx,
                 const F_FLOAT &dely, const F_FLOAT &delz) const
 {
@@ -708,12 +711,12 @@ void PairFLAREKokkos<DeviceType>::v_tally(EV_FLOAT &ev, const int &i, const int 
     const E_FLOAT v5 = dely*fz;
 
     if (vflag_global) {
-        ev.v[0] += v0;
-        ev.v[1] += v1;
-        ev.v[2] += v2;
-        ev.v[3] += v3;
-        ev.v[4] += v4;
-        ev.v[5] += v5;
+        v[0] += v0;
+        v[1] += v1;
+        v[2] += v2;
+        v[3] += v3;
+        v[4] += v4;
+        v[5] += v5;
     }
 
     if (vflag_atom) {
