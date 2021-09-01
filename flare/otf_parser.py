@@ -8,6 +8,15 @@ from flare.gp import GaussianProcess
 
 
 class OtfAnalysis:
+    """
+    Parse the OTF log file to get trajectory, training data, 
+    thermostat, and build GP model.
+
+    Args:
+        filename (str): name of the OTF log file.
+        calculate_energy (bool): if the potential energy is computed and
+            needs to be parsed, then set to True. Default False.
+    """
     def __init__(self, filename, calculate_energy=False):
         self.filename = filename
 
@@ -63,7 +72,32 @@ class OtfAnalysis:
         hyp_no=None,
         **kwargs,
     ):
+        """
+        Build GP model from the training frames parsed from the log file.
+        The cell, hyps and gp can be reset with customized values. 
 
+        Args:
+            cell (np.ndarray): Default None to use the cell from the log file.
+                A customized cell can be input as a 3x3 numpy array.
+            call_no (int): Default None to use all the DFT frames as training
+                data for building GP. If not None, then the frames 0 to `call_no`
+                will be added to GP.
+            hyps (np.ndarray): Default None to use the hyperparameters from the
+                log file. Customized hyps can be input as an array.
+            init_gp (GaussianProcess): Default to None to use no initial settings
+                or training data. an initial GP can be used, and then the 
+                frames parsed in the log file will add to the initial GP. Then the 
+                final GP uses the hyps and kernels of `init_gp`, and consists of 
+                training data from `init_gp` and the data from the log file.
+                **NOTE**: if a log file from restarted OTF is parsed, then an initial
+                GP needs to be parsed from the prior log file as the `init_gp` of the
+                restarted log file.
+            hyp_no (int): Default None to use the final optimized hyperparameters to
+                build GP. If not None, then use the hyps from the `hyp_no`th 
+                optimization step.
+            kwargs: if a new GP setting is needed without inputing `init_gp`, the GP
+                initial args can be input as kwargs.
+        """
         if "restart" in self.header and self.header["restart"] > 0:
             assert (
                 init_gp is not None
