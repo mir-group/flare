@@ -161,7 +161,7 @@ class CMakeBuild(build_ext):
 setuptools.setup(
     name="flare_pp",
     packages=setuptools.find_packages(exclude=[]),
-    version="0.0.20",
+    version="0.0.21",
     author="Materials Intelligence Research",
     author_email="mir@g.harvard.edu",
     description="Many-body extension of the flare code",
