@@ -86,6 +86,8 @@ class PairFLAREKokkos : public PairFLARE {
       const F_FLOAT &fx, const F_FLOAT &fy, const F_FLOAT &fz, const F_FLOAT &delx,
                   const F_FLOAT &dely, const F_FLOAT &delz) const;
 
+  typename AT::t_efloat_1d d_eatom;
+  typename AT::t_virial_array d_vatom;
  protected:
   typedef Kokkos::DualView<int***,DeviceType> tdual_int_3d;
   typedef typename tdual_int_3d::t_dev_const_randomread t_int_3d_randomread;
@@ -98,8 +100,6 @@ class PairFLAREKokkos : public PairFLARE {
 
   DAT::tdual_efloat_1d k_eatom;
   DAT::tdual_virial_array k_vatom;
-  typename AT::t_efloat_1d d_eatom;
-  typename AT::t_virial_array d_vatom;
 
   double maxmem = 15.0e9;
   int batch_size, startatom, n_batches, approx_batch_size;
