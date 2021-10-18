@@ -3,9 +3,6 @@ import numpy as np
 import pytest
 import sys
 
-sys.path.append("../..")
-sys.path.append("../../build")
-
 from ase.io import read
 from flare import struc
 from flare.lammps import lammps_calculator
@@ -47,7 +44,7 @@ sigma = 1.0
 power = 2
 kernel = NormalizedDotProduct(sigma, power)
 cutoff_function = "quadratic"
-cutoff = 1.0
+cutoff = 1.5
 many_body_cutoffs = [cutoff]
 radial_basis = "chebyshev"
 radial_hyps = [0.0, cutoff]
@@ -144,7 +141,21 @@ def test_calc():
     ),
 )
 def test_lammps():
-    sgp_py.write_mapping_coefficients("beta.txt", "A", 0)
+    sgp_py.write_mapping_coefficients("lmp.flare", "A", 0)
+    from fln.utils import get_ase_lmp_calc
+    lmp_calc = get_ase_lmp_calc(
+        ff_preset="flare_pp", 
+        specorder=["H", "He"], 
+        coeff_dir="./", 
+        lmp_command=os.environ.get("lmp"),
+    ) 
+    test_atoms = test_structure.to_ase_atoms()
+    test_atoms.calc = lmp_calc
+    lmp_f = test_atoms.get_forces()
+    lmp_e = test_atoms.get_potential_energy()
+    lmp_s = test_atoms.get_stress()
+
+
     new_kern = sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0) # here the new kernel needs to be returned, otherwise the kernel won't be found in the current module
 
     assert sgp_py.sparse_gp.sparse_indices[0] == sgp_py.sgp_var.sparse_indices[0], \
@@ -162,7 +173,42 @@ def test_lammps():
                         flag = True
                         break
                 assert flag, "the sparse_gp and sgp_var don't have the same descriptors"
-        
+
+    # compare with sgp_py prediction
+    assert len(sgp_py.training_data) > 0
+
+    # Convert coded species to 0, 1, 2, etc.
+    coded_species = []
+    for spec in test_structure.coded_species:
+        coded_species.append(species_map[spec])
+
+    test_cpp_struc = Structure(
+        test_structure.cell,
+        coded_species,
+        test_structure.positions,
+        sgp_py.cutoff,
+        sgp_py.descriptor_calculators,
+    )
+
+    print("GP predicting")
+    sgp_py.sparse_gp.predict_DTC(test_cpp_struc)
+    sgp_efs = test_cpp_struc.mean_efs
+
+    print("Forces")
+    sgp_forces = np.reshape(sgp_efs[1 : len(sgp_efs) - 6], (test_structure.nat, 3))
+    print(np.concatenate([lmp_f, sgp_forces], axis=1))
+    assert np.allclose(lmp_f, sgp_forces)
+    print("GP forces match LMP forces")
+
+    print("Stress")
+    lmp_s_ordered = - lmp_s[[0, 5, 4, 1, 3, 2]]
+    print(lmp_s[[0, 5, 4, 1, 3, 2]])
+    print(sgp_efs[-6:])
+    assert np.allclose(lmp_s_ordered, sgp_efs[-6:])
+
+    print("Energy")
+    print(lmp_e, sgp_efs[0])
+    assert np.allclose(lmp_e, sgp_efs[0])
 
     # set up input and data files
     data_file_name = "tmp.data"
@@ -194,36 +240,9 @@ def test_lammps():
     # read output
     lmp_dump = read(dump_file_name, format="lammps-dump-text")
     lmp_forces = lmp_dump.get_forces()
-#    lmp_var_1 = lmp_dump.get_array("c_std[1]")
-#    lmp_var_2 = lmp_dump.get_array("c_std[2]")
-#    lmp_var_3 = lmp_dump.get_array("c_std[3]")
-#    lmp_var = np.hstack([lmp_var_1, lmp_var_2, lmp_var_3])
-    lmp_std = lmp_dump.get_array("c_std")
-    lmp_var = lmp_std ** 2
-    print(lmp_var)
-
-    # compare with sgp_py prediction
-    assert len(sgp_py.training_data) > 0
-
-    # Convert coded species to 0, 1, 2, etc.
-    coded_species = []
-    for spec in test_structure.coded_species:
-        coded_species.append(species_map[spec])
-
-    test_cpp_struc = Structure(
-        test_structure.cell,
-        coded_species,
-        test_structure.positions,
-        sgp_py.cutoff,
-        sgp_py.descriptor_calculators,
-    )
-
-    print("GP predicting")
-    sgp_py.sparse_gp.predict_DTC(test_cpp_struc)
-    sgp_efs = test_cpp_struc.mean_efs
-    sgp_forces = np.reshape(sgp_efs[1:len(sgp_efs)-6], (test_structure.nat, 3))
-    assert np.allclose(lmp_forces, sgp_forces)
-    print("GP forces match LMP forces")
+#    lmp_std = lmp_dump.get_array("c_std")
+#    lmp_var = lmp_std ** 2
+#    print(lmp_var)
 
     sgp_py.sgp_var.predict_DTC(test_cpp_struc)
     #sgp_var = np.reshape(test_cpp_struc_pow1.variance_efs[1:len(sgp_efs)-6], (test_structure.nat, 3))

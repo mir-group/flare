@@ -128,7 +128,7 @@ void ComputeFlareStdAtom::compute_peratom() {
   int beta_init, beta_counter;
   double B2_norm_squared, B2_val_1, B2_val_2;
 
-  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces;
+  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces, u;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
 
   for (ii = 0; ii < ntotal; ii++) {
@@ -166,14 +166,13 @@ void ComputeFlareStdAtom::compute_peratom() {
                 single_bond_env_dervs);
 
     // Compute invariant descriptors.
+    double variance;
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
-                  l_max);
-
+                  l_max, beta_matrices[itype - 1], u, &variance);
 
     // Compute local energy and partial forces.
-    beta_p = beta_matrices[itype - 1] * B2_vals;
-    stds[i] = pow(abs(B2_vals.dot(beta_p)) / B2_norm_squared, 0.5); // the numerator could be negative
+    stds[i] = pow(abs(variance), 0.5); // the numerator could be negative
 
   }
 }

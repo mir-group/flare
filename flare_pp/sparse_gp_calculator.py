@@ -138,14 +138,14 @@ class SGP_Calculator(Calculator):
 
 def sort_variances(structure_descriptor, variances):
     # Check that the variance length matches the number of atoms.
-    assert(len(variances) == structure_descriptor.noa)
+    assert len(variances) == structure_descriptor.noa
     sorted_variances = np.zeros(len(variances))
 
     # Sort the variances by atomic order.
     descriptor_values = structure_descriptor.descriptors[0]
     atom_indices = descriptor_values.atom_indices
     n_types = descriptor_values.n_types
-    assert(n_types == len(atom_indices))
+    assert n_types == len(atom_indices)
 
     v_count = 0
     for s in range(n_types):
