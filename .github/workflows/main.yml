@@ -28,5 +28,4 @@ jobs:
     - name: Build
       run: |
         cd tests
-        pytest -vv --durations=0 --cov=../flare/
-
+        pytest
