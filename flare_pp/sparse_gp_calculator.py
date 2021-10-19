@@ -113,6 +113,7 @@ class SGP_Calculator(Calculator):
     def as_dict(self):
         out_dict = dict(vars(self))
         out_dict["gp_model"] = self.gp_model.as_dict()
+        out_dict.pop("atoms")
         out_dict.pop("get_spin_polarized")
         return out_dict
 
