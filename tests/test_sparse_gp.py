@@ -1,313 +1,218 @@
-import os
-import numpy as np
 import pytest
-import sys
+import numpy as np
+import os
+from copy import deepcopy
+import json
 
-from ase.io import read
-from flare import struc
-from flare.lammps import lammps_calculator
-
+from flare_pp._C_flare import SparseGP, NormalizedDotProduct, B2, Structure
 from flare_pp.sparse_gp import SGP_Wrapper
 from flare_pp.sparse_gp_calculator import SGP_Calculator
-from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
+
+from flare.ase.calculator import FLARE_Calculator
+from flare.ase.atoms import FLARE_Atoms
+
+from ase.calculators.lj import LennardJones
+from ase.build import bulk
 
 
-np.random.seed(10)
-
-# Make random structure.
-n_atoms = 4
-cell = np.eye(3)
-train_positions = np.random.rand(n_atoms, 3)
-test_positions = np.random.rand(n_atoms, 3)
-atom_types = [1, 2]
-atom_masses = [2, 4]
-species = [1, 2, 1, 2]
-train_structure = struc.Structure(cell, species, train_positions)
-test_structure = struc.Structure(cell, species, test_positions)
-
-# Test update db
-custom_range = [1, 2, 3]
-energy = np.random.rand()
-forces = np.random.rand(n_atoms, 3)
-stress = np.random.rand(6)
-
-# Create sparse GP model.
-sigma = 1.0
-power = 2
-kernel = NormalizedDotProduct(sigma, power)
-cutoff_function = "quadratic"
-cutoff = 1.5
-many_body_cutoffs = [cutoff]
-radial_basis = "chebyshev"
-radial_hyps = [0.0, cutoff]
-cutoff_hyps = []
-settings = [len(atom_types), 4, 3] 
-calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings)
-sigma_e = 1.0
-sigma_f = 1.0
-sigma_s = 1.0
-species_map = {1: 0, 2: 1}
-max_iterations = 20
-
-sgp_cpp = SparseGP([kernel], sigma_e, sigma_f, sigma_s)
-sgp_py = SGP_Wrapper(
-    [kernel],
-    [calc],
-    cutoff,
-    sigma_e,
-    sigma_f,
-    sigma_s,
-    species_map,
-    max_iterations=max_iterations,
-)
+def get_random_structure():
+    cell = np.eye(3)
 
 
-def test_update_db():
+@pytest.fixture(scope="module")
+def dot_product_kernel():
+    sigma = 2.0
+    power = 2
+
+    return NormalizedDotProduct(sigma, power)
+
+
+@pytest.fixture(scope="module")
+def cutoff():
+    return 5.0
+
+
+@pytest.fixture(scope="module")
+def lj_calc():
+    return LennardJones()
+
+
+@pytest.fixture(scope="module")
+def training_structure():
+    # Returns a randomly jittered diamond structure.
+    a = 3.52678
+    supercell = bulk("C", "diamond", a=a, cubic=True)
+    supercell.positions += (2 * np.random.rand(8, 3) - 1) * 0.1
+    flare_atoms = FLARE_Atoms.from_ase_atoms(supercell)
+
+    return flare_atoms
+
+
+@pytest.fixture(scope="module")
+def b2_calculator(cutoff):
+    cutoff_function = "quadratic"
+    radial_basis = "chebyshev"
+    radial_hyps = [0.0, cutoff]
+    cutoff_hyps = []
+    descriptor_settings = [1, 8, 3]
+    b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
+                 descriptor_settings)
+
+    return b2_calc
+
+
+@pytest.fixture(scope="module")
+def bare_sgp_wrapper(dot_product_kernel, b2_calculator, cutoff, lj_calc):
+    sigma_e = 0.001
+    sigma_f = 0.05
+    sigma_s = 0.006
+    species_map = {6: 0}
+    single_atom_energies = {0: -5}
+    variance_type = "local"
+    max_iterations = 20
+    opt_method = "L-BFGS-B"
+    bounds = [(None, None), (sigma_e, None), (None, None), (None, None)]
+
+    sgp_model = SGP_Wrapper(
+        [dot_product_kernel],
+        [b2_calculator],
+        cutoff,
+        sigma_e,
+        sigma_f,
+        sigma_s,
+        species_map,
+        single_atom_energies=single_atom_energies,
+        variance_type=variance_type,
+        opt_method=opt_method,
+        bounds=bounds,
+        max_iterations=max_iterations
+    )
+
+    return sgp_model
+
+
+@pytest.fixture(scope="module")
+def sgp_wrapper(bare_sgp_wrapper, training_structure, lj_calc):
+    training_structure.calc = lj_calc
+    forces = training_structure.get_forces()
+    energy = training_structure.get_potential_energy()
+    stress = training_structure.get_stress()
+    bare_sgp_wrapper.update_db(training_structure, forces,
+                               custom_range=(1, 2, 3, 4, 5),
+                               energy=energy,
+                               stress=stress,
+                               mode="specific")
+
+    return bare_sgp_wrapper
+
+
+@pytest.fixture(scope="module")
+def sgp_calc(sgp_wrapper):
+    sgp_calc = SGP_Calculator(sgp_wrapper)
+
+    return sgp_calc
+
+
+def test_update_db(bare_sgp_wrapper, training_structure, lj_calc):
     """Check that the covariance matrices have the correct size after the
     sparse GP is updated."""
 
-#    sgp_py.update_db(
-#        train_structure, forces, custom_range, energy, stress, mode="specific"
-#    )
-
-    sgp_py.update_db(
-        train_structure, forces, [3], energy, stress, mode="uncertain"
+    custom_range = [1, 2, 3]
+    training_structure.calc = lj_calc
+    forces = training_structure.get_forces()
+    energy = training_structure.get_potential_energy()
+    stress = training_structure.get_stress()
+    bare_sgp_wrapper.update_db(
+        training_structure, forces, custom_range, energy, stress,
+        mode="specific"
     )
 
     n_envs = len(custom_range)
-    assert sgp_py.sparse_gp.Kuu.shape[0] == n_envs
-    assert sgp_py.sparse_gp.Kuf.shape[1] == 1 + n_atoms * 3 + 6
+    n_atoms = len(training_structure)
+    assert bare_sgp_wrapper.sparse_gp.Kuu.shape[0] == n_envs
+    assert bare_sgp_wrapper.sparse_gp.Kuf.shape[1] == 1 + n_atoms * 3 + 6
 
 
-def test_train():
+def test_train(sgp_wrapper):
     """Check that the hyperparameters and likelihood are updated when the
     train method is called."""
 
-    hyps_init = tuple(sgp_py.hyps)
-    sgp_py.train()
-    hyps_post = tuple(sgp_py.hyps)
+    hyps_init = tuple(sgp_wrapper.hyps)
+    sgp_wrapper.train()
+    hyps_post = tuple(sgp_wrapper.hyps)
 
     assert hyps_init != hyps_post
-    assert sgp_py.likelihood != 0.0
+    assert sgp_wrapper.likelihood != 0.0
 
-def test_dict():
+
+def test_dict(sgp_wrapper):
     """
     Check the method from_dict and as_dict
     """
 
-    out_dict = sgp_py.as_dict()
-    assert len(sgp_py) == len(out_dict["training_structures"])
+    out_dict = sgp_wrapper.as_dict()
+    assert len(sgp_wrapper) == len(out_dict["training_structures"])
     new_sgp, _ = SGP_Wrapper.from_dict(out_dict)
-    assert len(sgp_py) == len(new_sgp)
-    assert len(sgp_py.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
-    assert np.allclose(sgp_py.hyps, new_sgp.hyps)
-
-# def test_dump():
-#     """
-#     Check the method from_file and write_model of SGP_Wrapper
-#     """
-
-#     sgp_py.write_model("sgp.json")
-#     new_sgp, _ = SGP_Wrapper.from_file("sgp.json")
-#     assert len(sgp_py) == len(new_sgp)
-#     assert len(sgp_py.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
-#     assert np.allclose(sgp_py.hyps, new_sgp.hyps)
-
-# def test_calc():
-#     """
-#     Check the method from_file and write_model of SGP_Calculator
-#     """
-
-#     calc = SGP_Calculator(sgp_py)
-#     calc.write_model("sgp_calc.json")
-#     new_calc = SGP_Calculator.from_file("sgp_calc.json")
-#     assert len(calc.gp_model) == len(new_calc.gp_model)
-
-# @pytest.mark.skipif(
-#     not os.environ.get("lmp", False),
-#     reason=(
-#         "lmp not found "
-#         "in environment: Please install LAMMPS "
-#         "and set the $lmp env. "
-#         "variable to point to the executatble."
-#     ),
-# )
-# def test_lammps():
-#     sgp_py.write_mapping_coefficients("lmp.flare", "A", 0)
-#     from fln.utils import get_ase_lmp_calc
-#     lmp_calc = get_ase_lmp_calc(
-#         ff_preset="flare_pp", 
-#         specorder=["H", "He"], 
-#         coeff_dir="./", 
-#         lmp_command=os.environ.get("lmp"),
-#     ) 
-#     test_atoms = test_structure.to_ase_atoms()
-#     test_atoms.calc = lmp_calc
-#     lmp_f = test_atoms.get_forces()
-#     lmp_e = test_atoms.get_potential_energy()
-#     lmp_s = test_atoms.get_stress()
+    assert len(sgp_wrapper) == len(new_sgp)
+    assert len(sgp_wrapper.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
+    assert np.allclose(sgp_wrapper.hyps, new_sgp.hyps)
 
 
-#     new_kern = sgp_py.write_varmap_coefficients("beta_var.txt", "B", 0) # here the new kernel needs to be returned, otherwise the kernel won't be found in the current module
+def test_dump(sgp_wrapper):
+    """
+    Check the method from_file and write_model of SGP_Wrapper
+    """
 
-#     assert sgp_py.sparse_gp.sparse_indices[0] == sgp_py.sgp_var.sparse_indices[0], \
-#             "the sparse_gp and sgp_var don't have the same training data"
+    sgp_wrapper.write_model("sgp.json")
+    new_sgp, _ = SGP_Wrapper.from_file("sgp.json")
+    assert len(sgp_wrapper) == len(new_sgp)
+    assert len(sgp_wrapper.sparse_gp.kernels) == len(new_sgp.sparse_gp.kernels)
+    assert np.allclose(sgp_wrapper.hyps, new_sgp.hyps)
+    os.remove("sgp.json")
 
-#     for s in range(len(atom_types)):
-#         org_desc = sgp_py.sparse_gp.sparse_descriptors[0].descriptors[s]
-#         new_desc = sgp_py.sgp_var.sparse_descriptors[0].descriptors[s]
-#         if not np.allclose(org_desc, new_desc): # the atomic order might change
-#             assert np.allclose(org_desc.shape, new_desc.shape)
-#             for i in range(org_desc.shape[0]):
-#                 flag = False
-#                 for j in range(new_desc.shape[0]): # seek in new_desc for matching of org_desc
-#                     if np.allclose(org_desc[i], new_desc[j]):
-#                         flag = True
-#                         break
-#                 assert flag, "the sparse_gp and sgp_var don't have the same descriptors"
 
-#     # compare with sgp_py prediction
-#     assert len(sgp_py.training_data) > 0
+def test_calc(sgp_wrapper):
+    """
+    Check the method from_file and write_model of SGP_Calculator
+    """
 
-#     # Convert coded species to 0, 1, 2, etc.
-#     coded_species = []
-#     for spec in test_structure.coded_species:
-#         coded_species.append(species_map[spec])
+    calc = SGP_Calculator(sgp_wrapper)
+    calc.write_model("sgp_calc.json")
+    new_calc = SGP_Calculator.from_file("sgp_calc.json")
+    assert len(calc.gp_model) == len(new_calc.gp_model)
+    os.remove("sgp_calc.json")
 
-#     test_cpp_struc = Structure(
-#         test_structure.cell,
-#         coded_species,
-#         test_structure.positions,
-#         sgp_py.cutoff,
-#         sgp_py.descriptor_calculators,
-#     )
 
-#     print("GP predicting")
-#     sgp_py.sparse_gp.predict_DTC(test_cpp_struc)
-#     sgp_efs = test_cpp_struc.mean_efs
+def test_write_model(sgp_calc, training_structure):
+    """Test that a reconstructed SGP calculator predicts the same forces
+    as the original."""
 
-#     print("Forces")
-#     sgp_forces = np.reshape(sgp_efs[1 : len(sgp_efs) - 6], (test_structure.nat, 3))
-#     print(np.concatenate([lmp_f, sgp_forces], axis=1))
-#     assert np.allclose(lmp_f, sgp_forces)
-#     print("GP forces match LMP forces")
+    # Predict on training structure.
+    training_structure.calc = sgp_calc
+    forces = training_structure.get_forces()
+    print(forces)
 
-#     print("Stress")
-#     lmp_s_ordered = - lmp_s[[0, 5, 4, 1, 3, 2]]
-#     print(lmp_s[[0, 5, 4, 1, 3, 2]])
-#     print(sgp_efs[-6:])
-#     assert np.allclose(lmp_s_ordered, sgp_efs[-6:])
+    # Write the SGP to JSON.
+    sgp_name = "sgp_calc.json"
+    sgp_calc.write_model(sgp_name)
 
-#     print("Energy")
-#     print(lmp_e, sgp_efs[0])
-#     assert np.allclose(lmp_e, sgp_efs[0])
+    # Odd Pybind-related bug here that seems to be caused by kernel pointers.
+    # Possibly related to: https://stackoverflow.com/questions/49633990/polymorphism-and-pybind11
 
-#     # set up input and data files
-#     data_file_name = "tmp.data"
-#     lammps_location = "beta.txt"
-#     style_string = "flare"
-#     coeff_string = "* * {}".format(lammps_location)
-#     lammps_executable = os.environ.get("lmp")
-#     dump_file_name = "tmp.dump"
-#     input_file_name = "tmp.in"
-#     output_file_name = "tmp.out"
-#     newton = True
+    # Load the SGP.
+    with open(sgp_name, "r") as f:
+        gp_dict = json.loads(f.readline())
+    sgp, _ = SGP_Wrapper.from_dict(gp_dict["gp_model"])
+    sgp_calc_2 = SGP_Calculator(sgp)
 
-#     # write data file
-#     data_text = lammps_calculator.lammps_dat(
-#         test_structure, atom_types, atom_masses, species
-#     )
-#     lammps_calculator.write_text(data_file_name, data_text)
+    # sgp_calc_2 = SGP_Calculator.from_file(sgp_name)
 
-#     # write input file
-#     input_text = lammps_calculator.generic_lammps_input(
-#         data_file_name, style_string, coeff_string, dump_file_name, newton=newton,
-#         std_string="beta_var.txt", std_style="flare_pp",
-#     )
-#     lammps_calculator.write_text(input_file_name, input_text)
+    os.remove(sgp_name)
 
-#     # run lammps
-#     lammps_calculator.run_lammps(lammps_executable, input_file_name, output_file_name)
+    # Compute forces with reconstructed SGP.
+    training_structure.calc = sgp_calc_2
+    forces_2 = training_structure.get_forces()
 
-#     # read output
-#     lmp_dump = read(dump_file_name, format="lammps-dump-text")
-#     lmp_forces = lmp_dump.get_forces()
-# #    lmp_std = lmp_dump.get_array("c_std")
-# #    lmp_var = lmp_std ** 2
-# #    print(lmp_var)
-
-#     sgp_py.sgp_var.predict_DTC(test_cpp_struc)
-#     #sgp_var = np.reshape(test_cpp_struc_pow1.variance_efs[1:len(sgp_efs)-6], (test_structure.nat, 3))
-#     sgp_var = sgp_py.sgp_var.compute_cluster_uncertainties(test_cpp_struc)
-# #    sgp_var = test_cpp_struc.variance_efs[0]
-#     print(sgp_var)
-
-#     n_descriptors = np.shape(test_cpp_struc.descriptors[0].descriptors[0])[1]
-#     n_species = len(atom_types)
-#     desc_en = np.zeros((n_species, n_descriptors))
-#     py_var = 0.0
-# #    for s in range(n_species):
-# #        n_struc_s = test_cpp_struc_pow1.descriptors[0].n_clusters_by_type[s];
-# #        assert np.shape(test_cpp_struc_pow1.descriptors[0].descriptors[s])[0] == n_struc_s
-# #        for i in range(n_descriptors):
-# #            desc_en[s, i] = np.sum(test_cpp_struc_pow1.descriptors[0].descriptors[s][:, i] / test_cpp_struc_pow1.descriptors[0].descriptor_norms[s], axis=0)
-# #
-#     print("len(varmap_coeffs)", len(sgp_py.sgp_var.varmap_coeffs))
-#     beta_matrices = []
-#     for s1 in range(n_species):
-#     #    for s2 in range(n_species):
-#         beta_matr = np.reshape(sgp_py.sgp_var.varmap_coeffs[s1, :], (n_descriptors, n_descriptors))
-#         print(s1, s1, "max", np.max(np.abs(beta_matr)), beta_matr.shape)
-#         beta_matrices.append(beta_matr)
-# #        py_var += desc_en[s1, :].dot(desc_en[s1, :].dot(beta_matr))
-# #    print(py_var)
-
-#     struc_desc = test_cpp_struc.descriptors[0]
-#     n_descriptors = np.shape(struc_desc.descriptors[0])[1]
-#     n_species = len(atom_types)
-# #    desc = np.zeros((n_atoms, 3, n_species, n_descriptors))
-
-#     print("len(varmap_coeffs)", len(sgp_py.sgp_var.varmap_coeffs))
-#     py_var = np.zeros(n_atoms)
-#     for s in range(n_species):
-#         n_struc = struc_desc.n_clusters_by_type[s];
-#         beta_matr = beta_matrices[s]
-#         for j in range(n_struc):
-#             norm = struc_desc.descriptor_norms[s][j]
-#             n_neigh = struc_desc.neighbor_counts[s][j]
-#             c_neigh = struc_desc.cumulative_neighbor_counts[s][j]
-#             atom_index = struc_desc.atom_indices[s][j]
-#             print("atom", atom_index, "n_neigh", n_neigh)
-#             desc = struc_desc.descriptors[s][j]
-#             py_var[atom_index] = desc.dot(desc.dot(beta_matr)) / norm ** 2
-#             #py_var[atom_index] = desc.dot(desc) / norm ** 2 * sgp_py.sgp_var.kernels[0].sigma ** 2 
-# #            for k in range(n_neigh):
-# #                ind = c_neigh + k
-# #                neighbor_index = struc_desc.neighbor_indices[s][ind];
-# #
-# #                neighbor_coord = struc_desc.neighbor_coordinates[s][ind];
-# #                neigh_dist = np.sum((neighbor_coord - test_positions[atom_index]) ** 2) 
-# #                #print("neighbor", neighbor_index, "dist", neigh_dist)
-# #                for comp in range(3):
-# #                    f1 = struc_desc.descriptor_force_dervs[s][3 * ind + comp] / norm
-# #                    f2 = struc_desc.descriptors[s][j] * struc_desc.descriptor_force_dots[s][3 * ind + comp] / norm ** 3
-# #                    f3 = f1 - f2
-# #                    desc[atom_index, comp, s, :] += norm #f3
-# #                    desc[neighbor_index, comp, s, :] -= norm #f3
-# #
-# #
-# #    for i in range(n_atoms):
-# #        for comp in range(3):
-# #            for s1 in range(n_species):
-# #                for s2 in range(n_species):
-# #                    beta_matr = np.reshape(sgp_py.sgp_var.varmap_coeffs[s1 * n_species + s2, :], (n_descriptors, n_descriptors))
-# ##                    print(s1, s2, "max", np.max(np.abs(beta_matr)))
-# #                    py_var[i, comp] += desc[i, comp, s1].dot(desc[i, comp, s2].dot(beta_matr))
-# ##                    py_var[i, comp] += np.sum(desc[i, comp, s1]) #np.sum(beta_matr[:, comp]) #np.sum(desc[i, comp, s1])
-#     print(py_var)
-#     os.system("rm -r tmp* *.txt lmp.flare *.json")
-
-#     #for i in range(4):
-#     #    print([sgp_py.sparse_gp.varmap_coeffs[0, n_descriptors * i + j] for j in range(3)])
-#     #for i in range(3):
-#     #    print(np.sum(test_cpp_struc_pow1.descriptors[0].descriptors[0][:, i] / test_cpp_struc_pow1.descriptors[0].descriptor_norms[0], axis=0))
+    # Check that they're the same.
+    max_abs_diff = np.max(np.abs(forces - forces_2))
+    assert max_abs_diff < 1e-8
