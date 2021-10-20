@@ -57,6 +57,7 @@ jobs:
 
         cmake ..
         cmake --build . -j
+        cp _C_flare* ../flare_pp
         cd ctests
         ./tests
     
