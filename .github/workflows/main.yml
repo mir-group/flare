@@ -57,14 +57,14 @@ jobs:
 
         cmake ..
         cmake --build . -j
-        cd tests
+        cd ctests
         ./tests
     
     - name: Pip install
       run: |
         pip install codecov pytest pytest-cov pytest_mock
         pip install -r requirements.txt
-        cd pytests
+        cd tests
         pytest
 
     - name: Install Sphinx and Breathe
