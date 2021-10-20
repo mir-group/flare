@@ -133,7 +133,10 @@ class SGP_Calculator(Calculator):
     @staticmethod
     def from_file(name):
         with open(name, "r") as f:
-            calc = SGP_Calculator.from_dict(json.loads(f.readline()))
+            gp_dict = json.loads(f.readline())
+        sgp, _ = SGP_Wrapper.from_dict(gp_dict["gp_model"])
+        calc = SGP_Calculator(sgp)
+
         return calc
 
 

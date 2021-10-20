@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import os
 from copy import deepcopy
+import json
 
 from flare_pp._C_flare import SparseGP, NormalizedDotProduct, B2, Structure
 from flare_pp.sparse_gp import SGP_Wrapper
@@ -129,22 +130,26 @@ def test_write_model(sgp_calc, training_structure, test_structure):
     # Predict on training structure.
     training_structure.calc = sgp_calc
     forces = training_structure.get_forces()
-    # print(sgp_calc.gp_model.sparse_gp.training_structures[0].species)
+    print(forces)
 
     # Write the SGP to JSON.
     sgp_name = "sgp_calc.json"
     sgp_calc.write_model(sgp_name)
 
+    # Odd Pybind-related bug here that seems to be caused by kernel pointers.
+    # Possibly related to: https://stackoverflow.com/questions/49633990/polymorphism-and-pybind11
+
     # Load the SGP.
-    sgp_calc_2 = SGP_Calculator.from_file(sgp_name)
-    print(sgp_calc_2.gp_model.sparse_gp.kernels)
-    # print(sgp_calc_2.gp_model.sparse_gp.training_structures[0].species)
+    with open(sgp_name, "r") as f:
+        gp_dict = json.loads(f.readline())
+    sgp, _ = SGP_Wrapper.from_dict(gp_dict["gp_model"])
+    sgp_calc_2 = SGP_Calculator(sgp)
 
-    # Predict on training structure.
-    test_structure.calc = sgp_calc_2
-    # forces_2 = test_structure.get_forces()
-    # print(forces_2)
+    # sgp_calc_2 = SGP_Calculator.from_file(sgp_name)
 
-    # Check that the forces match.
+    training_structure.calc = sgp_calc_2
+    forces_2 = training_structure.get_forces()
+    print(forces_2)
 
+    os.remove(sgp_name)
     assert 1 == 1

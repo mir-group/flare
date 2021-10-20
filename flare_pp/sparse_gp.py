@@ -200,15 +200,17 @@ class SGP_Wrapper:
         """
         Need an initialized GP
         """
-        # recover kernels from checkpoint
+        # Recover kernel from checkpoint.
         kernel_list = in_dict["kernels"]
-        kernels = []
-        for k, kern in enumerate(kernel_list):
-            if kern[0] != "NormalizedDotProduct":
-                raise NotImplementedError
-            assert kern[1] == in_dict["hyps"][k]
-            kernels.append(NormalizedDotProduct(float(kern[1]), int(kern[2])))
-        # recover descriptors from checkpoint
+        assert len(kernel_list) == 1
+        kernel_hyps = kernel_list[0]
+        assert kernel_hyps[0] == "NormalizedDotProduct"
+        sigma = float(kernel_hyps[1])
+        power = int(kernel_hyps[2])
+        kernel = NormalizedDotProduct(sigma, power)
+        kernels = [kernel]
+
+        # Recover descriptor from checkpoint.
         desc_calc = in_dict["descriptor_calculators"]
         assert len(desc_calc) == 1
         b2_dict = desc_calc[0]
@@ -229,7 +231,7 @@ class SGP_Wrapper:
         species_map = {int(k): v for k, v in in_dict["species_map"].items()}
 
         gp = SGP_Wrapper(
-            kernels=kernels,
+            kernels=[kernel],
             descriptor_calculators=[calc],
             cutoff=in_dict["cutoff"],
             sigma_e=in_dict["hyps"][-3],
