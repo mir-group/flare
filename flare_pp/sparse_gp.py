@@ -207,8 +207,7 @@ class SGP_Wrapper:
             if kern[0] != "NormalizedDotProduct":
                 raise NotImplementedError
             assert kern[1] == in_dict["hyps"][k]
-            kernels.append(NormalizedDotProduct(kern[1], kern[2]))
-
+            kernels.append(NormalizedDotProduct(float(kern[1]), int(kern[2])))
         # recover descriptors from checkpoint
         desc_calc = in_dict["descriptor_calculators"]
         assert len(desc_calc) == 1
@@ -415,12 +414,12 @@ class SGP_Wrapper:
             for s in range(n_add):
                 custom_range = self.sparse_gp.sparse_indices[0][s + n_sgp_var]
                 struc_cpp = self.training_data[s + n_sgp_var]
-    
+
                 if len(struc_cpp.energy) > 0:
                     energy = struc_cpp.energy[0]
                 else:
                     energy = None
-    
+
                 self.update_db(
                     struc_cpp,
                     struc_cpp.forces,
@@ -431,9 +430,9 @@ class SGP_Wrapper:
                     sgp=self.sgp_var,
                     update_qr=False,
                 )
-    
+
             self.sgp_var.update_matrices_QR()
-      
+
         if not is_same_hyps:
             print("Hyps not match, set hyperparameters")
             self.sgp_var.set_hyperparameters(self.sparse_gp.hyperparameters)
@@ -441,9 +440,9 @@ class SGP_Wrapper:
 
         new_kernels = self.sgp_var.kernels
         print("Map with current sgp_var")
-       
+
         self.sgp_var.write_varmap_coefficients(filename, contributor, kernel_idx)
-        
+
         return new_kernels
 
     def duplicate(self, new_hyps=None, new_kernels=None, new_powers=None):
