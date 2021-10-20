@@ -3,7 +3,6 @@ scipy
 memory_profiler
 numba
 ase
-pymatgen
 nptyping
 nbsphinx
 IPython
