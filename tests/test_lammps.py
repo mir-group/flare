@@ -4,7 +4,7 @@ from flare.lammps import lammps_calculator
 from flare.struc import Structure
 import os
 
-from get_sgp import get_updated_sgp, get_random_atoms
+from .get_sgp import get_updated_sgp, get_random_atoms
 
 
 def test_write_potential():
