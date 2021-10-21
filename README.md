@@ -1,4 +1,4 @@
-![build](https://github.com/mir-group/flare_pp/actions/workflows/main.yml/badge.svg)
+[![Build Status](https://github.com/mir-group/flare_pp/actions/workflows/main.yml/badge.svg)](https://github.com/mir-group/flare_pp/actions)
 
 # flare++
 Documentation can be accessed [here](https://mir-group.github.io/flare_pp/). An introductory tutorial in Google Colab is available [here](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv).
