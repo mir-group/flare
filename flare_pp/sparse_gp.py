@@ -501,7 +501,8 @@ class SGP_Wrapper:
         return new_gp, kernels
 
 
-def compute_negative_likelihood(hyperparameters, sparse_gp):
+def compute_negative_likelihood(hyperparameters, sparse_gp,
+                                print_vals=False):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
 
@@ -511,23 +512,27 @@ def compute_negative_likelihood(hyperparameters, sparse_gp):
     sparse_gp.compute_likelihood()
     negative_likelihood = -sparse_gp.log_marginal_likelihood
 
-    print_hyps(hyperparameters, negative_likelihood)
+    if print_vals:
+        print_hyps(hyperparameters, negative_likelihood)
 
     return negative_likelihood
 
 
-def compute_negative_likelihood_grad(hyperparameters, sparse_gp):
+def compute_negative_likelihood_grad(hyperparameters, sparse_gp,
+                                     print_vals=False):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
 
     assert len(hyperparameters) == len(sparse_gp.hyperparameters)
 
-    negative_likelihood = -sparse_gp.compute_likelihood_gradient(hyperparameters)
+    negative_likelihood = \
+        -sparse_gp.compute_likelihood_gradient(hyperparameters)
     negative_likelihood_gradient = -sparse_gp.likelihood_gradient
 
-    print_hyps_and_grad(
-        hyperparameters, negative_likelihood_gradient, negative_likelihood
-    )
+    if print_vals:
+        print_hyps_and_grad(
+            hyperparameters, negative_likelihood_gradient, negative_likelihood
+            )
 
     return negative_likelihood, negative_likelihood_gradient
 
@@ -552,7 +557,7 @@ def print_hyps_and_grad(hyperparameters, neglike_grad, neglike):
 
 def optimize_hyperparameters(
     sparse_gp,
-    display_results=True,
+    display_results=False,
     gradient_tolerance=1e-4,
     max_iterations=10,
     bounds=None,
