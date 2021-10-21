@@ -61,7 +61,7 @@ jobs:
 
     - name: Build
       run: |
-        sudo apt install liblapacke liblapacke-dev
+        sudo apt install liblapacke liblapacke-dev libeigen3-dev
         mkdir ${BUILD_DIR}
         cd ${BUILD_DIR}
 
@@ -94,7 +94,6 @@ jobs:
         cp src/flare_pp/y_grad.* lammps/src
         cp src/flare_pp/radial.* lammps/src
         cp src/flare_pp/cutoffs.* lammps/src
-        cp -r ${BUILD_DIR}/External/Eigen3/Eigen lammps/src
         cd lammps/src
         
         make serial CCFLAGS='-std=c++11'
