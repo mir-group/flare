@@ -94,7 +94,7 @@ jobs:
         cp src/flare_pp/y_grad.* lammps/src
         cp src/flare_pp/radial.* lammps/src
         cp src/flare_pp/cutoffs.* lammps/src
-        cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
+        sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
         cd lammps/src
         
         make serial CCFLAGS='-std=c++11'
