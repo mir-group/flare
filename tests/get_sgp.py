@@ -19,7 +19,7 @@ cutoff_function = "quadratic"
 radial_basis = "chebyshev"
 radial_hyps = [0.0, cutoff]
 cutoff_hyps = []
-descriptor_settings = [3, 8, 3]
+descriptor_settings = [2, 8, 3]
 b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
              descriptor_settings)
 
