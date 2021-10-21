@@ -59,20 +59,9 @@ jobs:
         # Change the directory if changes in Doxyfile
         publish_dir: ./docs/_build/html
 
-    - name: Install dependencies
-      run: |
-        sudo apt install liblapacke liblapacke-dev
-        git clone --depth 1 -b stable_29Oct2020 https://github.com/lammps/lammps.git lammps
-        cp lammps_plugins/pair_flare.* lammps/src
-        cp lammps_plugins/lammps_descriptor.* lammps/src
-        cp src/flare_pp/y_grad.* lammps/src
-        cp src/flare_pp/radial.* lammps/src
-        cp src/flare_pp/cutoffs.* lammps/src
-        cd lammps/src
-        make serial CCFLAGS='-std=c++11'
-
     - name: Build
       run: |
+        sudo apt install liblapacke liblapacke-dev
         mkdir ${BUILD_DIR}
         cd ${BUILD_DIR}
 
@@ -97,6 +86,19 @@ jobs:
         cd ctests
         ./tests
     
+    - name: Install LAMMPS
+      run: |
+        git clone --depth 1 -b stable_29Sep2021 https://github.com/lammps/lammps.git lammps
+        cp lammps_plugins/pair_flare.* lammps/src
+        cp lammps_plugins/lammps_descriptor.* lammps/src
+        cp src/flare_pp/y_grad.* lammps/src
+        cp src/flare_pp/radial.* lammps/src
+        cp src/flare_pp/cutoffs.* lammps/src
+        cp -r ${BUILD_DIR}/External/Eigen3/Eigen lammps/src
+        cd lammps/src
+        
+        make serial CCFLAGS='-std=c++11'
+
     - name: Pip install
       run: |
         pip install codecov pytest pytest-cov pytest_mock
