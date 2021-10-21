@@ -4,6 +4,7 @@ import numpy as np
 from flare.otf_parser import OtfAnalysis
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
+from ase.io import read
 
 
 def test_parse_header():
@@ -116,4 +117,14 @@ def test_replicate_gp():
         pred_for, pred_stds = predict_on_structure(structure, gp_model)
         assert np.isclose(structure.forces, pred_for, atol=1e-6).all()
         assert np.isclose(structure.stds, pred_stds, atol=1e-6).all()
-    os.system("rm sample_slab_otf.out")
+    os.system("rm sample_h2_otf.out")
+
+
+def test_otf2xyz():
+    xyz_file = "h2.xyz"
+    parsed = OtfAnalysis("test_files/sample_h2_otf.out", calculate_energy=True)
+    parsed.to_xyz(xyz_file)
+    xyz_trj = read(xyz_file, index=":")
+    assert np.allclose(xyz_trj[-1].positions[0, 0], 2.2794)
+    assert np.allclose(xyz_trj[-2].get_forces()[-1, 2], 0.0000)
+    os.system("rm h2.xyz")

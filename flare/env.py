@@ -174,7 +174,7 @@ class AtomicEnvironment:
 
         self.nspecie = cutoffs_mask.get("nspecie", 1)
         if "species_mask" in cutoffs_mask:
-            self.species_mask = np.array(cutoffs_mask["species_mask"], dtype=np.int)
+            self.species_mask = np.array(cutoffs_mask["species_mask"], dtype=int)
 
         for kernel in AtomicEnvironment.all_kernel_types:
             ndim = AtomicEnvironment.ndim[kernel]

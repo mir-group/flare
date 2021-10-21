@@ -144,7 +144,7 @@ def test_struc_from_ase():
     )
 
     calculator = SinglePointCalculator(uc, **results)
-    uc.set_calculator(calculator)
+    uc.calc = calculator
 
     new_struc = Structure.from_ase_atoms(uc)
 

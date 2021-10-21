@@ -106,7 +106,7 @@ class ASE_OTF(OTF):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
         if calculator is not None:
-            self.atoms.set_calculator(calculator)
+            self.atoms.calc = calculator
         self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
@@ -331,6 +331,7 @@ class ASE_OTF(OTF):
         new_otf = ASE_OTF(**dct)
         new_otf.dft_count = dct["dft_count"]
         new_otf.curr_step = dct["curr_step"]
+        new_otf.std_tolerance = dct["std_tolerance"]
 
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:

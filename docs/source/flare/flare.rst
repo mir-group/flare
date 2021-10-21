@@ -6,6 +6,7 @@ Code Documentation
 
    gp
    otf
+   otf_parser
    mgp/mgp
    ase/ase
    gp_from_aimd

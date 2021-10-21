@@ -1128,7 +1128,7 @@ def parse_trajectory_trainer_output(
     # to study GP growth and performance over trajectory
 
     gp_stats_line = [
-        line for line in lines[:30] if "GP Statistics" in line and "Pre-run" not in line
+        line for line in lines[:35] if "GP Statistics" in line and "Pre-run" not in line
     ][0][15:].strip()
 
     initial_gp_statistics = json.loads(gp_stats_line)

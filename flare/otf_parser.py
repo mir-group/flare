@@ -8,6 +8,15 @@ from flare.gp import GaussianProcess
 
 
 class OtfAnalysis:
+    """
+    Parse the OTF log file to get trajectory, training data, 
+    thermostat, and build GP model.
+
+    Args:
+        filename (str): name of the OTF log file.
+        calculate_energy (bool): if the potential energy is computed and
+            needs to be parsed, then set to True. Default False.
+    """
     def __init__(self, filename, calculate_energy=False):
         self.filename = filename
 
@@ -52,7 +61,7 @@ class OtfAnalysis:
         self.parse_pos_otf(blocks[1:])
 
         if self.calculate_energy:
-            self.energies = energies
+            self.energies = self.thermostat["potential energy"]
 
     def make_gp(
         self,
@@ -63,7 +72,32 @@ class OtfAnalysis:
         hyp_no=None,
         **kwargs,
     ):
+        """
+        Build GP model from the training frames parsed from the log file.
+        The cell, hyps and gp can be reset with customized values. 
 
+        Args:
+            cell (np.ndarray): Default None to use the cell from the log file.
+                A customized cell can be input as a 3x3 numpy array.
+            call_no (int): Default None to use all the DFT frames as training
+                data for building GP. If not None, then the frames 0 to `call_no`
+                will be added to GP.
+            hyps (np.ndarray): Default None to use the hyperparameters from the
+                log file. Customized hyps can be input as an array.
+            init_gp (GaussianProcess): Default to None to use no initial settings
+                or training data. an initial GP can be used, and then the 
+                frames parsed in the log file will add to the initial GP. Then the 
+                final GP uses the hyps and kernels of `init_gp`, and consists of 
+                training data from `init_gp` and the data from the log file.
+                **NOTE**: if a log file from restarted OTF is parsed, then an initial
+                GP needs to be parsed from the prior log file as the `init_gp` of the
+                restarted log file.
+            hyp_no (int): Default None to use the final optimized hyperparameters to
+                build GP. If not None, then use the hyps from the `hyp_no`th 
+                optimization step.
+            kwargs: if a new GP setting is needed without inputing `init_gp`, the GP
+                initial args can be input as kwargs.
+        """
         if "restart" in self.header and self.header["restart"] > 0:
             assert (
                 init_gp is not None
@@ -200,20 +234,44 @@ class OtfAnalysis:
         :return:
         """
 
-        positions = self.position_list
         structures = []
         cell = self.header["cell"]
         species = self.header["species"]
-        forces = self.force_list
-        stds = self.uncertainty_list
-        for i in range(len(positions)):
+        for i in range(len(self.position_list)):
+            if not self.calculate_energy:
+                energy = 0
+            else:
+                energy = self.energies[i]
+ 
             cur_struc = struc.Structure(
-                cell=cell, species=species, positions=positions[i]
+                cell=cell, 
+                species=species, 
+                positions=self.position_list[i],
+                forces=self.force_list[i],
+                stds=self.uncertainty_list[i],
             )
-            cur_struc.forces = forces[i]
-            cur_struc.stds = stds[i]
+            cur_struc.energy = energy
+            #cur_struc.stress = self.stress_list[i]
             structures.append(cur_struc)
         return structures
+
+
+    def to_xyz(self, xyz_file):
+        """
+        Convert OTF trajectory from log file to .xyz file.
+        Args:
+            xyz_file (str): the file name of the .xyz file to output
+
+        Return:
+            A list of `ASE Atoms` objects. 
+        """
+        from ase.io import write
+        struc_trj = self.output_md_structures()
+        trj = []
+        for s in struc_trj:
+            trj.append(s.to_ase_atoms())
+        write(xyz_file, trj, format="extxyz")
+        return trj
 
 
 def split_blocks(filename):
@@ -267,10 +325,12 @@ def parse_header_information(lines) -> dict:
             assert "hyperparameter" in new_line.lower()
 
             hyps_array = new_line[new_line.find(":") + 1 :].split()
-            if len(hyps_array) < n_hyps:
-                next_new_line = lines[i + 2].replace("[", "")
+            extra_line = 2
+            while len(hyps_array) < n_hyps:
+                next_new_line = lines[i + extra_line].replace("[", "")
                 next_new_line = next_new_line.replace("]", "")
                 hyps_array += next_new_line.split()
+                extra_line += 1
             assert len(hyps_array) == n_hyps
 
             hyps_array = [float(h.strip()) for h in hyps_array]
@@ -444,7 +504,7 @@ def extract_global_info(
             cell_list.append(vectors)
         if "Stress" in line:
             vectors = []
-            stress_line = block[ind + 2].split()
+            stress_line = block[ind + 2].replace('-',' -').split()
             vectors = [float(s) for s in stress_line]
             stress_list.append(vectors)
 
@@ -459,9 +519,13 @@ def extract_global_info(
 
 
 def get_thermostat(thermostat, kw, line):
+    kw = kw.lower()
+    line = line.lower()
     if kw in line:
-        value = float(line.split()[-1])
-        kw = kw.lower()
+        try:
+            value = float(line.split()[-2]) # old style
+        except:
+            value = float(line.split()[-1]) # new style
         if kw in thermostat:
             thermostat[kw].append(value)
         else:

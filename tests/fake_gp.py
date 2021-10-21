@@ -187,7 +187,7 @@ def generate_mb_twin_envs(cutoffs, cell, delt, d1, mask=None):
     )
     positions0[1:] += 0.1 * np.random.random([4, 3])
 
-    species_1 = np.array([1, 2, 1, 1, 1], dtype=np.int)
+    species_1 = np.array([1, 2, 1, 1, 1], dtype=int)
     env1 = generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
     positions1 = positions0[[0, 2, 3, 4]]

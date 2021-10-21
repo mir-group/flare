@@ -192,7 +192,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     Stationary(super_cell)  # zero linear momentum
     ZeroRotation(super_cell)  # zero angular momentum
 
-    super_cell.set_calculator(flare_calculator)
+    super_cell.calc = flare_calculator
     test_otf = ASE_OTF(
         super_cell,
         timestep=1 * units.fs,
