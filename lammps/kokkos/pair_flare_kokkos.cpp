@@ -658,6 +658,7 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
     }
   }
   Kokkos::deep_copy(beta, beta_h);
+  beta_matrices.clear();
 
   if(n_descriptors > 1250){
     B2_scratch_level = 1;
