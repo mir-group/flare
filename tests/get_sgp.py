@@ -45,7 +45,8 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
 
     cell = np.eye(3) * a
     positions = np.array([[0, 0, 0], [a/2, a/2, a/2]])
-    unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers)
+    unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers,
+                      pbc=True)
     multiplier = np.identity(3) * sc_size
     atoms = make_supercell(unit_cell, multiplier)
     atoms.positions += (2 * np.random.rand(len(atoms), 3) - 1) * 0.1
