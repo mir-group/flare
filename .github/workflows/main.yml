@@ -102,6 +102,6 @@ jobs:
       run: |
         pip install codecov pytest pytest-cov pytest_mock
         pip install -r requirements.txt
-        lmp=$(pwd)/lammps/src/lmp_serial
+        export lmp=$(pwd)/lammps/src/lmp_serial
         cd tests
         pytest
