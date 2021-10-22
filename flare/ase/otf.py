@@ -291,9 +291,22 @@ class ASE_OTF(OTF):
         md = self.md
         self.md = None
 
+        # SGP models aren't picklable. Temporarily set to None before copying.
+        flare_calc = self.flare_calc
+        gp = self.gp
+        self.flare_calc = None
+        self.gp = None
+        self.atoms.calc = None
+
+        # Deepcopy OTF object.
         dct = deepcopy(dict(vars(self)))
+
+        # Reset attributes.
         self.dft_module = eval(self.dft_module)
         self.md = md
+        self.flare_calc = flare_calc
+        self.gp = gp
+        self.atoms.calc = flare_calc
 
         # write atoms and flare calculator to separate files
         write(self.atoms_name, self.atoms)
