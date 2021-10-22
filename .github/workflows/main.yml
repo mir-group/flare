@@ -97,11 +97,11 @@ jobs:
         sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
         cd lammps/src
         make serial CCFLAGS='-std=c++11'
-        lmp=$(pwd)/lmp_serial
 
     - name: Pip install
       run: |
         pip install codecov pytest pytest-cov pytest_mock
         pip install -r requirements.txt
+        lmp=$(pwd)/lammps/src/lmp_serial
         cd tests
         pytest
