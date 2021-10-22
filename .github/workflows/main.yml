@@ -37,7 +37,7 @@ jobs:
     - name: Build
       run: |
         cd tests
-        PWSCF_COMMAND=pw.x
-        lmp=$(pwd)/../lammps/src/lmp_serial
-        CP2K_COMMAND=../cp2k-7.1-Linux-x86_64.sopt
+        export PWSCF_COMMAND=pw.x
+        export lmp=$(pwd)/../lammps/src/lmp_serial
+        export CP2K_COMMAND=../cp2k-7.1-Linux-x86_64.sopt
         pytest
