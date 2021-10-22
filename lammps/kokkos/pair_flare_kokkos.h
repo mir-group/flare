@@ -132,6 +132,8 @@ class PairFLAREKokkos : public PairFLARE {
   gYView4DRA g_ra, Y_ra;
   View5D single_bond_grad;
 
+  int B2_scratch_level = 0;
+
   typename AT::t_int_1d_randomread d_type2frho;
   typename AT::t_int_2d_randomread d_type2rhor;
   typename AT::t_int_2d_randomread d_type2z2r;

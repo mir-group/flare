@@ -262,7 +262,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       int B2_size = ScratchView1D::shmem_size(n_descriptors);
       Kokkos::parallel_for("FLARE: beta*B2",
           Kokkos::TeamPolicy<DeviceType, TagBetaB2>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
-            0, Kokkos::PerTeam(B2_size)
+            B2_scratch_level, Kokkos::PerTeam(B2_size)
           ),
           *this
       );
@@ -367,8 +367,8 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
 
   const int jnum = d_numneigh_short[i];
 
-  ScratchView2D gscratch(team_member.thread_scratch(0), n_max, 4);
-  ScratchView2D Yscratch(team_member.thread_scratch(0), n_harmonics, 4);
+  ScratchView2D gscratch(team_member.thread_scratch(0), 4, n_max);
+  ScratchView2D Yscratch(team_member.thread_scratch(0), 4, n_harmonics);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int jj){
 
@@ -378,14 +378,18 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
 
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
-          int n = nc / 4;
-          int c = nc - 4*n;
-          gscratch(n, c) = g(ii, jj, n, c);
+          //int n = nc / 4;
+          //int c = nc -4*n;
+          int c = nc / n_max;
+          int n = nc - c*n_max;
+          gscratch(c, n) = g_ra(ii, jj, n, c);
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
-          int lm = lmc / 4;
-          int c = lmc - 4*lm;
-          Yscratch(lm, c) = Y(ii, jj, lm, c);
+          //int lm = lmc / 4;
+          //int c = lmc - 4 * lm;
+          int c = lmc / n_harmonics;
+          int lm = lmc - c*n_harmonics;
+          Yscratch(c, lm) = Y_ra(ii, jj, lm, c);
       });
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&] (int nlm){
@@ -393,16 +397,16 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
           int lm = nlm - n_harmonics*n;
 
           int radial_index = s*n_max + n;
-          double g_val = gscratch(n,0);
-          double gx_val = gscratch(n,1);
-          double gy_val = gscratch(n,2);
-          double gz_val = gscratch(n,3);
+          double g_val = gscratch(0,n);
+          double gx_val = gscratch(1,n);
+          double gy_val = gscratch(2,n);
+          double gz_val = gscratch(3,n);
 
 
-          double h_val = Yscratch(lm,0);
-          double hx_val = Yscratch(lm,1);
-          double hy_val = Yscratch(lm,2);
-          double hz_val = Yscratch(lm,3);
+          double h_val = Yscratch(0,lm);
+          double hx_val = Yscratch(1,lm);
+          double hy_val = Yscratch(2,lm);
+          double hz_val = Yscratch(3,lm);
 
           double bond = g_val * h_val;
           double bond_x = gx_val * h_val + g_val * hx_val;
@@ -444,7 +448,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_me
 
   const int itype = type[i] - 1;
 
-  ScratchView1D B2scratch(team_member.team_scratch(0), n_descriptors);
+  ScratchView1D B2scratch(team_member.team_scratch(B2_scratch_level), n_descriptors);
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
       B2scratch(nnl) = B2(ii, nnl);
   });
@@ -654,6 +658,10 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
     }
   }
   Kokkos::deep_copy(beta, beta_h);
+
+  if(n_descriptors > 1250){
+    B2_scratch_level = 1;
+  }
 }
 
 /* ----------------------------------------------------------------------
