@@ -3,7 +3,7 @@ scipy
 memory_profiler
 numba
 ase
-pymatgen
+pymatgen<2021
 nptyping
 nbsphinx
 IPython
