@@ -227,6 +227,7 @@ class ASE_OTF(OTF):
             # Reset thermostat parameters.
             if self.md_engine in ["NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]:
                 self.md.set_temperature(temperature_K=new_temp)
+                self.md_kwargs["temperature"] = new_temp * units.kB
 
     def update_temperature(self):
         self.KE = self.atoms.get_kinetic_energy()
