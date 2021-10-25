@@ -32,4 +32,4 @@ dump_modify 1 sort id
 thermo 1
 thermo_style custom step temp pe etotal press pxx pyy pzz pxy pxz pyz
 
-run		0
+run		10

@@ -259,10 +259,11 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       );
 
     // compute beta*B2
-      int B2_size = ScratchView1D::shmem_size(n_descriptors);
+      B2_chunk_size = std::min(1000, n_descriptors);
+      int B2_size = ScratchView1D::shmem_size(B2_chunk_size);
       Kokkos::parallel_for("FLARE: beta*B2",
           Kokkos::TeamPolicy<DeviceType, TagBetaB2>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
-            B2_scratch_level, Kokkos::PerTeam(B2_size)
+            0, Kokkos::PerTeam(B2_size)
           ),
           *this
       );
@@ -448,20 +449,37 @@ void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_me
 
   const int itype = type[i] - 1;
 
-  ScratchView1D B2scratch(team_member.team_scratch(B2_scratch_level), n_descriptors);
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
-      B2scratch(nnl) = B2(ii, nnl);
-  });
-  team_member.team_barrier();
+  ScratchView1D B2scratch(team_member.team_scratch(0), B2_chunk_size);
 
-  // TODO: team-wise GEMV?
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int &x){
-      F_FLOAT tmp = 0.0;
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_descriptors), [&](int &y, F_FLOAT &tmp){
-          tmp += beta(itype, x, y)*B2scratch(y);
-      }, tmp);
-      beta_B2(ii, x) = tmp;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
+      beta_B2(ii,nnl) = 0.0;
   });
+
+  // do mat-vec product in chunks to enable level 0 scratch
+  // even when descriptors are too big
+  for(int starti = 0; starti < n_descriptors; starti += B2_chunk_size){
+    int stopi = starti + B2_chunk_size;
+    stopi = n_descriptors < stopi ? n_descriptors : stopi;
+//        Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
+//            if(ii==0) printf("%d %d %d\n", n_descriptors, starti, stopi);
+//        });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, stopi - starti), [&] (int nnl){
+        B2scratch(nnl) = B2(ii, nnl + starti);
+    });
+    team_member.team_barrier();
+
+    // TODO: team-wise GEMV?
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int x){
+        F_FLOAT tmp = 0.0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, stopi - starti), [&](int y, F_FLOAT &tmp){
+            tmp += beta(itype, x, y+starti)*B2scratch(y);
+        }, tmp);
+        Kokkos::single(Kokkos::PerThread(team_member), [&] () {
+            beta_B2(ii, x) += tmp;
+        });
+    });
+    team_member.team_barrier();
+  }
 }
 
 template <class DeviceType>
@@ -659,10 +677,6 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   }
   Kokkos::deep_copy(beta, beta_h);
   beta_matrices.clear();
-
-  if(n_descriptors > 1250){
-    B2_scratch_level = 1;
-  }
 }
 
 /* ----------------------------------------------------------------------
