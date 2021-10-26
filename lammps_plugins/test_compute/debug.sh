@@ -11,13 +11,14 @@ mv si.dump si_fasit.dump
 # (MPI reorders atoms, diff doesn't work)
 function checkdump {
     awk '{
-    if (NR>9){
+    if (NF==15){
         pattern = $2;
         for(i = 3; i <= NF; i++){
             pattern = (pattern " " $i);
         }
         grepcmd = "grep -q \"" pattern"\" si_fasit.dump";
         ret = system(grepcmd);
+        #print pattern;
         if (ret > 0) {
             exit 1;
         }
@@ -25,7 +26,7 @@ function checkdump {
     }' si.dump
 }
 
-for neigh in full half
+for neigh in full
 do
     for mpi in 1 2
     do

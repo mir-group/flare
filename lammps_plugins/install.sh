@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e -x
+set -e
 
 if [ "$#" -ne 1 ]; then
     echo "Give the path to lammps as a command-line argument!"
