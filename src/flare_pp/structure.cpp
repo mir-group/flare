@@ -1,5 +1,4 @@
 #include "structure.h"
-#include "omp.h"
 #include <fstream> // File operations
 #include <iostream>
 

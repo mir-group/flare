@@ -5,42 +5,35 @@ name: build
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on:
-  push:
-    branches: [ master ]
-
+on: [push, pull_request]
 
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
+    strategy:
+      matrix:
+        omp: [OFF, ON]
+        lapack: [OFF, ON]
+    name: "(OpenMP, Lapack) ="
+
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+
+    env:
+      BUILD_DIR: build_${{ matrix.omp }}_${{ matrix.lapack }}
+      CC: gcc-9
+      CXX: g++-9
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    
-    - name: Install dependencies
-      run: |
-        sudo apt install gcc-9 g++-9 liblapacke liblapacke-dev
- 
-    - name: Build
-      env:
-        CC: gcc-9
-        CXX: g++-9
-      run: |
-        mkdir build
-        cd build
-        cmake ..
-        cmake --build . -j
-        cd tests
-        ./tests
 
     - name: Install Sphinx and Breathe
       run: |
+        sudo apt-get update
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe
 
     - name: Run Doxygen
@@ -65,3 +58,50 @@ jobs:
         # Default Doxyfile build documentation to html directory. 
         # Change the directory if changes in Doxyfile
         publish_dir: ./docs/_build/html
+
+    - name: Build
+      run: |
+        sudo apt install liblapacke liblapacke-dev
+        mkdir ${BUILD_DIR}
+        cd ${BUILD_DIR}
+
+        if [ "${{ matrix.omp }}" = "ON" ]; then
+          unset NO_OMP
+        else
+          export NO_OMP=1
+        fi
+
+        if [ "${{ matrix.lapack }}" = "ON" ]; then
+          unset NO_LAPACK
+        else
+          export NO_LAPACK=1
+        fi
+        
+        echo "OpenMP ${{ matrix.omp }}"
+        echo "Lapack ${{ matrix.lapack }}"
+
+        cmake ..
+        cmake --build . -j
+        cp _C_flare* ../flare_pp
+        cd ctests
+        ./tests
+    
+    - name: Install LAMMPS
+      run: |
+        git clone --depth 1 https://github.com/lammps/lammps.git lammps
+        cp lammps_plugins/pair_flare.* lammps/src
+        cp lammps_plugins/lammps_descriptor.* lammps/src
+        cp src/flare_pp/y_grad.* lammps/src
+        cp src/flare_pp/radial.* lammps/src
+        cp src/flare_pp/cutoffs.* lammps/src
+        sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
+        cd lammps/src
+        make -j 2 serial CCFLAGS='-std=c++11'
+
+    - name: Pip install
+      run: |
+        pip install codecov pytest pytest-cov pytest_mock
+        pip install -r requirements.txt
+        export lmp=$(pwd)/lammps/src/lmp_serial
+        cd tests
+        pytest

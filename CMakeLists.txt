@@ -147,7 +147,10 @@ include_directories(
   src/flare_pp/bffs)
 
 # Create flare library.
-add_library(flare SHARED ${FLARE_SOURCES})
+# Should be static to avoid issues with pip installation.
+# See: https://github.com/pybind/cmake_example/issues/11
+add_library(flare STATIC ${FLARE_SOURCES})
+set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_dependencies(flare eigen_project)
 
 # Link to json.
@@ -156,6 +159,9 @@ target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
 # Link to OpenMP.
 if (DEFINED ENV{OMP_LOC})
     target_link_libraries(flare PUBLIC $ENV{OMP_LOC})
+    message(STATUS "Linking to user-specified OpenMP library.")
+elseif(DEFINED ENV{NO_OMP})
+    message(STATUS "Building without OpenMP.")
 else()
     find_package(OpenMP)
     if(OpenMP_CXX_FOUND)
@@ -163,29 +169,27 @@ else()
     endif()
 endif()
 
-# Link to MKL.
-if (DEFINED ENV{MKL_INCLUDE})
-  include_directories($ENV{MKL_INCLUDE})
-endif()
-
-if (DEFINED ENV{MKL_LIBS})
+# Check for user-specified MKL package.
+if (DEFINED ENV{MKL_INCLUDE} AND DEFINED ENV{MKL_LIBS})
   message(STATUS "Linking Eigen to user-specified MKL libraries.")
+  include_directories($ENV{MKL_INCLUDE})
   target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
   target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
+# Give the option to do a "bare-bones" build without Lapack/Lapacke.
+elseif(DEFINED ENV{NO_LAPACK})
+  message(STATUS "Building without Lapack.")
 else()
   find_package(LAPACK REQUIRED)
   target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
-
-  find_package(LAPACKE)
-  if(LAPACKE_FOUND)
-    message("Found LAPACKE.")
-    target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
-  endif()
 
   if (LAPACK_LIBRARIES MATCHES mkl)
     message(STATUS "Linking Eigen to MKL.")
     target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
   else()
+    find_package(LAPACKE)
+    if(LAPACKE_FOUND)
+      target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
+    endif()
     message(STATUS "Linking Eigen to LAPACKE.")
     target_compile_definitions(flare PUBLIC EIGEN_USE_LAPACKE=1)
   endif()
@@ -200,4 +204,4 @@ add_dependencies(flare_module pybind11_project)
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
-add_subdirectory(tests)
+add_subdirectory(ctests)

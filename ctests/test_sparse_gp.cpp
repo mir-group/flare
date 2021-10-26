@@ -1,6 +1,5 @@
 #include "sparse_gp.h"
 #include "test_structure.h"
-#include "omp.h"
 #include <thread>
 #include <chrono>
 #include <numeric> // Iota

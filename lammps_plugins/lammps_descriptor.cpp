@@ -210,7 +210,8 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
                    double &norm_squared, Eigen::VectorXd &B2_env_dot,
                    const Eigen::VectorXd &single_bond_vals,
                    const Eigen::MatrixXd &single_bond_env_dervs, int n_species,
-                   int N, int lmax) {
+                   int N, int lmax, const Eigen::MatrixXd &beta_matrix,
+                   Eigen::VectorXd &u, double *evdwl) {
 
   int env_derv_size = single_bond_env_dervs.rows();
   int neigh_size = env_derv_size / 3;
@@ -241,25 +242,48 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
 
           // Store B2 value.
           B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
-
-
-          // Store environment force derivatives.
-          for (int atom_index = 0; atom_index < neigh_size; atom_index++) {
-            for (int comp = 0; comp < 3; comp++) {
-              B2_env_dervs(atom_index * 3 + comp, counter) +=
-                  single_bond_vals(n1_l) *
-                      single_bond_env_dervs(atom_index * 3 + comp, n2_l) +
-                  single_bond_env_dervs(atom_index * 3 + comp, n1_l) *
-                      single_bond_vals(n2_l);
-            }
-          }
         }
         //printf(" | n1 = %d, n2 = %d, l = %d, B2 = %g |\n", n1, n2, l, B2_vals(counter));
       }
     }
   }
 
-  // Compute descriptor norm and dot products.
+  // Compute w(n1, n2, l), where f_ik = w * dB/dr_ik
   norm_squared = B2_vals.dot(B2_vals);
-  B2_env_dot = B2_env_dervs * B2_vals;
+  Eigen::VectorXd beta_p = beta_matrix * B2_vals;
+  *evdwl = B2_vals.dot(beta_p) / norm_squared;
+  Eigen::VectorXd w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared;
+
+  // Compute u(n1, l, m), where f_ik = u * dA/dr_ik
+  u = Eigen::VectorXd::Zero(single_bond_vals.size());
+  double factor;
+  for (int n1 = n_radial - 1; n1 >= 0; n1--) {
+    for (int n2 = 0; n2 < n_radial; n2++) {
+      if (n1 == n2){
+        n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
+        n2_count = n2 - n1;
+        factor = 1.0;
+      } else if (n1 < n2) {
+        n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
+        n2_count = n2 - n1;
+        factor = 0.5;
+      } else {
+        n1_count = (n2 * (2 * n_radial - n2 + 1)) / 2;
+        n2_count = n1 - n2;
+        factor = 0.5;
+      }
+
+      for (int l = 0; l < (lmax + 1); l++) {
+        counter = l + (n1_count + n2_count) * (lmax + 1);
+
+        for (int m = 0; m < (2 * l + 1); m++) {
+          n1_l = n1 * n_harmonics + (l * l + m);
+          n2_l = n2 * n_harmonics + (l * l + m);
+
+          u(n1_l) += w(counter) * single_bond_vals(n2_l) * factor;
+        }
+      }
+    }
+  }
+  u *= 2;
 }
