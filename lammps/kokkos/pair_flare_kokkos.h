@@ -102,7 +102,7 @@ class PairFLAREKokkos : public PairFLARE {
   DAT::tdual_virial_array k_vatom;
 
   double maxmem = 15.0e9;
-  int batch_size, startatom, n_batches, approx_batch_size;
+  int batch_size = 0, startatom, n_batches, approx_batch_size;
 
 
   using View1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, DeviceType>;
