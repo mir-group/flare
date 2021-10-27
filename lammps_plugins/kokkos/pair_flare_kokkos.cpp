@@ -172,7 +172,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 #ifdef KOKKOS_ENABLE_CUDA
       cudaMemGetInfo(&availmem, &totalmem);
       availmem += batch_size*mem_per_atom;
-      printf("avail: %g, total: %g\n", availmem/1.0e9, totalmem/1.0e9);
+      //printf("avail: %g, total: %g\n", availmem/1.0e9, totalmem/1.0e9);
 #endif
     approx_batch_size = std::min<int>( 0.95*availmem/ mem_per_atom, n_atoms);
 
@@ -181,7 +181,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     n_batches = std::ceil(1.0*n_atoms / approx_batch_size);
     approx_batch_size = n_atoms / n_batches;
 
-    printf("maxmem = %g | betamem = %g | neighmem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
+    //printf("maxmem = %g | betamem = %g | neighmem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
 
   }
   int remainder = n_atoms - n_batches*approx_batch_size;
@@ -227,12 +227,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       Y = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), Ylayout);
       g_ra = g;
       Y_ra = Y;
-
-#ifdef KOKKOS_ENABLE_CUDA
-      size_t availmem, totalmem;
-      cudaMemGetInfo(&availmem, &totalmem);
-      printf("avail: %g, total: %g\n", availmem/1.0e9, totalmem/1.0e9);
-#endif
 
       single_bond_grad = View5D();
       single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), batch_size, max_neighs, 3, n_max, n_harmonics);
