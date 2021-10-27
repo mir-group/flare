@@ -131,14 +131,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   // TODO: check inum/ignum here
   int n_atoms = neighflag == FULL ? inum : inum;
 
-  if ((d_neighbors_short.extent(1) != max_neighs) ||
-     (d_neighbors_short.extent(0) != n_atoms)) {
-    d_neighbors_short = Kokkos::View<int**,DeviceType>("FLARE::neighbors_short",n_atoms,max_neighs);
-  }
-  if (d_numneigh_short.extent(0)!=n_atoms)
-    d_numneigh_short = Kokkos::View<int*,DeviceType>("FLARE::numneighs_short",n_atoms);
-
-  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType>(0,n_atoms), *this);
 
 #ifdef LMP_KOKKOS_GPU
   int vector_length = 32;
@@ -210,6 +202,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       w = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: w"), batch_size, n_descriptors);
       u = View3D();
       u = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: u"), batch_size, n_radial, n_harmonics);
+
+      d_numneigh_short = decltype(d_numneigh_short)();
+      d_numneigh_short = Kokkos::View<int*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::numneighs_short") ,batch_size);
     }
 
     // reallocate per-neighbor views
@@ -232,7 +227,13 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), batch_size, max_neighs, 3, n_max, n_harmonics);
       partial_forces = View3D();
       partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_neighs, 3);
+
+      d_neighbors_short = decltype(d_neighbors_short)();
+      d_neighbors_short = Kokkos::View<int**,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::neighbors_short") ,batch_size,max_neighs);
     }
+
+    // compute short neighbor list
+      Kokkos::parallel_for("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size), *this);
 
     // compute basis functions Rn and Ylm
       Kokkos::parallel_for("FLARE: R and Y",
@@ -345,8 +346,9 @@ KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
 
   const int i = d_ilist[ii+startatom];
-  int j = d_neighbors_short(i,jj);
-  j &= NEIGHMASK;
+  const int j = d_neighbors_short(ii,jj);
+  const int jnum = d_numneigh_short(ii);
+  if(jj >= jnum) return;
 
   const X_FLOAT delx = x(j,0) - x(i,0);
   const X_FLOAT dely = x(j,1) - x(i,1);
@@ -368,16 +370,15 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType team_member) const{
   int ii = team_member.league_rank();
-  const int i = d_ilist[ii+startatom];
 
-  const int jnum = d_numneigh_short[i];
+  const int jnum = d_numneigh_short(ii);
 
   ScratchView2D gscratch(team_member.thread_scratch(0), 4, n_max);
   ScratchView2D Yscratch(team_member.thread_scratch(0), 4, n_harmonics);
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int jj){
 
-      int j = d_neighbors_short(i,jj);
+      int j = d_neighbors_short(ii,jj);
       j &= NEIGHMASK;
       int s = type[j] - 1;
 
@@ -535,7 +536,7 @@ KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member) const{
   int ii = team_member.league_rank();
   const int i = d_ilist[ii+startatom];
-  const int jnum = d_numneigh_short[i];
+  const int jnum = d_numneigh_short(ii);
 
   ScratchView2D uscratch(team_member.team_scratch(0), n_radial, n_harmonics);
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_bond), [&] (int nlm){
@@ -549,7 +550,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
       int jj = k/3;
       int c = k - 3*jj;
 
-      int j = d_neighbors_short(i,jj);
+      int j = d_neighbors_short(ii,jj);
       j &= NEIGHMASK;
       int s = type[j] - 1;
 
@@ -569,7 +570,7 @@ KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_member, EV_FLOAT &ev) const{
   int ii = team_member.league_rank();
   const int i = d_ilist[ii+startatom];
-  const int jnum = d_numneigh_short[i];
+  const int jnum = d_numneigh_short(ii);
   const X_FLOAT xtmp = x(i,0);
   const X_FLOAT ytmp = x(i,1);
   const X_FLOAT ztmp = x(i,2);
@@ -578,8 +579,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
   s_FEV_FLOAT fvsum;
 
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, s_FEV_FLOAT &fvtmp){
-      int j = d_neighbors_short(i,jj);
-      j &= NEIGHMASK;
+      int j = d_neighbors_short(ii,jj);
 
       const F_FLOAT fx = -partial_forces(ii,jj,0);
       const F_FLOAT fy = -partial_forces(ii,jj,1);
@@ -626,7 +626,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
-    const int i = d_ilist[ii];
+    const int i = d_ilist[ii+startatom];
     const X_FLOAT xtmp = x(i,0);
     const X_FLOAT ytmp = x(i,1);
     const X_FLOAT ztmp = x(i,2);
@@ -643,11 +643,11 @@ void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
       const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
 
       if (rsq < cutoff*cutoff) {
-        d_neighbors_short(i,inside) = j;
+        d_neighbors_short(ii,inside) = j;
         inside++;
       }
     }
-    d_numneigh_short(i) = inside;
+    d_numneigh_short(ii) = inside;
 }
 
 
