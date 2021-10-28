@@ -134,10 +134,10 @@ class SGP_Calculator(Calculator):
     def from_file(name):
         with open(name, "r") as f:
             gp_dict = json.loads(f.readline())
-        sgp, _ = SGP_Wrapper.from_dict(gp_dict["gp_model"])
+        sgp, kernels = SGP_Wrapper.from_dict(gp_dict["gp_model"])
         calc = SGP_Calculator(sgp)
 
-        return calc
+        return calc, kernels
 
 
 def sort_variances(structure_descriptor, variances):
