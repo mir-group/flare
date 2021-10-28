@@ -162,23 +162,16 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
           )
         );
     size_t availmem, totalmem;
-    double avail_double = maxmem - beta_mem - neigh_mem - lmp_atom_mem;
+    double avail_double = maxmem - beta_mem;
     availmem = avail_double;
-    printf("estimated avail: %g %ld\n", avail_double, availmem);
-#ifdef KOKKOS_ENABLE_CUDA
-      cudaMemGetInfo(&availmem, &totalmem);
-      printf("avail: %g, total: %g\n", availmem/1.0e9, totalmem/1.0e9);
-      availmem += (batch_size+(batch_size!=0&&n_atoms%batch_size!=0))*mem_per_atom - (batch_size==0)*3*8*ignum;
-      printf("avail: %g, total: %g\n", availmem/1.0e9, totalmem/1.0e9);
-#endif
-    approx_batch_size = std::min<int>( 0.90*availmem/ mem_per_atom, n_atoms);
+    approx_batch_size = std::min<int>(availmem/ mem_per_atom, n_atoms);
 
     if(approx_batch_size < 1) error->all(FLERR,"Not enough memory for even a single atom!");
 
     n_batches = std::ceil(1.0*n_atoms / approx_batch_size);
     approx_batch_size = n_atoms / n_batches;
 
-    printf("maxmem = %g | betamem = %g | neighmem = %g | lmp_atom_mem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, lmp_atom_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
+    //printf("maxmem = %g | betamem = %g | neighmem = %g | lmp_atom_mem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, lmp_atom_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
 
   }
   int remainder = n_atoms - n_batches*approx_batch_size;
