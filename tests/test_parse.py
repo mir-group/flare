@@ -1,9 +1,15 @@
 import numpy as np
-from flare_pp.parsers import parse_otf
+from flare_pp.parsers import parse_otf, parse_outfiles
+from ase.io.vasp import read_vasp_out
 
 
-def test_parse():
-    dft_data, gp_data = parse_otf("test_files/output.out")
+def test_outfile_parser():
+    output_dir = "test_files/output_files/"
+    dft_data = parse_outfiles(output_dir, read_vasp_out)
+
+
+def test_otf_parser():
+    dft_data, gp_data = parse_otf("./test_files/output.out")
 
     assert len(gp_data["positions"]) == 12
     assert len(dft_data["positions"]) == 2

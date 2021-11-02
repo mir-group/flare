@@ -1,5 +1,52 @@
 import numpy as np
 from copy import deepcopy
+import os
+
+
+def parse_outfiles(output_dir, ase_output_reader):
+    "Return data from DFT output files as np arrays."
+
+    # Get list of output files.
+    output_files = os.listdir(output_dir)
+
+    # Remove extraneous files (e.g. .DS_Store on Mac)
+    n_frames = len(output_files)
+    for n in range(n_frames):
+        check_ind = n_frames - 1 - n
+        if output_files[check_ind].startswith("."):
+            output_files.pop(check_ind)
+
+    output_files.sort()
+
+    # Count the number of atoms.
+    traj = list(ase_output_reader(
+        output_dir + output_files[0],
+        index=slice(None))
+        )
+    n_atoms = len(traj[0])
+
+    # Initialize numpy arrays.
+    dft_data = {}
+    dft_data["positions"] = np.zeros((n_frames, n_atoms, 3))
+    dft_data["cells"] = np.zeros((n_frames, 3, 3))
+    dft_data["atomic_numbers"] = np.zeros((n_frames, n_atoms))
+    dft_data["energies"] = np.zeros(n_frames)
+    dft_data["forces"] = np.zeros((n_frames, n_atoms, 3))
+    dft_data["stresses"] = np.zeros((n_frames, 3, 3))
+
+    # Parse with ASE.
+    for n, file_name in enumerate(output_files):
+        current_file = output_dir + file_name
+        traj = list(ase_output_reader(current_file, index=slice(None)))
+
+        dft_data["positions"][n] = traj[0].get_positions()  # Angstrom
+        dft_data["cells"][n] = traj[0].get_cell()  # Angstrom
+        dft_data["atomic_numbers"][n] = traj[0].numbers
+        dft_data["energies"][n] = traj[0].get_potential_energy()  # eV
+        dft_data["forces"][n] = traj[0].get_forces()  # eV/A
+        dft_data["stresses"][n] = -traj[0].get_stress(voigt=False)  # eV/A^3
+
+    return dft_data
 
 
 def parse_otf(filename):
