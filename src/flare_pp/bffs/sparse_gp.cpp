@@ -920,7 +920,7 @@ void SparseGP ::compute_KnK(bool precomputed) {
       for (int j = 0; j < n_kernels; j++) {
         Eigen::VectorXd hyps_j = kernels[j]->kernel_hyperparameters;
         assert(hyps_j.size() == 1);
-        int size_j = Kuu_kernels[i].rows();
+        int size_j = Kuu_kernels[j].rows();
    
         double sig4 = hyps_i(0) * hyps_i(0) * hyps_j(0) * hyps_j(0);
     
@@ -957,7 +957,7 @@ Eigen::MatrixXd SparseGP ::compute_dKnK(int i) {
   for (int j = 0; j < n_kernels; j++) {
     Eigen::VectorXd hyps_j = kernels[j]->kernel_hyperparameters;
     assert(hyps_j.size() == 1);
-    int size_j = Kuu_kernels[i].rows();
+    int size_j = Kuu_kernels[j].rows();
   
     double sig3 = 2 * hyps_i(0) * hyps_j(0) * hyps_j(0);
     double sig3e = sig3 / (energy_noise * energy_noise);
