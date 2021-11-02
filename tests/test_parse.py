@@ -1,9 +1,9 @@
 import numpy as np
-from flare_pp.parsing.simple_parser import simple_parser
+from flare_pp.parsers import parse_otf
 
 
 def test_parse():
-    dft_data, gp_data = simple_parser("test_files/output.out")
+    dft_data, gp_data = parse_otf("test_files/output.out")
 
     assert len(gp_data["positions"]) == 12
     assert len(dft_data["positions"]) == 2

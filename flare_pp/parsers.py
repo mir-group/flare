@@ -2,7 +2,7 @@ import numpy as np
 from copy import deepcopy
 
 
-def simple_parser(filename):
+def parse_otf(filename):
     """Parse an ASE OTF output file."""
 
     # Labels of data to be parsed.
