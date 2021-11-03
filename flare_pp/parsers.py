@@ -127,8 +127,7 @@ def parse_otf(filename):
                 atoms1[n] = at.strip("[").strip("]").strip(",")
             atoms1 = [int(n) for n in atoms1]
 
-            for atom in atoms1:
-                all_data["store_atoms"].append(atom)
+            all_data["store_atoms"].append(atoms1)
             all_data["store_natoms"].append(len(atoms1))
 
         # Record hyperparameters.
