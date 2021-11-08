@@ -14,6 +14,8 @@ This copies the necessary files and slightly updates the LAMMPS CMake file.
 
 3. Compile LAMMPS with CMake as usual. If you're not using Kokkos, the Makefile system might also work.
 
+*Note: The pair style uses the [Eigen](https://gitlab.com/libeigen/eigen) (header-only) library. This needs to be found by the compiler. Specifically, the `Eigen` folder. A simple workaround is usually to just clone the `eigen` repository, and `mv eigen/Eigen /path/to/lammps/src` if it is not easily available on your system.*
+
 ### Compilation for GPU with Kokkos
 Run the above steps, follow [LAMMPS's compilation instructions with Kokkos](https://docs.lammps.org/Build_extras.html#kokkos). Typically
 ```
