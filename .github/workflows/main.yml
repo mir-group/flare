@@ -7,7 +7,7 @@ name: build
 # events but only for the master branch
 on: [push, pull_request]
 
-  
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -55,7 +55,7 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        # Default Doxyfile build documentation to html directory. 
+        # Default Doxyfile build documentation to html directory.
         # Change the directory if changes in Doxyfile
         publish_dir: ./docs/_build/html
 
@@ -76,7 +76,7 @@ jobs:
         else
           export NO_LAPACK=1
         fi
-        
+
         echo "OpenMP ${{ matrix.omp }}"
         echo "Lapack ${{ matrix.lapack }}"
 
@@ -85,23 +85,26 @@ jobs:
         cp _C_flare* ../flare_pp
         cd ctests
         ./tests
-    
+
     - name: Install LAMMPS
       run: |
         git clone --depth 1 https://github.com/lammps/lammps.git lammps
-        cp lammps_plugins/pair_flare.* lammps/src
-        cp lammps_plugins/lammps_descriptor.* lammps/src
-        cp src/flare_pp/y_grad.* lammps/src
-        cp src/flare_pp/radial.* lammps/src
-        cp src/flare_pp/cutoffs.* lammps/src
+        cd lammps_plugins
+        ./install.sh $(pwd)/../lammps
+        cd ..
         sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
-        cd lammps/src
-        make -j 2 serial CCFLAGS='-std=c++11'
+        cd lammps
+        mkdir build
+        cd build
+        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON
+        make -j4
 
     - name: Pip install
       run: |
         pip install codecov pytest pytest-cov pytest_mock
         pip install -r requirements.txt
-        export lmp=$(pwd)/lammps/src/lmp_serial
+        export lmp=$(pwd)/lammps/build/lmp
         cd tests
         pytest
+        export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
+        pytest test_lammps.py
