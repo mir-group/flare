@@ -1,6 +1,7 @@
 # LAMMPS Plugin
 
 ## Compilation
+
 1. Download LAMMPS, e.g.
 ```
 git clone --depth=1 https://github.com/lammps/lammps.git
@@ -10,12 +11,19 @@ git clone --depth=1 https://github.com/lammps/lammps.git
 ./install.sh /path/to/lammps
 ```
 This copies the necessary files and slightly updates the LAMMPS CMake file.
+
 3. Compile LAMMPS with CMake as usual. If you're not using Kokkos, the Makefile system might also work.
 
 ### Compilation for GPU with Kokkos
-Run the above steps, follow [LAMMPS's compilation instructions with Kokkos](https://docs.lammps.org/Build_extras.html#kokkos).
+Run the above steps, follow [LAMMPS's compilation instructions with Kokkos](https://docs.lammps.org/Build_extras.html#kokkos). Typically
+```
+cd lammps
+mkdir build
+cd build
+cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_CUDA=ON [-DKokkos_ARCH_VOLTA70=on if not auto-detected]
+```
 
-If you really, really, really want to use the old Makefile system, it should work to copy the files from `kokkos/` into `/path/to/lammps/src`, do `make yes-kokkos` and otherwise follow the LAMMPS Kokkos instructions.
+If you really, really, really want to use the old Makefile system, you should be able to copy the files from `kokkos/` into `/path/to/lammps/src`, do `make yes-kokkos` and otherwise follow the LAMMPS Kokkos instructions.
 
 ## Basic usage
 Input script:
