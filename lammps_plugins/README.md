@@ -44,3 +44,7 @@ See the [LAMMPS documentation](https://docs.lammps.org/Speed_kokkos.html). In ge
 lmp -k on g 1 -sf kk -pk kokkos newton on neigh full -in in.script
 ```
 When running with MPI, replace `g 1` with the number of GPUs *per node*.
+
+In order to run large systems, the atoms will be divided into batches to reduce memory usage. The batch size is controlled by the `MAXMEM` environment variable (in GB). If necessary, set this to an estimate of how much memory FLARE++ can use (i.e., total GPU memory minus LAMMPS's memory for neighbor lists etc.). If you are memory-limited, you can set `MAXMEM=1` or similar, otherwise leave it to a larger number for more parallelism. The default is 12 GB, which should work for most systems while not affecting performance.
+
+`MAXMEM` is printed at the beginning of the simulation *from every MPI process*, in order to verify that the environment variable has been correctly set *on all nodes*. Look at `mpirun -x` if this is not the case.
