@@ -169,15 +169,22 @@ void ComputeFlareStdAtom::compute_peratom() {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    double sig = hyperparameters[0];
-    double sig2 = sig * sig;
-    double B2_norm = pow(B2_norm_squared, 0.5);
-    Eigen::VectorXd normed_B2 = B2_vals / B2_norm;
-    double K_self = 1.0;
-    Eigen::VectorXd kernel_vec = (normed_sparse_descriptors[0] * normed_B2).array().pow(power);
-    double Q_self = sig2 * kernel_vec.transpose() * L_inv_blocks[0] * kernel_vec;
+    double normed_variance;
+    if (use_map) {
+      compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, n_species,
+           n_max, l_max, beta_matrices[itype - 1], u, &normed_variance);
+    } else {
+      double sig = hyperparameters[0];
+      double sig2 = sig * sig;
+      double B2_norm = pow(B2_norm_squared, 0.5);
+      Eigen::VectorXd normed_B2 = B2_vals / B2_norm;
+      Eigen::VectorXd kernel_vec = (normed_sparse_descriptors[0] * normed_B2).array().pow(power);
 
-    double normed_variance = K_self - Q_self;
+      double K_self = 1.0;
+      double Q_self = sig2 * kernel_vec.transpose() * L_inv_blocks[0] * kernel_vec;
+ 
+      normed_variance = K_self - Q_self;
+    }
 
     // Compute local energy and partial forces.
     stds[i] = pow(abs(normed_variance), 0.5); // the numerator could be negative
