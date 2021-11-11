@@ -125,9 +125,11 @@ void PairFLARE::compute(int eflag, int vflag) {
                                  single_bond_env_dervs, cutoff_matrix);
 
     // Compute invariant descriptors.
-    B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
-                  single_bond_vals, single_bond_env_dervs, n_species, n_max,
-                  l_max, beta_matrices[itype - 1], u, &evdwl);
+    B2_descriptor(B2_vals, B2_norm_squared,
+                  single_bond_vals, n_species, n_max, l_max);
+
+    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, n_species,
+           n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
 
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
