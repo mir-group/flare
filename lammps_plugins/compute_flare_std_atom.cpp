@@ -166,13 +166,21 @@ void ComputeFlareStdAtom::compute_peratom() {
                 single_bond_env_dervs);
 
     // Compute invariant descriptors.
-    double variance;
-    B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
-                  single_bond_vals, single_bond_env_dervs, n_species, n_max,
-                  l_max, beta_matrices[itype - 1], u, &variance);
+    B2_descriptor(B2_vals, B2_norm_squared,
+                  single_bond_vals, n_species, n_max, l_max);
+
+    double sig = hyperparameters[0];
+    double sig2 = sig * sig;
+    double B2_norm = pow(B2_norm_squared, 0.5);
+    Eigen::VectorXd normed_B2 = B2_vals / B2_norm;
+    double K_self = 1.0;
+    Eigen::VectorXd kernel_vec = (normed_sparse_descriptors[0] * normed_B2).array().pow(power);
+    double Q_self = sig2 * kernel_vec.transpose() * L_inv_blocks[0] * kernel_vec;
+
+    double normed_variance = K_self - Q_self;
 
     // Compute local energy and partial forces.
-    stds[i] = pow(abs(variance), 0.5); // the numerator could be negative
+    stds[i] = pow(abs(normed_variance), 0.5); // the numerator could be negative
 
   }
 }
@@ -251,10 +259,16 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
     allocate();
 
   // Should be exactly 3 arguments following "compute" in the input file.
-  if (narg != 4)
+  if (narg == 4) {
+    read_file(arg[3]);
+    use_map = true;
+  } else if (narg == 5) {
+    read_L_inverse(arg[4]);
+    read_sparse_descriptors(arg[5]);
+    use_map = false;
+  } else {
     error->all(FLERR, "Incorrect args for compute coefficients");
-
-  read_file(arg[3]);
+  }
 
 }
 
@@ -289,7 +303,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     }
   }
 
-  int tmp, nwords;
   if (me == 0) {
     fgets(line, MAXLINE, fptr);
     fgets(line, MAXLINE, fptr);
@@ -366,6 +379,170 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
 
 }
+
+void ComputeFlareStdAtom::read_L_inverse(char *filename) {
+  int me = comm->me;
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  int radial_string_length, cutoff_string_length;
+  FILE *fptr;
+
+  // Check that the potential file can be opened.
+  if (me == 0) {
+    fptr = utils::open_potential(filename,lmp,nullptr);
+    if (fptr == NULL) {
+      char str[128];
+      snprintf(str, 128, "Cannot open variance file %s", filename);
+      error->one(FLERR, str);
+    }
+  }
+
+  int tmp, nwords;
+  if (me == 0) {
+    fgets(line, MAXLINE, fptr); // skip the first line
+
+    fgets(line, MAXLINE, fptr); // hyperparameters
+    sscanf(line, "%i", &n_hyps);
+
+    fgets(line, MAXLINE, fptr); // hyperparameters
+    hyperparameters = Eigen::VectorXd::Zero(n_hyps);
+    sscanf(line, "%lg %lg %lg %lg", &hyperparameters(0), &hyperparameters(1), &hyperparameters(2), &hyperparameters(0));
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%s", radial_string); // Radial basis set
+    radial_string_length = strlen(radial_string);
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &n_kernels);
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%s", cutoff_string); // Cutoff function
+    cutoff_string_length = strlen(cutoff_string);
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%lg", &cutoff); // Cutoff
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%i", &n_clusters); // number of sparse envs
+  }
+
+  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
+  MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
+  MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
+  MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
+  MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
+  MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
+  MPI_Bcast(&n_kernels, 1, MPI_INT, 0, world);
+  MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
+  MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
+  MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
+  MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+  // Set number of descriptors.
+  int n_radial = n_max * n_species;
+  n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+
+  // Check the relationship between the power spectrum and beta.
+  int Linv_size = n_clusters * (n_clusters + 1) / 2;
+//  if (beta_check != beta_size)
+//    error->all(FLERR, "Beta size doesn't match the number of descriptors.");
+
+  // Set the radial basis.
+  if (!strcmp(radial_string, "chebyshev")) {
+    basis_function = chebyshev;
+    radial_hyps = std::vector<double>{0, cutoff};
+  }
+
+  // Set the cutoff function.
+  if (!strcmp(cutoff_string, "quadratic"))
+    cutoff_function = quadratic_cutoff;
+  else if (!strcmp(cutoff_string, "cosine"))
+    cutoff_function = cos_cutoff;
+
+  // Parse the beta vectors.
+  memory->create(beta, Linv_size, "compute:L_inv");
+  if (me == 0)
+    grab(fptr, Linv_size, beta);
+  MPI_Bcast(beta, Linv_size, MPI_DOUBLE, 0, world);
+
+  // Fill in the beta matrix.
+  for (int i = 0; i < n_kernels; i++) {
+    int count = 0;
+    Eigen::MatrixXd Linv = Eigen::MatrixXd::Zero(n_clusters, n_clusters);
+    for (int j = 0; j < n_clusters; j++) {
+      for (int k = 0; k <= j; k++) {
+        Linv(j, k) = beta[count];
+        count++;
+      }
+    }
+    L_inv_blocks.push_back(Linv);
+  }
+  memory->destroy(beta);
+}
+
+void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
+  int me = comm->me;
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  int radial_string_length, cutoff_string_length;
+  FILE *fptr;
+
+  // Check that the potential file can be opened.
+  if (me == 0) {
+    fptr = utils::open_potential(filename,lmp,nullptr);
+    if (fptr == NULL) {
+      char str[128];
+      snprintf(str, 128, "Cannot open variance file %s", filename);
+      error->one(FLERR, str);
+    }
+  }
+
+  int kernel_ind = 0;
+  if (me == 0) {
+    fgets(line, MAXLINE, fptr); // skip the first line
+
+    fgets(line, MAXLINE, fptr); // hyperparameters
+    int n_kern = 0;
+    sscanf(line, "%i", &n_kern);
+    if (n_kern != n_kernels) {
+      error->all(FLERR, "n_kernals in sparse_descriptors and L_inv not match");
+    }
+  }
+
+  for (int i = 0; i < n_kernels; i++) {
+    if (me == 0) {
+      fgets(line, MAXLINE, fptr);
+      int n_clst = 0;
+      sscanf(line, "%i %i %i", &kernel_ind, &n_clst, &n_types);
+      if (n_clst != n_clusters) {
+        error->all(FLERR, "n_clusters in sparse_descriptors and L_inv not match");
+      }
+    }
+    MPI_Bcast(&n_types, 1, MPI_INT, 0, world);
+
+    // Check the relationship between the power spectrum and beta.
+    int sparse_desc_size = n_clusters * n_descriptors; 
+
+    // Parse the beta vectors.
+    memory->create(beta, sparse_desc_size, "compute:sparse_desc");
+    if (me == 0)
+      grab(fptr, sparse_desc_size, beta);
+    MPI_Bcast(beta, sparse_desc_size, MPI_DOUBLE, 0, world);
+
+    // Fill in the beta matrix.
+    int count = 0;
+    Eigen::MatrixXd sparse_desc = Eigen::MatrixXd::Zero(n_clusters, n_descriptors);
+    for (int j = 0; j < n_clusters; j++) {
+      for (int k = 0; k < n_descriptors; k++) {
+        sparse_desc(j, k) = beta[count];
+        count++;
+      }
+    }
+    memory->destroy(beta);
+    normed_sparse_descriptors.push_back(sparse_desc);
+  }
+
+}
+
 
 /* ----------------------------------------------------------------------
    grab n values from file fp and put them in list
