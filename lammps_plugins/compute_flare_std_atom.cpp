@@ -174,14 +174,27 @@ void ComputeFlareStdAtom::compute_peratom() {
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, n_species,
            n_max, l_max, beta_matrices[itype - 1], u, &normed_variance);
     } else {
-      double sig = hyperparameters[0];
+      double sig = hyperparameters(0);
       double sig2 = sig * sig;
       double B2_norm = pow(B2_norm_squared, 0.5);
       Eigen::VectorXd normed_B2 = B2_vals / B2_norm;
-      Eigen::VectorXd kernel_vec = (normed_sparse_descriptors[0] * normed_B2).array().pow(power);
+      Eigen::VectorXd kernel_vec = Eigen::VectorXd::Zero(n_clusters);
+      int cum_types = 0;
+      for (int s = 0; s < n_types; s++) {
+        if (type[i] - 1 == s) {
+          kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * normed_B2).array().pow(power);
+        }
+        cum_types += n_clusters_by_type[s];
+      }
+      Eigen::VectorXd L_inv_kv = L_inv_blocks[0] * kernel_vec; 
+      std::cout << "kernel_vec=" << kernel_vec << std::endl;
+      std::cout << "L_inv_kv=" << L_inv_kv << std::endl;
+      std::cout << "L_inv_blocks[0]=" << L_inv_blocks[0] << std::endl;
 
       double K_self = 1.0;
-      double Q_self = sig2 * kernel_vec.transpose() * L_inv_blocks[0] * kernel_vec;
+      double Q_self = sig2 * L_inv_kv.transpose() * L_inv_kv;
+      std::cout << "sig2=" << sig2 << std::endl;
+      std::cout << "Q_self=" << Q_self << std::endl;
  
       normed_variance = K_self - Q_self;
     }
@@ -270,8 +283,10 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
     read_file(arg[3]);
     use_map = true;
   } else if (narg == 5) {
-    read_L_inverse(arg[4]);
-    read_sparse_descriptors(arg[5]);
+    printf("begin reading L inverse\n");
+    read_L_inverse(arg[3]);
+    printf("finish reading L_inv\n");
+    read_sparse_descriptors(arg[4]);
     use_map = false;
   } else {
     error->all(FLERR, "Incorrect args for compute coefficients");
@@ -410,10 +425,17 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
 
+    printf("reading hyps\n");
     fgets(line, MAXLINE, fptr); // hyperparameters
     hyperparameters = Eigen::VectorXd::Zero(n_hyps);
-    sscanf(line, "%lg %lg %lg %lg", &hyperparameters(0), &hyperparameters(1), &hyperparameters(2), &hyperparameters(0));
+    double sig, en, fn, sn;
+    sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
+    hyperparameters(0) = sig;
+    hyperparameters(1) = en;
+    hyperparameters(2) = fn;
+    hyperparameters(3) = sn;
 
+    printf("reading radial\n");
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
@@ -432,6 +454,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     sscanf(line, "%i", &n_clusters); // number of sparse envs
   }
 
+  printf("MPI_Bcast\n");
   MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
@@ -444,6 +467,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+  printf("MPI_Bcast done\n");
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
@@ -467,11 +491,13 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     cutoff_function = cos_cutoff;
 
   // Parse the beta vectors.
+  printf("reading Linv, size=%d\n", Linv_size);
   memory->create(beta, Linv_size, "compute:L_inv");
   if (me == 0)
     grab(fptr, Linv_size, beta);
   MPI_Bcast(beta, Linv_size, MPI_DOUBLE, 0, world);
 
+  printf("assigning Linv\n");
   // Fill in the beta matrix.
   for (int i = 0; i < n_kernels; i++) {
     int count = 0;
@@ -526,26 +552,42 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
     }
     MPI_Bcast(&n_types, 1, MPI_INT, 0, world);
 
-    // Check the relationship between the power spectrum and beta.
-    int sparse_desc_size = n_clusters * n_descriptors; 
-
-    // Parse the beta vectors.
-    memory->create(beta, sparse_desc_size, "compute:sparse_desc");
-    if (me == 0)
-      grab(fptr, sparse_desc_size, beta);
-    MPI_Bcast(beta, sparse_desc_size, MPI_DOUBLE, 0, world);
-
-    // Fill in the beta matrix.
-    int count = 0;
-    Eigen::MatrixXd sparse_desc = Eigen::MatrixXd::Zero(n_clusters, n_descriptors);
-    for (int j = 0; j < n_clusters; j++) {
-      for (int k = 0; k < n_descriptors; k++) {
-        sparse_desc(j, k) = beta[count];
-        count++;
+    memory->create(n_clusters_by_type, n_types, "compute:n_clusters_by_type");
+    for (int s = 0; s < n_types; s++) {
+      int n_clst_by_type;
+      if (me == 0) {
+        fgets(line, MAXLINE, fptr);
+        sscanf(line, "%i", &n_clst_by_type);
       }
+      MPI_Bcast(&n_clst_by_type, 1, MPI_INT, 0, world);
+
+      n_clusters_by_type[s] = n_clst_by_type;
+
+      // Check the relationship between the power spectrum and beta.
+      int sparse_desc_size = n_clst_by_type * n_descriptors; 
+  
+      // Parse the beta vectors.
+      memory->create(beta, sparse_desc_size, "compute:sparse_desc");
+      if (me == 0)
+        grab(fptr, sparse_desc_size, beta);
+      MPI_Bcast(beta, sparse_desc_size, MPI_DOUBLE, 0, world);
+  
+      // Fill in the beta matrix.
+      printf("sparse_desc_size=%d\n", sparse_desc_size);
+      printf("filling in sparse_dec matrix\n");
+      int count = 0;
+      Eigen::MatrixXd sparse_desc = Eigen::MatrixXd::Zero(n_clst_by_type, n_descriptors);
+      for (int j = 0; j < n_clst_by_type; j++) {
+        for (int k = 0; k < n_descriptors; k++) {
+          sparse_desc(j, k) = beta[count];
+          count++;
+        }
+      }
+      memory->destroy(beta);
+      printf("done filling\n");
+      normed_sparse_descriptors.push_back(sparse_desc);
+      printf("pushed back\n");
     }
-    memory->destroy(beta);
-    normed_sparse_descriptors.push_back(sparse_desc);
   }
 
 }

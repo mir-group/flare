@@ -121,7 +121,10 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
         L_inv.block(sparse_count, sparse_count, n_clusters, n_clusters);
     sparse_count += n_clusters;
 
+    std::cout << "sparse_kernels[i]=" << sparse_kernels[i] << std::endl;
     Eigen::MatrixXd Q1 = L_inverse_block * sparse_kernels[i].transpose();
+    std::cout << "L_inverse_block=" << L_inverse_block << std::endl;
+    std::cout << "Q1=" << Q1 << std::endl;
     std::cout << "Q1 size=" << Q1.rows() << " " << Q1.cols() << std::endl;
     Q_self.push_back((Q1.transpose() * Q1).diagonal());
 
@@ -1162,7 +1165,7 @@ void SparseGP::write_sparse_descriptors(
       int n_clusters_by_type = sparse_descriptors[i].n_clusters_by_type[s];
       int n_descriptors = sparse_descriptors[i].n_descriptors;
 
-      //coeff_file << n_clusters_by_type << "\n";
+      coeff_file << n_clusters_by_type << "\n";
       for (int j = 0; j < n_clusters_by_type; j++) {
         for (int k = 0; k < n_descriptors; k++) {
           coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " "; 

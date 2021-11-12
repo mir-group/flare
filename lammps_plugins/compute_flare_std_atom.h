@@ -58,7 +58,7 @@ protected:
   int n_hyps, n_clusters, n_kernels, n_types;
   bool use_map = false;
   int power = 2;
-  //int* n_clusters_by_type;
+  int* n_clusters_by_type;
 
   virtual void allocate();
   virtual void read_file(char *);
