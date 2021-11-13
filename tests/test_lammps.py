@@ -10,6 +10,7 @@ from .get_sgp import get_sgp_calc, get_random_atoms, get_updated_sgp
 
 n_species_list = [1, 2]
 n_desc_types = [1, 2]
+rootdir = os.getcwd()
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -88,10 +89,12 @@ def test_write_potential(n_species, n_types):
 )
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
-def test_lammps_uncertainty(n_species, n_types):
+@pytest.mark.parametrize("use_map", [False, True])
+def test_lammps_uncertainty(n_species, n_types, use_map):
     if n_species > n_types:
         pytest.skip()
 
+    os.chdir(rootdir)
     lmp_command = os.environ.get("lmp")
 
     # get sgp & dump coefficient files
@@ -100,16 +103,23 @@ def test_lammps_uncertainty(n_species, n_types):
     kernel_index = 0
 
     potential_file = f"LJ_{n_species}_{n_types}.txt"
-    sgp_model.gp_model.sparse_gp.write_mapping_coefficients(
+    sgp_model.gp_model.write_mapping_coefficients(
         potential_file, contributor, kernel_index)
 
-    L_inv_file = f"Linv_{n_species}_{n_types}.txt"
-    sgp_model.gp_model.sparse_gp.write_L_inverse(
-        L_inv_file, contributor)
-
-    sparse_desc_file = f"sparse_desc_{n_species}_{n_types}.txt"
-    sgp_model.gp_model.sparse_gp.write_sparse_descriptors(
-        sparse_desc_file, contributor)
+    if use_map:
+        varmap_file = f"varmap_{n_species}_{n_types}.txt"
+        sgp_model.gp_model.write_varmap_coefficients(
+            varmap_file, contributor, kernel_index)
+        coeff_str = varmap_file
+    else:
+        L_inv_file = f"Linv_{n_species}_{n_types}.txt"
+        sgp_model.gp_model.sparse_gp.write_L_inverse(
+            L_inv_file, contributor)
+    
+        sparse_desc_file = f"sparse_desc_{n_species}_{n_types}.txt"
+        sgp_model.gp_model.sparse_gp.write_sparse_descriptors(
+            sparse_desc_file, contributor)
+        coeff_str = f"{L_inv_file} {sparse_desc_file}"
 
     # Generate random testing structure
     if n_species == 1:
@@ -138,7 +148,7 @@ pair_coeff * * {potential_file}
 
 ### run
 fix fix_nve all nve
-compute unc all flare/std/atom {L_inv_file} {sparse_desc_file}
+compute unc all flare/std/atom {coeff_str}
 dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc 
 thermo_style custom step temp press cpu pxx pyy pzz pxy pxz pyz ke pe etotal vol lx ly lz atoms
 thermo_modify flush yes format float %23.16g
@@ -150,21 +160,29 @@ run 0
     with open("in.lammps", "w") as f:
         f.write(in_lmp)
     shutil.copyfile(f"../{potential_file}", f"./{potential_file}")
-    shutil.copyfile(f"../{L_inv_file}", f"./{L_inv_file}")
-    shutil.copyfile(f"../{sparse_desc_file}", f"./{sparse_desc_file}")
+    if use_map:
+        shutil.copyfile(f"../{varmap_file}", f"./{varmap_file}")
+    else:
+        shutil.copyfile(f"../{L_inv_file}", f"./{L_inv_file}")
+        shutil.copyfile(f"../{sparse_desc_file}", f"./{sparse_desc_file}")
     os.system(f"{lmp_command} < in.lammps > log.lammps")
     unc_atoms = read("traj.lammps", format="lammps-dump-text")
-#    sgp_py = get_updated_sgp()
-    lmp_stds = unc_atoms.get_array(f"c_unc")
+    if use_map:
+        lmp_stds = unc_atoms.get_array(f"c_unc") / sgp_model.gp_model.hyps[0]
+    else:
+        lmp_stds = unc_atoms.get_array(f"c_unc")
 
     # Test mapped variance (need to use sgp_var)
     test_atoms.calc = None
     test_atoms = FLARE_Atoms.from_ase_atoms(test_atoms)
     test_atoms.calc = sgp_model
-    #test_atoms.calc.gp_model.sparse_gp = sgp_py.sgp_var
+    if use_map:
+        test_atoms.calc.gp_model.sparse_gp = sgp_model.gp_model.sgp_var
     test_atoms.calc.reset()
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
     print(sgp_stds)
     print(lmp_stds)
-    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze())
+    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), rtol=1e-4)
+
     os.chdir("..")
+    os.system("rm -r tmp *.txt")
