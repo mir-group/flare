@@ -19,9 +19,6 @@ cutoff_function = "quadratic"
 radial_basis = "chebyshev"
 radial_hyps = [0.0, cutoff]
 cutoff_hyps = []
-descriptor_settings = [2, 8, 3]
-b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
-             descriptor_settings)
 
 # Define remaining parameters for the SGP wrapper.
 sigma_e = 0.001
@@ -55,7 +52,11 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
     return flare_atoms
 
 
-def get_empty_sgp():
+def get_empty_sgp(n_types=2):
+    descriptor_settings = [n_types, 8, 3]
+    b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
+                 descriptor_settings)
+
     empty_sgp = SGP_Wrapper(
         [kernel], [b2_calc], cutoff, sigma_e, sigma_f, sigma_s, species_map,
         single_atom_energies=single_atom_energies, variance_type=variance_type,
@@ -65,23 +66,28 @@ def get_empty_sgp():
     return empty_sgp
 
 
-def get_updated_sgp():
-    training_structure = get_random_atoms()
+def get_updated_sgp(n_types=2):
+    if n_types == 1:
+        numbers = [6, 6]
+    elif n_types == 2:
+        numbers = [6, 8]
+
+    training_structure = get_random_atoms(numbers=numbers)
     training_structure.calc = LennardJones()
 
     forces = training_structure.get_forces()
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
-    sgp = get_empty_sgp()
+    sgp = get_empty_sgp(n_types)
     sgp.update_db(training_structure, forces, custom_range=(1, 2, 3, 4, 5),
                   energy=energy, stress=stress, mode="specific")
 
     return sgp
 
 
-def get_sgp_calc():
-    sgp = get_updated_sgp()
+def get_sgp_calc(n_types=2):
+    sgp = get_updated_sgp(n_types)
     sgp_calc = SGP_Calculator(sgp)
 
     return sgp_calc
