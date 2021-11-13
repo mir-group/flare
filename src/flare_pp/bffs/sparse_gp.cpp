@@ -105,7 +105,6 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
   std::vector<Eigen::VectorXd> K_self, Q_self, variances;
   std::vector<Eigen::MatrixXd> sparse_kernels;
   int sparse_count = 0;
-  std::cout << "hyperparameters=" << hyperparameters << std::endl;
   for (int i = 0; i < n_kernels; i++) {
     K_self.push_back(
         (kernels[i]->envs_envs(cluster_descriptors[i], cluster_descriptors[i],
@@ -121,26 +120,8 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
         L_inv.block(sparse_count, sparse_count, n_clusters, n_clusters);
     sparse_count += n_clusters;
 
-    std::cout << "sparse_kernels[i]=" << sparse_kernels[i] << std::endl;
     Eigen::MatrixXd Q1 = L_inverse_block * sparse_kernels[i].transpose();
-    std::cout << "L_inverse_block=" << L_inverse_block << std::endl;
-    std::cout << "Q1=" << Q1 << std::endl;
-    std::cout << "Q1 size=" << Q1.rows() << " " << Q1.cols() << std::endl;
     Q_self.push_back((Q1.transpose() * Q1).diagonal());
-
-    std::cout << "K_self=" << K_self[i] << std::endl;
-    std::cout << "Q_self=" << Q_self[i] << std::endl;
-    std::cout << "K_self - Q_self = " << K_self[i] - Q_self[i] << std::endl;
-
-    Eigen::VectorXd K_self_vec = Eigen::VectorXd::Ones(L_inverse_block.rows()) * sqrt(K_self[i](0,0)) / sqrt(L_inverse_block.rows());
-    std::cout << K_self_vec << std::endl;
-    std::cout << "gamma ";
-    Eigen::VectorXd gamma = Q1.col(0);
-    std::cout << gamma << std::endl;
-    Eigen::VectorXd Kmr = K_self_vec - gamma;
-    Eigen::VectorXd Kpr = K_self_vec + gamma;
-    std::cout << "(K-r)*(K+r)=" << Kmr.transpose() * Kpr << std::endl;
-
 
     variances.push_back(K_self[i] - Q_self[i]); // it is sorted by clusters, not the original atomic order 
     // TODO: If the environment is empty, the assigned uncertainty should be

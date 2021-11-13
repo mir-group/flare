@@ -187,14 +187,9 @@ void ComputeFlareStdAtom::compute_peratom() {
         cum_types += n_clusters_by_type[s];
       }
       Eigen::VectorXd L_inv_kv = L_inv_blocks[0] * kernel_vec; 
-      std::cout << "kernel_vec=" << kernel_vec << std::endl;
-      std::cout << "L_inv_kv=" << L_inv_kv << std::endl;
-      std::cout << "L_inv_blocks[0]=" << L_inv_blocks[0] << std::endl;
 
       double K_self = 1.0;
       double Q_self = sig2 * L_inv_kv.transpose() * L_inv_kv;
-      std::cout << "sig2=" << sig2 << std::endl;
-      std::cout << "Q_self=" << Q_self << std::endl;
  
       normed_variance = K_self - Q_self;
     }
@@ -283,9 +278,7 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
     read_file(arg[3]);
     use_map = true;
   } else if (narg == 5) {
-    printf("begin reading L inverse\n");
     read_L_inverse(arg[3]);
-    printf("finish reading L_inv\n");
     read_sparse_descriptors(arg[4]);
     use_map = false;
   } else {
@@ -425,7 +418,6 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
 
-    printf("reading hyps\n");
     fgets(line, MAXLINE, fptr); // hyperparameters
     hyperparameters = Eigen::VectorXd::Zero(n_hyps);
     double sig, en, fn, sn;
@@ -435,7 +427,6 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     hyperparameters(2) = fn;
     hyperparameters(3) = sn;
 
-    printf("reading radial\n");
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
@@ -454,7 +445,6 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     sscanf(line, "%i", &n_clusters); // number of sparse envs
   }
 
-  printf("MPI_Bcast\n");
   MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
@@ -467,7 +457,6 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
-  printf("MPI_Bcast done\n");
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
@@ -491,13 +480,11 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     cutoff_function = cos_cutoff;
 
   // Parse the beta vectors.
-  printf("reading Linv, size=%d\n", Linv_size);
   memory->create(beta, Linv_size, "compute:L_inv");
   if (me == 0)
     grab(fptr, Linv_size, beta);
   MPI_Bcast(beta, Linv_size, MPI_DOUBLE, 0, world);
 
-  printf("assigning Linv\n");
   // Fill in the beta matrix.
   for (int i = 0; i < n_kernels; i++) {
     int count = 0;
@@ -573,8 +560,6 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
       MPI_Bcast(beta, sparse_desc_size, MPI_DOUBLE, 0, world);
   
       // Fill in the beta matrix.
-      printf("sparse_desc_size=%d\n", sparse_desc_size);
-      printf("filling in sparse_dec matrix\n");
       int count = 0;
       Eigen::MatrixXd sparse_desc = Eigen::MatrixXd::Zero(n_clst_by_type, n_descriptors);
       for (int j = 0; j < n_clst_by_type; j++) {
@@ -584,9 +569,7 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
         }
       }
       memory->destroy(beta);
-      printf("done filling\n");
       normed_sparse_descriptors.push_back(sparse_desc);
-      printf("pushed back\n");
     }
   }
 
