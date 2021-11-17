@@ -169,13 +169,14 @@ void ComputeFlareStdAtom::compute_peratom() {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    double normed_variance;
+    double variance;
+    double sig = hyperparameters(0);
+    double sig2 = sig * sig;
     if (use_map) {
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, n_species,
-           n_max, l_max, beta_matrices[itype - 1], u, &normed_variance);
+           n_max, l_max, beta_matrices[itype - 1], u, &variance);
+      variance /= sig2;
     } else {
-      double sig = hyperparameters(0);
-      double sig2 = sig * sig;
       double B2_norm = pow(B2_norm_squared, 0.5);
       Eigen::VectorXd normed_B2 = B2_vals / B2_norm;
       Eigen::VectorXd kernel_vec = Eigen::VectorXd::Zero(n_clusters);
@@ -191,11 +192,15 @@ void ComputeFlareStdAtom::compute_peratom() {
       double K_self = 1.0;
       double Q_self = sig2 * L_inv_kv.transpose() * L_inv_kv;
  
-      normed_variance = K_self - Q_self;
+      variance = K_self - Q_self;
     }
 
-    // Compute local energy and partial forces.
-    stds[i] = pow(abs(normed_variance), 0.5); // the numerator could be negative
+    // Compute the normalized variance, it could be negative
+    if (variance > 0.0) {
+      stds[i] = pow(variance, 0.5); 
+    } else {
+      stds[i] = - pow(abs(variance), 0.5); 
+    }
 
   }
 }
@@ -320,6 +325,19 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
   if (me == 0) {
     fgets(line, MAXLINE, fptr);
+
+    fgets(line, MAXLINE, fptr); // hyperparameters
+    sscanf(line, "%i", &n_hyps);
+
+    fgets(line, MAXLINE, fptr); // hyperparameters
+    hyperparameters = Eigen::VectorXd::Zero(n_hyps);
+    double sig, en, fn, sn;
+    sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
+    hyperparameters(0) = sig;
+    hyperparameters(1) = en;
+    hyperparameters(2) = fn;
+    hyperparameters(3) = sn;
+
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
@@ -332,6 +350,8 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     sscanf(line, "%lg", &cutoff); // Cutoff
   }
 
+  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
+  MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
