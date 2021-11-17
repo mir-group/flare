@@ -437,9 +437,12 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
 
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
+  }
+  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
 
+  hyperparameters = Eigen::VectorXd::Zero(n_hyps);
+  if (me == 0) {
     fgets(line, MAXLINE, fptr); // hyperparameters
-    hyperparameters = Eigen::VectorXd::Zero(n_hyps);
     double sig, en, fn, sn;
     sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
     hyperparameters(0) = sig;
@@ -465,7 +468,6 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     sscanf(line, "%i", &n_clusters); // number of sparse envs
   }
 
-  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
