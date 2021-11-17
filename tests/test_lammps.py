@@ -167,10 +167,7 @@ run 0
         shutil.copyfile(f"../{sparse_desc_file}", f"./{sparse_desc_file}")
     os.system(f"{lmp_command} < in.lammps > log.lammps")
     unc_atoms = read("traj.lammps", format="lammps-dump-text")
-    if use_map:
-        lmp_stds = unc_atoms.get_array(f"c_unc") / sgp_model.gp_model.hyps[0]
-    else:
-        lmp_stds = unc_atoms.get_array(f"c_unc")
+    lmp_stds = unc_atoms.get_array(f"c_unc")
 
     # Test mapped variance (need to use sgp_var)
     test_atoms.calc = None
