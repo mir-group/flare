@@ -1009,6 +1009,14 @@ void SparseGP::write_varmap_coefficients(
   coeff_file << "CONTRIBUTOR: ";
   coeff_file << contributor << "\n";
 
+  // Record the hyps
+  coeff_file << hyperparameters.size() << "\n";
+  coeff_file << std::scientific << std::setprecision(16);
+  for (int i = 0; i < hyperparameters.size(); i++) {      
+    coeff_file << hyperparameters(i) << " ";
+  }
+  coeff_file << "\n";
+
   // Write descriptor information to file.
   int coeff_size = varmap_coeffs.row(0).size();
   training_structures[0].descriptor_calculators[kernel_index]->
@@ -1156,7 +1164,7 @@ void SparseGP::write_sparse_descriptors(
           count++;
         }
       }
-      if (count % 5 != 0) coeff_file << "\n";
+      if (count % 5 != 1) coeff_file << "\n";
     }
 
   }
