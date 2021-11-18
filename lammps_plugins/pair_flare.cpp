@@ -125,6 +125,7 @@ void PairFLARE::compute(int eflag, int vflag) {
                                  single_bond_env_dervs, cutoff_matrix);
 
     // Compute invariant descriptors.
+    //printf("i = %d, B2 =", i);
     B2_descriptor(B2_vals, B2_env_dervs, B2_norm_squared, B2_env_dot,
                   single_bond_vals, single_bond_env_dervs, n_species, n_max,
                   l_max, beta_matrices[itype - 1], u, &evdwl);
@@ -135,6 +136,7 @@ void PairFLARE::compute(int eflag, int vflag) {
 
     // Update energy, force and stress arrays.
     n_count = 0;
+    double fxsum = 0, fysum = 0, fzsum = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       int s = type[j] - 1;
@@ -157,6 +159,10 @@ void PairFLARE::compute(int eflag, int vflag) {
         f[j][0] -= fx;
         f[j][1] -= fy;
         f[j][2] -= fz;
+        fxsum += fx;
+        fysum += fy;
+        fzsum += fz;
+        //printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
 
         if (vflag) {
           ev_tally_xyz(i, j, nlocal, newton_pair, 0.0, 0.0, fx, fy, fz, delx,
@@ -165,6 +171,7 @@ void PairFLARE::compute(int eflag, int vflag) {
         n_count++;
       }
     }
+      //printf("i = %d, Fsum = %g %g %g\n", i, fxsum, fysum, fzsum);
 
     // Compute local energy.
     if (eflag)

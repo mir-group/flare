@@ -24,7 +24,7 @@ public:
   virtual void compute(int, int);
   void settings(int, char **);
   virtual void coeff(int, char **);
-  void init_style();
+  virtual void init_style();
   double init_one(int, int);
 
 protected:

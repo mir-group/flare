@@ -16,12 +16,4 @@ module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01
 
 ## Compiling LAMMPS
 
-To compile lammps with the flare++ pair style, run the following:
-
-```
-cp lammps_plugins/{pair_flare*,lammps_descriptor*} lammps/src
-cp src/flare_pp/{y_grad*,radial*,cutoffs*} lammps/src
-sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
-cd lammps/src
-make mpi CCFLAGS='-std=c++11'
-```
+See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master/lammps_plugins/README.md).
