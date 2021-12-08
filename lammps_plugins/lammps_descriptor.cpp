@@ -189,6 +189,7 @@ void single_bond(
           single_bond_env_dervs(n_count * 3, descriptor_counter) += bond_x;
           single_bond_env_dervs(n_count * 3 + 1, descriptor_counter) += bond_y;
           single_bond_env_dervs(n_count * 3 + 2, descriptor_counter) += bond_z;
+          //printf("i = %d, j = %d, n = %d, lm = %d, idx = %d, bond = %g %g %g %g\n", i, j, radial_counter, angular_counter, descriptor_counter, bond, bond_x, bond_y, bond_z);
 
           descriptor_counter++;
         }
@@ -196,6 +197,13 @@ void single_bond(
       n_count++;
     }
   }
+  /*
+  printf("i = %d, d =", i);
+  for(int d = 0; d < n_bond; d++){
+    printf(" %g", single_bond_vals(d));
+  }
+  printf("\n");
+  */
 }
 
 void B2_descriptor(Eigen::VectorXd &B2_vals, 
@@ -230,6 +238,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals,
           // Store B2 value.
           B2_vals(counter) += single_bond_vals(n1_l) * single_bond_vals(n2_l);
         }
+        //printf(" | n1 = %d, n2 = %d, l = %d, B2 = %g |\n", n1, n2, l, B2_vals(counter));
       }
     }
   }
@@ -252,7 +261,7 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
 
   Eigen::VectorXd beta_p = beta_matrix * B2_vals;
   *evdwl = B2_vals.dot(beta_p) / norm_squared;
-  Eigen::VectorXd w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared; 
+  Eigen::VectorXd w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared;
 
   // Compute u(n1, l, m), where f_ik = u * dA/dr_ik
   u = Eigen::VectorXd::Zero(single_bond_vals.size());

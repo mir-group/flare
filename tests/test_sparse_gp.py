@@ -91,7 +91,7 @@ def test_calc():
     sgp_wrapper = get_updated_sgp()
     calc = SGP_Calculator(sgp_wrapper)
     calc.write_model("sgp_calc.json")
-    new_calc = SGP_Calculator.from_file("sgp_calc.json")
+    new_calc, _ = SGP_Calculator.from_file("sgp_calc.json")
     os.remove("sgp_calc.json")
     assert len(calc.gp_model) == len(new_calc.gp_model)
 
@@ -111,16 +111,11 @@ def test_write_model():
     sgp_name = "sgp_calc.json"
     sgp_calc.write_model(sgp_name)
 
-    # Odd Pybind-related bug here that seems to be caused by kernel pointers.
-    # Possibly related to: https://stackoverflow.com/questions/49633990/polymorphism-and-pybind11
-
-    # Load the SGP.
-    with open(sgp_name, "r") as f:
-        gp_dict = json.loads(f.readline())
-    sgp, _ = SGP_Wrapper.from_dict(gp_dict["gp_model"])
-    sgp_calc_2 = SGP_Calculator(sgp)
-
-    # sgp_calc_2 = SGP_Calculator.from_file(sgp_name)
+    # Odd Pybind-related issue here that seems to be related to polymorphic
+    # kernel pointers. Need to return the kernel list for SGP prediction to
+    # work. Possibly related to:
+    # https://stackoverflow.com/questions/49633990/polymorphism-and-pybind11
+    sgp_calc_2, _ = SGP_Calculator.from_file(sgp_name)
 
     os.remove(sgp_name)
 

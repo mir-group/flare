@@ -1,3 +1,12 @@
+perf.data.old
+perf.data
+*.nvprof
+*.plist
+log.lammps
+*.gdb
+*.dump
+vgcore.*
+*.zip
 **/build
 __pycache__
 _C_flare*
