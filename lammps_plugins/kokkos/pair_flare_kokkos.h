@@ -126,7 +126,7 @@ class PairFLAREKokkos : public PairFLARE {
   int need_dup;
 
   View1D B2_norm2s, evdwls;
-  View2D B2, beta_B2, w;
+  View2D B2, beta_B2, w, cutoff_matrix_k;
   View3D beta, single_bond, u, partial_forces;
   gYView4D g, Y;
   gYView4DRA g_ra, Y_ra;

@@ -353,7 +353,7 @@ void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
   const X_FLOAT delz = x(j,2) - x(i,2);
   const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
 
-  calculate_radial_kokkos(ii, jj, g, delx, dely, delz, sqrt(rsq), cutoff, n_max);
+  calculate_radial_kokkos(ii, jj, g, delx, dely, delz, sqrt(rsq), cutoff_matrix_k(type[i]-1, type[j]-1), n_max);
   get_Y_kokkos(ii, jj, Y, delx, dely, delz, l_max);
   /*
   printf("i = %d, j = %d, Y =", i, j);
@@ -629,6 +629,8 @@ void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
     const X_FLOAT ytmp = x(i,1);
     const X_FLOAT ztmp = x(i,2);
 
+    const int si = type[i] - 1;
+
     const int jnum = d_numneigh[i];
     int inside = 0;
     for (int jj = 0; jj < jnum; jj++) {
@@ -640,7 +642,9 @@ void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
       const X_FLOAT delz = ztmp - x(j,2);
       const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
 
-      if (rsq < cutoff*cutoff) {
+      const double paircut = cutoff_matrix_k(si, type[j]-1);
+
+      if (rsq < paircut*paircut) {
         d_neighbors_short(ii,inside) = j;
         inside++;
       }
@@ -679,6 +683,16 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   }
   Kokkos::deep_copy(beta, beta_h);
   beta_matrices.clear();
+
+  cutoff_matrix_k = View2D("cutoff_matrix", n_species, n_species);
+  auto cutoff_matrix_h = Kokkos::create_mirror_view(cutoff_matrix_k);
+
+  for(int si = 0; si < n_species; si++){
+    for(int sj = 0; sj < n_species; sj++){
+      cutoff_matrix_h(si,sj) = cutoff_matrix(si,sj);
+    }
+  }
+  Kokkos::deep_copy(cutoff_matrix_k, cutoff_matrix_h);
 }
 
 /* ----------------------------------------------------------------------
