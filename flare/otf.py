@@ -109,7 +109,7 @@ class OTF:
         calculate_energy: bool = False,
         calculate_efs: bool = False,
         write_model: int = 0,
-        force_only: bool = False,
+        force_only: bool = True,
         # otf args
         std_tolerance_factor: float = 1,
         skip: int = 0,
