@@ -90,6 +90,7 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/lammps/lammps.git lammps
         cp lammps_plugins/pair_flare.* lammps/src
+        cp lammps_plugins/compute_flare_std_atom.* lammps/src
         cp lammps_plugins/lammps_descriptor.* lammps/src
         cp src/flare_pp/y_grad.* lammps/src
         cp src/flare_pp/radial.* lammps/src

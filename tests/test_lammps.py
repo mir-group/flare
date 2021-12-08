@@ -155,6 +155,9 @@ thermo_modify flush yes format float %23.16g
 thermo 1
 run 0
 """
+    if "tmp" not in os.listdir():
+        os.mkdir("tmp")
+
     os.chdir("tmp")
     write("data.lammps", test_atoms, format="lammps-data")
     with open("in.lammps", "w") as f:
