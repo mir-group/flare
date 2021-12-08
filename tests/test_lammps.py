@@ -182,7 +182,7 @@ run 0
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
     print(sgp_stds)
     print(lmp_stds)
-    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), rtol=1e-4)
+    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), rtol=1e-3)
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")
