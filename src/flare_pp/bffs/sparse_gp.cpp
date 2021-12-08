@@ -455,7 +455,7 @@ void SparseGP ::update_Kuf(
   }
 }
 
-void SparseGP ::add_training_structure(const Structure &structure) {
+void SparseGP ::add_training_structure(const Structure &structure, const std::vector<int> atoms) {
 
   initialize_sparse_descriptors(structure);
 

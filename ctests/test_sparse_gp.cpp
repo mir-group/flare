@@ -195,7 +195,7 @@ TEST_F(StructureTest, LikeGrad) {
 
     fin_diff = (like_up - like_down) / (2 * pert);
 
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-6);
   }
 }
 
@@ -212,12 +212,12 @@ TEST_F(StructureTest, LikeGradStable) {
 
   std::vector<Descriptor *> dc;
 
-  descriptor_settings = {n_species, 1, N, 0};
-  Bk b1(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+  descriptor_settings = {n_species, N, L};
+  B2 b1(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
           descriptor_settings);
   dc.push_back(&b1);
-  descriptor_settings = {n_species, 2, N, L};
-  Bk b2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+  descriptor_settings = {n_species, N, L};
+  B3 b2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
           descriptor_settings);
   dc.push_back(&b2);
 
@@ -282,8 +282,8 @@ TEST_F(StructureTest, LikeGradStable) {
     fin_diff = (like_up - like_down) / (2 * pert);
 
     std::cout << like_grad(i) << " " << fin_diff << std::endl;
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
-    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-7);
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-6);
+    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-6);
   }
 }
 
