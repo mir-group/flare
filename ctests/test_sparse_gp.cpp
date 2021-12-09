@@ -195,7 +195,7 @@ TEST_F(StructureTest, LikeGrad) {
 
     fin_diff = (like_up - like_down) / (2 * pert);
 
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-6);
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-5);
   }
 }
 

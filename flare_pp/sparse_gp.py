@@ -289,6 +289,7 @@ class SGP_Wrapper:
         mode: str = "specific",
         sgp: SparseGP = None,  # for creating sgp_var
         update_qr=True,
+        atom_indices=[-1],
     ):
 
         # Convert coded species to 0, 1, 2, etc.
@@ -332,7 +333,7 @@ class SGP_Wrapper:
         if sgp is None:
             sgp = self.sparse_gp
 
-        sgp.add_training_structure(structure_descriptor)
+        sgp.add_training_structure(structure_descriptor, atom_indices)
         if mode == "all":
             if not custom_range:
                 sgp.add_all_environments(structure_descriptor)

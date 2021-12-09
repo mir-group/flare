@@ -133,6 +133,8 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
 void SparseGP ::add_specific_environments(const Structure &structure,
                                           const std::vector<int> atoms) {
 
+  initialize_sparse_descriptors(structure);
+
   // Gather clusters with central atom in the given list.
   std::vector<std::vector<std::vector<int>>> indices_1;
   for (int i = 0; i < n_kernels; i++){
@@ -181,6 +183,7 @@ void SparseGP ::add_specific_environments(const Structure &structure,
 void SparseGP ::add_uncertain_environments(const Structure &structure,
                                            const std::vector<int> &n_added) {
 
+  initialize_sparse_descriptors(structure);
   // Compute cluster uncertainties.
   std::vector<std::vector<int>> sorted_indices =
       sort_clusters_by_uncertainty(structure);
@@ -241,6 +244,7 @@ void SparseGP ::add_uncertain_environments(const Structure &structure,
 void SparseGP ::add_random_environments(const Structure &structure,
                                         const std::vector<int> &n_added) {
 
+  initialize_sparse_descriptors(structure);
   // Randomly select environments without replacement.
   std::vector<std::vector<int>> envs1;
   for (int i = 0; i < structure.descriptors.size(); i++) { // NOTE: n_kernels might be diff from descriptors number
@@ -430,14 +434,14 @@ void SparseGP ::update_Kuf(
         }
 
         if (training_structures[j].forces.size() != 0) {
-          kern_mat.block(u_ind, label_count(j) + current_count, n3,
-                         n_atoms * 3) =
-              Kuf_kernels[i].block(n1, label_count(j) + current_count, n3,
-                                   n_atoms * 3);
-          kern_mat.block(u_ind + n3, label_count(j) + current_count, n4,
-                         n_atoms * 3) =
-              envs_struc_kernels.block(n2, 1, n4, n_atoms * 3);
-          current_count += n_atoms * 3;
+          std::vector<int> atom_indices = training_atom_indices[j];
+          for (int a = 0; a < atom_indices.size(); a++) {  // Allow adding a subset of force labels
+            kern_mat.block(u_ind, label_count(j) + current_count, n3, 3) =
+                Kuf_kernels[i].block(n1, label_count(j) + current_count, n3, 3);
+            kern_mat.block(u_ind + n3, label_count(j) + current_count, n4, 3) =
+                envs_struc_kernels.block(n2, 1 + atom_indices[a] * 3, n4, 3);
+            current_count += 3;
+          }
         }
 
         if (training_structures[j].stresses.size() != 0) {
@@ -455,15 +459,27 @@ void SparseGP ::update_Kuf(
   }
 }
 
-void SparseGP ::add_training_structure(const Structure &structure, const std::vector<int> atoms) {
-
+void SparseGP ::add_training_structure(const Structure &structure,
+                                       const std::vector<int> atom_indices) {
+  // Allow adding a subset of force labels
   initialize_sparse_descriptors(structure);
 
+  int n_atoms = structure.noa;
   int n_energy = structure.energy.size();
-  int n_force = structure.forces.size();
+  int n_force = 0;
+  std::vector<int> atoms;
+  if (atom_indices[0] == -1) { // add all atoms
+    n_force = structure.forces.size();
+    for (int i = 0; i < n_atoms; i++) {
+      atoms.push_back(i);
+    }
+  } else {
+    atoms = atom_indices;
+    n_force = atoms.size() * 3;
+  }
+  training_atom_indices.push_back(atoms);
   int n_stress = structure.stresses.size();
   int n_struc_labels = n_energy + n_force + n_stress;
-  int n_atoms = structure.noa;
 
   // Update labels.
   label_count.conservativeResize(training_structures.size() + 2);
@@ -502,15 +518,13 @@ void SparseGP ::add_training_structure(const Structure &structure, const std::ve
   for (int i = 0; i < n_kernels; i++) {
     int n_sparse = sparse_descriptors[i].n_clusters;
 
-    envs_struc_kernels =
+    envs_struc_kernels = // contain all atoms
         kernels[i]->envs_struc(sparse_descriptors[i], structure.descriptors[i],
                                kernels[i]->kernel_hyperparameters);
 
     Kuf_kernels[i].conservativeResize(n_sparse, n_labels + n_struc_labels);
     Kuf_kernels[i].block(0, n_labels, n_sparse, n_energy) =
         envs_struc_kernels.block(0, 0, n_sparse, n_energy);
-    Kuf_kernels[i].block(0, n_labels + n_energy, n_sparse, n_force) =
-        envs_struc_kernels.block(0, 1, n_sparse, n_force);
     Kuf_kernels[i].block(0, n_labels + n_energy + n_force, n_sparse, n_stress) =
         envs_struc_kernels.block(0, 1 + n_atoms * 3, n_sparse, n_stress);
 
@@ -721,6 +735,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   std::chrono::high_resolution_clock::time_point t1, t2;
   t1 = std::chrono::high_resolution_clock::now();
 
+  // Compute training data fitting loss
   Eigen::VectorXd K_alpha = Kuf.transpose() * alpha;
   Eigen::VectorXd y_K_alpha = y - K_alpha;
   data_fit =
@@ -801,7 +816,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
       std::cout << "Time: Kuu_grad Kuf_grad " << duration << std::endl;
       t1 = std::chrono::high_resolution_clock::now();
 
-      // Compute Pi matrix and save as an intermediate variable
+      // Compute Pi matrix and save as an intermediate variable for derivative of complexity
       Eigen::MatrixXd dK_noise_K;
       if (precomputed_KnK) {
         dK_noise_K = compute_dKnK(i);
@@ -885,6 +900,9 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
 }
 
 void SparseGP ::precompute_KnK() {
+  // For NormalizedDotProduct kernel, since the signal variance is just a prefactor, we can
+  // save some intermediate matrices without the prefactor. Here we save
+  // Kuf * energy_noise_vector_one * Kfu / sig^4
   Kuf_e_noise_Kfu = {};
   Kuf_f_noise_Kfu = {};
   Kuf_s_noise_Kfu = {};
@@ -906,6 +924,7 @@ void SparseGP ::precompute_KnK() {
 }
 
 void SparseGP ::compute_KnK(bool precomputed) {
+  // Compute Kuf * noise_vector * Kfu sperately for energy, force and stress noises
   if (precomputed) {
     KnK_e = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
     KnK_f = Eigen::MatrixXd::Zero(n_sparse, n_sparse); 
@@ -941,6 +960,7 @@ void SparseGP ::compute_KnK(bool precomputed) {
 }
 
 Eigen::MatrixXd SparseGP ::compute_dKnK(int i) {
+  // Compute Kuf_gra * noise_vector * Kfu sperately for energy, force and stress noises
   Eigen::MatrixXd dKnK = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
 
   int count_ij = i * n_kernels;

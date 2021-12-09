@@ -30,6 +30,7 @@ public:
   std::vector<ClusterDescriptor> sparse_descriptors;
   std::vector<Structure> training_structures;
   std::vector<std::vector<std::vector<int>>> sparse_indices;
+  std::vector<std::vector<int>> training_atom_indices;
 
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count, e_noise_one, f_noise_one, s_noise_one;
