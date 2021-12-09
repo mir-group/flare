@@ -148,9 +148,9 @@ TEST_F(StructureTest, TestAdd){
 
 TEST_F(StructureTest, LikeGrad) {
   // Check that the DTC likelihood gradient is correctly computed.
-  double sigma_e = 1;
-  double sigma_f = 2;
-  double sigma_s = 3;
+  double sigma_e = 0.1;
+  double sigma_f = 0.1;
+  double sigma_s = 0.1;
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel_3);
@@ -182,7 +182,7 @@ TEST_F(StructureTest, LikeGrad) {
 
   int n_hyps = hyps.size();
   Eigen::VectorXd hyps_up, hyps_down;
-  double pert = 1e-4, like_up, like_down, fin_diff;
+  double pert = 1e-6, like_up, like_down, fin_diff;
 
   for (int i = 0; i < n_hyps; i++) {
     hyps_up = hyps;
@@ -195,9 +195,98 @@ TEST_F(StructureTest, LikeGrad) {
 
     fin_diff = (like_up - like_down) / (2 * pert);
 
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-7);
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-5);
   }
 }
+
+TEST_F(StructureTest, LikeGradStable) {
+  // Check that the DTC likelihood gradient is correctly computed.
+  double sigma_e = 0.1;
+  double sigma_f = 0.1;
+  double sigma_s = 0.1;
+
+  std::vector<Kernel *> kernels;
+  kernels.push_back(&kernel_norm);
+  kernels.push_back(&kernel_3_norm);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+
+  std::vector<Descriptor *> dc;
+
+  descriptor_settings = {n_species, N, L};
+  B2 b1(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+          descriptor_settings);
+  dc.push_back(&b1);
+  descriptor_settings = {n_species, N, L};
+  B3 b2(radial_string, cutoff_string, radial_hyps, cutoff_hyps,
+          descriptor_settings);
+  dc.push_back(&b2);
+
+  test_struc = Structure(cell, species, positions, cutoff, dc);
+
+  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
+  test_struc.energy = energy;
+  test_struc.forces = forces;
+  test_struc.stresses = stresses;
+
+  sparse_gp.add_training_structure(test_struc, {0, 1, 3, 5});
+  sparse_gp.add_specific_environments(test_struc, {0, 1, 3}); 
+
+  EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
+  EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
+
+  sparse_gp.update_matrices_QR();
+
+  // Check the likelihood function.
+  Eigen::VectorXd hyps = sparse_gp.hyperparameters;
+  sparse_gp.set_hyperparameters(hyps);
+  sparse_gp.precompute_KnK();
+  double like = sparse_gp.compute_likelihood_gradient_stable(true);
+
+  // Debug: check KnK
+  Eigen::MatrixXd KnK_e = sparse_gp.Kuf * sparse_gp.e_noise_one.asDiagonal() * sparse_gp.Kuf.transpose();
+  for (int i = 0; i < KnK_e.rows(); i++) {
+    for (int j = 0; j < KnK_e.rows(); j++) {
+      EXPECT_NEAR(KnK_e(i, j), sparse_gp.KnK_e(i, j), 1e-8);
+    }
+  }
+
+  Eigen::VectorXd like_grad = sparse_gp.likelihood_gradient;
+
+  // Check the likelihood function.
+  double like_original = sparse_gp.compute_likelihood_gradient(hyps);
+  Eigen::VectorXd like_grad_original = sparse_gp.likelihood_gradient;
+  EXPECT_NEAR(like, like_original, 1e-7);
+
+  int n_hyps = hyps.size();
+  Eigen::VectorXd hyps_up, hyps_down;
+  double pert = 1e-6, like_up, like_down, fin_diff;
+
+  for (int i = 0; i < n_hyps; i++) {
+    hyps_up = hyps;
+    hyps_down = hyps;
+    hyps_up(i) += pert;
+    hyps_down(i) -= pert;
+
+    sparse_gp.set_hyperparameters(hyps_up);
+    like_up = sparse_gp.compute_likelihood_gradient_stable();
+    double datafit_up = sparse_gp.data_fit; 
+    double complexity_up = sparse_gp.complexity_penalty;
+
+    sparse_gp.set_hyperparameters(hyps_down);
+    like_down = sparse_gp.compute_likelihood_gradient_stable();
+    double datafit_down = sparse_gp.data_fit; 
+    double complexity_down = sparse_gp.complexity_penalty;
+
+    fin_diff = (like_up - like_down) / (2 * pert);
+
+    std::cout << like_grad(i) << " " << fin_diff << std::endl;
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-6);
+    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-6);
+  }
+}
+
 
 TEST_F(StructureTest, Set_Hyps) {
   // Check the reset hyperparameters method.
@@ -230,16 +319,19 @@ TEST_F(StructureTest, Set_Hyps) {
   test_struc_2.stresses = stresses_2;
 
   // Add sparse environments and training structures.
+  std::cout << "adding training structure" << std::endl;
   sparse_gp_1.add_training_structure(test_struc);
   sparse_gp_1.add_training_structure(test_struc_2);
   sparse_gp_1.add_all_environments(test_struc);
   sparse_gp_1.add_all_environments(test_struc_2);
 
+  std::cout << "adding training structure" << std::endl;
   sparse_gp_2.add_training_structure(test_struc);
   sparse_gp_2.add_training_structure(test_struc_2);
   sparse_gp_2.add_all_environments(test_struc);
   sparse_gp_2.add_all_environments(test_struc_2);
 
+  std::cout << "updating matrices" << std::endl;
   sparse_gp_1.update_matrices_QR();
   sparse_gp_2.update_matrices_QR();
 

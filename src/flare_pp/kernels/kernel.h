@@ -49,15 +49,15 @@ public:
   virtual Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
                                                        int kernel_index) = 0;
 
-  std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
-                                        const Eigen::MatrixXd &Kuu,
-                                        const Eigen::VectorXd &hyps);
+  virtual std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
+                                                const Eigen::MatrixXd &Kuu,
+                                                const Eigen::VectorXd &hyps);
 
-  std::vector<Eigen::MatrixXd> Kuf_grad(const ClusterDescriptor &envs,
-                                        const std::vector<Structure> &strucs,
-                                        int kernel_index,
-                                        const Eigen::MatrixXd &Kuf,
-                                        const Eigen::VectorXd &hyps);
+  virtual std::vector<Eigen::MatrixXd> Kuf_grad(const ClusterDescriptor &envs,
+                                                const std::vector<Structure> &strucs,
+                                                int kernel_index,
+                                                const Eigen::MatrixXd &Kuf,
+                                                const Eigen::VectorXd &hyps);
 
   virtual void set_hyperparameters(Eigen::VectorXd hyps) = 0;
 

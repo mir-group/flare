@@ -173,6 +173,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)
       .def("compute_likelihood_gradient",
            &SparseGP::compute_likelihood_gradient)
+      .def("compute_likelihood_gradient_stable",
+           &SparseGP::compute_likelihood_gradient_stable)
+      .def("precompute_KnK", &SparseGP::precompute_KnK)
       .def("write_mapping_coefficients", &SparseGP::write_mapping_coefficients)
       .def_readonly("varmap_coeffs", &SparseGP::varmap_coeffs) // for debugging and unit test
       .def("compute_cluster_uncertainties", &SparseGP::compute_cluster_uncertainties) // for debugging and unit test
@@ -202,6 +205,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("Kuu_kernels", &SparseGP::Kuu_kernels)
       .def_readonly("Kuf", &SparseGP::Kuf)
       .def_readonly("Kuf_kernels", &SparseGP::Kuf_kernels)
+      .def_readwrite("Kuf_e_noise_Kfu", &SparseGP::Kuf_e_noise_Kfu)
+      .def_readwrite("Kuf_f_noise_Kfu", &SparseGP::Kuf_f_noise_Kfu)
+      .def_readwrite("Kuf_s_noise_Kfu", &SparseGP::Kuf_s_noise_Kfu)
       .def_readonly("alpha", &SparseGP::alpha)
       .def_readonly("Kuu_inverse", &SparseGP::Kuu_inverse)
       .def_readonly("Sigma", &SparseGP::Sigma)

@@ -289,6 +289,7 @@ class SGP_Wrapper:
         mode: str = "specific",
         sgp: SparseGP = None,  # for creating sgp_var
         update_qr=True,
+        atom_indices=[-1],
     ):
 
         # Convert coded species to 0, 1, 2, etc.
@@ -332,7 +333,7 @@ class SGP_Wrapper:
         if sgp is None:
             sgp = self.sparse_gp
 
-        sgp.add_training_structure(structure_descriptor)
+        sgp.add_training_structure(structure_descriptor, atom_indices)
         if mode == "all":
             if not custom_range:
                 sgp.add_all_environments(structure_descriptor)
@@ -536,6 +537,23 @@ def compute_negative_likelihood_grad(hyperparameters, sparse_gp,
 
     return negative_likelihood, negative_likelihood_gradient
 
+def compute_negative_likelihood_grad_stable(hyperparameters, sparse_gp, precomputed=False):
+    """Compute the negative log likelihood and gradient with respect to the
+    hyperparameters."""
+
+    assert len(hyperparameters) == len(sparse_gp.hyperparameters)
+
+    sparse_gp.set_hyperparameters(hyperparameters)
+
+    negative_likelihood = -sparse_gp.compute_likelihood_gradient_stable(precomputed)
+    negative_likelihood_gradient = -sparse_gp.likelihood_gradient
+
+    print_hyps_and_grad(
+        hyperparameters, negative_likelihood_gradient, negative_likelihood
+    )
+
+    return negative_likelihood, negative_likelihood_gradient
+
 
 def print_hyps(hyperparameters, neglike):
     print("Hyperparameters:")
@@ -566,11 +584,23 @@ def optimize_hyperparameters(
     """Optimize the hyperparameters of a sparse GP model."""
 
     initial_guess = sparse_gp.hyperparameters
-    arguments = sparse_gp
+    precompute = True
+    for kern in sparse_gp.kernels:
+        if not isinstance(kern, NormalizedDotProduct):
+            precompute = False
+            break
+    if precompute:
+        tic = time()
+        print("Precomputing KnK for hyps optimization")
+        sparse_gp.precompute_KnK()
+        print("Done precomputing. Time:", time() - tic)
+        arguments = (sparse_gp, precompute)
+    else:
+        arguments = (sparse_gp, precompute)
 
     if method == "BFGS":
         optimization_result = minimize(
-            compute_negative_likelihood_grad,
+            compute_negative_likelihood_grad_stable,
             initial_guess,
             arguments,
             method="BFGS",
@@ -587,7 +617,7 @@ def optimize_hyperparameters(
 
     elif method == "L-BFGS-B":
         optimization_result = minimize(
-            compute_negative_likelihood_grad,
+            compute_negative_likelihood_grad_stable,
             initial_guess,
             arguments,
             method="L-BFGS-B",

@@ -17,6 +17,8 @@ public:
   std::vector<Kernel *> kernels;
   std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_kernels;
   Eigen::MatrixXd Kuu, Kuf;
+  std::vector<Eigen::MatrixXd> Kuf_e_noise_Kfu, Kuf_f_noise_Kfu, Kuf_s_noise_Kfu;
+  Eigen::MatrixXd KnK_e, KnK_f, KnK_s;
   int n_kernels = 0;
   double Kuu_jitter;
 
@@ -28,9 +30,10 @@ public:
   std::vector<ClusterDescriptor> sparse_descriptors;
   std::vector<Structure> training_structures;
   std::vector<std::vector<std::vector<int>>> sparse_indices;
+  std::vector<std::vector<int>> training_atom_indices;
 
   // Label attributes.
-  Eigen::VectorXd noise_vector, y, label_count;
+  Eigen::VectorXd noise_vector, y, label_count, e_noise_one, f_noise_one, s_noise_one;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
       n_sparse = 0, n_labels = 0, n_strucs = 0;
   double energy_noise, force_noise, stress_noise;
@@ -59,7 +62,7 @@ public:
   std::vector<std::vector<int>>
   sort_clusters_by_uncertainty(const Structure &structure);
 
-  void add_training_structure(const Structure &structure);
+  void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1});
   void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);
   void update_Kuf(const std::vector<ClusterDescriptor> &cluster_descriptors);
   void stack_Kuu();
@@ -73,6 +76,11 @@ public:
   void predict_local_uncertainties(Structure &structure);
 
   void compute_likelihood_stable();
+  double compute_likelihood_gradient_stable(bool precomputed_KnK = false);
+  void precompute_KnK();
+  void compute_KnK(bool precomputed = false);
+  Eigen::MatrixXd compute_dKnK(int i);
+
   void compute_likelihood();
 
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
