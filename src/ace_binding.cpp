@@ -80,7 +80,8 @@ PYBIND11_MODULE(_C_flare, m) {
                      &DescriptorValues::n_neighbors_by_type);
 
   py::class_<ClusterDescriptor>(m, "ClusterDescriptor")
-      .def_readonly("descriptors", &ClusterDescriptor::descriptors);
+      .def_readonly("descriptors", &ClusterDescriptor::descriptors)
+      .def_readonly("descriptor_norms", &ClusterDescriptor::descriptor_norms);
 
   // Descriptor calculators
   py::class_<Descriptor>(m, "Descriptor")
@@ -176,6 +177,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("varmap_coeffs", &SparseGP::varmap_coeffs) // for debugging and unit test
       .def("compute_cluster_uncertainties", &SparseGP::compute_cluster_uncertainties) // for debugging and unit test
       .def("write_varmap_coefficients", &SparseGP::write_varmap_coefficients)
+      .def("write_sparse_descriptors", &SparseGP::write_sparse_descriptors)
+      .def("write_L_inverse", &SparseGP::write_L_inverse)
       .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
       .def_readonly("complexity_penalty", &SparseGP::complexity_penalty)
       .def_readonly("data_fit", &SparseGP::data_fit)

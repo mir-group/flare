@@ -35,11 +35,17 @@ void single_bond_multiple_cutoffs(
     Eigen::MatrixXd &single_bond_env_dervs,
     const Eigen::MatrixXd &cutoff_matrix);
 
-void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
-                   double &norm_squared, Eigen::VectorXd &B2_env_dot,
+void B2_descriptor(Eigen::VectorXd &B2_vals,
+                   double &norm_squared,
                    const Eigen::VectorXd &single_bond_vals,
-                   const Eigen::MatrixXd &single_bond_env_dervs, int n_species,
-                   int N, int lmax, const Eigen::MatrixXd &beta_matrix,
+                   int n_species,
+                   int N, int lmax);
+
+void compute_energy_and_u(Eigen::VectorXd &B2_vals, 
+                   double &norm_squared,
+                   const Eigen::VectorXd &single_bond_vals,
+                   int n_species,
+                   int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
                    Eigen::VectorXd &u, double *evdwl);
 
 #endif

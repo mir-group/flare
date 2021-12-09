@@ -53,8 +53,17 @@ protected:
   Eigen::MatrixXd beta_matrix;
   std::vector<Eigen::MatrixXd> beta_matrices;
 
+  Eigen::VectorXd hyperparameters;
+  std::vector<Eigen::MatrixXd> L_inv_blocks, normed_sparse_descriptors;
+  int n_hyps, n_clusters, n_kernels, n_types;
+  bool use_map = false;
+  int power = 2;
+  int* n_clusters_by_type;
+
   virtual void allocate();
   virtual void read_file(char *);
+  void read_L_inverse(char *);
+  void read_sparse_descriptors(char *);
   void grab(FILE *, int, double *);
 
   virtual void coeff(int, char **);
