@@ -7,6 +7,8 @@
 #include <numeric> // Iota
 #include <assert.h> 
 
+#define MAXLINE 1024
+
 SparseGP ::SparseGP() {}
 
 SparseGP ::SparseGP(std::vector<Kernel *> kernels, double energy_noise,
@@ -1291,6 +1293,14 @@ void SparseGP::write_varmap_coefficients(
   coeff_file << "CONTRIBUTOR: ";
   coeff_file << contributor << "\n";
 
+  // Record the hyps
+  coeff_file << hyperparameters.size() << "\n";
+  coeff_file << std::scientific << std::setprecision(16);
+  for (int i = 0; i < hyperparameters.size(); i++) {      
+    coeff_file << hyperparameters(i) << " ";
+  }
+  coeff_file << "\n";
+
   // Write descriptor information to file.
   int coeff_size = varmap_coeffs.row(0).size();
   training_structures[0].descriptor_calculators[kernel_index]->
@@ -1306,6 +1316,7 @@ void SparseGP::write_varmap_coefficients(
     // Start a new line for each beta.
     if (count != 0) {
       coeff_file << "\n";
+      count = 0;
     }
 
     for (int j = 0; j < coeff_vals.size(); j++) {
@@ -1327,6 +1338,119 @@ void SparseGP::write_varmap_coefficients(
         coeff_file << "\n";
       }
     }
+  }
+
+  coeff_file.close();
+}
+
+void SparseGP::write_L_inverse(
+  std::string file_name, std::string contributor) {
+  // Make beta file.
+  std::ofstream coeff_file;
+  coeff_file.open(file_name);
+
+  // Record file name
+  coeff_file << "L_inverse_block file ";
+
+  // Record the date.
+  time_t now = std::time(0);
+  std::string t(ctime(&now));
+  coeff_file << "DATE: ";
+  coeff_file << t.substr(0, t.length() - 1) << " ";
+
+  // Record the contributor.
+  coeff_file << "CONTRIBUTOR: ";
+  coeff_file << contributor << "\n";
+
+  // Record the hyps
+  coeff_file << hyperparameters.size() << "\n";
+  coeff_file << std::scientific << std::setprecision(16);
+  for (int i = 0; i < hyperparameters.size(); i++) {      
+    coeff_file << hyperparameters(i) << " ";
+  }
+  coeff_file << "\n";
+
+  int sparse_count = 0;
+  for (int i = 0; i < n_kernels; i++) {
+    //  sparse_descriptors[i].descriptors[s];
+    training_structures[0].descriptor_calculators[i]->
+      write_to_file(coeff_file, n_kernels);
+
+    coeff_file << std::scientific << std::setprecision(16);
+
+    // write the lower triangular part of L_inv_block 
+    int n_clusters = sparse_descriptors[i].n_clusters;
+    Eigen::MatrixXd L_inverse_block =
+        L_inv.block(sparse_count, sparse_count, n_clusters, n_clusters);
+    sparse_count += n_clusters;
+
+    coeff_file << n_clusters << "\n";
+    int count = 1;
+    for (int j = 0; j < n_clusters; j++) {
+      for (int k = 0; k <= j; k++) {
+        coeff_file << L_inverse_block(j, k) << " ";
+
+        // Change line after writing 5 numbers
+        if (count % 5 == 0) coeff_file << "\n";
+        count++;
+      }
+    }
+    if (count % 5 != 0) coeff_file << "\n";
+
+  }
+
+  coeff_file.close();
+}
+
+void SparseGP::write_sparse_descriptors(
+  std::string file_name, std::string contributor) {
+  // Make beta file.
+  std::ofstream coeff_file;
+  coeff_file.open(file_name);
+
+  // Record file name
+  coeff_file << "sparse_descriptors file ";
+
+  // Record the date.
+  time_t now = std::time(0);
+  std::string t(ctime(&now));
+  coeff_file << "DATE: ";
+  coeff_file << t.substr(0, t.length() - 1) << " ";
+
+  // Record the contributor.
+  coeff_file << "CONTRIBUTOR: ";
+  coeff_file << contributor << "\n";
+
+  coeff_file << std::scientific << std::setprecision(16);
+
+  // Record the number of kernels
+  coeff_file << n_kernels << "\n";
+
+  for (int i = 0; i < n_kernels; i++) {
+
+    int n_types = sparse_descriptors[i].n_types;
+    int n_clusters = sparse_descriptors[i].n_clusters;
+
+    coeff_file << i << " " << n_clusters << " " << n_types << "\n";
+
+    int count = 1;
+    for (int s = 0; s < n_types; s++) {
+      int n_clusters_by_type = sparse_descriptors[i].n_clusters_by_type[s];
+      int n_descriptors = sparse_descriptors[i].n_descriptors;
+
+      coeff_file << n_clusters_by_type << "\n";
+      for (int j = 0; j < n_clusters_by_type; j++) {
+        for (int k = 0; k < n_descriptors; k++) {
+          coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " "; 
+
+          // Change line after writing 5 numbers
+          if (count % 5 == 0) coeff_file << "\n";
+          count++;
+        }
+      }
+      if (count % 5 != 1) coeff_file << "\n";
+    }
+
   }
 
   coeff_file.close();

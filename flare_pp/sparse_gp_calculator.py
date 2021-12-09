@@ -101,7 +101,7 @@ class SGP_Calculator(Calculator):
             stds_full = np.zeros((len(sorted_variances), 3))
 
             # Divide by the signal std to get a unitless value.
-            stds_full[:, 0] = stds / self.gp_model.hyps[0]
+            stds_full[:, 0] = stds / np.abs(self.gp_model.hyps[0])
             self.results["stds"] = stds_full
 
     def get_uncertainties(self, atoms):

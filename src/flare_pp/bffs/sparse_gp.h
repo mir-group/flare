@@ -94,6 +94,8 @@ public:
   void write_varmap_coefficients(std::string file_name,
                                   std::string contributor,
                                   int kernel_index);
+  void write_sparse_descriptors(std::string file_name, std::string contributor);
+  void write_L_inverse(std::string file_name, std::string contributor);
 
   // TODO: Make kernels jsonable.
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SparseGP, hyperparameters, kernels,    

@@ -206,15 +206,12 @@ void single_bond(
   */
 }
 
-void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
-                   double &norm_squared, Eigen::VectorXd &B2_env_dot,
+void B2_descriptor(Eigen::VectorXd &B2_vals, 
+                   double &norm_squared,
                    const Eigen::VectorXd &single_bond_vals,
-                   const Eigen::MatrixXd &single_bond_env_dervs, int n_species,
-                   int N, int lmax, const Eigen::MatrixXd &beta_matrix,
-                   Eigen::VectorXd &u, double *evdwl) {
+                   int n_species,
+                   int N, int lmax) { 
 
-  int env_derv_size = single_bond_env_dervs.rows();
-  int neigh_size = env_derv_size / 3;
   int n_radial = n_species * N;
   int n_harmonics = (lmax + 1) * (lmax + 1);
   int n_descriptors = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
@@ -223,8 +220,6 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
 
   // Zero the B2 vectors and matrices.
   B2_vals = Eigen::VectorXd::Zero(n_descriptors);
-  B2_env_dervs = Eigen::MatrixXd::Zero(env_derv_size, n_descriptors);
-  B2_env_dot = Eigen::VectorXd::Zero(env_derv_size);
 
   // Compute the descriptor.
   for (int n1 = n_radial - 1; n1 >= 0; n1--) {
@@ -250,6 +245,20 @@ void B2_descriptor(Eigen::VectorXd &B2_vals, Eigen::MatrixXd &B2_env_dervs,
 
   // Compute w(n1, n2, l), where f_ik = w * dB/dr_ik
   norm_squared = B2_vals.dot(B2_vals);
+}
+
+void compute_energy_and_u(Eigen::VectorXd &B2_vals, 
+                   double &norm_squared,
+                   const Eigen::VectorXd &single_bond_vals,
+                   int n_species,
+                   int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
+                   Eigen::VectorXd &u, double *evdwl) {
+
+
+  int n1_l, n2_l, counter, n1_count, n2_count;
+  int n_radial = n_species * N;
+  int n_harmonics = (lmax + 1) * (lmax + 1);
+
   Eigen::VectorXd beta_p = beta_matrix * B2_vals;
   *evdwl = B2_vals.dot(beta_p) / norm_squared;
   Eigen::VectorXd w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared;
