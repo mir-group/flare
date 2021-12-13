@@ -49,6 +49,7 @@ public:
                                                int kernel_index);
   Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
+  void write_info(std::ofstream &coeff_file);
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct_ICM,
     sigma, sig2, power, no_types, n_icm_coeffs, icm_coeffs, kernel_name)

@@ -55,10 +55,16 @@ public:
 
   void set_hyperparameters(Eigen::VectorXd new_hyps);
 
+  Eigen::MatrixXd compute_map_coeff_pow1(const SparseGP &gp_model,
+                                         int kernel_index);
+  Eigen::MatrixXd compute_map_coeff_pow2(const SparseGP &gp_model,
+                                         int kernel_index);
+
   Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
   Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
-                                               int kernel_index);
+                                              int kernel_index);
+  void write_info(std::ofstream &coeff_file);
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct,
     sigma, sig2, power, kernel_name, kernel_hyperparameters)

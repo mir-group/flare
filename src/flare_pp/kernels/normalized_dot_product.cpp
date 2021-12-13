@@ -5,6 +5,8 @@
 #undef NDEBUG
 #include <assert.h>
 #include <cmath>
+#include <fstream> // File operations
+#include <iomanip> // setprecision
 #include <iostream>
 #include <stdexcept>
 
@@ -621,20 +623,83 @@ NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
   // Assumes there is at least one sparse environment stored in the sparse GP.
 
   Eigen::MatrixXd mapping_coeffs;
-  if (power != 2) {
+
+  if (power == 1) {
+    mapping_coeffs = compute_map_coeff_pow1(gp_model, kernel_index);
+  } else if (power == 2) {
+    mapping_coeffs = compute_map_coeff_pow2(gp_model, kernel_index);
+  } else { 
     std::cout
         << "Mapping coefficients of the normalized dot product kernel are "
            "implemented for power 2 only."
         << std::endl;
-    return mapping_coeffs;
   }
+
+  return mapping_coeffs;
+}
+
+Eigen::MatrixXd
+NormalizedDotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
+                                              int kernel_index) {
+
+  // Initialize beta vector.
+  int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
+  int beta_size = p_size;
+  int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
+  int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
+  Eigen::MatrixXd mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
+  double empty_thresh = 1e-8;
+
+  // Get alpha index.
+  int alpha_ind = 0;
+  for (int i = 0; i < kernel_index; i++) {
+    alpha_ind += gp_model.sparse_descriptors[i].n_clusters;
+  }
+
+  // Loop over types.
+  for (int i = 0; i < n_species; i++) {
+    int n_types =
+        gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[i];
+    int c_types =
+        gp_model.sparse_descriptors[kernel_index].cumulative_type_count[i];
+
+    // Loop over clusters within each type.
+    for (int j = 0; j < n_types; j++) {
+      Eigen::VectorXd p_current =
+          gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
+      double p_norm =
+          gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
+      
+      // Skip empty environments.
+      if (p_norm < empty_thresh)
+        continue;
+
+      double alpha_val = gp_model.alpha(alpha_ind + c_types + j);
+      int beta_count = 0;
+
+      // First loop over descriptor values.
+      for (int k = 0; k < p_size; k++) {
+        double p_ik = p_current(k) / p_norm;
+        mapping_coeffs(i, beta_count) += sig2 * p_ik * alpha_val;
+
+        beta_count++;
+      }
+    }
+  }
+
+  return mapping_coeffs;
+}
+
+Eigen::MatrixXd
+NormalizedDotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
+                                              int kernel_index) {
 
   // Initialize beta vector.
   int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
   int beta_size = p_size * (p_size + 1) / 2;
   int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
   int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
-  mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
+  Eigen::MatrixXd mapping_coeffs = Eigen::MatrixXd::Zero(n_species, beta_size);
   double empty_thresh = 1e-8;
 
   // Get alpha index.
@@ -770,6 +835,11 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
   }
 
   return mapping_coeffs;
+}
+
+void NormalizedDotProduct ::write_info(std::ofstream &coeff_file) {
+  //coeff_file << std::fixed << std::setprecision(2);
+  coeff_file << power << "\n";
 }
 
 nlohmann::json NormalizedDotProduct ::return_json(){

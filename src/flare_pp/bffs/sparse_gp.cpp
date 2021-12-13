@@ -1227,6 +1227,9 @@ void SparseGP::write_mapping_coefficients(std::string file_name,
   coeff_file << "CONTRIBUTOR: ";
   coeff_file << contributor << "\n";
 
+  // Write the kernel power
+  kernels[kernel_index]->write_info(coeff_file);
+
   // Write descriptor information to file.
   int coeff_size = mapping_coeffs.row(0).size();
   training_structures[0].descriptor_calculators[kernel_index]->write_to_file(
