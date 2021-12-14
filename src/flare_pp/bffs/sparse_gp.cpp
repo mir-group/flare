@@ -1365,6 +1365,10 @@ void SparseGP::write_L_inverse(
   coeff_file << "CONTRIBUTOR: ";
   coeff_file << contributor << "\n";
 
+  // Write the kernel power
+  // TODO: support multiple kernels
+  kernels[0]->write_info(coeff_file);
+
   // Record the hyps
   coeff_file << hyperparameters.size() << "\n";
   coeff_file << std::scientific << std::setprecision(16);

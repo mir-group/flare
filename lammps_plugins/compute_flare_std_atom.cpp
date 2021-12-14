@@ -173,8 +173,9 @@ void ComputeFlareStdAtom::compute_peratom() {
     double sig = hyperparameters(0);
     double sig2 = sig * sig;
     if (use_map) {
-      compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, n_species,
-           n_max, l_max, beta_matrices[itype - 1], u, &variance);
+      int power = 2;
+      compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
+              n_species, n_max, l_max, beta_matrices[itype - 1], u, &variance);
       variance /= sig2;
     } else {
       double B2_norm = pow(B2_norm_squared, 0.5);
@@ -435,9 +436,13 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   if (me == 0) {
     fgets(line, MAXLINE, fptr); // skip the first line
 
+    fgets(line, MAXLINE, fptr); // power 
+    sscanf(line, "%i", &power);
+
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
   }
+  MPI_Bcast(&power, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
 
   hyperparameters = Eigen::VectorXd::Zero(n_hyps);

@@ -838,7 +838,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
 }
 
 void NormalizedDotProduct ::write_info(std::ofstream &coeff_file) {
-  //coeff_file << std::fixed << std::setprecision(2);
+  coeff_file << std::fixed << std::setprecision(1);
   coeff_file << power << "\n";
 }
 

@@ -128,8 +128,8 @@ void PairFLARE::compute(int eflag, int vflag) {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, n_species,
-           n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
+    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power, 
+           n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
 
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
@@ -278,17 +278,24 @@ void PairFLARE::read_file(char *filename) {
 
   int tmp, nwords;
   if (me == 0) {
-    fgets(line, MAXLINE, fptr);
+    fgets(line, MAXLINE, fptr); // Date and contributor
+
+    fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
+    sscanf(line, "%i", &power);
+
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
+
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
+
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
   }
 
+  MPI_Bcast(&power, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
@@ -324,7 +331,14 @@ void PairFLARE::read_file(char *filename) {
   n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
 
   // Check the relationship between the power spectrum and beta.
-  int beta_check = n_descriptors * (n_descriptors + 1) / 2;
+  int beta_check;
+  if (power == 1) {
+    beta_check = n_descriptors;
+  } else if (power == 2) {
+    beta_check = n_descriptors * (n_descriptors + 1) / 2;
+  } else {
+    error->all(FLERR, "Power should be 1 or 2.");
+  }
   if (beta_check != beta_size)
     error->all(FLERR, "Beta size doesn't match the number of descriptors.");
 
@@ -351,21 +365,33 @@ void PairFLARE::read_file(char *filename) {
   Eigen::MatrixXd beta_matrix;
   int beta_count = 0;
   double beta_val;
-  for (int k = 0; k < n_species; k++) {
-    beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
-    for (int i = 0; i < n_descriptors; i++) {
-      for (int j = i; j < n_descriptors; j++) {
-        if (i == j)
-          beta_matrix(i, j) = beta[beta_count];
-        else if (i != j) {
-          beta_val = beta[beta_count] / 2;
-          beta_matrix(i, j) = beta_val;
-          beta_matrix(j, i) = beta_val;
-        }
+
+  if (power == 1) {
+    for (int k = 0; k < n_species; k++) {
+      beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, 1);
+      for (int i = 0; i < n_descriptors; i++) {
+        beta_matrix(i, 0) = beta[beta_count];
         beta_count++;
       }
+      beta_matrices.push_back(beta_matrix);
     }
-    beta_matrices.push_back(beta_matrix);
+  } else if (power == 2) {
+    for (int k = 0; k < n_species; k++) {
+      beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
+      for (int i = 0; i < n_descriptors; i++) {
+        for (int j = i; j < n_descriptors; j++) {
+          if (i == j)
+            beta_matrix(i, j) = beta[beta_count];
+          else if (i != j) {
+            beta_val = beta[beta_count] / 2;
+            beta_matrix(i, j) = beta_val;
+            beta_matrix(j, i) = beta_val;
+          }
+          beta_count++;
+        }
+      }
+      beta_matrices.push_back(beta_matrix);
+    }
   }
 }
 
