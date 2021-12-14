@@ -29,6 +29,9 @@ def test_write_potential(n_species, n_types, power):
     if n_species > n_types:
         pytest.skip()
 
+    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
+        pytest.skip()
+
     # Write potential file.
     sgp_model = get_sgp_calc(n_types, power)
     potential_name = f"LJ_{n_species}_{n_types}.txt"
@@ -98,6 +101,9 @@ def test_write_potential(n_species, n_types, power):
 @pytest.mark.parametrize("power", power_list)
 def test_lammps_uncertainty(n_species, n_types, use_map, power):
     if n_species > n_types:
+        pytest.skip()
+
+    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
         pytest.skip()
 
     os.chdir(rootdir)
