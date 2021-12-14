@@ -44,7 +44,7 @@ void B2_descriptor(Eigen::VectorXd &B2_vals,
 void compute_energy_and_u(Eigen::VectorXd &B2_vals, 
                    double &norm_squared,
                    const Eigen::VectorXd &single_bond_vals,
-                   int n_species,
+                   int power, int n_species,
                    int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
                    Eigen::VectorXd &u, double *evdwl);
 

@@ -677,6 +677,10 @@ NormalizedDotProduct_ICM ::compute_varmap_coefficients(const SparseGP &gp_model,
   return empty_mat;
 }
 
+void NormalizedDotProduct_ICM ::write_info(std::ofstream &coeff_file) {
+  std::cout << "Not implemented." << std::endl;
+}
+
 int get_icm_index(int s1, int s2, int n_types) {
   int s_min = std::min(s1, s2);
   int diff_1 = n_types - s_min;

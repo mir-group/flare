@@ -28,7 +28,7 @@ public:
   double init_one(int, int);
 
 protected:
-  int n_species, n_max, l_max, n_descriptors, beta_size;
+  int power, n_species, n_max, l_max, n_descriptors, beta_size;
 
   std::function<void(std::vector<double> &, std::vector<double> &, double, int,
                      std::vector<double>)>

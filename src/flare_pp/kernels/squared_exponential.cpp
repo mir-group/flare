@@ -635,6 +635,10 @@ SquaredExponential ::compute_varmap_coefficients(const SparseGP &gp_model,
   return empty_mat;
 }
 
+void SquaredExponential ::write_info(std::ofstream &coeff_file) {
+  std::cout << "Not implemented." << std::endl;
+}
+
 nlohmann::json SquaredExponential ::return_json(){
   nlohmann::json j;
   to_json(j, *this);

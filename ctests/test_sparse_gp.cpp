@@ -153,7 +153,7 @@ TEST_F(StructureTest, LikeGrad) {
   double sigma_s = 0.1;
 
   std::vector<Kernel *> kernels;
-  kernels.push_back(&kernel_3);
+  kernels.push_back(&kernel_norm);
   SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
@@ -195,7 +195,7 @@ TEST_F(StructureTest, LikeGrad) {
 
     fin_diff = (like_up - like_down) / (2 * pert);
 
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-5);
+    EXPECT_NEAR(like_grad(i), fin_diff, 2e-4 * abs(fin_diff));
   }
 }
 

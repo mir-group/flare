@@ -6,10 +6,11 @@ from flare.ase.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
 
-from .get_sgp import get_sgp_calc, get_random_atoms, get_updated_sgp
+from .get_sgp import get_sgp_calc, get_random_atoms
 
 n_species_list = [1, 2]
 n_desc_types = [1, 2]
+power_list = [1] #, 2]
 rootdir = os.getcwd()
 
 @pytest.mark.skipif(
@@ -21,14 +22,18 @@ rootdir = os.getcwd()
 )
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
-def test_write_potential(n_species, n_types):
+@pytest.mark.parametrize("power", power_list)
+def test_write_potential(n_species, n_types, power):
     """Test the flare_pp pair style."""
 
     if n_species > n_types:
         pytest.skip()
 
+    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
+        pytest.skip()
+
     # Write potential file.
-    sgp_model = get_sgp_calc(n_types)
+    sgp_model = get_sgp_calc(n_types, power)
     potential_name = f"LJ_{n_species}_{n_types}.txt"
     contributor = "Jon"
     kernel_index = 0
@@ -69,7 +74,10 @@ def test_write_potential(n_species, n_types):
     stress_lmp = test_structure.get_stress()
 
     thresh = 1e-6
+    print(energy, energy_lmp)
     assert(np.abs(energy - energy_lmp) < thresh)
+    print(forces)
+    print(forces_lmp)
     assert(np.max(np.abs(forces - forces_lmp)) < thresh)
     assert(np.max(np.abs(stress - stress_lmp)) < thresh)
 
@@ -90,15 +98,19 @@ def test_write_potential(n_species, n_types):
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("use_map", [False, True])
-def test_lammps_uncertainty(n_species, n_types, use_map):
+@pytest.mark.parametrize("power", power_list)
+def test_lammps_uncertainty(n_species, n_types, use_map, power):
     if n_species > n_types:
+        pytest.skip()
+
+    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
         pytest.skip()
 
     os.chdir(rootdir)
     lmp_command = os.environ.get("lmp")
 
     # get sgp & dump coefficient files
-    sgp_model = get_sgp_calc(n_types)
+    sgp_model = get_sgp_calc(n_types, power)
     contributor = "YX"
     kernel_index = 0
 
