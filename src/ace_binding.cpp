@@ -167,7 +167,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("add_random_environments", &SparseGP::add_random_environments)
       .def("add_uncertain_environments",
            &SparseGP::add_uncertain_environments)
-      .def("add_training_structure", &SparseGP::add_training_structure)
+      .def("add_training_structure", &SparseGP::add_training_structure,
+                       py::arg("structure"),
+                       py::arg("atom_indices") = py::list(-1))
       .def("update_matrices_QR", &SparseGP::update_matrices_QR)
       .def("compute_likelihood", &SparseGP::compute_likelihood)
       .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)
