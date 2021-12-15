@@ -139,7 +139,7 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
       .def(py::init<double, double>())
       .def_readonly("sigma", &NormalizedDotProduct::sigma)
-      .def_readonly("power", &NormalizedDotProduct::power)
+      .def_readwrite("power", &NormalizedDotProduct::power)
       .def_readonly("kernel_hyperparameters",
                     &NormalizedDotProduct::kernel_hyperparameters)
       .def("envs_envs", &NormalizedDotProduct::envs_envs)
