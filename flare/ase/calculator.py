@@ -224,3 +224,6 @@ class FLARE_Calculator(Calculator):
             calc = FLARE_Calculator.from_dict(json.loads(f.readline()))
 
         return calc
+
+    def build_map(self):
+        self.mgp_model.build_map(self.gp_model)
