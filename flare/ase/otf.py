@@ -20,13 +20,13 @@ from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
-import flare
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
 
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
+from flare.fln.lammps import LAMMPS
 
 
 class ASE_OTF(OTF):
@@ -123,11 +123,16 @@ class ASE_OTF(OTF):
             MD = Langevin
         elif md_engine == "NoseHoover":
             MD = NoseHoover
+        elif md_engine == "LAMMPS":
+            MD = LAMMPS
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
         self.md = MD(
-            atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
+            atoms=self.atoms, 
+            timestep=timestep, 
+            trajectory=trajectory, 
+            **md_kwargs,
         )
 
         force_source = dft_source
@@ -206,7 +211,18 @@ class ASE_OTF(OTF):
             self.atoms.calc = self.flare_calc
 
         # Take MD step.
-        self.md.step()
+        if self.md_engine == "LAMMPS":
+            if self.std_tolerance < 0:
+                tol = - self.std_tolerance
+            else:
+                tol = np.abs(self.gp.force_noise) * self.std_tolerance 
+            self.md.step(tol, self.number_of_steps - self.curr_step)
+            new_curr_step = self.md.curr_step - 1
+            self.steps_since_dft += new_curr_step - self.curr_step
+            self.curr_step = new_curr_step
+            self.structure = self.md.curr_atoms
+        else:
+            self.md.step()
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -217,6 +233,9 @@ class ASE_OTF(OTF):
 
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
+            if self.md_engine == "LAMMPS":
+                raise NotImplementedError("Rescaling temperature not supported")
+
             rescale_ind = self.rescale_steps.index(self.curr_step)
             new_temp = self.rescale_temps[rescale_ind]
             temp_fac = new_temp / self.temperature
@@ -274,8 +293,8 @@ class ASE_OTF(OTF):
             self.train_gp()
 
         # update mgp model
-        if self.flare_calc.use_mapping:
-            self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
+        if (self.flare_calc.use_mapping) or (self.md_engine == "LAMMPS"):
+            self.flare_calc.build_map()
 
         # write model
         if (self.dft_count - 1) < self.freeze_hyps:
