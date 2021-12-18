@@ -40,6 +40,7 @@ class LAMMPS:
         self.above_tol = True
         self.curr_tol = None
         self.uncertainty_style = uncertainty_style
+        self.md_dict = md_dict
         self.md_dict["timestep"] = timestep
 
         self.ff_preset_name = ff_preset

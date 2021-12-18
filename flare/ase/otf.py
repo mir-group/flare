@@ -20,9 +20,8 @@ from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
+import flare
 from flare.otf import OTF
-from flare.utils.learner import is_std_in_bound
-
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
@@ -220,7 +219,7 @@ class ASE_OTF(OTF):
             new_curr_step = self.md.curr_step - 1
             self.steps_since_dft += new_curr_step - self.curr_step
             self.curr_step = new_curr_step
-            self.structure = self.md.curr_atoms
+            self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
         else:
             self.md.step()
 

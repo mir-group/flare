@@ -61,8 +61,8 @@ def preset_flare_pp(coeff_dir, species, read_restart=None, compute_unc=True, unc
     if uncertainty_style == "map":
         var_file = os.path.join(coeff_dir, config.COEFF + ".flare.std")
     elif uncertainty_style == "sgp":
-        L_inv_file = os.path.join(coeff_dir, "L_inv.txt")
-        sparse_desc_file = os.path.join(coeff_dir, "sparse_desc.txt")
+        L_inv_file = os.path.join(coeff_dir, f"L_inv_{config.COEFF}.flare")
+        sparse_desc_file = os.path.join(coeff_dir, f"sparse_desc_{config.COEFF}.flare")
         var_file = f"{L_inv_file} {sparse_desc_file}"
 
     if compute_unc:
@@ -101,12 +101,13 @@ def vanilla_md(
     """
 
     # group atoms
+    group_cmd = ""
     if group_commands is not None:
-        group_cmd = ""
         for key in group_commands:
             group_cmd += key.ljust(20, " ") + group_commands[key] + "\n"
 
     # if restart from file, then do not initialize velocites
+    vel_cmd = ""
     if read_restart is None:
         if (not isinstance(init_temp, str)) or ("velocity" not in init_temp):
             vel_cmd = f"velocity            all create {init_temp} {seed} dist gaussian rot yes mom yes\n"
@@ -114,8 +115,8 @@ def vanilla_md(
             vel_cmd = init_temp + "\n"
 
     # add customized fix commands
+    fix_cmd = ""
     if len(fix_commands) > 0:
-        fix_cmd = ""
         for key in fix_commands:
             fix_cmd += key.ljust(20, " ") + fix_commands[key] + "\n"
 
@@ -131,13 +132,13 @@ def vanilla_md(
 
     # Add output commands including dump, thermo.
     # Here we use `fix print` to replace `thermo` because `thermo` sometimes miss lines
+    output_cmd = ""
     if output_commands is None:
         output_cmd = f"""
 dump                dump_all all custom {dump_freq} {config.LMP_TRJ} id type x y z vx vy vz fx fy fz {c_unc}
 fix                 thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) {c_MaxUnc}" append {config.LMP_THERMO}
 """
     else:
-        output_cmd = ""
         for key in output_commands:
             output_cmd += key.ljust(20, " ") + output_commands[key] + "\n"
 
@@ -161,7 +162,7 @@ label break
         # not use uncertainty, only run a non-Bayesian plain MD
         run_cmd = f"""run             {n_steps}"""
 
-    md_cmd = """
+    md_cmd = f"""
 {group_cmd}
 
 {vel_cmd}
