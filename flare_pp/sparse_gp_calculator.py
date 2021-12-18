@@ -110,6 +110,12 @@ class SGP_Calculator(Calculator):
     def calculation_required(self, atoms, quantities):
         return True
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        cls_dict = self.as_dict()
+        cls_dict["results"] = deepcopy(cls_dict["results"])
+        return cls.from_dict(cls_dict)
+
     def as_dict(self):
         out_dict = dict(vars(self))
         out_dict["gp_model"] = self.gp_model.as_dict()
