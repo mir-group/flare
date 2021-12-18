@@ -139,7 +139,7 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
       .def(py::init<double, double>())
       .def_readonly("sigma", &NormalizedDotProduct::sigma)
-      .def_readonly("power", &NormalizedDotProduct::power)
+      .def_readwrite("power", &NormalizedDotProduct::power)
       .def_readonly("kernel_hyperparameters",
                     &NormalizedDotProduct::kernel_hyperparameters)
       .def("envs_envs", &NormalizedDotProduct::envs_envs)
@@ -167,7 +167,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("add_random_environments", &SparseGP::add_random_environments)
       .def("add_uncertain_environments",
            &SparseGP::add_uncertain_environments)
-      .def("add_training_structure", &SparseGP::add_training_structure)
+      .def("add_training_structure", &SparseGP::add_training_structure,
+                       py::arg("structure"),
+                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1))
       .def("update_matrices_QR", &SparseGP::update_matrices_QR)
       .def("compute_likelihood", &SparseGP::compute_likelihood)
       .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)
