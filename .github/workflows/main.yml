@@ -118,6 +118,7 @@ jobs:
 
     - name: Run tutorial
       run: |
+        cd tests
         # Download colab notebook
         export fileid="18_pTcWM19AUiksaRyCgg9BCpVyw744xv"
         wget -O tutorial.ipynb 'https://docs.google.com/uc?export=download&id='${fileid}
