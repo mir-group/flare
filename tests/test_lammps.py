@@ -34,7 +34,7 @@ def test_write_potential(n_species, n_types, power):
 
     # Write potential file.
     sgp_model = get_sgp_calc(n_types, power)
-    potential_name = f"LJ_{n_species}_{n_types}.txt"
+    potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
     contributor = "Jon"
     kernel_index = 0
     sgp_model.gp_model.sparse_gp.write_mapping_coefficients(
@@ -114,7 +114,7 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power):
     contributor = "YX"
     kernel_index = 0
 
-    potential_file = f"LJ_{n_species}_{n_types}.txt"
+    potential_file = f"LJ_{n_species}_{n_types}_{power}.txt"
     sgp_model.gp_model.write_mapping_coefficients(
         potential_file, contributor, kernel_index)
 
