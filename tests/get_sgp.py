@@ -9,7 +9,7 @@ from ase.build import make_supercell
 
 # Define kernel.
 sigma = 2.0
-power = 1
+power = 1.0
 kernel = NormalizedDotProduct(sigma, power)
 
 # Define B2 calculator.
@@ -52,9 +52,7 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
 
 
 def get_empty_sgp(n_types=2, power=2):
-#    # Define kernel.
-#    sigma = 2.0
-#    kernel = NormalizedDotProduct(sigma, power)
+    kernel.power = power
 
     descriptor_settings = [n_types, 8, 3]
     b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
