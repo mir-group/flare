@@ -10,7 +10,7 @@ from .get_sgp import get_sgp_calc, get_random_atoms
 
 n_species_list = [1, 2]
 n_desc_types = [1, 2]
-power_list = [1] #, 2]
+power_list = [1, 2]
 rootdir = os.getcwd()
 
 @pytest.mark.skipif(
