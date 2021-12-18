@@ -115,3 +115,18 @@ jobs:
         export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
         cd tests
         pytest test_lammps.py
+
+    - name: Run tutorial
+      run: |
+        # Download colab notebook
+        export fileid="18_pTcWM19AUiksaRyCgg9BCpVyw744xv"
+        wget -O tutorial.ipynb 'https://docs.google.com/uc?export=download&id='${fileid}
+        # Convert notebook into python script
+        jupyter nbconvert --to script tutorial.ipynb
+        # Remove bash commands in the notebook
+        sed '/!/d' tutorial.txt > tutorial.py
+        # Download datasets needed for the tutorial
+        wget http://quantum-machine.org/gdml/data/npz/aspirin_dft.npz
+        wget https://www.ctcms.nist.gov/potentials/Download/1999--Mishin-Y-Farkas-D-Mehl-M-J-Papaconstantopoulos-D-A--Al/2/Al99.eam.alloy
+        # Run script
+        pytest tutorial.py
