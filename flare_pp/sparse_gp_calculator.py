@@ -142,6 +142,14 @@ class SGP_Calculator(Calculator):
 
         return calc, kernels
 
+    def build_map(self, filename="lmp.flare", contributor="user"):
+        # write potential file for lammps
+        self.gp_model.sparse_gp.write_mapping_coefficients(filename, contributor, 0)
+
+        # write L_inv and sparse descriptors for variance in lammps
+        self.gp_model.sparse_gp.write_L_inverse(f"L_inv_{filename}", contributor)
+        self.gp_model.sparse_gp.write_sparse_descriptors(f"sparse_desc_{filename}", contributor)
+
 
 def sort_variances(structure_descriptor, variances):
     # Check that the variance length matches the number of atoms.
