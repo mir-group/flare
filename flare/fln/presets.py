@@ -164,17 +164,11 @@ label break
 
     md_cmd = f"""
 {group_cmd}
-
 {vel_cmd}
-
 {fix_cmd}
-
 {unc_cmd}
-
 timestep            {timestep}     # set timestep
-
 {output_cmd}
-
 {run_cmd}
 
 write_restart       {config.LMP_RESTART}  # write to restart file for the next run

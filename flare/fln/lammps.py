@@ -1,7 +1,6 @@
 import os, logging, re
 from copy import deepcopy
 import numpy as np
-import matplotlib.pyplot as plt
 from subprocess import call
 
 from ase.io import read, write
@@ -63,17 +62,17 @@ class LAMMPS:
         else:
             raise NotImplementedError
 
-    def step(self, tol, N_steps):
+    def step(self, tol, N_steps, logger):
         # run lammps until the uncertainty interrupts
         N_iter = N_steps // self.md_dict["n_steps"]
-        self.run(coeff_dir=".", N_iter=N_iter, tol=tol)
+        self.run(coeff_dir=".", N_iter=N_iter, tol=tol, logger=logger)
 
         # save trajectory into .xyz
         self.backup()
 
         self.curr_atoms = read(config.LMP_XYZ, index=-1)
 
-    def run(self, coeff_dir, N_iter, tol=None, **kwargs):
+    def run(self, coeff_dir, N_iter, tol=None, logger=None, **kwargs):
         # write lammps data file
         self.write_data(self.atoms)
 
@@ -96,17 +95,18 @@ class LAMMPS:
 
         self.write_input(ff_dict, md_dict)
 
-        logging.info(
-            f"Running LAMMPS command {self.lmp_command} < {config.LMP_IN} > {config.LMP_LOG}"
+        logger.info(
+            f"\nRunning LAMMPS command {self.lmp_command} < {config.LMP_IN} > {config.LMP_LOG}"
         )
 
         # run lammps simulation
         self.above_tol, self.curr_tol = self.run_lammps()
         if not self.above_tol:
             self.curr_iter = N_iter
+            logger.info(f"before updating curr_step={self.curr_step}")
             self.curr_step += self.md_dict["n_steps"] * N_iter
-        logging.info(f"This iteration has run {self.md_dict['n_steps'] * self.curr_iter} time steps")
-        logging.info(f"In total, the MD has run {self.curr_step} time steps")
+        logger.info(f"This iteration has run {self.md_dict['n_steps'] * self.curr_iter} time steps")
+        logger.info(f"In total, the MD has run {self.curr_step} time steps")
 
         # post procesessing
         self.post_process()
@@ -134,6 +134,7 @@ class LAMMPS:
                         self.curr_iter = int(words[1])
                         above_tol = True
                         curr_tol = float(words[-1])
+                        break
                 if line.startswith("Absolute tolerance"):
                     try:
                         curr_tol = float(words[2])
@@ -211,14 +212,18 @@ class LAMMPS:
         """
         self.thermo_dict = process_thermo_txt(config.LMP_IN, config.LMP_THERMO)
 
-    def as_dict(self):
-        new_dict = super().as_dict()
+    def todict(self):
+        var_dict = dict(vars(self))
+        var_dict.pop("atoms")
+
+        new_dict = deepcopy(var_dict)
         new_dict.pop("ff_preset")
         new_dict.pop("md_preset")
         if self.atoms is not None:
             new_dict["atoms"] = self.atoms.todict()
+        new_dict["curr_atoms"] = self.curr_atoms.todict()
         return new_dict
-
+    
 
 ################################################################################
 #                                                                              #
@@ -300,33 +305,3 @@ def process_thermo_txt(in_file="in.lammps", thermo_file="thermo.txt"):
     #    thermo = {k: np.array(v) for k, v in thermo.items()}
     thermo = {prop: thermo_data[:, p] for p, prop in enumerate(properties)}
     return thermo
-
-
-def plot_thermostat(thermo):
-    """
-    Plot thermo info including temperature, ke, pe of the LAMMPS trajectory
-    """
-    plt.switch_backend("agg")
-    plt.style.use("ggplot")
-
-    steps = thermo["Step"]
-
-    plt.figure()
-    plt.plot(steps, thermo["Temp"], label="temperature")
-    plt.xlabel("Time (fs)")
-    plt.ylabel("Temperature (K)")
-    plt.legend()
-    plt.savefig("temp.png", dpi=300)
-
-    plt.figure()
-    ke = thermo["KinEng"]
-    pe = thermo["PotEng"]
-    te = thermo["TotEng"]
-    plt.plot(steps, ke - ke[-1], label="kinetic energy")
-    plt.plot(steps, pe - pe[-1], label="potential energy")
-    plt.plot(steps, te - te[-1], label="total energy")
-    plt.xlabel("Time (fs)")
-    plt.ylabel("Energy (eV)")
-    plt.ylim([-10, 10])
-    plt.legend()
-    plt.savefig("energies.png", dpi=300)
