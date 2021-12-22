@@ -109,6 +109,7 @@ class ASE_OTF(OTF):
         self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
+        self._kernels = None
 
         if md_engine == "VelocityVerlet":
             MD = VelocityVerlet
@@ -214,14 +215,15 @@ class ASE_OTF(OTF):
             if self.std_tolerance < 0:
                 tol = - self.std_tolerance
             else:
-                tol = np.abs(self.gp.force_noise) * self.std_tolerance 
-            self.md.step(tol, self.number_of_steps - self.curr_step)
-            new_curr_step = self.md.curr_step - 1
-            self.steps_since_dft += new_curr_step - self.curr_step
-            self.curr_step = new_curr_step
+                tol = np.abs(self.gp.force_noise) * self.std_tolerance
+            f = logging.getLogger(self.output.basename + "log")
+            self.md.step(tol, self.number_of_steps - self.curr_step, f)
+            self.curr_step = self.md.curr_step
             self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
+            self.atoms = self.structure
         else:
             self.md.step()
+            self.curr_step += 1
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -308,10 +310,19 @@ class ASE_OTF(OTF):
         self.dft_module = self.dft_module.__name__
         md = self.md
         self.md = None
-
+        _kernels = self._kernels
+        self._kernels = None
+        dft_loc = self.dft_loc
+        self.dft_loc = None
+        calc = self.dft_input.calc
+        self.dft_input.calc = None
+        
         dct = deepcopy(dict(vars(self)))
         self.dft_module = eval(self.dft_module)
         self.md = md
+        self._kernels = _kernels
+        self.dft_loc = dft_loc
+        self.dft_input.calc = calc
 
         # write atoms and flare calculator to separate files
         write(self.atoms_name, self.atoms)
@@ -329,15 +340,24 @@ class ASE_OTF(OTF):
 
         for key in ["output", "pred_func", "structure", "dft_input", "md"]:
             dct.pop(key)
+        dct["md"] = self.md.todict()
 
         return dct
 
     @staticmethod
     def from_dict(dct):
-        flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        try:
+            flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+            _kernels = None
+        except: 
+            from flare_pp.sparse_gp_calculator import SGP_Calculator
+            flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
+        else:
+            raise TypeError(f"The calculator from {dct['flare_calc']} is not recognized.")
+
         flare_calc.reset()
         dct["atoms"] = read(dct["atoms"])
-        dct["atoms"].calc = flare_calc
+        dct["calculator"] = flare_calc
         dct.pop("gp")
 
         with open(dct["dft_loc"], "rb") as f:
@@ -347,6 +367,7 @@ class ASE_OTF(OTF):
             dct.pop(key)
 
         new_otf = ASE_OTF(**dct)
+        new_otf._kernels = _kernels
         new_otf.dft_count = dct["dft_count"]
         new_otf.curr_step = dct["curr_step"]
         new_otf.std_tolerance = dct["std_tolerance"]
@@ -354,5 +375,11 @@ class ASE_OTF(OTF):
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:
                 new_otf.md.initialize()
+        elif new_otf.md_engine == "LAMMPS":
+            new_otf.md.curr_step = dct["md"]["curr_step"]
+            assert new_otf.md.curr_step == new_otf.curr_step
+            new_otf.md.curr_iter = dct["md"]["curr_iter"]
+            new_otf.md.above_tol = dct["md"]["above_tol"]
+            new_otf.md.curr_tol = dct["md"]["curr_tol"]
 
         return new_otf

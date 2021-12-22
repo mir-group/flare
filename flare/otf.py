@@ -185,7 +185,7 @@ class OTF:
         # other args
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
-        self.steps_since_dft = 0
+        self.last_dft_step = 0
 
         # Set the prediction function based on user inputs.
         # Force only prediction.
@@ -265,8 +265,9 @@ class OTF:
                     update_threshold=self.update_threshold,
                 )
 
+                steps_since_dft = self.curr_step - self.last_dft_step
                 if (not std_in_bound) and (
-                    self.steps_since_dft > self.min_steps_with_model
+                    steps_since_dft > self.min_steps_with_model
                 ):
                     # record GP forces
                     self.update_temperature()
@@ -275,7 +276,7 @@ class OTF:
 
                     # run DFT and record forces
                     self.dft_step = True
-                    self.steps_since_dft = 0
+                    self.last_dft_step = self.curr_step
                     self.run_dft()
                     dft_frcs = deepcopy(self.structure.forces)
                     dft_stress = deepcopy(self.structure.stress)
@@ -304,10 +305,8 @@ class OTF:
             counter += 1
             # TODO: Reinstate velocity rescaling.
             self.md_step()  # update positions by Verlet
-            self.steps_since_dft += 1
             self.rescale_temperature(self.structure.positions)
 
-            self.curr_step += 1
 
             if self.write_model == 3:
                 self.checkpoint()
@@ -359,6 +358,7 @@ class OTF:
         Take an MD step. This updates the positions of the structure.
         """
         md.update_positions(self.dt, self.noa, self.structure)
+        self.curr_step += 1
 
     def write_gp(self):
         self.gp.write_model(self.gp_name)
