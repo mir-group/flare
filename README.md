@@ -15,7 +15,7 @@ An introductory tutorial in Google Colab is available [here](https://colab.resea
 The tutorial takes a few minutes to run on a normal desktop computer or laptop (excluding installation time).
 
 ## Installation guide
-The easiest way to install is with pip. Just run the following command:
+The easiest way to install flare++ is with pip. Just run the following command:
 ```
 pip install flare_pp
 ```
@@ -38,7 +38,7 @@ See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master
 
 All other software dependencies are taken care of by pip and CMake.
 
-The code is built and tested with Github Actions using the GCC 9 compiler. Other C++ compilers may work, but we can't guarantee this. You can find a summary of recent builds [here](https://github.com/mir-group/flare_pp/actions).
+The code is built and tested with Github Actions using the GCC 9 compiler. (You can find a summary of recent builds [here](https://github.com/mir-group/flare_pp/actions).) Other C++ compilers may work, but we can't guarantee this.
 
 ### Operating systems
 flare++ is tested on a Linux operating system (Ubuntu 20.04.3), but should also be compatible with Mac and Windows operating systems. If you run into issues running the code on Mac or Windows, please post to the issue board.
