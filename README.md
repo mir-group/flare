@@ -31,8 +31,12 @@ See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master
 
 ## System requirements
 ### Software dependencies
-* cmake>=3.14.5 (to compile the C++ source code)
-* [flare](https://github.com/mir-group/flare) (for on-the-fly training)
+* GCC 9
+* Lapack/Lapacke or MKL
+
+All other software dependencies are taken care of by pip and CMake.
+
+The code is built and tested with the GCC 9 compiler. Other C++ compilers may work, but we can't guarantee this.
 
 ### Operating systems
 flare++ is tested with Github Actions on a Linux operating system (Ubuntu 20.04.3). You can find a summary of recent builds [here](https://github.com/mir-group/flare_pp/actions).
