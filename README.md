@@ -3,14 +3,14 @@
 # flare++
 Major features:
 * Bayesian force fields based on sparse Gaussian process regression.
-* Multielement many-body descriptors based on the atomic cluster expansion.
+* Multielement many-body descriptors based on the [atomic cluster expansion](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.99.014104).
 * Mapping to efficient parametric models.
-* Coupling to LAMMPS for large-scale molecular dynamics simulations.
+* Coupling to [LAMMPS](https://www.lammps.org/) for large-scale molecular dynamics simulations.
 
 Check out our preprint introducing flare++ [here](https://arxiv.org/abs/2106.01949).
 
 ## Demo and Instructions for Use
-An introductory tutorial in Google Colab is available [here](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). The tutorial shows how to run flare++ on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://www.youtube.com/watch?v=-FH_VqRQrso&t=875s).
+An introductory tutorial in Google Colab is available [here](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). The tutorial shows how to run flare++ on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
 
 The tutorial takes a few minutes to run on a normal desktop computer or laptop (excluding installation time).
 
