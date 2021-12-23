@@ -33,10 +33,9 @@ See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master
 ### Software dependencies
 * GCC 9
 * Python 3
-* pip
-* Lapack & Lapacke or MKL
+* pip>=20
 
-All other software dependencies are taken care of by pip and CMake.
+MKL is recommended but not required. All other software dependencies are taken care of by pip.
 
 The code is built and tested with Github Actions using the GCC 9 compiler. (You can find a summary of recent builds [here](https://github.com/mir-group/flare_pp/actions).) Other C++ compilers may work, but we can't guarantee this.
 
