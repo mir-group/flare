@@ -25,7 +25,7 @@ from flare.otf import OTF
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
-from flare.fln.lammps import LAMMPS
+from flare.fln.lammps import LAMMPS, check_sgp_match
 
 
 class ASE_OTF(OTF):
@@ -221,6 +221,11 @@ class ASE_OTF(OTF):
             self.curr_step = self.md.curr_step
             self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
             self.atoms = self.structure
+
+            # check if the lammps energy/forces/stress/stds match sgp
+            f = logging.getLogger(self.output.basename + "log")
+            check_sgp_match(self.atoms, self.flare_calc, f)
+
         else:
             self.md.step()
             self.curr_step += 1

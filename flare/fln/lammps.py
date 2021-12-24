@@ -5,6 +5,8 @@ from subprocess import call
 
 from ase.io import read, write
 from ase.calculators.lammps import convert
+from ase.calculators import lammpsrun
+from ase.calculators.singlepoint import SinglePointCalculator
 from flare.utils.element_coder import _Z_to_mass, element_to_Z
 
 from . import presets, config
@@ -73,6 +75,20 @@ class LAMMPS:
         self.curr_atoms = read(config.LMP_XYZ, index=-1)
 
     def run(self, coeff_dir, N_iter, tol=None, logger=None, **kwargs):
+        """
+        Write input and data files for LAMMPS, and then launch the simulation.
+        In active learning, the simulation will be interrupted and exit once 
+        the uncertainty is above the tolerance threshold, or the total number
+        of steps is finished.
+
+        Args:
+            coeff_dir (str): directory of the coefficient file.
+            N_iter (int): the number of iterations to run. Each iteration the 
+                MD runs `n_steps`. Therefore, the total `rest_number_of_steps =
+                n_steps * N_iter`.
+            tol (float): the uncertainty threshold.
+            logger (Logger): a logger from `logging` module to dump log messages.
+        """
         # write lammps data file
         self.write_data(self.atoms)
 
@@ -162,16 +178,18 @@ class LAMMPS:
                     steps.append(int(dump_file[l + 1]))
 
         assert len(steps) == len(trj)
+        start_index = len(self.thermo_dict["step"]) - len(trj)
         for i, frame in enumerate(trj):
             frame.pbc = True
             stress = np.array(
                 [
-                    -self.thermo_dict[p][i]
+                    -self.thermo_dict[p][start_index + i]
                     for p in ["pxx", "pyy", "pzz", "pyz", "pxz", "pxy"]
                 ]
             )
             frame.calc.results["stress"] = convert(stress, "pressure", "metal", "ASE")
-            frame.calc.results["energy"] = self.thermo_dict["pe"][i]
+            frame.calc.results["energy"] = self.thermo_dict["pe"][start_index + i]
+            assert self.thermo_dict["step"][start_index + i] == steps[i], (self.thermo_dict["step"][start_index + i], steps[i])
             frame.info["step"] = steps[i]
         write(config.LMP_XYZ, trj, append=True, format="extxyz")
 
@@ -227,9 +245,126 @@ class LAMMPS:
 
 ################################################################################
 #                                                                              #
-#                                Functions                                     #
+#                               Util Functions                                 #
 #                                                                              #
 ################################################################################
+
+def check_sgp_match(atoms, sgp_calc, logger):
+    """
+    Check if the lammps trajectory or calculator matches the SGP predictions
+    """
+    # if atoms are from a lammps trajectory, then directly use the 
+    # energy/forces/stress/stds from the trajectory to compare with sgp
+    assert isinstance(atoms.calc, SinglePointCalculator), type(atoms.calc)
+    lmp_energy = atoms.potential_energy
+    lmp_forces = atoms.forces
+    lmp_stress = atoms.stress
+    lmp_stds = atoms.get_array("c_unc")
+
+    # subtract the pressure from temperature: sum(m_k * v_ki * v_kj)/ V
+    velocities = atoms.get_velocities()
+    masses = atoms.get_masses()
+    kinetic_stress = np.zeros(6)
+    n = 0
+    for i in range(3):
+        for j in range(i, 3):
+            kinetic_stress[n] += np.sum(masses * velocities[:, i] * velocities[:, j])
+            n += 1
+    kinetic_stress /= atoms.get_volume()
+    kinetic_stress = kinetic_stress[[0, 3, 5, 4, 2, 1]]
+    lmp_stress += kinetic_stress
+
+    # compute sgp energy/forces/stress/stds
+    sgp_calc.reset()
+    atoms.calc = sgp_calc
+    gp_energy = atoms.get_potential_energy()
+    gp_forces = atoms.get_forces()
+    gp_stress = atoms.get_stress()
+    gp_stds = atoms.calc.results["stds"]
+
+    # compute the difference and print to log file
+    de = np.abs(lmp_energy - gp_energy)
+    df = np.max(np.abs(lmp_forces - gp_forces))
+    ds = np.max(np.abs(lmp_stress - gp_stress))
+    du = np.max(np.abs(lmp_stds - gp_stds[:, 0]))
+    logger.info("LAMMPS and SGP maximal absolute difference in prediction:")
+    logger.info(f"Maximal absolute energy difference: {de}")
+    logger.info(f"Maximal absolute forces difference: {df}")
+    logger.info(f"Maximal absolute stress difference: {ds}")
+    logger.info(f"Maximal absolute uncertainty difference: {du}")
+
+    try:
+        # allow a small discrepancy because the position loses precision during dumping
+        assert np.allclose(lmp_energy, gp_energy, atol=1e-3)
+        assert np.allclose(lmp_forces, gp_forces, atol=1e-3)
+        assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
+        assert np.allclose(lmp_stds, gp_stds[0], atol=1e-4)  
+    except:
+        # if the trajectory does not match sgp, this is probably because the dumped
+        # atomic positions in LAMMPS lose precision. Then build a new lammps calc
+        # and do a static calculation and compare to SGP
+        lmp_calc = get_ase_lmp_calc(
+            ff_preset="flare_pp",
+            specorder=["Si", "C"],
+            coeff_dir=".",
+            lmp_command=os.environ.get("lmp"),
+        )
+        atoms.calc = lmp_calc
+        lmp_energy = atoms.get_potential_energy()
+        lmp_forces = atoms.get_forces()
+        lmp_stress = atoms.get_stress()
+
+        assert np.allclose(lmp_energy, gp_energy)
+        assert np.allclose(lmp_forces, gp_forces)
+        assert np.allclose(lmp_stress, gp_stress)
+        atoms.calc = sgp_calc
+
+
+def get_ase_lmp_calc(
+    ff_preset: str, specorder: list, coeff_dir: str, lmp_command: str = None,
+    tmp_dir: str = "./tmp/",
+):
+    """
+    Set up ASE calculator of lammps
+    Args:
+        ff_preset (str): force field preset, either "mgp" or "flare_pp".
+        specorder (list): a list of (unique) species, for example, ["Si", "C"].
+        coeff_dir (str): the directory of the coefficient file for LAMMPS.
+    """
+    if lmp_command is None:
+        lmp_command = os.environ.get("lmp")
+
+    if ff_preset == "mgp":
+        species_str = " ".join(specorder)
+        pot_file = os.path.join(coeff_dir, config.COEFF + ".mgp")
+        params = {
+            "command": lmp_command,
+            "pair_style": "mgp",
+            "pair_coeff": [f"* * {pot_file} {species_str} yes yes"],
+        }
+    elif ff_preset == "flare_pp":
+        pot_file = os.path.join(coeff_dir, config.COEFF + ".flare")
+        params = {
+            "command": lmp_command,
+            "pair_style": "flare",
+            "pair_coeff": [f"* * {pot_file}"],
+        }
+    else:
+        raise NotImplementedError(f"{ff_preset} preset is not implemented")
+
+    files = [pot_file]
+
+    # create ASE calc
+    calc = lammpsrun.LAMMPS(
+        label=f"tmp",
+        keep_tmp_files=True,
+        tmp_dir=tmp_dir,
+        parameters=params,
+        files=files,
+        specorder=specorder,
+    )
+    return calc
+
 
 
 def special_match(strg, search):
@@ -292,16 +427,5 @@ def process_thermo_txt(in_file="in.lammps", thermo_file="thermo.txt"):
     thermo = {prop: [] for prop in properties}
 
     assert "step" in properties
-    # NOT filter out replicated steps
-    #    p_step = properties.index("step")
-    #
-    #    # filter out those replicated steps
-    #    for i in range(thermo_data.shape[0]):
-    #        line = thermo_data[i]
-    #        step = line[p_step]
-    #        if step not in thermo["step"]:
-    #            for p, prop in enumerate(properties):
-    #                thermo[prop].append(line[p])
-    #    thermo = {k: np.array(v) for k, v in thermo.items()}
     thermo = {prop: thermo_data[:, p] for p, prop in enumerate(properties)}
     return thermo
