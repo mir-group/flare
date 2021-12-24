@@ -481,6 +481,7 @@ class Structure:
         predict_energy=None,
         dft_forces=None,
         dft_energy=None,
+        target_atoms=None,
         timestep=-1,
         write_file: str = "",
         append: bool = False,
@@ -515,6 +516,9 @@ class Structure:
                 xyz_str += f" PE={predict_energy}"
             if dft_energy is not None:
                 xyz_str += f" DFT_PE={dft_energy}"
+            if target_atoms is not None:
+                indices = " ".join(target_atoms)
+                xyz_str += f' target_atoms="{indices}"'
             xyz_str += f' Proprties="species:S:1:pos:R:3'
 
             if print_stds:

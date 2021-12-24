@@ -284,6 +284,7 @@ class OTF:
 
                     # run MD step & record the state
                     self.record_state()
+                    self.record_dft_data(self.structure, target_atoms)
 
                     # compute mae and write to output
                     self.compute_mae(gp_frcs, dft_frcs)
@@ -340,6 +341,7 @@ class OTF:
 
         self.update_temperature()
         self.record_state()
+        self.record_dft_data(self.structure, self.init_atoms)
 
         # make initial gp model and predict forces
         self.update_gp(
@@ -512,6 +514,18 @@ class OTF:
             self.start_time,
             self.dft_step,
             self.velocities,
+        )
+
+    def record_dft_data(self, structure, target_atoms):
+        # write xyz and energy/forces/stress
+        self.output.write_xyz_config(
+            self.curr_step,
+            self.structure,
+            self.structure.forces,
+            self.structure.stds,
+            dft_forces=self.structure.forces,
+            dft_energy=self.structure.potential_energy,
+            target_atoms=target_atoms,
         )
 
     def as_dict(self):

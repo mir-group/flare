@@ -221,6 +221,7 @@ class ASE_OTF(OTF):
             self.curr_step = self.md.curr_step
             self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
             self.atoms = self.structure
+            self.dft_input = self.atoms
 
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
@@ -308,6 +309,10 @@ class ASE_OTF(OTF):
                 self.write_gp()
         if self.write_model == 3:
             self.write_gp()
+
+    def record_dft_data(self, structure, target_atoms):
+        structure.info["target_atoms"] = np.array(target_atoms)
+        write(self.output.basename + "_dft.xyz", structure, append=True)
 
     def as_dict(self):
 
