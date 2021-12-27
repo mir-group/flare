@@ -3,6 +3,7 @@
 It needs to be used adjointly with ASE MD engine. 
 """
 import os
+import json
 import sys
 import inspect
 import pickle
@@ -103,9 +104,9 @@ class ASE_OTF(OTF):
         **otf_kwargs
     ):
 
-        self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+        self.structure = FLARE_Atoms.from_ase_atoms(atoms)
         if calculator is not None:
-            self.atoms.calc = calculator
+            self.structure.calc = calculator
         self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
@@ -129,14 +130,14 @@ class ASE_OTF(OTF):
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
         self.md = MD(
-            atoms=self.atoms, 
+            atoms=self.structure, 
             timestep=timestep, 
             trajectory=trajectory, 
             **md_kwargs,
         )
 
         force_source = dft_source
-        self.flare_calc = self.atoms.calc
+        self.flare_calc = self.structure.calc
 
         # Convert ASE timestep to ps for the output file.
         flare_dt = timestep / (units.fs * 1e3)
@@ -147,31 +148,30 @@ class ASE_OTF(OTF):
             gp=self.flare_calc.gp_model,
             force_source=force_source,
             dft_loc=dft_calc,
-            dft_input=self.atoms,
+            dft_input=self.structure,
             **otf_kwargs
         )
 
         self.flare_name = self.output_name + "_flare.json"
         self.dft_name = self.output_name + "_dft.pickle"
-        self.atoms_name = self.output_name + "_atoms.json"
+        self.structure_name = self.output_name + "_atoms.json"
 
     def get_structure_from_input(self, prev_pos_init):
-        self.structure = self.atoms
         if prev_pos_init is None:
-            self.atoms.prev_positions = np.copy(self.atoms.positions)
+            self.structure.prev_positions = np.copy(self.structure.positions)
         else:
-            assert len(self.atoms.positions) == len(
-                self.atoms.prev_positions
+            assert len(self.structure.positions) == len(
+                self.structure.prev_positions
             ), "Previous positions and positions are not same length"
-            self.atoms.prev_positions = prev_pos_init
+            self.structure.prev_positions = prev_pos_init
 
     def initialize_train(self):
         super().initialize_train()
 
         # TODO: Turn this into a "reset" method.
-        if not isinstance(self.atoms.calc, FLARE_Calculator):
+        if not isinstance(self.structure.calc, FLARE_Calculator):
             self.flare_calc.reset()
-            self.atoms.calc = self.flare_calc
+            self.structure.calc = self.flare_calc
 
         if self.md_engine == "NPT":
             if not self.md.initialized:
@@ -190,12 +190,12 @@ class ASE_OTF(OTF):
         """
 
         # Change to FLARE calculator if necessary.
-        if not isinstance(self.atoms.calc, FLARE_Calculator):
+        if not isinstance(self.structure.calc, FLARE_Calculator):
             self.flare_calc.reset()
-            self.atoms.calc = self.flare_calc
+            self.structure.calc = self.flare_calc
 
         if not self.flare_calc.results:
-            self.atoms.calc.calculate(self.atoms)
+            self.structure.calc.calculate(self.structure)
 
     def md_step(self):
         """
@@ -208,7 +208,7 @@ class ASE_OTF(OTF):
         # Reset FLARE calculator.
         if self.dft_step:
             self.flare_calc.reset()
-            self.atoms.calc = self.flare_calc
+            self.structure.calc = self.flare_calc
 
         # Take MD step.
         if self.md_engine == "LAMMPS":
@@ -220,12 +220,11 @@ class ASE_OTF(OTF):
             self.md.step(tol, self.number_of_steps - self.curr_step, f)
             self.curr_step = self.md.curr_step
             self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
-            self.atoms = self.structure
-            self.dft_input = self.atoms
+            self.dft_input = self.structure
 
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
-            check_sgp_match(self.atoms, self.flare_calc, f)
+            check_sgp_match(self.structure, self.flare_calc, f)
 
         else:
             self.md.step()
@@ -247,19 +246,19 @@ class ASE_OTF(OTF):
             new_temp = self.rescale_temps[rescale_ind]
             temp_fac = new_temp / self.temperature
             vel_fac = np.sqrt(temp_fac)
-            curr_velocities = self.atoms.get_velocities()
-            self.atoms.set_velocities(curr_velocities * vel_fac)
+            curr_velocities = self.structure.get_velocities()
+            self.structure.set_velocities(curr_velocities * vel_fac)
 
             # Reset thermostat parameters.
             if self.md_engine in ["NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]:
                 self.md.set_temperature(temperature_K=new_temp)
 
     def update_temperature(self):
-        self.KE = self.atoms.get_kinetic_energy()
-        self.temperature = self.atoms.get_temperature()
+        self.KE = self.structure.get_kinetic_energy()
+        self.temperature = self.structure.get_temperature()
 
         # Convert velocities to Angstrom / ps.
-        self.velocities = self.atoms.get_velocities() * units.fs * 1e3
+        self.velocities = self.structure.get_velocities() * units.fs * 1e3
 
     def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
         stds = self.flare_calc.results.get("stds", np.zeros_like(dft_frcs))
@@ -285,8 +284,25 @@ class ASE_OTF(OTF):
             flare_stress = None
 
         # update gp model
+        try:
+            struc_to_add = deepcopy(self.structure)
+        except TypeError:
+            from ase.calculators.singlepoint import SinglePointCalculator
+            properties = ["forces", "energy", "stress"]
+            results = {
+                "forces": self.structure.forces,
+                "energy": self.structure.potential_energy,
+                "stress": self.structure.stress,
+            }
+
+            calc = self.structure.calc
+            self.structure.calc = None
+            struc_to_add = deepcopy(self.structure)
+            struc_to_add.calc = SinglePointCalculator(struc_to_add, **results)
+            self.structure.calc = calc
+
         self.gp.update_db(
-            self.structure,
+            struc_to_add,
             dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
@@ -335,8 +351,8 @@ class ASE_OTF(OTF):
         self.dft_input.calc = calc
 
         # write atoms and flare calculator to separate files
-        write(self.atoms_name, self.atoms)
-        dct["atoms"] = self.atoms_name
+        write(self.structure_name, self.structure)
+        dct["atoms"] = self.structure_name
 
         self.flare_calc.write_model(self.flare_name)
         dct["flare_calc"] = self.flare_name
@@ -356,10 +372,11 @@ class ASE_OTF(OTF):
 
     @staticmethod
     def from_dict(dct):
-        try:
+        flare_calc_dict = json.load(open(dct["flare_calc"]))
+        if flare_calc_dict["class"] == "FLARE_Calculator":
             flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
             _kernels = None
-        except: 
+        elif flare_calc_dict["class"] == "SGP_Calculator":
             from flare_pp.sparse_gp_calculator import SGP_Calculator
             flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
         else:
