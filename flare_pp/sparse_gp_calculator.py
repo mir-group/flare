@@ -118,6 +118,7 @@ class SGP_Calculator(Calculator):
 
     def as_dict(self):
         out_dict = dict(vars(self))
+        out_dict["class"] = self.__class__.__name__
         out_dict["gp_model"] = self.gp_model.as_dict()
         out_dict.pop("atoms")
 
