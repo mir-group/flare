@@ -177,6 +177,8 @@ class FLARE_Calculator(Calculator):
     def as_dict(self):
         outdict = {}
 
+        outdict["class"] = self.__class__.__name__
+
         gp_dict = self.gp_model.as_dict()
         outdict["gp_model"] = gp_dict
 
