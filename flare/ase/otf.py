@@ -252,6 +252,7 @@ class ASE_OTF(OTF):
             # Reset thermostat parameters.
             if self.md_engine in ["NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]:
                 self.md.set_temperature(temperature_K=new_temp)
+                self.md_kwargs["temperature"] = new_temp * units.kB
 
     def update_temperature(self):
         self.KE = self.structure.get_kinetic_energy()
@@ -332,7 +333,7 @@ class ASE_OTF(OTF):
 
     def as_dict(self):
 
-        # DFT module and Trajectory will cause issue in deepcopy
+        # DFT module and Trajectory are not pickable
         self.dft_module = self.dft_module.__name__
         md = self.md
         self.md = None
@@ -343,12 +344,25 @@ class ASE_OTF(OTF):
         calc = self.dft_input.calc
         self.dft_input.calc = None
         
+        # SGP models aren't picklable. Temporarily set to None before copying.
+        flare_calc = self.flare_calc
+        gp = self.gp
+        self.flare_calc = None
+        self.gp = None
+        self.atoms.calc = None
+
+        # Deepcopy OTF object.
         dct = deepcopy(dict(vars(self)))
+
+        # Reset attributes.
         self.dft_module = eval(self.dft_module)
         self.md = md
         self._kernels = _kernels
         self.dft_loc = dft_loc
         self.dft_input.calc = calc
+        self.flare_calc = flare_calc
+        self.gp = gp
+        self.atoms.calc = flare_calc
 
         # write atoms and flare calculator to separate files
         write(self.structure_name, self.structure)
