@@ -420,12 +420,36 @@ def process_thermo_txt(in_file="in.lammps", thermo_file="thermo.txt"):
             prop_str = prop_str.replace("(", "").replace(")", "")
             properties = prop_str.split()
             break
+
+    # find the last "#" line to be the start of the current trajectory
+    with open(thermo_file) as f:
+        lines = f.readlines()
+        curr_traj_len = 0
+        for l in range(len(lines)):
+            if "#" in lines[len(lines) - l - 1]:
+                curr_traj_len = l
+                break
+
     thermo_data = np.loadtxt(thermo_file)
     if len(thermo_data.shape) == 1: # if there is only one line, numpy reads it as an array
         thermo_data = np.array([thermo_data])
+    else:
+        traj_start = thermo_data.shape[0] - curr_traj_len
+        thermo_data = thermo_data[traj_start:, :]
+
     assert len(properties) == thermo_data.shape[1]
     thermo = {prop: [] for prop in properties}
 
     assert "step" in properties
+    step_ind = properties.index("step")
+
+    # remove duplicated steps
+    new_thermo_data = []
+    for s in range(thermo_data.shape[0]):
+        if not new_thermo_data:
+            new_thermo_data.append(thermo_data[s])
+        elif thermo_data[s][step_ind] != new_thermo_data[-1][step_ind]:
+            new_thermo_data.append(thermo_data[s])
+    thermo_data = np.array(new_thermo_data)
     thermo = {prop: thermo_data[:, p] for p, prop in enumerate(properties)}
     return thermo
