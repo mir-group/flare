@@ -145,6 +145,7 @@ class SGP_Wrapper:
             "radial_hyps": b2_calc.radial_hyps,
             "cutoff_hyps": b2_calc.cutoff_hyps,
             "descriptor_settings": b2_calc.descriptor_settings,
+            "cutoffs": b2_calc.cutoffs,
         }
         out_dict["descriptor_calculators"] = [b2_dict]
 
@@ -226,6 +227,7 @@ class SGP_Wrapper:
             b2_dict["radial_hyps"],
             b2_dict["cutoff_hyps"],
             b2_dict["descriptor_settings"],
+            b2_dict["cutoffs"],
         )
 
         # change the keys of single_atom_energies and species_map to int

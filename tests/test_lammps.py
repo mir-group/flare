@@ -23,7 +23,8 @@ rootdir = os.getcwd()
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("power", power_list)
-def test_write_potential(n_species, n_types, power):
+@pytest.mark.parametrize("multicut", [False, True])
+def test_write_potential(n_species, n_types, power, multicut):
     """Test the flare_pp pair style."""
 
     if n_species > n_types:
@@ -33,7 +34,7 @@ def test_write_potential(n_species, n_types, power):
         pytest.skip()
 
     # Write potential file.
-    sgp_model = get_sgp_calc(n_types, power)
+    sgp_model = get_sgp_calc(n_types, power, multicut)
     potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
     contributor = "Jon"
     kernel_index = 0
@@ -99,7 +100,8 @@ def test_write_potential(n_species, n_types, power):
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("use_map", [False, True])
 @pytest.mark.parametrize("power", power_list)
-def test_lammps_uncertainty(n_species, n_types, use_map, power):
+@pytest.mark.parametrize("multicut", [False, True])
+def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
     if n_species > n_types:
         pytest.skip()
 
@@ -110,7 +112,7 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power):
     lmp_command = os.environ.get("lmp")
 
     # get sgp & dump coefficient files
-    sgp_model = get_sgp_calc(n_types, power)
+    sgp_model = get_sgp_calc(n_types, power, multicut)
     contributor = "YX"
     kernel_index = 0
 

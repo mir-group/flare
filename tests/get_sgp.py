@@ -12,13 +12,6 @@ sigma = 2.0
 power = 1.0
 kernel = NormalizedDotProduct(sigma, power)
 
-# Define B2 calculator.
-cutoff = 5.0
-cutoff_function = "quadratic"
-radial_basis = "chebyshev"
-radial_hyps = [0.0, cutoff]
-cutoff_hyps = []
-
 # Define remaining parameters for the SGP wrapper.
 sigma_e = 0.001
 sigma_f = 0.05
@@ -51,12 +44,22 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
     return flare_atoms
 
 
-def get_empty_sgp(n_types=2, power=2):
+def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
     kernel.power = power
+
+    # Define B2 calculator.
+    cutoff = 5.0
+    cutoff_function = "quadratic"
+    radial_basis = "chebyshev"
+    radial_hyps = [0.0, cutoff]
+    cutoff_hyps = []
+    cutoff_matrix = cutoff * np.ones((n_types, n_types))
+    if multiple_cutoff:
+        cutoff_matrix += np.eye(n_types) - 1
 
     descriptor_settings = [n_types, 8, 3]
     b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
-                 descriptor_settings)
+                 descriptor_settings, cutoff_matrix)
 
     empty_sgp = SGP_Wrapper(
         [kernel], [b2_calc], cutoff, sigma_e, sigma_f, sigma_s, species_map,
@@ -67,7 +70,7 @@ def get_empty_sgp(n_types=2, power=2):
     return empty_sgp
 
 
-def get_updated_sgp(n_types=2, power=2):
+def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
     if n_types == 1:
         numbers = [6, 6]
     elif n_types == 2:
@@ -80,15 +83,15 @@ def get_updated_sgp(n_types=2, power=2):
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
-    sgp = get_empty_sgp(n_types, power)
+    sgp = get_empty_sgp(n_types, power, multiple_cutoff)
     sgp.update_db(training_structure, forces, custom_range=(1, 2, 3, 4, 5),
                   energy=energy, stress=stress, mode="specific")
 
     return sgp
 
 
-def get_sgp_calc(n_types=2, power=2):
-    sgp = get_updated_sgp(n_types, power)
+def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False):
+    sgp = get_updated_sgp(n_types, power, multiple_cutoff)
     sgp_calc = SGP_Calculator(sgp)
 
     return sgp_calc
