@@ -148,22 +148,25 @@ void ComputeFlareStdAtom::compute_peratom() {
     n_inner = 0;
     for (int jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
+      int s = type[j] - 1;
+      double cutoff_val = cutoff_matrix(itype-1, s);
 
       delx = x[j][0] - xtmp;
       dely = x[j][1] - ytmp;
       delz = x[j][2] - ztmp;
       rsq = delx * delx + dely * dely + delz * delz;
-      if (rsq < (cutoff * cutoff)) {
+      if (rsq < (cutoff_val * cutoff_val)) {
         n_inner++;
       }
 
     }
 
     // Compute covariant descriptors.
-    single_bond(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
-                basis_function, cutoff_function, cutoff, n_species, n_max,
-                l_max, radial_hyps, cutoff_hyps, single_bond_vals,
-                single_bond_env_dervs);
+    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, 
+                                 jlist, basis_function, cutoff_function, 
+                                 n_species, n_max, l_max, radial_hyps, 
+                                 cutoff_hyps, single_bond_vals,
+                                 single_bond_env_dervs, cutoff_matrix);
 
     // Compute invariant descriptors.
     B2_descriptor(B2_vals, B2_norm_squared,
@@ -347,8 +350,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%lg", &cutoff); // Cutoff
   }
 
   MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
@@ -362,6 +363,26 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+  // Parse the cutoffs.
+  int n_cutoffs = n_species * n_species;
+  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
+  if (me == 0)
+    grab(fptr, n_cutoffs, cutoffs);
+  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Fill in the cutoff matrix.
+  cutoff = -1;
+  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
+  int cutoff_count = 0;
+  for (int i = 0; i < n_species; i++){
+    for (int j = 0; j < n_species; j++){
+      double cutoff_val = cutoffs[cutoff_count];
+      cutoff_matrix(i, j) = cutoff_val;
+      if (cutoff_val > cutoff) cutoff = cutoff_val;
+      cutoff_count ++;
+    }
+  }
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
@@ -465,16 +486,9 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
-
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%lg", &cutoff); // Cutoff
-
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%i", &n_clusters); // number of sparse envs
   }
 
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
-  MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
@@ -484,6 +498,33 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+
+  // Parse the cutoffs.
+  int n_cutoffs = n_species * n_species;
+  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
+  if (me == 0)
+    grab(fptr, n_cutoffs, cutoffs);
+  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Fill in the cutoff matrix.
+  cutoff = -1;
+  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
+  int cutoff_count = 0;
+  for (int i = 0; i < n_species; i++){
+    for (int j = 0; j < n_species; j++){
+      double cutoff_val = cutoffs[cutoff_count];
+      cutoff_matrix(i, j) = cutoff_val;
+      if (cutoff_val > cutoff) cutoff = cutoff_val;
+      cutoff_count ++;
+    }
+  }
+
+  // Parse number of sparse envs
+  if (me == 0) {
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%i", &n_clusters); 
+  }
+  MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;

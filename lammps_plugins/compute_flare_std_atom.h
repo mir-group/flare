@@ -49,8 +49,8 @@ protected:
 
   int nmax; // number of atoms
   double cutoff;
-  double *beta;
-  Eigen::MatrixXd beta_matrix;
+  double *beta, *cutoffs;
+  Eigen::MatrixXd beta_matrix, cutoff_matrix;
   std::vector<Eigen::MatrixXd> beta_matrices;
 
   Eigen::VectorXd hyperparameters;
