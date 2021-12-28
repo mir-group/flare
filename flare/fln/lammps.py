@@ -249,7 +249,7 @@ class LAMMPS:
 #                                                                              #
 ################################################################################
 
-def check_sgp_match(atoms, sgp_calc, logger):
+def check_sgp_match(atoms, sgp_calc, logger, specorder):
     """
     Check if the lammps trajectory or calculator matches the SGP predictions
     """
@@ -305,7 +305,7 @@ def check_sgp_match(atoms, sgp_calc, logger):
         # and do a static calculation and compare to SGP
         lmp_calc = get_ase_lmp_calc(
             ff_preset="flare_pp",
-            specorder=["Si", "C"],
+            specorder=specorder,
             coeff_dir=".",
             lmp_command=os.environ.get("lmp"),
         )

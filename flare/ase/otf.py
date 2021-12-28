@@ -224,7 +224,7 @@ class ASE_OTF(OTF):
 
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
-            check_sgp_match(self.structure, self.flare_calc, f)
+            check_sgp_match(self.structure, self.flare_calc, f, self.md.specorder)
 
         else:
             self.md.step()
