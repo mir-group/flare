@@ -15,6 +15,7 @@ An introductory tutorial in Google Colab is available [here](https://colab.resea
 The tutorial takes a few minutes to run on a normal desktop computer or laptop (excluding installation time).
 
 ## Installation guide
+### Pip installation
 The easiest way to install flare++ is with pip. Just run the following command:
 ```
 pip install flare_pp
@@ -26,8 +27,35 @@ If you're installing on Harvard's compute cluster, make sure to load the followi
 module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01
 ```
 
+### Developer's installation guide
+After loading modules as above, we use `cmake` to compile the c++ code 
+```bash
+git clone git@github.com:mir-group/flare_pp.git
+cd flare_pp
+mkdir build
+cd build
+cmake ..
+make -j
+```
+Then copy the c-library file into the python code folder to make it importable through python
+```bash
+# copy the python bound c-library into the python code folder
+cp _C_flare*.so ../flare_pp
+cd ..
+```
+
+Finally, add the path of `flare_pp` to `PYTHONPATH`, such that you can `import flare_pp` in python. 
+```bash
+export PYTHONPATH=${PYTHONPATH}:<current_dir>
+```
+An alternative way is setting `sys.path.append(<flare_pp path>)` in your python script.
+
 ### Compiling LAMMPS
 See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master/lammps_plugins/README.md).
+
+### Trouble shooting
+* If you have successfully installed the code, and can `import flare_pp`, but cannot `import flare_pp._C_flare`, we suggest you to check your python version.
+We use `pybind11` to compile the c++ code into a python importable library, however, `pybind11` seems to have problem with python3.9. We have tried python3.6 and it works.
 
 ## System requirements
 ### Software dependencies
