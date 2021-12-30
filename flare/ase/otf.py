@@ -205,7 +205,7 @@ class ASE_OTF(OTF):
             self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
-        # Take MD step.
+        # Take MD step. Inside the step() function, get_forces() is called
         self.md.step()
 
     def write_gp(self):
