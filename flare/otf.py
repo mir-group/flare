@@ -272,7 +272,9 @@ class OTF:
                     # record GP forces
                     self.update_temperature()
                     self.record_state()
-                    gp_frcs = deepcopy(self.structure.forces)
+                    gp_energy = self.structure.potential_energy
+                    gp_forces = deepcopy(self.structure.forces)
+                    gp_stress = deepcopy(self.structure.stress)
 
                     # run DFT and record forces
                     self.dft_step = True
@@ -287,7 +289,14 @@ class OTF:
                     self.record_dft_data(self.structure, target_atoms)
 
                     # compute mae and write to output
-                    self.compute_mae(gp_frcs, dft_frcs)
+                    self.compute_mae(
+                        gp_energy, 
+                        gp_forces, 
+                        gp_stress, 
+                        dft_energy, 
+                        dft_frcs, 
+                        dft_stress,
+                    )
 
                     # add max uncertainty atoms to training set
                     self.update_gp(
@@ -469,13 +478,52 @@ class OTF:
             hyps_mask=self.gp.hyps_mask,
         )
 
-    def compute_mae(self, gp_frcs, dft_frcs):
-        mae = np.mean(np.abs(gp_frcs - dft_frcs))
-        mac = np.mean(np.abs(dft_frcs))
+    def compute_mae(
+        self, 
+        gp_energy,
+        gp_forces, 
+        gp_stress,
+        dft_energy,
+        dft_forces,
+        dft_stress,
+    ):
 
         f = logging.getLogger(self.output.basename + "log")
-        f.info(f"mean absolute error: {mae:.4f} eV/A")
-        f.info(f"mean absolute dft component: {mac:.4f} eV/A")
+
+        # compute energy/forces/stress mean absolute error and value
+        e_mae = np.mean(np.abs(dft_energy - gp_energy))
+        e_mav = np.mean(np.abs(dft_energy))
+        f.info(f"energy mae: {e_mae:.4f} eV")
+        f.info(f"energy mav: {e_mav:.4f} eV")
+
+        f_mae = np.mean(np.abs(dft_forces - gp_forces))
+        f_mav = np.mean(np.abs(dft_forces))
+        f.info(f"forces mae: {f_mae:.4f} eV/A")
+        f.info(f"forces mav: {f_mav:.4f} eV/A")
+
+        s_mae = np.mean(np.abs(dft_stress - gp_stress))
+        s_mav = np.mean(np.abs(dft_stress))
+        f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+        f.info(f"stress mav: {s_mav:.4f} eV/A^3")
+
+        # compute the per-species MAE
+        unique_species = list(set(self.structure.coded_species))
+        per_species_mae = np.zeros(len(unique_species))
+        per_species_mav = np.zeros(len(unique_species))
+        per_species_num = np.zeros(len(unique_species))
+        for a in range(self.structure.nat):
+            species_ind = unique_species.index(self.structure.coded_species[a])
+            per_species_mae[species_ind] += np.mean(np.abs(dft_forces[a] - gp_forces[a]))
+            per_species_mav[species_ind] += np.mean(np.abs(dft_forces[a]))
+            per_species_num[species_ind] += 1
+        per_species_mae /= per_species_num
+        per_species_mav /= per_species_num
+
+        for s in range(len(unique_species)):
+            curr_species = unique_species[s]
+            f.info(f"type {curr_species} forces mae: {per_species_mae[s]:.4f} eV/A")
+            f.info(f"type {curr_species} forces mav: {per_species_mav[s]:.4f} eV/A")
+
 
     def rescale_temperature(self, new_pos: "ndarray"):
         """Change the previous positions to update the temperature
