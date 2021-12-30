@@ -1369,7 +1369,7 @@ class GaussianProcess:
             dictionary["name"] = "default_gp"
         if "per_atom_par" not in dictionary:
             dictionary["per_atom_par"] = True
-        if "optimization_algorithm" not in dictionary:
+        if "opt_algorithm" not in dictionary:
             dictionary["opt_algorithm"] = "L-BFGS-B"
         if "hyps_mask" not in dictionary:
             dictionary["hyps_mask"] = None
