@@ -10,7 +10,7 @@ from flare.utils.parameter_helper import ParameterHelper
 
 
 def get_random_structure(cell, unique_species, noa, set_seed: int = None):
-    """Create a random test structure """
+    """Create a random test structure"""
     if set_seed:
         np.random.seed(set_seed)
 

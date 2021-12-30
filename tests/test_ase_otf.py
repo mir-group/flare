@@ -48,7 +48,7 @@ def read_qe_results(self):
 
 md_list = [
     "VelocityVerlet",
-    "NVTBerendsen", 
+    "NVTBerendsen",
     "NPTBerendsen",
     "NPT",
     "Langevin",
@@ -77,7 +77,9 @@ def md_params():
         elif md_engine == "NPTBerendsen":
             md_dict[md_engine].update({"pressure": 0.0, "compressibility_au": 1.0})
         elif md_engine == "NPT":
-            md_dict[md_engine].update({"externalstress": 0, "ttime": 25, "pfactor": 1.0})
+            md_dict[md_engine].update(
+                {"externalstress": 0, "ttime": 25, "pfactor": 1.0}
+            )
         elif md_engine == "Langevin":
             md_dict[md_engine].update({"friction": 0.02})
         elif md_engine == "NoseHoover":
@@ -220,7 +222,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
     otf_traj = OtfAnalysis(output_name + ".out")
     comp1 = otf_traj.force_list[-2][1, 0]
     comp2 = otf_traj.force_list[-1][1, 0]
-    assert (comp1 != comp2)
+    assert comp1 != comp2
 
     for f in glob.glob("scf*.pw*"):
         os.remove(f)
@@ -264,7 +266,7 @@ def test_otf_parser(md_engine, write_model):
     # Check that the GP forces change.
     comp1 = otf_traj.force_list[-2][1, 0]
     comp2 = otf_traj.force_list[-1][1, 0]
-    assert (comp1 != comp2)
+    assert comp1 != comp2
 
-    for f in glob.glob(output_name + "*"): 
+    for f in glob.glob(output_name + "*"):
         os.remove(f)

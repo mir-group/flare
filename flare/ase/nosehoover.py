@@ -77,7 +77,7 @@ class NoseHoover(MolecularDynamics):
         )
 
     def step(self):
-        """ Perform a MD step. """
+        """Perform a MD step."""
         masses = self.atoms.get_masses()
 
         modified_acc = (

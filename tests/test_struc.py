@@ -47,7 +47,7 @@ def test_prev_positions_arg():
 
 
 def test_raw_to_relative():
-    """ Test that Cartesian and relative coordinates are equal. """
+    """Test that Cartesian and relative coordinates are equal."""
 
     cell = np.random.rand(3, 3)
     noa = 10

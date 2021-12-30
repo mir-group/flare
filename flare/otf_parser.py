@@ -9,7 +9,7 @@ from flare.gp import GaussianProcess
 
 class OtfAnalysis:
     """
-    Parse the OTF log file to get trajectory, training data, 
+    Parse the OTF log file to get trajectory, training data,
     thermostat, and build GP model.
 
     Args:
@@ -17,6 +17,7 @@ class OtfAnalysis:
         calculate_energy (bool): if the potential energy is computed and
             needs to be parsed, then set to True. Default False.
     """
+
     def __init__(self, filename, calculate_energy=False):
         self.filename = filename
 
@@ -74,7 +75,7 @@ class OtfAnalysis:
     ):
         """
         Build GP model from the training frames parsed from the log file.
-        The cell, hyps and gp can be reset with customized values. 
+        The cell, hyps and gp can be reset with customized values.
 
         Args:
             cell (np.ndarray): Default None to use the cell from the log file.
@@ -85,15 +86,15 @@ class OtfAnalysis:
             hyps (np.ndarray): Default None to use the hyperparameters from the
                 log file. Customized hyps can be input as an array.
             init_gp (GaussianProcess): Default to None to use no initial settings
-                or training data. an initial GP can be used, and then the 
-                frames parsed in the log file will add to the initial GP. Then the 
-                final GP uses the hyps and kernels of `init_gp`, and consists of 
+                or training data. an initial GP can be used, and then the
+                frames parsed in the log file will add to the initial GP. Then the
+                final GP uses the hyps and kernels of `init_gp`, and consists of
                 training data from `init_gp` and the data from the log file.
                 **NOTE**: if a log file from restarted OTF is parsed, then an initial
                 GP needs to be parsed from the prior log file as the `init_gp` of the
                 restarted log file.
             hyp_no (int): Default None to use the final optimized hyperparameters to
-                build GP. If not None, then use the hyps from the `hyp_no`th 
+                build GP. If not None, then use the hyps from the `hyp_no`th
                 optimization step.
             kwargs: if a new GP setting is needed without inputing `init_gp`, the GP
                 initial args can be input as kwargs.
@@ -242,19 +243,18 @@ class OtfAnalysis:
                 energy = 0
             else:
                 energy = self.energies[i]
- 
+
             cur_struc = struc.Structure(
-                cell=cell, 
-                species=species, 
+                cell=cell,
+                species=species,
                 positions=self.position_list[i],
                 forces=self.force_list[i],
                 stds=self.uncertainty_list[i],
             )
             cur_struc.energy = energy
-            #cur_struc.stress = self.stress_list[i]
+            # cur_struc.stress = self.stress_list[i]
             structures.append(cur_struc)
         return structures
-
 
     def to_xyz(self, xyz_file):
         """
@@ -263,9 +263,10 @@ class OtfAnalysis:
             xyz_file (str): the file name of the .xyz file to output
 
         Return:
-            A list of `ASE Atoms` objects. 
+            A list of `ASE Atoms` objects.
         """
         from ase.io import write
+
         struc_trj = self.output_md_structures()
         trj = []
         for s in struc_trj:
@@ -504,7 +505,7 @@ def extract_global_info(
             cell_list.append(vectors)
         if "Stress" in line:
             vectors = []
-            stress_line = block[ind + 2].replace('-',' -').split()
+            stress_line = block[ind + 2].replace("-", " -").split()
             vectors = [float(s) for s in stress_line]
             stress_list.append(vectors)
 
@@ -523,9 +524,9 @@ def get_thermostat(thermostat, kw, line):
     line = line.lower()
     if kw in line:
         try:
-            value = float(line.split()[-2]) # old style
+            value = float(line.split()[-2])  # old style
         except:
-            value = float(line.split()[-1]) # new style
+            value = float(line.split()[-1])  # new style
         if kw in thermostat:
             thermostat[kw].append(value)
         else:
