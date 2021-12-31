@@ -1,4 +1,6 @@
 import logging
+import os
+import shutil
 import json
 import numpy as np
 import time
@@ -211,6 +213,8 @@ class OTF:
         self.output_name = output_name
         self.gp_name = self.output_name + "_gp.json"
         self.checkpt_name = self.output_name + "_checkpt.json"
+        self.dft_xyz = self.output_name + "_dft.xyz"
+        self.checkpt_files = [self.checkpt_name, self.gp_name, self.dft_xyz]
 
         self.write_model = write_model
 
@@ -306,6 +310,10 @@ class OTF:
                         dft_energy=dft_energy,
                     )
 
+                    if self.write_model == 4:
+                        self.checkpoint()
+                        self.backup_checkpoint()
+
             # write gp forces
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature()
@@ -316,7 +324,6 @@ class OTF:
             # TODO: Reinstate velocity rescaling.
             self.md_step()  # update positions by Verlet
             self.rescale_temperature(self.structure.positions)
-
 
             if self.write_model == 3:
                 self.checkpoint()
@@ -612,6 +619,12 @@ class OTF:
         new_otf.curr_step = in_dict["curr_step"]
         new_otf.std_tolerance = in_dict["std_tolerance"]
         return new_otf
+
+    def backup_checkpoint(self):
+        dir_name = f"ckpt_{self.curr_step}"
+        os.mkdir(dir_name)
+        for f in self.checkpt_files: 
+            shutil.copyfile(f, f"{dir_name}/{f}")
 
     def checkpoint(self):
         name = self.checkpt_name

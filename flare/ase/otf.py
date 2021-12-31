@@ -155,6 +155,7 @@ class ASE_OTF(OTF):
         self.flare_name = self.output_name + "_flare.json"
         self.dft_name = self.output_name + "_dft.pickle"
         self.structure_name = self.output_name + "_atoms.json"
+        self.checkpt_files = [self.checkpt_name, self.flare_name, self.dft_name, self.structure_name, self.dft_xyz]
 
     def get_structure_from_input(self, prev_pos_init):
         if prev_pos_init is None:
@@ -330,7 +331,7 @@ class ASE_OTF(OTF):
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)
-        write(self.output.basename + "_dft.xyz", structure, append=True)
+        write(self.dft_xyz, structure, append=True)
 
     def as_dict(self):
 
