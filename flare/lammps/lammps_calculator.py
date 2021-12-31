@@ -133,7 +133,7 @@ Atoms
 
 
 def lammps_cell_text(structure):
-    """ Write cell from structure object."""
+    """Write cell from structure object."""
 
     cell_text = f"""
 0.0 {structure.cell[0, 0]}  xlo xhi

@@ -401,8 +401,7 @@ class Structure:
         properties = ["forces", "energy", "stress"]
         for p in properties:
             results[p] = getattr(self, p)
-        calculator = SinglePointCalculator(atoms, **results)
-        atoms.set_calculator(calculator)
+        atoms.calc = SinglePointCalculator(atoms, **results)
 
         return atoms
 

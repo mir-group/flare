@@ -227,6 +227,7 @@ class ASE_OTF(OTF):
             check_sgp_match(self.structure, self.flare_calc, f, self.md.specorder)
 
         else:
+            # Inside the step() function, get_forces() is called
             self.md.step()
             self.curr_step += 1
 

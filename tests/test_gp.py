@@ -129,6 +129,9 @@ class TestInitialization:
             GaussianProcess(parallel=parallel)
         for per_atom_par in [True, False]:
             GaussianProcess(per_atom_par=per_atom_par)
+        for opt_algorithm in ["L-BFGS-B", "BFGS"]:
+            gp = GaussianProcess(opt_algorithm=opt_algorithm)
+            assert opt_algorithm == gp.opt_algorithm
 
 
 class TestDataUpdating:
