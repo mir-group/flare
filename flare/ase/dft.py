@@ -21,7 +21,7 @@ def parse_dft_input(atoms):
     return pos, spc, cell, mass_dict
 
 
-def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
+def run_dft_par(atoms, structure, dft_calc, dft_kwargs, **kwargs):
     """
     Assume that the atoms have been updated
     """
