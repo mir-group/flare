@@ -138,6 +138,8 @@ void compute_b2_norm(
   int n_bond = n_radial * n_harmonics;
   int n_d = (n_radial * (n_radial + 1) / 2) * (lmax + 1);
 
+  double empty_thresh = 1e-8;
+
   // Compute unnormalized B2 values.
   Eigen::MatrixXd B2_vals_1, B2_force_dervs_1;
   Eigen::VectorXd B2_norms_1, B2_force_dots_1;
@@ -153,9 +155,14 @@ void compute_b2_norm(
 
   for (int i = 0; i < n_atoms; i++){
     double norm_val = B2_norms_1(i);
+
+    // Continue if atom i has no neighbors.
+    if (norm_val < empty_thresh)
+      continue;
+
     double norm_val_3 = norm_val * norm_val * norm_val;
     B2_vals.row(i) = B2_vals_1.row(i) / norm_val;
-    B2_norms(i) = 1;
+    B2_norms(i) = 1.0;
     int n_atom_neighbors = unique_neighbor_count(i);
     int force_start = cumulative_neighbor_count(i) * 3;
     for (int j = 0; j < n_atom_neighbors; j++){
