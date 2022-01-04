@@ -57,6 +57,11 @@ class SGP_Calculator(Calculator):
         self.results["energy"] = deepcopy(structure_descriptor.mean_efs[0])
         self.results["forces"] = deepcopy(structure_descriptor.mean_efs[1:-6].reshape(-1, 3))
 
+        # Add back single atom energies
+        if self.gp_model.single_atom_energies is not None:
+            for spec in coded_species:
+                self.results["energy"] += self.gp_model.single_atom_energies[spec]
+
         # Convert stress to ASE format.
         flare_stress = deepcopy(structure_descriptor.mean_efs[-6:])
         ase_stress = -np.array(
