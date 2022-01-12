@@ -30,7 +30,7 @@ def run_dft_par(atoms, structure, dft_calc, dft_kwargs, **kwargs):
     atoms.set_calculator(calc)
 
     # clean up previous results
-    if dft_kwargs.get("cleanup", None):
+    if dft_kwargs is not None and dft_kwargs.get("cleanup", None):
         if "dft" in os.listdir():
             if "WAVECAR" in os.listdir("dft"):
                 os.remove("dft/WAVECAR")
