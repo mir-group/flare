@@ -621,7 +621,7 @@ class OTF:
         return new_otf
 
     def backup_checkpoint(self):
-        dir_name = f"ckpt_{self.curr_step}"
+        dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
         os.mkdir(dir_name)
         for f in self.checkpt_files: 
             shutil.copyfile(f, f"{dir_name}/{f}")
