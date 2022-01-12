@@ -6,14 +6,6 @@ from tests.test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads, dumps
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
-
-try:
-    import pymatgen.core.structure as pmgstruc
-
-    _test_pmg = True
-except ImportError:
-    _test_pmg = False
-
 from .test_gp import dumpcompare
 
 
@@ -47,7 +39,7 @@ def test_prev_positions_arg():
 
 
 def test_raw_to_relative():
-    """ Test that Cartesian and relative coordinates are equal. """
+    """Test that Cartesian and relative coordinates are equal."""
 
     cell = np.random.rand(3, 3)
     noa = 10
@@ -176,8 +168,8 @@ def test_struc_to_ase():
     assert np.all(new_atoms.get_stress() == uc.stress)
 
 
-@pytest.mark.skipif(not _test_pmg, reason="Pymatgen not present in available packages.")
 def test_from_pmg_structure():
+    pmgstruc = pytest.importorskip("pymatgen.core.structure")
 
     pmg_struc = pmgstruc.Structure(
         lattice=np.eye(3),
@@ -220,8 +212,8 @@ def test_from_pmg_structure():
     assert np.equal(new_struc.forces, np.array([1.0, 1.0, 1.0])).all()
 
 
-@pytest.mark.skipif(not _test_pmg, reason="Pymatgen not present in available packages.")
 def test_to_pmg_structure(varied_test_struc):
+    pmgstruc = pytest.importorskip("pymatgen.core.structure")
 
     new_struc = Structure.to_pmg_structure(varied_test_struc)
     assert len(varied_test_struc) == len(varied_test_struc)
@@ -263,6 +255,8 @@ def test_to_xyz(varied_test_struc):
 
 
 def test_file_load():
+    pmgstruc = pytest.importorskip("pymatgen.core.structure")
+
     struct1, forces = get_random_structure(cell=np.eye(3), unique_species=[1, 2], noa=2)
     struct2, forces = get_random_structure(cell=np.eye(3), unique_species=[1, 2], noa=2)
 
@@ -303,6 +297,8 @@ def test_is_valid():
     tolerance
     :return:
     """
+    pmgstruc = pytest.importorskip("pymatgen.core.structure")
+
     test_struc = Structure(
         cell=np.eye(3), species=["H"], positions=np.array([[0, 0, 0]])
     )

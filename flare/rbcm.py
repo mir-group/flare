@@ -768,7 +768,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             self.sync_experts_data(i)
 
     def unsync_experts_data(self, expert_id: int):
-        """ Reset global variables. """
+        """Reset global variables."""
         if len(self.training_data) > expert_id:
             _global_training_data.pop(f"{self.name}_{expert_id}", None)
             _global_training_labels.pop(f"{self.name}_{expert_id}", None)
@@ -776,7 +776,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             _global_energy_labels.pop(f"{self.name}_{expert_id}", None)
 
     def sync_experts_data(self, expert_id: int):
-        """ Reset global variables. """
+        """Reset global variables."""
         if len(self.training_data) > expert_id:
             _global_training_data[f"{self.name}_{expert_id}"] = self.training_data[
                 expert_id
@@ -842,7 +842,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         self.n_envs_prev[expert_id] = len(self.training_data[expert_id])
 
     def redistribute_training_data(self, figure_name="default"):
-        """ redistribute data """
+        """redistribute data"""
 
         joint_data = []
         joint_structures = []
@@ -910,7 +910,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         return kmat
 
     def compute_join_dist_mat(self, list_expert_id):
-        """ Reset global variables. """
+        """Reset global variables."""
         joint_data = []
         joint_structures = []
         for i in list_expert_id:

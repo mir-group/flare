@@ -293,18 +293,18 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
         kernel_name = "threebody"
         # compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
 
-    mgp_f, mgp_e_var, mgp_s, mgp_e  = mgp_model.predict(test_envi)
+    mgp_f, mgp_e_var, mgp_s, mgp_e = mgp_model.predict(test_envi)
 
     assert Parameters.compare_dict(
         gp_model.hyps_mask, mgp_model.maps[kernel_name].hyps_mask
     )
 
-    if multihyps: 
+    if multihyps:
         gp_e, gp_e_var = gp_model.predict_local_energy_and_var(test_envi)
         gp_f, gp_f_var = gp_model.predict_force_xyz(test_envi)
     else:
         gp_e, gp_f, gp_s, gp_e_var, _, _ = gp_model.predict_efs(test_envi)
-        gp_s = - gp_s[[0, 3, 5, 4, 2, 1]]
+        gp_s = -gp_s[[0, 3, 5, 4, 2, 1]]
 
         # check stress
         assert np.allclose(mgp_s, gp_s, rtol=1e-2)
@@ -317,9 +317,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
 
     # check forces
     print("isclose?", mgp_f - gp_f, gp_f)
-    assert np.allclose(
-        mgp_f, gp_f, atol=1e-3
-    ), f"{bodies} body force mapping is wrong"
+    assert np.allclose(mgp_f, gp_f, atol=1e-3), f"{bodies} body force mapping is wrong"
 
     if mgp_model.var_map == "simple":
         print(bodies, multihyps)
