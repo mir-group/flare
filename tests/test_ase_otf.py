@@ -188,8 +188,8 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
         "output_name": output_name,
         "std_tolerance_factor": 1.0,
         "max_atoms_added": len(super_cell.positions),
-        "freeze_hyps": write_model,
-        "write_model": 3,
+        "freeze_hyps": 10,
+        "write_model": write_model,
     }
     #                  'use_mapping': flare_calculator.use_mapping}
 

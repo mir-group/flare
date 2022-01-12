@@ -302,7 +302,7 @@ def predict_on_structure_efs_par(
 
     # Just work in serial in the number of cpus is 1,
     # or the gp is not parallelized by atoms
-    if (n_cpus is 1) or (not gp.per_atom_par):
+    if (n_cpus == 1) or (not gp.per_atom_par):
         return predict_on_structure_efs(
             structure=structure,
             gp=gp,
@@ -505,7 +505,7 @@ def predict_on_structure_par_en(
     """
     # Work in serial if the number of cpus is 1
     # or the gp is not parallelized by atoms
-    if (n_cpus is 1) or (not gp.per_atom_par):
+    if (n_cpus == 1) or (not gp.per_atom_par):
         predict_on_structure_en(
             structure,
             gp,

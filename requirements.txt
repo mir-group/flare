@@ -1,11 +1,11 @@
-numpy<=1.20
+numpy<=1.20.3
 scipy
 memory_profiler
 numba
 ase
-pymatgen<2021
 nptyping
 nbsphinx
 IPython
 pytest>=4.6
 pytest-mock
+pymatgen<=2022.0.17
