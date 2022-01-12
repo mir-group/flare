@@ -6,10 +6,14 @@ from json import dump, load
 from subprocess import call
 from typing import List, Union
 
-from pymatgen.io.vasp.inputs import Poscar
-from pymatgen.io.vasp.outputs import Vasprun
-from pymatgen.io.vasp.sets import VaspInputSet
-from pymatgen.core.periodic_table import Element
+try:
+    from pymatgen.io.vasp.inputs import Poscar
+    from pymatgen.io.vasp.outputs import Vasprun
+    from pymatgen.io.vasp.sets import VaspInputSet
+    from pymatgen.core.periodic_table import Element
+    _pmg_present = True
+except:
+    _pmg_present = False
 
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder
@@ -17,11 +21,11 @@ from flare.utils.element_coder import NumpyEncoder
 name = "VASP"
 
 
-def check_vasprun(vasprun: Union[str, Vasprun], vasprun_kwargs: dict = {}) -> Vasprun:
+def check_vasprun(vasprun, vasprun_kwargs: dict = {}):
     """
     Helper utility to take a vasprun file name or Vasprun object
     and return a vasprun object.
-    :param vasprun: vasprun filename or object
+    :param vasprun: Vasprun filename or object
     """
 
     if type(vasprun) == str:
@@ -167,7 +171,7 @@ def edit_dft_input_positions(output_name: str, structure: Structure):
     return output_name
 
 
-def parse_dft_forces(vasprun: Union[str, Vasprun]):
+def parse_dft_forces(vasprun):
     """
     Parses the DFT forces from the last ionic step of a VASP vasprun.xml file
     :param vasprun: pymatgen Vasprun object or vasprun filename
@@ -177,7 +181,7 @@ def parse_dft_forces(vasprun: Union[str, Vasprun]):
     return np.array(istep["forces"])
 
 
-def parse_dft_forces_and_energy(vasprun: Union[str, Vasprun]):
+def parse_dft_forces_and_energy(vasprun):
     """
     Parses the DFT forces and energy from a VASP vasprun.xml file
     :param vasprun: pymatgen Vasprun object or vasprun filename
@@ -188,7 +192,7 @@ def parse_dft_forces_and_energy(vasprun: Union[str, Vasprun]):
 
 
 def md_trajectory_from_vasprun(
-    vasprun: Union[str, Vasprun], ionic_step_skips=1, vasprun_kwargs: dict = {}
+    vasprun, ionic_step_skips=1, vasprun_kwargs: dict = {}
 ):
     """
     Returns a list of flare Structure objects decorated with forces, stress,

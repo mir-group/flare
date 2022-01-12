@@ -2,8 +2,13 @@ import pytest
 import os
 import sys
 import numpy as np
-from pymatgen.io.vasp.inputs import Poscar
-from pymatgen.io.vasp.outputs import Vasprun
+try:
+    from pymatgen.io.vasp.inputs import Poscar
+    from pymatgen.io.vasp.outputs import Vasprun
+    _pmg_present = True
+except:
+    _pmg_present = False
+
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import (
     parse_dft_forces,
@@ -25,12 +30,13 @@ pytestmark = pytest.mark.filterwarnings(
 TEST_DIR = os.path.dirname(__file__)
 TEST_FILE_DIR = os.path.join(TEST_DIR, "test_files")
 
-
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 def cleanup_vasp_run():
     os.system("rm POSCAR")
     os.system("rm vasprun.xml")
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 def test_check_vasprun():
     fname = "./test_files/test_vasprun.xml"
     vr = Vasprun(fname)
@@ -45,6 +51,7 @@ def test_check_vasprun():
 # ------------------------------------------------------
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 @pytest.mark.parametrize("poscar", ["./test_files/test_POSCAR"])
 def test_structure_parsing(poscar):
     structure = dft_input_to_structure(poscar)
@@ -56,11 +63,13 @@ def test_structure_parsing(poscar):
     assert np.isclose(structure.positions, pmg_struct.cart_coords).all()
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 @pytest.mark.parametrize("poscar", ["./test_files/test_POSCAR"])
 def test_input_to_structure(poscar):
     assert isinstance(dft_input_to_structure(poscar), Structure)
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 @pytest.mark.parametrize(
     "cmd, poscar", [("python ./test_files/dummy_vasp.py", "./test_files/test_POSCAR")]
 )
@@ -94,6 +103,7 @@ def test_vasp_calling(cmd, poscar):
     cleanup_vasp_run()
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 @pytest.mark.parametrize(
     "cmd, poscar",
     [("python ./test_files/dummy_vasp.py test_fail", "./test_files/test_POSCAR")],
@@ -104,6 +114,7 @@ def test_vasp_calling_fail(cmd, poscar):
         _ = run_dft(".", cmd, structure=structure, en=False)
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 def test_vasp_input_edit():
     os.system("cp test_files/test_POSCAR ./POSCAR")
     structure = dft_input_to_structure("./test_files/test_POSCAR")
@@ -123,6 +134,7 @@ def test_vasp_input_edit():
     os.system("rm ./POSCAR.bak")
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 @pytest.mark.skipif(
     not os.environ.get("VASP_COMMAND", False),
     reason=(
@@ -164,6 +176,7 @@ def test_run_dft_par():
 # ------------------------------------------------------
 
 
+@pytest.mark.skipif(not _pmg_present, reason=("pymatgen not found "))
 def test_md_trajectory():
     structures = md_trajectory_from_vasprun("test_files/test_vasprun.xml")
     assert len(structures) == 2
