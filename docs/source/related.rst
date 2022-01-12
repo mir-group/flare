@@ -12,4 +12,6 @@ We will list the applications of FLARE here.
 
 - Jonathan Vandermause, Yu Xie, Jin Soo Lim, Cameron J. Owen, and Boris Kozinsky. "Active learning of reactive Bayesian force fields: Application to heterogeneous hydrogen-platinum catalysis dynamics." arXiv preprint arXiv:2106.01949 (2021). (`arXiv <https://arxiv.org/abs/2106.01949>`_)
 
-- Claudio Zeni, Kevin Rossi, Theodore Pavloudis, Joseph Kioseoglou, Stefano de Gironcoli, Richard Palmer, and Francesca Baletto. "Data-driven simulation and characterization of gold nanoparticles melting." (2021). (`arXiv <https://arxiv.org/abs/2107.00330>`_)
+- Claudio Zeni, Kevin Rossi, Theodore Pavloudis, Joseph Kioseoglou, Stefano de Gironcoli, Richard Palmer, and Francesca Baletto. "Data-driven simulation and characterization of gold nanoparticles melting." Nat Commun 12, 6056 (2021). (`arXiv <https://arxiv.org/abs/2107.00330>`_) (`published version <https://www.nature.com/articles/s41467-021-26199-7>`_)
+
+- Kai Xu, Lei Yan, and Bingran You. "Bayesian active learning of interatomic force field for molecular dynamics simulation of Pt/Ag(111)." ChemRxiv preprint. (`ChemRxiv <http://dx.doi.org/10.26434/chemrxiv-2021-sk6lf>`_)
