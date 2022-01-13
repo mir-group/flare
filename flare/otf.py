@@ -168,7 +168,7 @@ class OTF:
         self.flare_calc = self.atoms.calc
 
         # set DFT
-        self.dft_loc = dft_calc
+        self.dft_calc = dft_calc
         self.dft_step = True
         self.dft_count = 0
 
@@ -187,7 +187,10 @@ class OTF:
         # set otf
         self.std_tolerance = std_tolerance_factor
         self.skip = skip
-        self.max_atoms_added = max_atoms_added
+        if max_atoms_added < 0:
+            self.max_atoms_added = self.noa
+        else:
+            self.max_atoms_added = max_atoms_added
         self.freeze_hyps = freeze_hyps
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
@@ -406,7 +409,7 @@ class OTF:
         f.info("\nCalling DFT...\n")
 
         # change from FLARE to DFT calculator
-        calc = deepcopy(self.dft_loc)
+        calc = deepcopy(self.dft_calc)
         self.atoms.set_calculator(calc)
     
         # Calculate DFT energy, forces, and stress.
@@ -431,7 +434,9 @@ class OTF:
             else:
                 to_copy = target_files
             for ofile in to_copy:
-                copyfile(ofile, dest + "/" + dt_string + ofile)
+                # if the file is in a subdirectory like dft/OUTCAR, then copy it out
+                filename = ofile.split("/")[-1]
+                copyfile(filename, dest + "/" + dt_string + filename)
 
     def update_gp(
         self,
@@ -603,8 +608,8 @@ class OTF:
 
         # dump dft calculator as pickle
         with open(self.dft_name, "wb") as f:
-            pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
-        dct["dft_loc"] = self.dft_name
+            pickle.dump(self.dft_calc, f)
+        dct["dft_calc"] = self.dft_name
 
         for key in ["output", "md"]:
             dct.pop(key)
@@ -618,11 +623,8 @@ class OTF:
         flare_calc.reset()
         dct["flare_calc"] = flare_calc
 
-        with open(dct["dft_loc"], "rb") as f:
+        with open(dct["dft_calc"], "rb") as f:
             dct["dft_calc"] = pickle.load(f)
-
-        for key in ["dft_loc"]:
-            dct.pop(key)
 
         new_otf = OTF(**dct)
         new_otf.dft_count = dct["dft_count"]
