@@ -40,10 +40,9 @@ class OTF:
 
     Args:
         atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run.
-        calculator: ASE calculator. Must have "get_uncertainties" method
+        flare_calc: ASE calculator. Must have "get_uncertainties" method
           implemented.
-        timestep: the timestep in MD. Please use ASE units, e.g. if the
-            timestep is 1 fs, then set `timestep = 1 * units.fs`
+        dt: the timestep in MD, in the units of pico-second. 
         number_of_steps (int): the total number of steps for MD.
         dft_calc (ASE Calculator): any ASE calculator is supported,
             e.g. Espresso, VASP etc.
@@ -67,11 +66,6 @@ class OTF:
         rescale_temps (List[int], optional): List of rescaled temperatures.
             Defaults to [].
 
-        gp (gp.GaussianProcess): Initial GP model.
-        calculate_energy (bool, optional): If True, the energy of each
-            frame is calculated with the GP. Defaults to False.
-        calculate_efs (bool, optional): If True, the energy and stress of each
-            frame is calculated with the GP. Defaults to False.
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
@@ -119,21 +113,18 @@ class OTF:
         self,
         # ase otf args
         atoms,
-        timestep,
+        dt,
         number_of_steps,
         dft_calc,
         md_engine,
         md_kwargs,
-        calculator=None,
+        flare_calc=None,
         trajectory=None,
         # md args
         prev_pos_init: "ndarray" = None,
         rescale_steps: List[int] = [],
         rescale_temps: List[int] = [],
         # flare args
-        gp: gp.GaussianProcess = None,
-        calculate_energy: bool = False,
-        calculate_efs: bool = False,
         write_model: int = 0,
         force_only: bool = True,
         # otf args
@@ -155,8 +146,8 @@ class OTF:
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
-        if calculator is not None:
-            self.atoms.calc = calculator
+        if flare_calc is not None:
+            self.atoms.calc = flare_calc 
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
 
@@ -175,14 +166,12 @@ class OTF:
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
+        timestep = dt * units.fs * 1e3 # convert pico-second to ASE timestep units
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )
 
         self.flare_calc = self.atoms.calc
-
-        # Convert ASE timestep to ps for the output file.
-        flare_dt = timestep / (units.fs * 1e3)
 
         # set DFT
         self.dft_loc = dft_calc
@@ -190,7 +179,7 @@ class OTF:
         self.dft_count = 0
 
         # set md
-        self.dt = flare_dt
+        self.dt = dt
         self.number_of_steps = number_of_steps
         self.get_structure_from_input(prev_pos_init)  # parse input file
         self.noa = self.structure.positions.shape[0]
@@ -199,11 +188,6 @@ class OTF:
 
         # set flare
         self.gp = self.flare_calc.gp_model
-        # initialize local energies
-        if calculate_energy:
-            self.local_energies = np.zeros(self.noa)
-        else:
-            self.local_energies = None
         self.force_only = force_only
 
         # set otf
@@ -229,31 +213,9 @@ class OTF:
         self.curr_step = 0
         self.steps_since_dft = 0
 
-        # Set the prediction function based on user inputs.
-        # Force only prediction.
-        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not (
-            calculate_energy or calculate_efs
-        ):
-            self.pred_func = predict.predict_on_structure_par
-        elif not (calculate_energy or calculate_efs):
-            self.pred_func = predict.predict_on_structure
-        # Energy and force prediction.
-        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not (calculate_efs):
-            self.pred_func = predict.predict_on_structure_par_en
-        elif not calculate_efs:
-            self.pred_func = predict.predict_on_structure_en
-        # Energy, force, and stress prediction.
-        elif n_cpus > 1 and gp.per_atom_par and gp.parallel:
-            self.pred_func = predict.predict_on_structure_efs_par
-        else:
-            self.pred_func = predict.predict_on_structure_efs
-
         # set logger
         self.output = Output(output_name, always_flush=True)
         self.output_name = output_name
-
-        # TODO: gp_name is not needed
-        self.gp_name = self.output_name + "_gp.json"
 
         self.checkpt_name = self.output_name + "_checkpt.json"
         self.flare_name = self.output_name + "_flare.json"
@@ -654,25 +616,22 @@ class OTF:
             pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
         dct["dft_loc"] = self.dft_name
 
-        dct["gp"] = self.gp_name
-
-        for key in ["output", "pred_func", "structure", "md"]:
+        for key in ["output", "structure", "md"]:
             dct.pop(key)
 
         return dct
 
     @staticmethod
     def from_dict(dct):
+        dct["atoms"] = read(dct["atoms"])
         flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
         flare_calc.reset()
-        dct["atoms"] = read(dct["atoms"])
-        dct["atoms"].calc = flare_calc
-        dct.pop("gp")
+        dct["flare_calc"] = flare_calc
 
         with open(dct["dft_loc"], "rb") as f:
             dct["dft_calc"] = pickle.load(f)
 
-        for key in ["dt", "dft_loc"]:
+        for key in ["dft_loc"]:
             dct.pop(key)
 
         new_otf = OTF(**dct)

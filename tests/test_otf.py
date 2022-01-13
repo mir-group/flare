@@ -179,7 +179,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
     super_cell.calc = flare_calculator
     test_otf = OTF(
         super_cell,
-        timestep=1 * units.fs,
+        dt=0.001, # ps
         number_of_steps=number_of_steps,
         dft_calc=qe_calc,
         md_engine=md_engine,
