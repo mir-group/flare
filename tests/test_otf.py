@@ -1,279 +1,271 @@
+import time, os, shutil, glob, subprocess
+from copy import deepcopy
 import pytest
-import os
-
-import glob, os, re, shutil
 import numpy as np
 
-from flare.otf import OTF
+from flare import otf, kernels
 from flare.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
-from flare.struc import Structure
+from flare.mgp import MappedGaussianProcess
+from flare.ase.calculator import FLARE_Calculator
+import flare.ase_otf as ase_otf
+from flare.utils.parameter_helper import ParameterHelper
+
+from ase.constraints import FixAtoms
+from ase import units
+from ase.md.velocitydistribution import (
+    MaxwellBoltzmannDistribution,
+    Stationary,
+    ZeroRotation,
+)
+from ase.spacegroup import crystal
+from ase.calculators.espresso import Espresso
+from ase import io
 
 
-cmd = {"cp2k": "CP2K_COMMAND", "qe": "PWSCF_COMMAND"}
-software_list = ["cp2k", "qe"]
-example_list = [1, 2]
-name_list = {1: "h2", 2: "al"}
+def read_qe_results(self):
 
-dt = 0.0001
-number_of_steps = 3
+    out_file = self.label + ".pwo"
 
-print("running test_otf.py")
-print("current working directory:")
-print(os.getcwd())
+    # find out slurm job id
+    qe_slurm_dat = open("qe_slurm.dat").readlines()[0].split()
+    qe_slurm_id = qe_slurm_dat[3]
 
+    # mv scf.pwo to scp+nsteps.pwo
+    if ("forces" not in self.results.keys()) and (out_file in os.listdir()):
+        subprocess.call(["mv", out_file, f"{self.label}{self.nsteps}.pwo"])
 
-def get_gp(par=False, per_atom_par=False, n_cpus=1):
-    hyps = np.array([1, 1, 1, 1, 1])
-    hyp_labels = [
-        "Signal Std 2b",
-        "Length Scale 2b",
-        "Signal Std 3b",
-        "Length Scale 3b",
-        "Noise Std",
-    ]
-    cutoffs = {"twobody": 4, "threebody": 4}
-    return GaussianProcess(
-        kernel_name="23mc",
-        hyps=hyps,
-        cutoffs=cutoffs,
-        hyp_labels=hyp_labels,
-        maxiter=50,
-        par=par,
-        per_atom_par=per_atom_par,
-        n_cpus=n_cpus,
-    )
+    # sleep until the job is finished
+    job_list = subprocess.check_output(["showq", "-p", "kozinsky"]).decode("utf-8")
+    while qe_slurm_id in job_list:
+        time.sleep(10)
+        job_list = subprocess.check_output(["showq", "-p", "kozinsky"]).decode("utf-8")
+
+    output = io.read(out_file)
+    self.calc = output.calc
+    self.results = output.calc.results
 
 
-def cleanup(software="qe", casename="h2_otf_cp2k"):
+md_list = [
+    "VelocityVerlet",
+#    "NVTBerendsen",
+#    "NPTBerendsen",
+#    "NPT",
+#    "Langevin",
+#    "NoseHoover",
+]
+number_of_steps = 5
 
-    for f in glob.glob(f"{casename}*"):
-        os.remove(f)
-    for f in glob.glob(f"*{software}.in"):
-        os.remove(f)
-    for f in glob.glob(f"*{software}.out"):
-        os.remove(f)
+np.random.seed(12345)
 
-    if software == "qe":
-        for f in glob.glob(f"pwscf.wfc*"):
+@pytest.fixture(scope="module")
+def md_params():
+
+    md_dict = {"temperature": 500}
+    print(md_list)
+
+    for md_engine in md_list:
+        for f in glob.glob(md_engine + "*"):
             os.remove(f)
-        for f in glob.glob(f"*pwscf.out"):
+
+        if md_engine == "VelocityVerlet":
+            md_dict[md_engine] = {}
+        else:
+            md_dict[md_engine] = {"temperature": md_dict["temperature"]}
+
+        if md_engine == "NVTBerendsen":
+            md_dict[md_engine].update({"taut": 0.5e3 * units.fs})
+        elif md_engine == "NPTBerendsen":
+            md_dict[md_engine].update({"pressure": 0.0, "compressibility_au": 1.0})
+        elif md_engine == "NPT":
+            md_dict[md_engine].update(
+                {"externalstress": 0, "ttime": 25, "pfactor": 1.0}
+            )
+        elif md_engine == "Langevin":
+            md_dict[md_engine].update({"friction": 0.02})
+        elif md_engine == "NoseHoover":
+            md_dict[md_engine].update({"nvt_q": 334.0})
+
+    yield md_dict
+    del md_dict
+
+
+@pytest.fixture(scope="module")
+def super_cell():
+
+    from ase.spacegroup import crystal
+
+    a = 5.0
+    alpha = 90
+    atoms = crystal(
+        ["H", "He"],
+        basis=[(0, 0, 0), (0.5, 0.5, 0.5)],
+        size=(2, 1, 1),
+        cellpar=[a, a, a, alpha, alpha, alpha],
+    )
+
+    # jitter positions to give nonzero force on first frame
+    for atom_pos in atoms.positions:
+        for coord in range(3):
+            atom_pos[coord] += (2 * np.random.random() - 1) * 0.5
+
+    atoms.set_constraint(FixAtoms(indices=[0]))
+
+    yield atoms
+    del atoms
+
+
+@pytest.fixture(scope="module")
+def flare_calc():
+    flare_calc_dict = {}
+    for md_engine in md_list:
+
+        # ---------- create gaussian process model -------------------
+
+        # set up GP hyperparameters
+        kernels = ["twobody", "threebody"]  # use 2+3 body kernel
+        parameters = {"cutoff_twobody": 10.0, "cutoff_threebody": 6.0}
+        pm = ParameterHelper(kernels=kernels, random=True, parameters=parameters)
+
+        hm = pm.as_dict()
+        hyps = hm["hyps"]
+        cut = hm["cutoffs"]
+        print("hyps", hyps)
+
+        gp_model = GaussianProcess(
+            kernels=kernels,
+            component="mc",  # multi-component. For single-comp, use 'sc'
+            hyps=hyps,
+            cutoffs=cut,
+            hyp_labels=["sig2", "ls2", "sig3", "ls3", "noise"],
+            opt_algorithm="L-BFGS-B",
+            n_cpus=1,
+        )
+
+        # ----------- create mapped gaussian process ------------------
+        grid_params = {
+            "twobody": {"grid_num": [64]},
+            "threebody": {"grid_num": [16, 16, 16]},
+        }
+
+        mgp_model = MappedGaussianProcess(
+            grid_params=grid_params, unique_species=[1, 2], n_cpus=1, var_map="pca"
+        )
+
+        # ------------ create ASE's flare calculator -----------------------
+        flare_calculator = FLARE_Calculator(
+            gp_model, mgp_model=mgp_model, par=True, use_mapping=True
+        )
+
+        flare_calc_dict[md_engine] = flare_calculator
+        print(md_engine)
+    yield flare_calc_dict
+    del flare_calc_dict
+
+
+@pytest.fixture(scope="module")
+def qe_calc():
+    from ase.calculators.lj import LennardJones
+
+    dft_calculator = LennardJones()
+    dft_calculator.parameters.sigma = 3.0
+    dft_calculator.parameters.rc = 3 * dft_calculator.parameters.sigma
+
+    yield dft_calculator
+    del dft_calculator
+
+
+@pytest.mark.parametrize("md_engine", md_list)
+@pytest.mark.parametrize("write_model", [1, 2, 3])
+def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_model):
+    flare_calculator = flare_calc[md_engine]
+    output_name = f"{md_engine}_{write_model}"
+
+    # set up OTF MD engine
+    otf_params = {
+        "init_atoms": [0, 1, 2, 3],
+        "output_name": output_name,
+        "std_tolerance_factor": 1.0,
+        "max_atoms_added": len(super_cell.positions),
+        "freeze_hyps": 10,
+        "write_model": write_model,
+    }
+    #                  'use_mapping': flare_calculator.use_mapping}
+
+    md_kwargs = md_params[md_engine]
+
+    # intialize velocity
+    temperature = md_params["temperature"]
+    MaxwellBoltzmannDistribution(super_cell, temperature * units.kB)
+    Stationary(super_cell)  # zero linear momentum
+    ZeroRotation(super_cell)  # zero angular momentum
+
+    super_cell.calc = flare_calculator
+    test_otf = ase_otf.OTF(
+        super_cell,
+        timestep=1 * units.fs,
+        number_of_steps=number_of_steps,
+        dft_calc=qe_calc,
+        md_engine=md_engine,
+        md_kwargs=md_kwargs,
+        trajectory=f"{output_name}_otf.traj",
+        **otf_params,
+    )
+
+    # TODO: test if mgp matches gp
+    # TODO: see if there's difference between MD timestep & OTF timestep
+
+    test_otf.run()
+
+    # Check that the GP forces change.
+    otf_traj = OtfAnalysis(output_name + ".out")
+    comp1 = otf_traj.force_list[-2][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
+    assert comp1 != comp2
+
+    for f in glob.glob("scf*.pw*"):
+        os.remove(f)
+    for f in glob.glob("*.npy"):
+        os.remove(f)
+    for f in glob.glob("kv3*"):
+        shutil.rmtree(f)
+    for f in glob.glob("otf_data"):
+        shutil.rmtree(f, ignore_errors=True)
+    for f in glob.glob("out"):
+        shutil.rmtree(f, ignore_errors=True)
+    for f in os.listdir("./"):
+        if ".mgp" in f or ".var" in f:
             os.remove(f)
-        for f in os.listdir("./"):
-            if f in ["pwscf.save"]:
-                shutil.rmtree(f)
-    else:
-        for f in os.listdir("./"):
-            for f in glob.glob(f"{software}*"):
-                os.remove(f)
+        if "slurm" in f:
+            os.remove(f)
 
 
-@pytest.mark.parametrize("software", software_list)
-@pytest.mark.parametrize("example", example_list)
-def test_otf(software, example):
-    """
-    Test that an otf run can survive going for more steps
-    :return:
-    """
-
-    print("running test_otf.py")
-    print("current working directory:")
-    print(os.getcwd())
-
-    outdir = f"test_outputs_{software}"
-    if os.path.isdir(outdir):
-        shutil.rmtree(outdir)
-
-    if not os.environ.get(cmd[software], False):
-        pytest.skip(
-            f"{cmd[software]} not found in environment:"
-            " Please install the code "
-            f" and set the {cmd[software]} env. "
-            "variable to point to the executable."
-        )
-
-    dft_input = f"{software}.in"
-    dft_output = f"{software}.out"
-    shutil.copy(f"./test_files/{software}_input_{example}.in", dft_input)
-
-    dft_loc = os.environ.get(cmd[software])
-    std_tolerance_factor = 0.5
-
-    casename = name_list[example]
-
-    gp = get_gp()
-
-    otf = OTF(
-        dt=dt,
-        number_of_steps=number_of_steps,
-        gp=gp,
-        write_model=3,
-        std_tolerance_factor=std_tolerance_factor,
-        init_atoms=[0],
-        calculate_energy=True,
-        max_atoms_added=1,
-        freeze_hyps=1,
-        skip=1,
-        force_source=software,
-        dft_input=dft_input,
-        dft_loc=dft_loc,
-        dft_output=dft_output,
-        output_name=f"{casename}_otf_{software}",
-        store_dft_output=([dft_output, dft_input], "."),
-    )
-
-    otf.run()
-
-
-@pytest.mark.parametrize("software", software_list)
-@pytest.mark.parametrize("per_atom_par", [True, False])
-@pytest.mark.parametrize("n_cpus", [2])
-def test_otf_par(software, per_atom_par, n_cpus):
-    """
-    Test that an otf run can survive going for more steps
-    :return:
-    """
-
-    example = 1
-    outdir = f"test_outputs_{software}"
-    if os.path.isdir(outdir):
-        shutil.rmtree(outdir)
-
-    print("running test_otf.py")
-    print("current working directory:")
-    print(os.getcwd())
-
-    if not os.environ.get(cmd[software], False):
-        pytest.skip(
-            f"{cmd[software]} not found in environment:"
-            " Please install the code "
-            f" and set the {cmd[software]} env. "
-            "variable to point to the executable."
-        )
-    if software == "cp2k":
-        if not "popt" in os.environ.get(cmd[software]):
-            pytest.skip(f"cp2k is serial version skipping the parallel test")
-
-    dft_input = f"{software}.in"
-    dft_output = f"{software}.out"
-    shutil.copy(f"./test_files/{software}_input_{example}.in", dft_input)
-
-    dft_loc = os.environ.get(cmd[software])
-    std_tolerance_factor = -0.1
-
-    casename = name_list[example]
-
-    gp = get_gp(par=True, n_cpus=n_cpus, per_atom_par=per_atom_par)
-
-    otf = OTF(
-        dt=dt,
-        number_of_steps=number_of_steps,
-        gp=gp,
-        write_model=3,
-        std_tolerance_factor=std_tolerance_factor,
-        init_atoms=[0],
-        calculate_energy=True,
-        max_atoms_added=1,
-        n_cpus=n_cpus,
-        freeze_hyps=1,
-        skip=1,
-        mpi="mpi",
-        force_source=software,
-        dft_input=dft_input,
-        dft_loc=dft_loc,
-        dft_output=dft_output,
-        output_name=f"{casename}_otf_{software}",
-        store_dft_output=([dft_output, dft_input], "."),
-    )
-
-    otf.run()
-    pytest.my_otf = otf
-
-
-@pytest.mark.parametrize("software", software_list)
-def test_otf_parser(software):
-
-    if not os.environ.get(cmd[software], False):
-        pytest.skip(
-            f"{cmd[software]} not found in environment:"
-            " Please install the code "
-            f" and set the {cmd[software]} env. "
-            "variable to point to the executable."
-        )
-
-    example = 1
-    casename = name_list[example]
-    output_name = f"{casename}_otf_{software}.out"
-    otf_traj = OtfAnalysis(output_name)
-    replicated_gp = otf_traj.make_gp()
-
-    # TODO: debug cp2k
-    if software == "cp2k":
-        pytest.skip()
-
-    otf = pytest.my_otf
-    assert otf.dft_count == len(otf_traj.gp_position_list)
-    assert otf.curr_step == len(otf_traj.position_list) + 1
-    assert otf.dft_count == len(otf_traj.gp_thermostat["temperature"])
-    assert otf.curr_step == len(otf_traj.thermostat["temperature"]) + 1
-
-    if otf_traj.gp_cell_list:
-        assert otf.dft_count == len(otf_traj.gp_cell_list)
-
-
-@pytest.mark.parametrize("software", software_list)
-def test_load_checkpoint(software):
-
-    if not os.environ.get(cmd[software], False):
-        pytest.skip(
-            f"{cmd[software]} not found in environment:"
-            " Please install the code "
-            f" and set the {cmd[software]} env. "
-            "variable to point to the executable."
-        )
-
-    if software == "cp2k":
-        pytest.skip()
-
-    example = 1
-    casename = name_list[example]
-    log_name = f"{casename}_otf_{software}"
-    new_otf = OTF.from_checkpoint(log_name + "_checkpt.json")
-    print("loaded from checkpoint", log_name)
+@pytest.mark.parametrize("md_engine", md_list)
+@pytest.mark.parametrize("write_model", [1, 2, 3])
+def test_load_checkpoint(md_engine, write_model):
+    output_name = f"{md_engine}_{write_model}"
+    new_otf = ase_otf.OTF.from_checkpoint(output_name + "_checkpt.json")
     assert new_otf.curr_step == number_of_steps
-    new_otf.number_of_steps = new_otf.number_of_steps + 2
+    new_otf.number_of_steps = new_otf.number_of_steps + 3
     new_otf.run()
 
 
-@pytest.mark.parametrize("software", software_list)
-def test_otf_parser_from_checkpt(software):
-
-    if not os.environ.get(cmd[software], False):
-        pytest.skip(
-            f"{cmd[software]} not found in environment:"
-            " Please install the code "
-            f" and set the {cmd[software]} env. "
-            "variable to point to the executable."
-        )
-
-    if software == "cp2k":
-        pytest.skip()
-
-    example = 1
-    casename = name_list[example]
-    log_name = f"{casename}_otf_{software}"
-    output_name = f"{log_name}.out"
-    otf_traj = OtfAnalysis(output_name)
+@pytest.mark.parametrize("md_engine", md_list)
+@pytest.mark.parametrize("write_model", [1, 2, 3])
+def test_otf_parser(md_engine, write_model):
+    output_name = f"{md_engine}_{write_model}"
+    otf_traj = OtfAnalysis(output_name + ".out")
     try:
         replicated_gp = otf_traj.make_gp()
     except:
-        init_gp = GaussianProcess.from_file(log_name + "_gp.json")
-        replicated_gp = otf_traj.make_gp(init_gp=init_gp)
+        init_flare = FLARE_Calculator.from_file(output_name + "_flare.json")
+        replicated_gp = otf_traj.make_gp(init_gp=init_flare.gp_model)
 
-    outdir = f"test_outputs_{software}"
-    if not os.path.isdir(outdir):
-        os.mkdir(outdir)
-    for f in os.listdir("./"):
-        if f"{casename}_otf_{software}" in f:
-            shutil.move(f, outdir)
-    cleanup(software, f"{casename}_otf_{software}")
+    print("ase otf traj parsed")
+    # Check that the GP forces change.
+    comp1 = otf_traj.force_list[-2][1, 0]
+    comp2 = otf_traj.force_list[-1][1, 0]
+    assert comp1 != comp2
+
+#    for f in glob.glob(output_name + "*"):
+#        os.remove(f)

@@ -48,13 +48,14 @@ def read_qe_results(self):
 
 md_list = [
     "VelocityVerlet",
-    "NVTBerendsen",
-    "NPTBerendsen",
-    "NPT",
-    "Langevin",
-    "NoseHoover",
+#    "NVTBerendsen",
+#    "NPTBerendsen",
+#    "NPT",
+#    "Langevin",
+#    "NoseHoover",
 ]
 number_of_steps = 5
+np.random.seed(12345)
 
 
 @pytest.fixture(scope="module")
@@ -177,8 +178,6 @@ def qe_calc():
 @pytest.mark.parametrize("md_engine", md_list)
 @pytest.mark.parametrize("write_model", [1, 2, 3])
 def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_model):
-    np.random.seed(12345)
-
     flare_calculator = flare_calc[md_engine]
     output_name = f"{md_engine}_{write_model}"
 
@@ -268,5 +267,5 @@ def test_otf_parser(md_engine, write_model):
     comp2 = otf_traj.force_list[-1][1, 0]
     assert comp1 != comp2
 
-    for f in glob.glob(output_name + "*"):
-        os.remove(f)
+#    for f in glob.glob(output_name + "*"):
+#        os.remove(f)

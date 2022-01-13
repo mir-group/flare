@@ -1,66 +1,26 @@
-"""
-:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
-It needs to be used adjointly with ASE MD engine. 
-"""
-import os
-import sys
-import pickle
 import logging
 import json
+import numpy as np
 import time
 import warnings
+
 from copy import deepcopy
 from datetime import datetime
 from shutil import copyfile
 from typing import List, Tuple, Union
 
-import numpy as np
-
-from ase.md.nvtberendsen import NVTBerendsen
-from ase.md.nptberendsen import NPTBerendsen
-from ase.md.verlet import VelocityVerlet
-from ase.md.langevin import Langevin
-from flare.ase.npt import NPT_mod
-from flare.ase.nosehoover import NoseHoover
-from ase import units
-from ase.io import read, write
-
 import flare
 import flare.predict as predict
-from flare import gp
-from flare.dft_interface import dft_software
+from flare import struc, gp, env, md
+from flare.legacy.dft_interface import dft_software
 from flare.output import Output
 from flare.utils.learner import is_std_in_bound
 from flare.utils.element_coder import NumpyEncoder
-from flare.ase.atoms import FLARE_Atoms
-from flare.ase.calculator import FLARE_Calculator
-
 
 
 class OTF:
     """Trains a Gaussian process force field on the fly during
         molecular dynamics.
-
-    Args:
-        atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run.
-        calculator: ASE calculator. Must have "get_uncertainties" method
-          implemented.
-        timestep: the timestep in MD. Please use ASE units, e.g. if the
-            timestep is 1 fs, then set `timestep = 1 * units.fs`
-        number_of_steps (int): the total number of steps for MD.
-        dft_calc (ASE Calculator): any ASE calculator is supported,
-            e.g. Espresso, VASP etc.
-        md_engine (str): the name of MD thermostat, only `VelocityVerlet`,
-            `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin`, `NoseHoover`
-            are supported.
-        md_kwargs (dict): Specify the args for MD as a dictionary, the args are
-            as required by the ASE MD modules consistent with the `md_engine`.
-        trajectory (ASE Trajectory): default `None`, not recommended,
-            currently in experiment.
-
-    The following arguments are for on-the-fly training, the user can also
-    refer to :class:`flare.otf.OTF`
-
 
     Args:
         dt (float): MD timestep.
@@ -104,6 +64,14 @@ class OTF:
             Defaults to 10.
         min_steps_with_model (int, optional): Minimum number of steps the
             model takes in between calls to DFT. Defaults to 0.
+        force_source (Union[str, object], optional): DFT code used to calculate
+            ab initio forces during training. A custom module can be used here
+            in place of the DFT modules available in the FLARE package. The
+            module must contain two functions: parse_dft_input, which takes a
+            file name (in string format) as input and returns the positions,
+            species, cell, and masses of a structure of atoms; and run_dft_par,
+            which takes a number of DFT related inputs and returns the forces
+            on all atoms.  Defaults to "qe".
         npool (int, optional): Number of k-point pools for DFT
             calculations. Defaults to None.
         mpi (str, optional): Determines how mpi is called. Defaults to
@@ -130,16 +98,9 @@ class OTF:
 
     def __init__(
         self,
-        # ase otf args
-        atoms,
-        timestep,
-        number_of_steps,
-        dft_calc,
-        md_engine,
-        md_kwargs,
-        calculator=None,
-        trajectory=None,
         # md args
+        dt: float,
+        number_of_steps: int,
         prev_pos_init: "ndarray" = None,
         rescale_steps: List[int] = [],
         rescale_temps: List[int] = [],
@@ -160,6 +121,7 @@ class OTF:
         update_style: str = "add_n",
         update_threshold: float = None,
         # dft args
+        force_source: str = "qe",
         npool: int = None,
         mpi: str = "srun",
         dft_loc: str = None,
@@ -172,46 +134,19 @@ class OTF:
         **kwargs,
     ):
 
-        self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
-        if calculator is not None:
-            self.atoms.calc = calculator
-        self.timestep = timestep
-        self.md_engine = md_engine
-        self.md_kwargs = md_kwargs
-
-        if md_engine == "VelocityVerlet":
-            MD = VelocityVerlet
-        elif md_engine == "NVTBerendsen":
-            MD = NVTBerendsen
-        elif md_engine == "NPTBerendsen":
-            MD = NPTBerendsen
-        elif md_engine == "NPT":
-            MD = NPT_mod
-        elif md_engine == "Langevin":
-            MD = Langevin
-        elif md_engine == "NoseHoover":
-            MD = NoseHoover
-        else:
-            raise NotImplementedError(md_engine + " is not implemented in ASE")
-
-        self.md = MD(
-            atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
-        )
-
-        self.flare_calc = self.atoms.calc
-
-        # Convert ASE timestep to ps for the output file.
-        flare_dt = timestep / (units.fs * 1e3)
-
         # set DFT
-        self.dft_loc = dft_calc
-        self.dft_input = self.atoms 
+        self.dft_loc = dft_loc
+        self.dft_input = dft_input
         self.dft_output = dft_output
         self.dft_step = True
         self.dft_count = 0
+        if isinstance(force_source, str):
+            self.dft_module = dft_software[force_source]
+        else:
+            self.dft_module = force_source
 
         # set md
-        self.dt = flare_dt
+        self.dt = dt
         self.number_of_steps = number_of_steps
         self.get_structure_from_input(prev_pos_init)  # parse input file
         self.noa = self.structure.positions.shape[0]
@@ -219,7 +154,7 @@ class OTF:
         self.rescale_temps = rescale_temps
 
         # set flare
-        self.gp = self.flare_calc.gp_model
+        self.gp = gp
         # initialize local energies
         if calculate_energy:
             self.local_energies = np.zeros(self.noa)
@@ -274,14 +209,8 @@ class OTF:
         # set logger
         self.output = Output(output_name, always_flush=True)
         self.output_name = output_name
-
-        # TODO: gp_name is not needed
         self.gp_name = self.output_name + "_gp.json"
-
         self.checkpt_name = self.output_name + "_checkpt.json"
-        self.flare_name = self.output_name + "_flare.json"
-        self.dft_name = self.output_name + "_dft.pickle"
-        self.atoms_name = self.output_name + "_atoms.json"
 
         self.write_model = write_model
 
@@ -390,14 +319,18 @@ class OTF:
             self.checkpoint()
 
     def get_structure_from_input(self, prev_pos_init):
-        self.structure = self.atoms
-        if prev_pos_init is None:
-            self.atoms.prev_positions = np.copy(self.atoms.positions)
-        else:
-            assert len(self.atoms.positions) == len(
-                self.atoms.prev_positions
-            ), "Previous positions and positions are not same length"
-            self.atoms.prev_positions = prev_pos_init
+        positions, species, cell, masses = self.dft_module.parse_dft_input(
+            self.dft_input
+        )
+
+        self.structure = struc.Structure(
+            cell=cell,
+            species=species,
+            positions=positions,
+            mass_dict=masses,
+            prev_positions=prev_pos_init,
+            species_labels=species,
+        )
 
     def initialize_train(self):
         # call dft and update positions
@@ -414,53 +347,21 @@ class OTF:
             self.init_atoms, dft_frcs, dft_stress=dft_stress, dft_energy=dft_energy
         )
 
-        # TODO: Turn this into a "reset" method.
-        if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.flare_calc.reset()
-            self.atoms.calc = self.flare_calc
-
-        if self.md_engine == "NPT":
-            if not self.md.initialized:
-                self.md.initialize()
-            else:
-                if self.md.have_the_atoms_been_changed():
-                    raise NotImplementedError(
-                        "You have modified the atoms since the last timestep."
-                    )
-
     def compute_properties(self):
         """
-        Compute energies, forces, stresses, and their uncertainties with
-            the FLARE ASE calcuator, and write the results to the
-            OTF structure object.
+        In ASE-OTF, it will be replaced by subclass method
         """
-
-        # Change to FLARE calculator if necessary.
-        if not isinstance(self.atoms.calc, FLARE_Calculator):
-            self.flare_calc.reset()
-            self.atoms.calc = self.flare_calc
-
-        if not self.flare_calc.results:
-            self.atoms.calc.calculate(self.atoms)
+        self.gp.check_L_alpha()
+        self.pred_func(self.structure, self.gp, self.n_cpus)
 
     def md_step(self):
         """
-        Get new position in molecular dynamics based on the forces predicted by
-        FLARE_Calculator or DFT calculator
+        Take an MD step. This updates the positions of the structure.
         """
-        # Update previous positions.
-        self.structure.prev_positions = np.copy(self.structure.positions)
-
-        # Reset FLARE calculator.
-        if self.dft_step:
-            self.flare_calc.reset()
-            self.atoms.calc = self.flare_calc
-
-        # Take MD step. Inside the step() function, get_forces() is called
-        self.md.step()
+        md.update_positions(self.dt, self.noa, self.structure)
 
     def write_gp(self):
-        self.flare_calc.write_model(self.flare_name)
+        self.gp.write_model(self.gp_name)
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
@@ -474,15 +375,18 @@ class OTF:
         f = logging.getLogger(self.output.basename + "log")
         f.info("\nCalling DFT...\n")
 
-        # change from FLARE to DFT calculator
-        calc = deepcopy(self.dft_loc)
-        self.atoms.set_calculator(calc)
-    
-        # Calculate DFT energy, forces, and stress.
-        # Note that ASE and QE stresses differ by a minus sign.
-        forces = self.atoms.get_forces()
-        stress = self.atoms.get_stress()
-        energy = self.atoms.get_potential_energy()
+        # calculate DFT forces
+        # TODO: Return stress and energy
+        forces = self.dft_module.run_dft_par(
+            self.dft_input,
+            self.structure,
+            self.dft_loc,
+            n_cpus=self.n_cpus,
+            dft_out=self.dft_output,
+            npool=self.npool,
+            mpi=self.mpi,
+            dft_kwargs=self.dft_kwargs,
+        )
 
         self.structure.forces = forces
 
@@ -520,27 +424,11 @@ class OTF:
                 will be added to the training set.
             dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
         """
-        stds = self.flare_calc.results.get("stds", np.zeros_like(dft_frcs))
-        self.output.add_atom_info(train_atoms, stds)
-
-        # Convert ASE stress (xx, yy, zz, yz, xz, xy) to FLARE stress
-        # (xx, xy, xz, yy, yz, zz).
-        flare_stress = None
-        if dft_stress is not None:
-            flare_stress = -np.array(
-                [
-                    dft_stress[0],
-                    dft_stress[5],
-                    dft_stress[4],
-                    dft_stress[1],
-                    dft_stress[3],
-                    dft_stress[2],
-                ]
-            )
+        self.output.add_atom_info(train_atoms, self.structure.stds)
 
         if self.force_only:
             dft_energy = None
-            flare_stress = None
+            dft_stress = None
 
         # update gp model
         self.gp.update_db(
@@ -548,26 +436,18 @@ class OTF:
             dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
-            stress=flare_stress,
+            stress=dft_stress,
         )
 
         self.gp.set_L_alpha()
 
-        # train model
-        if (self.dft_count - 1) < self.freeze_hyps:
-            self.train_gp()
-
-        # update mgp model
-        if self.flare_calc.use_mapping:
-            self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
-
         # write model
         if (self.dft_count - 1) < self.freeze_hyps:
+            self.train_gp()
             if self.write_model == 2:
                 self.write_gp()
         if self.write_model == 3:
             self.write_gp()
-
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
@@ -609,28 +489,18 @@ class OTF:
                 new_pos - self.velocities * self.dt * vel_fac
             )
 
-        # update ASE atoms
-        if self.curr_step in self.rescale_steps:
-            rescale_ind = self.rescale_steps.index(self.curr_step)
-            new_temp = self.rescale_temps[rescale_ind]
-            temp_fac = new_temp / self.temperature
-            vel_fac = np.sqrt(temp_fac)
-            curr_velocities = self.atoms.get_velocities()
-            self.atoms.set_velocities(curr_velocities * vel_fac)
-
-            # Reset thermostat parameters.
-            if self.md_engine in ["NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]:
-                self.md.set_temperature(temperature_K=new_temp)
-                self.md_kwargs["temperature"] = new_temp * units.kB
-
     def update_temperature(self):
         """Updates the instantaneous temperatures of the system.
-        """
-        self.KE = self.atoms.get_kinetic_energy()
-        self.temperature = self.atoms.get_temperature()
 
-        # Convert velocities to Angstrom / ps.
-        self.velocities = self.atoms.get_velocities() * units.fs * 1e3
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
+        KE, temperature, velocities = md.calculate_temperature(
+            self.structure, self.dt, self.noa
+        )
+        self.KE = KE
+        self.temperature = temperature
+        self.velocities = velocities
 
     def record_state(self):
         self.output.write_md_config(
@@ -645,68 +515,40 @@ class OTF:
         )
 
     def as_dict(self):
-        # DFT module and Trajectory will cause issue in deepcopy
-        md = self.md
-        self.md = None
+        self.dft_module = self.dft_module.__name__
+        out_dict = deepcopy(dict(vars(self)))
+        self.dft_module = eval(self.dft_module)
 
-        # SGP models aren't picklable. Temporarily set to None before copying.
-        flare_calc = self.flare_calc
-        gp = self.gp
-        self.flare_calc = None
-        self.gp = None
-        self.atoms.calc = None
+        out_dict["gp"] = self.gp_name
+        out_dict["structure"] = self.structure.as_dict()
 
-        # Deepcopy OTF object.
-        dct = deepcopy(dict(vars(self)))
+        for key in ["output", "pred_func"]:
+            out_dict.pop(key)
 
-        # Reset attributes.
-        self.md = md
-        self.flare_calc = flare_calc
-        self.gp = gp
-        self.atoms.calc = flare_calc
-
-        # write atoms and flare calculator to separate files
-        write(self.atoms_name, self.atoms)
-        dct["atoms"] = self.atoms_name
-
-        self.flare_calc.write_model(self.flare_name)
-        dct["flare_calc"] = self.flare_name
-
-        # dump dft calculator as pickle
-        with open(self.dft_name, "wb") as f:
-            pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
-        dct["dft_loc"] = self.dft_name
-
-        dct["gp"] = self.gp_name
-
-        for key in ["output", "pred_func", "structure", "dft_input", "md"]:
-            dct.pop(key)
-
-        return dct
+        return out_dict
 
     @staticmethod
-    def from_dict(dct):
-        flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
-        flare_calc.reset()
-        dct["atoms"] = read(dct["atoms"])
-        dct["atoms"].calc = flare_calc
-        dct.pop("gp")
+    def from_dict(in_dict):
+        if in_dict["write_model"] <= 1:  # TODO: detect GP version
+            warnings.warn("The GP model might not be the latest")
 
-        with open(dct["dft_loc"], "rb") as f:
-            dct["dft_calc"] = pickle.load(f)
+        gp_model = gp.GaussianProcess.from_file(in_dict["gp"])
+        in_dict["gp"] = gp_model
+        in_dict["structure"] = struc.Structure.from_dict(in_dict["structure"])
 
-        for key in ["dt", "dft_loc"]:
-            dct.pop(key)
+        if "flare.dft_interface" in in_dict["dft_module"]:
+            for dft_name in ["qe", "cp2k", "vasp"]:
+                if dft_name in in_dict["dft_module"]:
+                    in_dict["force_source"] = dft_name
+                    break
+        else:  # if force source is a module
+            in_dict["force_source"] = eval(in_dict["dft_module"])
 
-        new_otf = OTF(**dct)
-        new_otf.dft_count = dct["dft_count"]
-        new_otf.curr_step = dct["curr_step"]
-        new_otf.std_tolerance = dct["std_tolerance"]
-
-        if new_otf.md_engine == "NPT":
-            if not new_otf.md.initialized:
-                new_otf.md.initialize()
-
+        new_otf = OTF(**in_dict)
+        new_otf.structure = in_dict["structure"]
+        new_otf.dft_count = in_dict["dft_count"]
+        new_otf.curr_step = in_dict["curr_step"]
+        new_otf.std_tolerance = in_dict["std_tolerance"]
         return new_otf
 
     def checkpoint(self):

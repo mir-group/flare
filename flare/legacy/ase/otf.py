@@ -21,12 +21,12 @@ from ase import units
 from ase.io import read, write
 
 import flare
-from flare.otf import OTF
+from flare.legacy.otf import OTF
 from flare.utils.learner import is_std_in_bound
 
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
-import flare.ase.dft as dft_source
+import flare.legacy.ase.dft as dft_source
 
 
 class ASE_OTF(OTF):
