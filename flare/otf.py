@@ -25,8 +25,6 @@ from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
-import flare.predict as predict
-from flare import gp
 from flare.output import Output
 from flare.utils.learner import is_std_in_bound
 from flare.utils.element_coder import NumpyEncoder
@@ -104,9 +102,6 @@ class OTF:
             single file name, or a list of several. Copied files will be
             prepended with the date and time with the format
             'Year.Month.Day:Hour:Minute:Second:'.
-
-        n_cpus (int, optional): Number of cpus used during training.
-            Defaults to 1.
     """
 
     def __init__(
@@ -141,7 +136,6 @@ class OTF:
         dft_kwargs=None,
         store_dft_output: Tuple[Union[str, List[str]], str] = None,
         # other args
-        n_cpus: int = 1,
         **kwargs,
     ):
 
@@ -182,7 +176,7 @@ class OTF:
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.get_structure_from_input(prev_pos_init)  # parse input file
-        self.noa = self.structure.positions.shape[0]
+        self.noa = len(self.atoms)
         self.rescale_steps = rescale_steps
         self.rescale_temps = rescale_temps
 
@@ -202,7 +196,6 @@ class OTF:
         self.update_style = update_style
         self.update_threshold = update_threshold
 
-        self.n_cpus = n_cpus  # set number of cpus for DFT runs
         self.min_steps_with_model = min_steps_with_model
 
         self.dft_kwargs = dft_kwargs
@@ -238,7 +231,7 @@ class OTF:
             str(self.gp),
             self.dt,
             self.number_of_steps,
-            self.structure,
+            self.atoms,
             self.std_tolerance,
             optional_dict,
         )
@@ -269,7 +262,7 @@ class OTF:
                 std_in_bound, target_atoms = is_std_in_bound(
                     self.std_tolerance,
                     self.gp.force_noise,
-                    self.structure,
+                    self.atoms,
                     max_atoms_added=self.max_atoms_added,
                     update_style=self.update_style,
                     update_threshold=self.update_threshold,
@@ -281,15 +274,15 @@ class OTF:
                     # record GP forces
                     self.update_temperature()
                     self.record_state()
-                    gp_frcs = deepcopy(self.structure.forces)
+                    gp_frcs = deepcopy(self.atoms.forces)
 
                     # run DFT and record forces
                     self.dft_step = True
                     self.steps_since_dft = 0
                     self.run_dft()
-                    dft_frcs = deepcopy(self.structure.forces)
-                    dft_stress = deepcopy(self.structure.stress)
-                    dft_energy = self.structure.potential_energy
+                    dft_frcs = deepcopy(self.atoms.forces)
+                    dft_stress = deepcopy(self.atoms.stress)
+                    dft_energy = self.atoms.potential_energy
 
                     # run MD step & record the state
                     self.record_state()
@@ -315,7 +308,7 @@ class OTF:
             # TODO: Reinstate velocity rescaling.
             self.md_step()  # update positions by Verlet
             self.steps_since_dft += 1
-            self.rescale_temperature(self.structure.positions)
+            self.rescale_temperature(self.atoms.positions)
 
             self.curr_step += 1
 
@@ -329,7 +322,6 @@ class OTF:
             self.checkpoint()
 
     def get_structure_from_input(self, prev_pos_init):
-        self.structure = self.atoms
         if prev_pos_init is None:
             self.atoms.prev_positions = np.copy(self.atoms.positions)
         else:
@@ -341,9 +333,9 @@ class OTF:
     def initialize_train(self):
         # call dft and update positions
         self.run_dft()
-        dft_frcs = deepcopy(self.structure.forces)
-        dft_stress = deepcopy(self.structure.stress)
-        dft_energy = self.structure.potential_energy
+        dft_frcs = deepcopy(self.atoms.forces)
+        dft_stress = deepcopy(self.atoms.stress)
+        dft_energy = self.atoms.potential_energy
 
         self.update_temperature()
         self.record_state()
@@ -388,7 +380,7 @@ class OTF:
         FLARE_Calculator or DFT calculator
         """
         # Update previous positions.
-        self.structure.prev_positions = np.copy(self.structure.positions)
+        self.atoms.prev_positions = np.copy(self.atoms.positions)
 
         # Reset FLARE calculator.
         if self.dft_step:
@@ -422,8 +414,6 @@ class OTF:
         forces = self.atoms.get_forces()
         stress = self.atoms.get_stress()
         energy = self.atoms.get_potential_energy()
-
-        self.structure.forces = forces
 
         # write wall time of DFT calculation
         self.dft_count += 1
@@ -483,7 +473,7 @@ class OTF:
 
         # update gp model
         self.gp.update_db(
-            self.structure,
+            self.atoms,
             dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
@@ -544,7 +534,7 @@ class OTF:
             rescale_ind = self.rescale_steps.index(self.curr_step)
             temp_fac = self.rescale_temps[rescale_ind] / self.temperature
             vel_fac = np.sqrt(temp_fac)
-            self.structure.prev_positions = (
+            self.atoms.prev_positions = (
                 new_pos - self.velocities * self.dt * vel_fac
             )
 
@@ -575,7 +565,7 @@ class OTF:
         self.output.write_md_config(
             self.dt,
             self.curr_step,
-            self.structure,
+            self.atoms,
             self.temperature,
             self.KE,
             self.start_time,
@@ -616,7 +606,7 @@ class OTF:
             pickle.dump(self.dft_loc, f)  # dft_loc is the dft calculator
         dct["dft_loc"] = self.dft_name
 
-        for key in ["output", "structure", "md"]:
+        for key in ["output", "md"]:
             dct.pop(key)
 
         return dct
