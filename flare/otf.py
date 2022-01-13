@@ -25,7 +25,6 @@ from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
-import flare
 import flare.predict as predict
 from flare import gp
 from flare.output import Output
@@ -33,7 +32,6 @@ from flare.utils.learner import is_std_in_bound
 from flare.utils.element_coder import NumpyEncoder
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
-
 
 
 class OTF:
@@ -62,9 +60,6 @@ class OTF:
 
 
     Args:
-        dt (float): MD timestep.
-        number_of_steps (int): Number of timesteps in the training
-            simulation.
         prev_pos_init ([type], optional): Previous positions. Defaults
             to None.
         rescale_steps (List[int], optional): List of frames for which the
@@ -162,7 +157,6 @@ class OTF:
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
         if calculator is not None:
             self.atoms.calc = calculator
-        self.timestep = timestep
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
 

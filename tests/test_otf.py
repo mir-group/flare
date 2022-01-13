@@ -3,12 +3,11 @@ from copy import deepcopy
 import pytest
 import numpy as np
 
-from flare import otf, kernels
 from flare.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
-import flare.ase_otf as ase_otf
+from flare.otf import OTF
 from flare.utils.parameter_helper import ParameterHelper
 
 from ase.constraints import FixAtoms
@@ -21,29 +20,6 @@ from ase.md.velocitydistribution import (
 from ase.spacegroup import crystal
 from ase.calculators.espresso import Espresso
 from ase import io
-
-
-def read_qe_results(self):
-
-    out_file = self.label + ".pwo"
-
-    # find out slurm job id
-    qe_slurm_dat = open("qe_slurm.dat").readlines()[0].split()
-    qe_slurm_id = qe_slurm_dat[3]
-
-    # mv scf.pwo to scp+nsteps.pwo
-    if ("forces" not in self.results.keys()) and (out_file in os.listdir()):
-        subprocess.call(["mv", out_file, f"{self.label}{self.nsteps}.pwo"])
-
-    # sleep until the job is finished
-    job_list = subprocess.check_output(["showq", "-p", "kozinsky"]).decode("utf-8")
-    while qe_slurm_id in job_list:
-        time.sleep(10)
-        job_list = subprocess.check_output(["showq", "-p", "kozinsky"]).decode("utf-8")
-
-    output = io.read(out_file)
-    self.calc = output.calc
-    self.results = output.calc.results
 
 
 md_list = [
@@ -201,7 +177,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
     ZeroRotation(super_cell)  # zero angular momentum
 
     super_cell.calc = flare_calculator
-    test_otf = ase_otf.OTF(
+    test_otf = OTF(
         super_cell,
         timestep=1 * units.fs,
         number_of_steps=number_of_steps,
@@ -244,7 +220,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
 @pytest.mark.parametrize("write_model", [1, 2, 3])
 def test_load_checkpoint(md_engine, write_model):
     output_name = f"{md_engine}_{write_model}"
-    new_otf = ase_otf.OTF.from_checkpoint(output_name + "_checkpt.json")
+    new_otf = OTF.from_checkpoint(output_name + "_checkpt.json")
     assert new_otf.curr_step == number_of_steps
     new_otf.number_of_steps = new_otf.number_of_steps + 3
     new_otf.run()
