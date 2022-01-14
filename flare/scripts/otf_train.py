@@ -1,18 +1,10 @@
-import time, os, shutil, glob, subprocess
+import time, os, shutil, glob, subprocess, sys
 from copy import deepcopy
 import pytest
-import numpy as np
-#import sys
-#config_path = os.getcwd()
-#print("Importing configurations from", config_path)
-#sys.path.append(config_path)
-#print(locals().keys())
-#from config import *
-##import config
-#print(locals().keys())
 import pkgutil, pyclbr
 import importlib
 import inspect
+import numpy as np
 
 from flare.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
@@ -31,92 +23,94 @@ from ase.md.velocitydistribution import (
 from ase import io
 from ase.symbols import symbols2numbers
 
+import yaml
+
+with open(sys.argv[1], "r") as f:
+    config = yaml.safe_load(f)
 
 # -------------- Set up Supercell from ASE Atoms --------------
-super_cell = read(ase_atoms_file, ase_atoms_format)
-super_cell *= replicate
+super_cell = io.read(config["ase_atoms"]["file"], format=config["ase_atoms"]["format"])
+super_cell *= config["ase_atoms"]["replicate"]
 
 # jitter positions to give nonzero force on first frame
 for atom_pos in super_cell.positions:
     for coord in range(3):
-        atom_pos[coord] += (2 * np.random.random() - 1) * jitter
+        atom_pos[coord] += (2 * np.random.random() - 1) * config["ase_atoms"]["jitter"]
 
 # ----------------- Set up ASE DFT calculator -----------------
 # find the module including the ASE DFT calculator class by name
 dft_module_name = ""
+ase_dft_calc_name = config["ase_dft_calc"]["name"]
 for importer, modname, ispkg in pkgutil.iter_modules(ase_calculators.__path__):
     module_info = pyclbr.readmodule("ase.calculators." + modname)
     if ase_dft_calc_name in module_info:
         dft_module_name = modname
         break
-print(dft_module_name)
 
 # import ASE DFT calculator module, and build a DFT calculator class object
 dft_calc = None
 dft_module = importlib.import_module("ase.calculators." + dft_module_name)
 for name, obj in inspect.getmembers(dft_module, inspect.isclass):
     if name == ase_dft_calc_name:
-        print(name)
-        dft_calc = obj(**ase_dft_calc_kwargs)
-dft_calc.set(**ase_dft_calc_params)
+        dft_calc = obj(**config["ase_dft_calc"]["kwargs"])
+dft_calc.set(**config["ase_dft_calc"]["params"])
 
 # ---------- create gaussian process model -------------------
+flare_config = config["ase_flare_calc"]
 
-## set up GP hyperparameters
-#kernels = ["twobody", "threebody"]  # use 2+3 body kernel
-#parameters = {"cutoff_twobody": 10.0, "cutoff_threebody": 6.0}
-#pm = ParameterHelper(kernels=kernels, random=True, parameters=parameters)
-#
-#hm = pm.as_dict()
-#hyps = hm["hyps"]
-#cut = hm["cutoffs"]
-#print("hyps", hyps)
+# set up GP hyperparameters
+pm = ParameterHelper(
+    kernels=flare_config["kernels"],
+    random=flare_config["random_init_hyps"],
+    parameters=flare_config["gp_parameters"],
+)
+hm = pm.as_dict()
 
 gp_model = GaussianProcess(
-    kernels=kernels,
-    component=components,
-    hyps=hyps,
-    cutoffs=cutoffs,
-    hyp_labels=hyp_labels,
-    opt_algorithm=opt_algorithm,
-    n_cpus=n_cpus,
+    kernels=flare_config["kernels"],
+    component="mc",
+    hyps=hm["hyps"],
+    cutoffs=hm["cutoffs"],
+    hyp_labels=hm["hyp_labels"],
+    opt_algorithm=flare_config["opt_algorithm"],
+    n_cpus=flare_config["n_cpus"],
 )
 
 # ----------- create mapped gaussian process ------------------
-coded_unique_species = symbols2numbers(unique_species)
-mgp_model = MappedGaussianProcess(
-    grid_params=grid_params, 
-    unique_species=coded_unique_species, 
-    n_cpus=n_cpus, 
-    var_map=var_map,
-)
+if flare_config["use_mapping"]:
+    unique_species = []
+    for s in super_cell.symbols:
+        if s not in unique_species:
+            unique_species.append(s)
+    coded_unique_species = symbols2numbers(unique_species)
+    mgp_model = MappedGaussianProcess(
+        grid_params=flare_config["grid_params"],
+        unique_species=coded_unique_species,
+        n_cpus=flare_config["n_cpus"],
+        var_map=flare_config["var_map"],
+    )
+else:
+    mgp_model = None
 
 # ------------ create ASE's flare calculator -----------------------
 flare_calc = FLARE_Calculator(
-    gp_model, mgp_model=mgp_model, par=par, use_mapping=use_mapping
+    gp_model=gp_model,
+    mgp_model=mgp_model,
+    par=flare_config["par"],
+    use_mapping=flare_config["use_mapping"],
 )
 
 # On-the-fly training engine
 # intialize velocity
-MaxwellBoltzmannDistribution(super_cell, temperature * units.kB)
+MaxwellBoltzmannDistribution(super_cell, config["otf"]["temperature"] * units.kB)
 Stationary(super_cell)  # zero linear momentum
 ZeroRotation(super_cell)  # zero angular momentum
 
 test_otf = OTF(
     super_cell,
-    dt=dt,
-    number_of_steps=number_of_steps,
     flare_calc=flare_calc,
     dft_calc=dft_calc,
-    md_engine=md_engine,
-    md_kwargs=md_kwargs,
-    trajectory=f"{output_name}_otf.traj",
-    init_atoms=init_atoms, 
-    output_name=output_name,
-    std_tolerance_factor=std_tolerance_factor,
-    max_atoms_added=max_atoms_added,
-    freeze_hyps=freeze_hyps,
-    write_model=write_model,
+    **config["otf"],
 )
 
 # run on-the-fly training

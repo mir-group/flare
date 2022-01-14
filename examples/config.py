@@ -2,9 +2,8 @@ import numpy as np
 from ase import units
 
 # Super cell
-unique_species = ["H", "He"]
-ase_atoms_file = "atoms.xyz"
-ase_atoms_format = "extxyz"
+ase_atoms_file = "POSCAR"
+ase_atoms_format = "vasp"
 replicate = [1, 1, 1]
 jitter = 0.1
 
@@ -17,10 +16,9 @@ number_of_steps = 5
 
 # GP
 kernels = ["twobody", "threebody"]
+gp_parameters = {"cutoff_twobody": 10.0, "cutoff_threebody": 6.0}
+random_init_hyps = True
 components = "mc"  # multi-component. For single-comp, use 'sc'
-hyps = np.random.rand(5)
-cutoffs = {'twobody': 10.0, 'threebody': 6.0}
-hyp_labels = ["sig2", "ls2", "sig3", "ls3", "noise"]
 opt_algorithm = "L-BFGS-B"
 n_cpus = 1
 par = False
