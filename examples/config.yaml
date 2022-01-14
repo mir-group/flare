@@ -5,8 +5,6 @@ ase_atoms: # Super cell
     jitter: 0.1
 
 ase_flare_calc: # FLARE calculator
-    par: False
-    use_mapping: False
     gp: GaussianProcess
     kernels:
         - twobody
@@ -17,6 +15,7 @@ ase_flare_calc: # FLARE calculator
     random_init_hyps: True
     opt_algorithm: L-BFGS-B
     n_cpus: 1
+    use_mapping: False
     # (Optional)
     mgp: MappedGaussianProcess
     grid_params:
