@@ -277,30 +277,3 @@ DEFAULT_TIMESTEP = {
     "nano": 0.00045,
 }
 
-if __name__ == "__main__":
-    import os
-    from ase import Atom, Atoms
-    from ase.build import bulk
-
-    Ni = bulk("Ni", cubic=True)
-    H = Atom("H", position=Ni.cell.diagonal() / 2)
-    NiH = Ni + H
-
-    os.environ[
-        "ASE_LAMMPSRUN_COMMAND"
-    ] = "/n/home08/xiey/lammps-stable_29Oct2020/src/lmp_mpi"
-    files = ["NiAlH_jea.eam.alloy"]
-    lammps = LAMMPS(files=files, keep_tmp_files=True, tmp_dir="tmp")
-    lammps.set(
-        pair_style="eam/alloy",
-        pair_coeff=["* * NiAlH_jea.eam.alloy H Ni"],
-        compute=["1 all pair/local dist", "2 all reduce max c_1"],
-        velocity=["1 all parameters"],
-        fix=[
-            "1 all nvt temp 300 300 $(100.0*dt)",
-        ],
-        dump_period=dump_freq,
-        timestep=f"{timestep}{otf_run_command}",
-    )
-    NiH.calc = lammps
-    print("Energy ", NiH.get_potential_energy())
