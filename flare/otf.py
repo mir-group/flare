@@ -43,6 +43,8 @@ class OTF:
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
+            If 4, write after each training and end of run, and back up
+            after each write.
         force_only (bool, optional): If True, only use forces for training.
             Default to False, use forces, energy and stress for training.
 
