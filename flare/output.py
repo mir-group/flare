@@ -177,6 +177,8 @@ class Output:
                     if "version=" in line:
                         f.info(f"flare_pp {line[9:len(line)-2]}")
                         break
+        except ModuleNotFoundError:
+            pass 
 
         # Write uncertainty tolerance
         if isinstance(std_tolerance, tuple):
