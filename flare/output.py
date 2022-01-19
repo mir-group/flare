@@ -377,6 +377,7 @@ class Output:
         dft_forces: np.array = None,
         dft_energy=0,
         predict_energy=float("nan"),
+        target_atoms=None,
     ):
         """write atomic configuration in xyz file
 
@@ -401,6 +402,7 @@ class Output:
             timestep=curr_step,
             write_file="",
             append=False,
+            target_atoms=target_atoms,
         )
 
         logger = logging.getLogger(self.basename + "xyz")
