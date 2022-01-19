@@ -1,8 +1,10 @@
 from math import ceil
+import numpy as np
 import glob
 import warnings
 from datetime import datetime
 from copy import deepcopy
+from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.lammpsrun import LAMMPS
 from ase.calculators.lammps import convert
 from ase.md.md import MolecularDynamics
@@ -74,7 +76,7 @@ class LAMMPS_MOD(LAMMPS):
         if "velocity" in self.parameters:
             velocity_command = ""
             for cmd in self.parameters["velocity"]:
-                velocity_command += "velocity" + cmd + "\n"
+                velocity_command += "velocity " + cmd + "\n"
             self.parameters["model_post"] += velocity_command
 
         # Always unfix "nve" defined in ASE
@@ -87,6 +89,26 @@ class LAMMPS_MOD(LAMMPS):
             system_changes = all_changes
         Calculator.calculate(self, atoms, properties, system_changes)
         self.run(set_atoms)
+
+        self.subtract_kinetic_stress()
+
+
+    def subtract_kinetic_stress(self):
+        # LAMMPS stress tensor = virial + kinetic
+        # kinetic = sum(m_k * v_ki * v_kj) / V
+        # We subtract the kinetic term and keep only the virial term
+        velocities = self.atoms.get_velocities()
+        masses = self.atoms.get_masses()
+        volume = self.atoms.get_volume()
+        kinetic = velocities.T @ np.diag(masses) @ velocities / volume
+    
+        # apply the Lammps rotation stuff to the stress (copied from lammpsrun.py)
+        R = self.prism.rot_mat
+        kinetic_atoms = np.dot(R, kinetic)
+        kinetic_atoms = np.dot(kinetic_atoms, R.T)
+        kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0],
+                                      [0, 1, 2, 2, 2, 1]]
+        self.results["stress"] += kinetic_atoms
 
 
 class LAMMPS_BAL(MolecularDynamics):
