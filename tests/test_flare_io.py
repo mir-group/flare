@@ -1,7 +1,8 @@
 import pytest
+pmgout = pytest.importorskip("pymatgen.io.vasp.outputs")
+Vasprun = pmgout.Vasprun
 import os
 import numpy as np
-from pymatgen.io.vasp.outputs import Vasprun
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
 from flare.utils.flare_io import md_trajectory_to_file, md_trajectory_from_file
@@ -9,7 +10,6 @@ from flare.utils.flare_io import md_trajectory_to_file, md_trajectory_from_file
 pytestmark = pytest.mark.filterwarnings(
     "ignore::UserWarning", "ignore::pymatgen.io.vasp.outputs.UnconvergedVASPWarning"
 )
-
 
 def test_read_write_trajectory():
     structures = md_trajectory_from_vasprun("test_files/test_vasprun.xml")
