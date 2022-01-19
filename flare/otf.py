@@ -270,9 +270,7 @@ class OTF:
                 )
 
                 steps_since_dft = self.curr_step - self.last_dft_step
-                if (not std_in_bound) and (
-                    steps_since_dft > self.min_steps_with_model
-                ):
+                if (not std_in_bound) and (steps_since_dft > self.min_steps_with_model):
                     # record GP forces
                     self.update_temperature()
                     self.record_state()
@@ -294,11 +292,11 @@ class OTF:
 
                     # compute mae and write to output
                     self.compute_mae(
-                        gp_energy, 
-                        gp_forces, 
-                        gp_stress, 
-                        dft_energy, 
-                        dft_frcs, 
+                        gp_energy,
+                        gp_forces,
+                        gp_stress,
+                        dft_energy,
+                        dft_frcs,
                         dft_stress,
                     )
 
@@ -486,9 +484,9 @@ class OTF:
         )
 
     def compute_mae(
-        self, 
+        self,
         gp_energy,
-        gp_forces, 
+        gp_forces,
         gp_stress,
         dft_energy,
         dft_forces,
@@ -522,7 +520,9 @@ class OTF:
         per_species_num = np.zeros(len(unique_species))
         for a in range(self.structure.nat):
             species_ind = unique_species.index(self.structure.coded_species[a])
-            per_species_mae[species_ind] += np.mean(np.abs(dft_forces[a] - gp_forces[a]))
+            per_species_mae[species_ind] += np.mean(
+                np.abs(dft_forces[a] - gp_forces[a])
+            )
             per_species_mav[species_ind] += np.mean(np.abs(dft_forces[a]))
             per_species_num[species_ind] += 1
         per_species_mae /= per_species_num
@@ -532,7 +532,6 @@ class OTF:
             curr_species = unique_species[s]
             f.info(f"type {curr_species} forces mae: {per_species_mae[s]:.4f} eV/A")
             f.info(f"type {curr_species} forces mav: {per_species_mav[s]:.4f} eV/A")
-
 
     def rescale_temperature(self, new_pos: "ndarray"):
         """Change the previous positions to update the temperature
@@ -625,7 +624,7 @@ class OTF:
     def backup_checkpoint(self):
         dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
         os.mkdir(dir_name)
-        for f in self.checkpt_files: 
+        for f in self.checkpt_files:
             shutil.copyfile(f, f"{dir_name}/{f}")
 
     def checkpoint(self):

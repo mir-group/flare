@@ -100,7 +100,7 @@ class ASE_OTF(OTF):
         md_kwargs,
         calculator=None,
         trajectory=None,
-        **otf_kwargs
+        **otf_kwargs,
     ):
 
         self.structure = FLARE_Atoms.from_ase_atoms(atoms)
@@ -127,9 +127,9 @@ class ASE_OTF(OTF):
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
         self.md = MD(
-            atoms=self.structure, 
-            timestep=timestep, 
-            trajectory=trajectory, 
+            atoms=self.structure,
+            timestep=timestep,
+            trajectory=trajectory,
             **md_kwargs,
         )
 
@@ -146,13 +146,19 @@ class ASE_OTF(OTF):
             force_source=force_source,
             dft_loc=dft_calc,
             dft_input=self.structure,
-            **otf_kwargs
+            **otf_kwargs,
         )
 
         self.flare_name = self.output_name + "_flare.json"
         self.dft_name = self.output_name + "_dft.pickle"
         self.structure_name = self.output_name + "_atoms.json"
-        self.checkpt_files = [self.checkpt_name, self.flare_name, self.dft_name, self.structure_name, self.dft_xyz]
+        self.checkpt_files = [
+            self.checkpt_name,
+            self.flare_name,
+            self.dft_name,
+            self.structure_name,
+            self.dft_xyz,
+        ]
 
     def get_structure_from_input(self, prev_pos_init):
         if prev_pos_init is None:
@@ -269,6 +275,7 @@ class ASE_OTF(OTF):
             struc_to_add = deepcopy(self.structure)
         except TypeError:
             from ase.calculators.singlepoint import SinglePointCalculator
+
             properties = ["forces", "energy", "stress"]
             results = {
                 "forces": self.structure.forces,
@@ -297,7 +304,7 @@ class ASE_OTF(OTF):
             self.train_gp()
 
         # update mgp model
-        if (self.flare_calc.use_mapping):
+        if self.flare_calc.use_mapping:
             self.flare_calc.build_map()
 
         # write model
@@ -323,7 +330,7 @@ class ASE_OTF(OTF):
         self.dft_loc = None
         calc = self.dft_input.calc
         self.dft_input.calc = None
-        
+
         gp = self.gp
         self.gp = None
 
@@ -366,9 +373,12 @@ class ASE_OTF(OTF):
             _kernels = None
         elif flare_calc_dict["class"] == "SGP_Calculator":
             from flare_pp.sparse_gp_calculator import SGP_Calculator
+
             flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
         else:
-            raise TypeError(f"The calculator from {dct['flare_calc']} is not recognized.")
+            raise TypeError(
+                f"The calculator from {dct['flare_calc']} is not recognized."
+            )
 
         flare_calc.reset()
         dct["atoms"] = read(dct["atoms"])
