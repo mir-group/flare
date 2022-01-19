@@ -209,7 +209,7 @@ class OTF:
             self.pred_func = predict.predict_on_structure_efs
 
         # set logger
-        self.output = Output(output_name, always_flush=True)
+        self.output = Output(output_name, always_flush=True, print_as_xyz=True)
         self.output_name = output_name
         self.gp_name = self.output_name + "_gp.json"
         self.checkpt_name = self.output_name + "_checkpt.json"
@@ -496,22 +496,24 @@ class OTF:
     ):
 
         f = logging.getLogger(self.output.basename + "log")
+        f.info("Mean absolute errors & Mean absolute values")
 
         # compute energy/forces/stress mean absolute error and value
-        e_mae = np.mean(np.abs(dft_energy - gp_energy))
-        e_mav = np.mean(np.abs(dft_energy))
-        f.info(f"energy mae: {e_mae:.4f} eV")
-        f.info(f"energy mav: {e_mav:.4f} eV")
+        if not self.force_only:
+            e_mae = np.mean(np.abs(dft_energy - gp_energy))
+            e_mav = np.mean(np.abs(dft_energy))
+            f.info(f"energy mae: {e_mae:.4f} eV")
+            f.info(f"energy mav: {e_mav:.4f} eV")
+
+            s_mae = np.mean(np.abs(dft_stress - gp_stress))
+            s_mav = np.mean(np.abs(dft_stress))
+            f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+            f.info(f"stress mav: {s_mav:.4f} eV/A^3")
 
         f_mae = np.mean(np.abs(dft_forces - gp_forces))
         f_mav = np.mean(np.abs(dft_forces))
         f.info(f"forces mae: {f_mae:.4f} eV/A")
         f.info(f"forces mav: {f_mav:.4f} eV/A")
-
-        s_mae = np.mean(np.abs(dft_stress - gp_stress))
-        s_mav = np.mean(np.abs(dft_stress))
-        f.info(f"stress mae: {s_mae:.4f} eV/A^3")
-        f.info(f"stress mav: {s_mav:.4f} eV/A^3")
 
         # compute the per-species MAE
         unique_species = list(set(self.structure.coded_species))
