@@ -1,16 +1,23 @@
-from ase.calculators.lammpsrun import LAMMPS
+from math import ceil
+import glob
+import warnings
+from datetime import datetime
 from copy import deepcopy
+from ase.calculators.lammpsrun import LAMMPS
+from ase.calculators.lammps import convert
+from ase.md.md import MolecularDynamics
+
 
 class LAMMPS_MOD(LAMMPS):
     """
     A modified ASE LAMMPS calculator based on ase.lammpsrun.LAMMPS,
-    to allow for more flexible input parameters, including compute, 
+    to allow for more flexible input parameters, including compute,
     fix/nvt, fix/npt etc.
-    
+
     Supported customized commands for LAMMPS input:
     - mass (set by arg `masses`)
     - package
-    - atom_style, bond_style, angle_style, dihedral_style, improper_style, kspace_style 
+    - atom_style, bond_style, angle_style, dihedral_style, improper_style, kspace_style
     - units (default: metal)
     - boundary
     - neighbor
@@ -38,21 +45,23 @@ class LAMMPS_MOD(LAMMPS):
     - thermo_style custom (thermo_args)
     - thermo_modify flush yes format float %23.16g
     - thermo 1
- 
+
     Customized parameters:
     - dump_period
     - thermo_args
     - specorder
     """
 
-    def __init__(**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.nsteps = 0
 
-    def calculate(self, atoms=None, properties=None, system_changes=None, set_atoms=False):
+    def calculate(
+        self, atoms=None, properties=None, system_changes=None, set_atoms=False
+    ):
         """Modify parameters"""
 
-        if "model_post" not in self.parameters:
-            self.parameters["model_post"] = []
+        self.parameters.setdefault("model_post", [])
 
         # Add "compute" command after "pair_coeff", using `model_post`
         if "compute" in self.parameters:
@@ -79,59 +88,169 @@ class LAMMPS_MOD(LAMMPS):
         Calculator.calculate(self, atoms, properties, system_changes)
         self.run(set_atoms)
 
-        # TODO: check if the per-atom compute result is read into atoms
-        # TODO: we can not read global compute result though
 
-
-class LAMMPS_BAL(LAMMPS_MOD):
+class LAMMPS_BAL(MolecularDynamics):
     """
-    LAMMPS for Bayesian active learning
+    Run MD with LAMMPS based on the ase.md.md.MolecularDynamics
+    for Bayesian active learning
+
+    Args:
+        parameters (dict): LAMMPS input commands.
+
     """
 
-    def __init__(**kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, atoms, timestep, parameters, **kwargs):
+        super().__init__(atoms, timestep, **kwargs)
+
+        # Set up ASE calculator parameters
+        if "specorder" not in parameters:  # user must provide the unique species
+            raise ValueError("Please set 'specorder' to a list of unique species")
+        parameters.setdefault("write_velocities", True)
+
+        # Set up default LAMMPS input commands if not given
+        parameters.setdefault("units", "metal")
+        parameters.setdefault("timestep", str(DEFAULT_TIMESTEP[parameters["units"]]))
+        parameters.setdefault("dump_period", 1)
+        parameters.setdefault("pair_style", "mgp")
+        parameters.setdefault("compute", [])
+
+        # The flare uncertainty command should not be set by user
+        for cmd in parameters["compute"]:
+            if ("uncertainty/atom" in cmd) or ("flare/std/atom" in cmd):
+                raise ValueError(f"Please remove command '{cmd}'")
+
+        # Set up default potential and uncertainty command for mgp
+        self.potential_file = "lmp.flare"
+        if parameters["pair_style"] == "mgp":
+            species_str = " ".join(parameters["specorder"])
+            parameters["pair_coeff"] = [
+                f"* * {self.potential_file} {species_str} yes yes"
+            ]
+
+            self.uncertainty_file = "lmp.flare.std"
+            parameters["compute"] += [
+                "unc all uncertainty/atom {self.uncertainty_file} {species_str} yes yes"
+            ]
+
+        # Set up default potential and uncertainty command for flare
+        elif parameters["pair_style"] == "flare":
+            parameters["pair_coeff"] = ["* * {self.potential_file}"]
+
+            self.uncertainty_file = "L_inv.flare sparse_desc.flare"
+            parameters["compute"] += ["unc all flare/std/atom {self.uncertainty_file}"]
+
+        else:
+            raise ValueError("pair_style can only be 'mgp' or 'flare'")
+
+        self.parameters = parameters
 
     def step(self, std_tolerance, N_steps):
-        """Run lammps until the uncertainty interrupts"""
-        # TODO: compute commands for uncertainties
-        # TODO: convert restart.dat into a data file and keep the group, velocity etc. info 
-        # read the data file into the current atoms, and add the group, velocity info to
-        # parameters dict, if it is not written by ase
+        """
+        Run lammps until the uncertainty interrupts. Notice this method neither runs
+        only a single MD step, nor finishes all the ``N_steps``. The MD exits only when
+        1) the maximal atomic uncertainty goes beyond ``std_tolerance``, or
+        2) all the ``N_steps`` are finished without uncertainty beyond ``std_tolerance``.
 
-        # Get the commands for running Bayesian MD
+        Args:
+            std_tolerance (float): the threshold for atomic uncertainty, above which the 
+                MD will be interrupted and DFT will be called.
+            N_steps (int): number of MD steps left to run.
+        """
+
+        # Create a modified LAMMPS calculator,
+        # assign a unique label by datetime to this calculator
+        now = datetime.now()
+        label = now.strftime("%Y.%m.%d:%H:%M:%S:")
+
+        lmp_calc = LAMMPS_MOD(
+            label=label,
+            files=[self.potential_file] + self.uncertainty_file.split(),
+            keep_tmp_files=True,
+            tmp_dir="tmp",
+        )
+        lmp_calc.set(**self.parameters)
+
+        # Get lammps commands for running Bayesian MD to monitor uncertainty
         dump_freq = self.parameters["dump_period"]
-        N_iter = N_steps // dump_freq 
+        N_iter = ceil(N_steps / dump_freq)
 
         bayesian_run_command = BAL_RUN_CMD.format(
             std_tolerance=std_tolerance,
             dump_freq=dump_freq,
             N_iter=N_iter,
+            thermo_file=THERMO_TXT,
         )
 
         # Append the bayesian command after the "timestep" command
-        if "units" not in self.parameters:
-            self.parameters["units"] = "metal"
-        lmp_units = self.parameters["units"]
-
-        if "timestep" not in self.parameters:
-            self.parameters["timestep"] = str(DEFAULT_TIMESTEP[lmp_units])
         self.parameters["timestep"] += bayesian_run_command
-        
+
         # Run lammps with the customized parameters
         atoms = deepcopy(self.atoms)
-        self.calculate(self.atoms, set_atoms=True)
+        lmp_calc.calculate(self.atoms, set_atoms=True)
+        
+        # Read the trajectory after the current run exits
+        trj = read(
+            glob.glob(f"tmp/trj_{label}*")[0],
+            format="lammps-dump-binary", 
+            specorder=self.parameters["specorder"],
+            index=":",
+        )
+        trj_len = len(trj)
 
-        self.backup()
+        # Check the atoms are the same as the last frame of the trajectory
+        assert np.allclose(trj[-1].positions, self.atoms.positions)
+        assert np.allclose(trj[-1].get_forces(), self.atoms.get_forces())
+        assert np.allclose(trj[-1].cell, self.atoms.cell)
+
+        # Back up the trajectory into the .xyz file
+        self.backup(trj, TRAJ_XYZ, THERMO_TXT)
 
         self.curr_atoms = self.atoms
         self.atoms = atoms
 
-    def backup(self):
-        pass
+        self.nsteps += dump_freq * (trj_len - 1)
 
+
+    def backup(self, curr_trj, trj_file, thermo_file):
+        """
+        Back up the current trajectory into .xyz file. The atomic positions,
+        velocities, forces and uncertainties are read from lammps trajectory.
+        The step, potential energy and stress are read from thermo.txt
+
+        Args:
+            curr_trj (list[ase.Atoms]): lammps trajectory of current run read
+                by ASE.
+            trj_file (str): the file name of the .xyz file to write to.
+            thermo_file (str): the file name of the thermostat file which has
+                global properties dumped from lammps.
+        """
+
+        thermostat = np.loadtxt(thermo_file)
+        previous_trj = read(trj_file, index=":")
+        assert thermostat.shape[0] == len(previous_trj) + len(curr_trj)
+
+        # Extract energy, stress and step from dumped log file and write to 
+        # the frames in .xyz
+        curr_thermo = thermostat[-len(curr_trj):]
+        for i, frame in enumerate(curr_trj):
+            frame.pbc = True
+            frame.info["step"] = curr_thermo[i][0]
+            frame.calc.results["energy"] = curr_thermo[i][3]
+
+            stress = - curr_thermo[i][5:11] # pxx pyy pzz pyz pxz pxy
+            frame.calc.results["stress"] = convert(
+                stress, "pressure", self.parameters["units"], "ASE"
+            )
+
+        write(TRAJ_XYZ, curr_trj, append=True, format="extxyz")
+
+        
+
+THERMO_TXT = "thermo.txt"
+TRAJ_XYZ = "traj.xyz"
 
 BAL_RUN_CMD = """
-fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append thermo.txt
+fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {thermo_file}
 variable abstol equal {std_tolerance}
 variable UncMax equal c_2 
 variable a loop {N_iter}
@@ -162,13 +281,15 @@ if __name__ == "__main__":
     import os
     from ase import Atom, Atoms
     from ase.build import bulk
-    
-    Ni = bulk('Ni', cubic=True)
-    H = Atom('H', position=Ni.cell.diagonal()/2)
+
+    Ni = bulk("Ni", cubic=True)
+    H = Atom("H", position=Ni.cell.diagonal() / 2)
     NiH = Ni + H
-    
-    os.environ["ASE_LAMMPSRUN_COMMAND"] = "/n/home08/xiey/lammps-stable_29Oct2020/src/lmp_mpi"
-    files = ['NiAlH_jea.eam.alloy']
+
+    os.environ[
+        "ASE_LAMMPSRUN_COMMAND"
+    ] = "/n/home08/xiey/lammps-stable_29Oct2020/src/lmp_mpi"
+    files = ["NiAlH_jea.eam.alloy"]
     lammps = LAMMPS(files=files, keep_tmp_files=True, tmp_dir="tmp")
     lammps.set(
         pair_style="eam/alloy",
@@ -176,12 +297,10 @@ if __name__ == "__main__":
         compute=["1 all pair/local dist", "2 all reduce max c_1"],
         velocity=["1 all parameters"],
         fix=[
-            '1 all nvt temp 300 300 $(100.0*dt)',
+            "1 all nvt temp 300 300 $(100.0*dt)",
         ],
         dump_period=dump_freq,
         timestep=f"{timestep}{otf_run_command}",
     )
     NiH.calc = lammps
     print("Energy ", NiH.get_potential_energy())
-    
-    
