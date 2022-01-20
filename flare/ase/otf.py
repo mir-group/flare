@@ -26,7 +26,7 @@ from flare.otf import OTF
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
-from flare.fln.lammps import LAMMPS, check_sgp_match
+from flare.ase.lammps import LAMMPS_BAL, check_sgp_match
 
 
 class ASE_OTF(OTF):
@@ -125,7 +125,7 @@ class ASE_OTF(OTF):
         elif md_engine == "NoseHoover":
             MD = NoseHoover
         elif md_engine == "LAMMPS":
-            MD = LAMMPS
+            MD = LAMMPS_BAL
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
@@ -218,14 +218,14 @@ class ASE_OTF(OTF):
             else:
                 tol = np.abs(self.gp.force_noise) * self.std_tolerance
             f = logging.getLogger(self.output.basename + "log")
-            self.md.step(tol, self.number_of_steps - self.curr_step, f)
-            self.curr_step = self.md.curr_step
+            self.md.step(tol, self.number_of_steps)
+            self.curr_step = self.md.nsteps
             self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
             self.dft_input = self.structure
 
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
-            check_sgp_match(self.structure, self.flare_calc, f, self.md.specorder)
+            check_sgp_match(self.structure, self.flare_calc, f, self.md.parameters["specorder"])
 
         else:
             # Inside the step() function, get_forces() is called

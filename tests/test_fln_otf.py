@@ -21,6 +21,11 @@ from ase import units
 from ase.spacegroup import crystal
 from ase import io
 from ase.calculators import lammpsrun
+from ase.md.velocitydistribution import (
+    MaxwellBoltzmannDistribution,
+    Stationary,
+    ZeroRotation,
+)
 
 np.random.seed(12345)
 
@@ -44,26 +49,20 @@ def super_cell():
 @pytest.fixture(scope="module")
 def md_params(super_cell):
     # Set up LAMMPS MD parameters
-    dump_freq = 10
     md_kwargs = {
-        "init_temp": 2000,
-        "dump_freq": dump_freq,
-        "n_steps": dump_freq,
-        "fix_commands": {
-            "fix 1": "all nve",
-            "compute 1": "all pair/local dist",
-        },
+        "specorder": ["Si", "C"],
+        "dump_period": 10,
+        "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
+        "timestep": 0.001,
+        "pair_style": "flare",
+        "fix": ["1 all nvt temp 300.0 300.0 100.0"],
+        "keep_alive": False,
+        #"binary_dump": False,
     }
     
     md_dict = {}
-    md_dict["LAMMPS"] = {
-        "specorder": ["Si", "C"],
-        "lmp_command": os.environ.get("lmp"),
-        "ff_preset": "flare_pp",
-        "md_preset": "vanilla",
-        "md_dict": md_kwargs,
-        "uncertainty_style": "sgp",
-    }
+    md_dict["LAMMPS"] = {"parameters": md_kwargs}
+
     #md_dict["VelocityVerlet"] = {}
     yield md_dict
     del md_dict
@@ -120,6 +119,7 @@ def qe_calc():
     rootdir = os.getcwd()
     parameters = {
         "command": os.environ.get("lmp"),  # set up executable for ASE
+        "keep_alive": False,
         "newton": "on",
         "pair_style": "tersoff",
         "pair_coeff": [f"* * {rootdir}/tmp/{coef_name} Si C"],
@@ -134,10 +134,10 @@ def qe_calc():
         label=label,
         keep_tmp_files=True,
         tmp_dir="./tmp/",
-        parameters=parameters,
         files=files,
         specorder=species,
     )
+    dft_calculator.set(**parameters)
 
     yield dft_calculator
     del dft_calculator
@@ -156,13 +156,17 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         "output_name": md_engine,
         "std_tolerance_factor": -0.02,
         "max_atoms_added": len(super_cell.positions),
-        "freeze_hyps": 10,
+        "freeze_hyps": 0,
         "write_model": 4,
         "update_style": "threshold",
         "update_threshold": 0.01,
     }
 
     md_kwargs = md_params[md_engine]
+
+    MaxwellBoltzmannDistribution(super_cell, 300 * units.kB)
+    Stationary(super_cell)  # zero linear momentum
+    ZeroRotation(super_cell)  # zero angular momentum
 
     #super_cell.calc = flare_calculator
     test_otf = ASE_OTF(
