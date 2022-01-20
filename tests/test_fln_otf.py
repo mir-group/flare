@@ -1,6 +1,7 @@
 import time, os, shutil, glob, subprocess
 from copy import deepcopy
 import pytest
+flare_pp = pytest.importorskip("flare_pp")
 import numpy as np
 
 from flare import otf, kernels
