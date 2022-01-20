@@ -7,7 +7,7 @@ from copy import deepcopy
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.lammpsrun import LAMMPS
-from ase.calculators.lammps import convert
+from ase.calculators.lammps import convert, Prism
 from ase.md.md import MolecularDynamics
 from ase.io import read, write
 
@@ -70,9 +70,7 @@ class LAMMPS_MOD(LAMMPS):
 
         self.parameters.setdefault("units", "metal")
         self.parameters.setdefault("model_post", [])
-        self.parameters.setdefault(
-            "timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]])
-        )
+        self.parameters.setdefault("timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]]))
 
         # Add "compute" command after "pair_coeff", using `model_post`
         if "compute" in self.parameters:
@@ -93,27 +91,8 @@ class LAMMPS_MOD(LAMMPS):
 
         self.run(set_atoms)
 
-        # Keep only the virial stress, remove the kinetic stress
-        self.subtract_kinetic_stress()
 
-    def subtract_kinetic_stress(self):
-        # LAMMPS stress tensor = virial + kinetic
-        # kinetic = sum(m_k * v_ki * v_kj) / V
-        # We subtract the kinetic term and keep only the virial term
-        velocities = self.atoms.get_velocities()
-        masses = self.atoms.get_masses()
-        volume = self.atoms.get_volume()
-        kinetic = velocities.T @ np.diag(masses) @ velocities / volume
-
-        # apply the Lammps rotation stuff to the stress (copied from lammpsrun.py)
-        R = self.prism.rot_mat
-        kinetic_atoms = np.dot(R, kinetic)
-        kinetic_atoms = np.dot(kinetic_atoms, R.T)
-        kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0], [0, 1, 2, 2, 2, 1]]
-        self.results["stress"] += kinetic_atoms
-
-
-class LAMMPS_BAL(MolecularDynamics):
+class LAMMPS_MD(MolecularDynamics):
     """
     Run MD with LAMMPS based on the ase.md.md.MolecularDynamics.
     It includes using LAMMPS_MOD to run multiple steps, and supports
@@ -124,78 +103,61 @@ class LAMMPS_BAL(MolecularDynamics):
 
     """
 
-    def __init__(self, atoms, timestep, parameters, **kwargs):
+    def __init__(self, atoms, timestep, params, **kwargs):
         self.thermo_file = "thermo.txt"
         self.traj_xyz_file = "traj.xyz"
         self.potential_file = "lmp.flare"
-        self.dump_cols = [
-            "id",
-            "type",
-            "x",
-            "y",
-            "z",
-            "vx",
-            "vy",
-            "vz",
-            "fx",
-            "fy",
-            "fz",
-            "c_unc",
-        ]
-        self.initial_parameters = deepcopy(parameters)
+        self.dump_cols = "id type x y z vx vy vz fx fy fz c_unc"
 
         # Set up ASE calculator parameters
-        if "specorder" not in parameters:  # user must provide the unique species
+        if "specorder" not in params:  # user must provide the unique species
             raise ValueError("Please set 'specorder' to a list of unique species")
-        parameters.setdefault("write_velocities", True)
-
-        # Set up default LAMMPS input commands if not given
-        parameters.setdefault("units", "metal")
-        parameters.setdefault("timestep", str(DEFAULT_TIMESTEP[parameters["units"]]))
-        parameters.setdefault("dump_period", 1)
-        self.parameters = parameters
-
-        self.initial_parameters = deepcopy(parameters)
+        self.params = params
+        self.initial_params = deepcopy(params)
 
         super().__init__(atoms, timestep, **kwargs)
         self.curr_atoms = self.atoms.copy()
 
-    def set_bayesian_active_learning_parameters(self):
-        self.parameters.setdefault("pair_style", "mgp")
-        self.parameters.setdefault("compute", [])
+    def set_otf_parameters(self, label, N_steps, std_tolerance):
+        self.params = deepcopy(self.initial_params)
 
-        # The flare uncertainty command should not be set by user
-        for cmd in self.parameters["compute"]:
-            if ("uncertainty/atom" in cmd) or ("flare/std/atom" in cmd):
-                raise ValueError(f"Please remove command '{cmd}'")
+        # Set up default LAMMPS input commands if not given
+        self.params.setdefault("write_velocities", True)
+        self.params.setdefault("units", "metal")
+        self.params.setdefault("dump_period", 1)
+        self.params.setdefault("compute", [])
+        self.params.setdefault("timestep", str(DEFAULT_TIMESTEP[self.params["units"]]))
 
-        # Set up default potential and uncertainty command for mgp
-        if self.parameters["pair_style"] == "mgp":
-            self.parameters["newton"] = "off"
-            species_str = " ".join(self.parameters["specorder"])
-            self.parameters["pair_coeff"] = [
-                f"* * {self.potential_file} {species_str} yes yes"
-            ]
+        self.params.setdefault("pair_style", "mgp")
 
+        # Set up flare pair_style and compute command
+        if self.params["pair_style"] == "mgp":
             self.uncertainty_file = "lmp.flare.std"
-            self.parameters["compute"] += [
-                f"unc all uncertainty/atom {self.uncertainty_file} {species_str} yes yes",
-                "MaxUnc all reduce max c_unc",
-            ]
-
-        # Set up default potential and uncertainty command for flare
-        elif self.parameters["pair_style"] == "flare":
-            self.parameters["newton"] = "on"
-            self.parameters["pair_coeff"] = [f"* * {self.potential_file}"]
-
+        elif self.params["pair_style"] == "flare":
             self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
-            self.parameters["compute"] += [
-                f"unc all flare/std/atom {self.uncertainty_file}",
-                "MaxUnc all reduce max c_unc",
-            ]
 
-        else:
-            raise ValueError("pair_style can only be 'mgp' or 'flare'")
+        flare_params = get_flare_lammps_settings(
+            self.params["pair_style"], 
+            self.potential_file, 
+            self.uncertainty_file, 
+            self.params["specorder"], 
+            compute_uncertainty=True, 
+            params=self.params,
+        )
+        self.params.update(flare_params)
+
+        # Get lammps commands for running Bayesian MD to monitor uncertainty
+        # Append the bayesian command after the "timestep" command
+        self.params["timestep"] = str(self.params["timestep"])
+        self.params["timestep"] += BAL_RUN_CMD.format(
+            dump_freq=self.params["dump_period"],
+            label=label,
+            curr_steps=self.nsteps,
+            N_steps=N_steps,
+            std_tolerance=std_tolerance,
+            thermo_file=self.thermo_file,
+            dump_cols=self.dump_cols,
+        )
 
     def step(self, std_tolerance, N_steps):
         """
@@ -216,21 +178,7 @@ class LAMMPS_BAL(MolecularDynamics):
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
 
         # Set up pair_style and compute commands
-        self.parameters = deepcopy(self.initial_parameters)
-        self.set_bayesian_active_learning_parameters()
-
-        # Get lammps commands for running Bayesian MD to monitor uncertainty
-        # Append the bayesian command after the "timestep" command
-        self.parameters["timestep"] = str(self.parameters["timestep"])
-        self.parameters["timestep"] += BAL_RUN_CMD.format(
-            dump_freq=self.parameters["dump_period"],
-            label=label,
-            curr_steps=self.nsteps,
-            N_steps=N_steps,
-            std_tolerance=std_tolerance,
-            thermo_file=self.thermo_file,
-            dump_cols=" ".join(self.dump_cols),
-        )
+        self.set_otf_parameters(label, N_steps, std_tolerance)
 
         # Run lammps with the customized parameters
         lmp_calc = LAMMPS_MOD(
@@ -239,7 +187,7 @@ class LAMMPS_BAL(MolecularDynamics):
             keep_tmp_files=True,
             tmp_dir="tmp",
         )
-        lmp_calc.set(**self.parameters)
+        lmp_calc.set(**self.params)
         atoms = deepcopy(self.curr_atoms)
         lmp_calc.calculate(atoms, set_atoms=True)
 
@@ -247,14 +195,14 @@ class LAMMPS_BAL(MolecularDynamics):
         trj = read(
             glob.glob(f"tmp/trjunc_{label}*")[0],
             format="lammps-dump-binary",
-            specorder=self.parameters["specorder"],
-            colnames=self.dump_cols,
+            specorder=self.params["specorder"],
+            colnames=self.dump_cols.split(),
             index=":",
         )
 
         # Update the time steps that have been run
         trj_len = len(trj)
-        self.nsteps += self.parameters["dump_period"] * (trj_len - 1)
+        self.nsteps += self.params["dump_period"] * (trj_len - 1)
 
         # Get the last frame as the current structure
         self.curr_atoms = trj[-1]
@@ -305,14 +253,14 @@ class LAMMPS_BAL(MolecularDynamics):
 
             stress = -curr_thermo[i][5:11]  # pxx pyy pzz pyz pxz pxy
             frame.calc.results["stress"] = convert(
-                stress, "pressure", self.parameters["units"], "ASE"
+                stress, "pressure", self.params["units"], "ASE"
             )
 
         write(self.traj_xyz_file, curr_trj, append=True, format="extxyz")
 
     def todict(self):
         dct = super().todict()
-        dct["parameters"] = deepcopy(self.initial_parameters)
+        dct["params"] = deepcopy(self.initial_params)
         dct["nsteps"] = self.nsteps
         return dct
 
@@ -343,6 +291,65 @@ DEFAULT_TIMESTEP = {
 #                                                                              #
 ################################################################################
 
+def get_kinetic_stress(atoms):
+    """
+    LAMMPS stress tensor = virial + kinetic,
+    kinetic = sum(m_k * v_ki * v_kj) / V.
+    We subtract the kinetic term and keep only the virial term.
+    In the calculator, results["stress"] += kinetic_atoms gives virial.
+    """
+    velocities = atoms.get_velocities()
+    masses = atoms.get_masses()
+    volume = atoms.get_volume()
+    kinetic = velocities.T @ np.diag(masses) @ velocities / volume
+
+    # apply the Lammps rotation stuff to the stress (copied from lammpsrun.py)
+    prism = Prism(atoms.get_cell())
+    R = prism.rot_mat
+    kinetic_atoms = np.dot(R, kinetic)
+    kinetic_atoms = np.dot(kinetic_atoms, R.T)
+    kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0], [0, 1, 2, 2, 2, 1]]
+    return kinetic_atoms
+
+def get_flare_lammps_settings(
+    pair_style, potfile, uncfile, specorder, compute_uncertainty=False, params={}
+):
+
+    params.setdefault("compute", [])
+
+    # The flare uncertainty command should not be set by user
+    for cmd in params["compute"]:
+        if ("uncertainty/atom" in cmd) or ("flare/std/atom" in cmd):
+            raise ValueError(f"Please remove command '{cmd}'")
+
+    # Set up default potential and uncertainty command for mgp
+    if pair_style == "mgp":
+        species = " ".join(specorder)
+
+        params["newton"] = "off"
+        params["pair_style"] = "mgp"
+        params["pair_coeff"] = [f"* * {potfile} {species} yes yes"]
+        if compute_uncertainty:
+            params["compute"] = [
+                f"unc all uncertainty/atom {uncfile} {species} yes yes",
+                "MaxUnc all reduce max c_unc",
+            ]
+
+    # Set up default potential and uncertainty command for flare_pp
+    elif pair_style == "flare":
+        params["newton"] = "on"
+        params["pair_style"] = "flare"
+        params["pair_coeff"] = [f"* * {potfile}"]
+        if compute_uncertainty:
+            params["compute"] += [
+                f"unc all flare/std/atom {uncfile}",
+                "MaxUnc all reduce max c_unc",
+            ]
+
+    else:
+        raise ValueError("pair_style can only be 'mgp' or 'flare'")
+
+    return params
 
 def check_sgp_match(atoms, sgp_calc, logger, specorder):
     """
@@ -356,17 +363,8 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
     lmp_stress = atoms.stress
     lmp_stds = atoms.get_array("c_unc")
 
-    # subtract the pressure from temperature: sum(m_k * v_ki * v_kj)/ V
-    velocities = atoms.get_velocities()
-    masses = atoms.get_masses()
-    kinetic_stress = np.zeros(6)
-    n = 0
-    for i in range(3):
-        for j in range(i, 3):
-            kinetic_stress[n] += np.sum(masses * velocities[:, i] * velocities[:, j])
-            n += 1
-    kinetic_stress /= atoms.get_volume()
-    kinetic_stress = kinetic_stress[[0, 3, 5, 4, 2, 1]]
+    # subtract the pressure from temperature
+    kinetic_stress = get_kinetic_stress(atoms)
     lmp_stress += kinetic_stress
 
     # compute sgp energy/forces/stress/stds
@@ -398,12 +396,28 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
         # if the trajectory does not match sgp, this is probably because the dumped
         # atomic positions in LAMMPS lose precision. Then build a new lammps calc
         # and do a static calculation and compare to SGP
-        lmp_calc = get_ase_lmp_calc(
-            ff_preset="flare_pp",
-            specorder=specorder,
-            coeff_dir=".",
-            lmp_command=os.environ.get("lmp"),
+        files = ["lmp.flare"]
+    
+        params = get_flare_lammps_settings(
+            pair_style="flare", 
+            potfile="lmp.flare", 
+            uncfile=None, 
+            specorder=None, 
+            compute_uncertainty=False, 
+            params={},
         )
+
+        # create ASE calc
+        lmp_calc = LAMMPS(
+            label=f"tmp",
+            keep_tmp_files=True,
+            tmp_dir="tmp",
+            parameters=params,
+            files=files,
+            specorder=specorder,
+        )
+
+        os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
         atoms.calc = lmp_calc
         lmp_energy = atoms.get_potential_energy()
         lmp_forces = atoms.get_forces()
@@ -413,52 +427,3 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
         assert np.allclose(lmp_forces, gp_forces)
         assert np.allclose(lmp_stress, gp_stress)
         atoms.calc = sgp_calc
-
-
-def get_ase_lmp_calc(
-    ff_preset: str,
-    specorder: list,
-    coeff_dir: str,
-    lmp_command: str = None,
-    tmp_dir: str = "./tmp/",
-):
-    """
-    Set up ASE calculator of lammps
-    Args:
-        ff_preset (str): force field preset, either "mgp" or "flare_pp".
-        specorder (list): a list of (unique) species, for example, ["Si", "C"].
-        coeff_dir (str): the directory of the coefficient file for LAMMPS.
-    """
-    if lmp_command is None:
-        lmp_command = os.environ.get("lmp")
-
-    if ff_preset == "mgp":
-        species_str = " ".join(specorder)
-        pot_file = os.path.join(coeff_dir, "lmp.flare")
-        params = {
-            "command": lmp_command,
-            "pair_style": "mgp",
-            "pair_coeff": [f"* * {pot_file} {species_str} yes yes"],
-        }
-    elif ff_preset == "flare_pp":
-        pot_file = os.path.join(coeff_dir, "lmp.flare")
-        params = {
-            "command": lmp_command,
-            "pair_style": "flare",
-            "pair_coeff": [f"* * {pot_file}"],
-        }
-    else:
-        raise NotImplementedError(f"{ff_preset} preset is not implemented")
-
-    files = [pot_file]
-
-    # create ASE calc
-    calc = LAMMPS(
-        label=f"tmp",
-        keep_tmp_files=True,
-        tmp_dir=tmp_dir,
-        parameters=params,
-        files=files,
-        specorder=specorder,
-    )
-    return calc

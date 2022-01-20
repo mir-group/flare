@@ -61,7 +61,7 @@ def md_params(super_cell):
     }
     
     md_dict = {}
-    md_dict["LAMMPS"] = {"parameters": md_kwargs}
+    md_dict["LAMMPS"] = {"params": md_kwargs}
 
     #md_dict["VelocityVerlet"] = {}
     yield md_dict

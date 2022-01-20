@@ -5,7 +5,7 @@ from copy import deepcopy
 from ase import Atom, Atoms
 from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
-from flare.ase.lammps import LAMMPS_MOD, LAMMPS_MD
+from flare.ase.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -49,9 +49,10 @@ def test_lmp_calc():
     mod_atoms = deepcopy(NiH) 
     mod_atoms.calc = mod_lmp_calc
     mod_lmp_calc.calculate(mod_atoms, set_atoms=True)
+    mod_stress = mod_atoms.get_stress() + get_kinetic_stress(mod_atoms)
 
     assert np.allclose(ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy())
     assert np.allclose(ase_atoms.get_forces(), mod_atoms.get_forces())
-    assert np.allclose(ase_atoms.get_stress(), mod_atoms.get_stress())
+    assert np.allclose(ase_atoms.get_stress(), mod_stress)
 
     os.remove("NiAlH_jea.eam.alloy")
