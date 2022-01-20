@@ -1,5 +1,0 @@
-Structures
-==========
-
-.. doxygenclass:: Structure
-    :members:

@@ -1,5 +1,0 @@
-include requirements.txt CMakeLists.txt
-graft src
-graft tests
-graft ctests
-graft CMakeModules
