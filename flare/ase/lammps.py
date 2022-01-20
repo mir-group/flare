@@ -59,7 +59,9 @@ class LAMMPS_MOD(LAMMPS):
         super().__init__(**kwargs)
         self.nsteps = 0
         if not os.environ.get("ASE_LAMMPSRUN_COMMAND"):
-            raise Exception("Please set environment variable 'ASE_LAMMPSRUN_COMMAND' to the lammps executable")
+            raise Exception(
+                "Please set environment variable 'ASE_LAMMPSRUN_COMMAND' to the lammps executable"
+            )
 
     def calculate(
         self, atoms=None, properties=None, system_changes=None, set_atoms=False
@@ -68,7 +70,9 @@ class LAMMPS_MOD(LAMMPS):
 
         self.parameters.setdefault("units", "metal")
         self.parameters.setdefault("model_post", [])
-        self.parameters.setdefault("timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]]))
+        self.parameters.setdefault(
+            "timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]])
+        )
 
         # Add "compute" command after "pair_coeff", using `model_post`
         if "compute" in self.parameters:
@@ -81,16 +85,6 @@ class LAMMPS_MOD(LAMMPS):
         if "fix" in self.parameters:
             self.parameters["fix"][-1] += "\nunfix fix_nve"
 
-#        # Add "velocity" command after "fix" TODO
-#        if "velocity" in self.parameters:
-#            velocity_command = ""
-#            for cmd in self.parameters["velocity"]:
-#                velocity_command += "velocity " + cmd + "\n"
-#
-#            timestep_cmds = str(self.parameters["timestep"]).split("\n")
-#            timestep_cmds.insert(1, velocity_command)
-#            self.parameters["timestep"] = "\n".join(timestep_cmds)
-
         if properties is None:
             properties = self.implemented_properties
         if system_changes is None:
@@ -102,7 +96,6 @@ class LAMMPS_MOD(LAMMPS):
         # Keep only the virial stress, remove the kinetic stress
         self.subtract_kinetic_stress()
 
-
     def subtract_kinetic_stress(self):
         # LAMMPS stress tensor = virial + kinetic
         # kinetic = sum(m_k * v_ki * v_kj) / V
@@ -111,13 +104,12 @@ class LAMMPS_MOD(LAMMPS):
         masses = self.atoms.get_masses()
         volume = self.atoms.get_volume()
         kinetic = velocities.T @ np.diag(masses) @ velocities / volume
-    
+
         # apply the Lammps rotation stuff to the stress (copied from lammpsrun.py)
         R = self.prism.rot_mat
         kinetic_atoms = np.dot(R, kinetic)
         kinetic_atoms = np.dot(kinetic_atoms, R.T)
-        kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0],
-                                      [0, 1, 2, 2, 2, 1]]
+        kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0], [0, 1, 2, 2, 2, 1]]
         self.results["stress"] += kinetic_atoms
 
 
@@ -136,7 +128,20 @@ class LAMMPS_BAL(MolecularDynamics):
         self.thermo_file = "thermo.txt"
         self.traj_xyz_file = "traj.xyz"
         self.potential_file = "lmp.flare"
-        self.dump_cols = ["id", "type", "x", "y", "z", "vx", "vy", "vz", "fx", "fy", "fz", "c_unc"]
+        self.dump_cols = [
+            "id",
+            "type",
+            "x",
+            "y",
+            "z",
+            "vx",
+            "vy",
+            "vz",
+            "fx",
+            "fy",
+            "fz",
+            "c_unc",
+        ]
         self.initial_parameters = deepcopy(parameters)
 
         # Set up ASE calculator parameters
@@ -154,7 +159,6 @@ class LAMMPS_BAL(MolecularDynamics):
 
         super().__init__(atoms, timestep, **kwargs)
         self.curr_atoms = self.atoms.copy()
-
 
     def set_bayesian_active_learning_parameters(self):
         self.parameters.setdefault("pair_style", "mgp")
@@ -193,7 +197,6 @@ class LAMMPS_BAL(MolecularDynamics):
         else:
             raise ValueError("pair_style can only be 'mgp' or 'flare'")
 
-
     def step(self, std_tolerance, N_steps):
         """
         Run lammps until the uncertainty interrupts. Notice this method neither runs
@@ -202,7 +205,7 @@ class LAMMPS_BAL(MolecularDynamics):
         2) all the ``N_steps`` are finished without uncertainty beyond ``std_tolerance``.
 
         Args:
-            std_tolerance (float): the threshold for atomic uncertainty, above which the 
+            std_tolerance (float): the threshold for atomic uncertainty, above which the
                 MD will be interrupted and DFT will be called.
             N_steps (int): number of MD steps left to run.
         """
@@ -239,11 +242,11 @@ class LAMMPS_BAL(MolecularDynamics):
         lmp_calc.set(**self.parameters)
         atoms = deepcopy(self.curr_atoms)
         lmp_calc.calculate(atoms, set_atoms=True)
-        
+
         # Read the trajectory after the current run exits
         trj = read(
             glob.glob(f"tmp/trjunc_{label}*")[0],
-            format="lammps-dump-binary", 
+            format="lammps-dump-binary",
             specorder=self.parameters["specorder"],
             colnames=self.dump_cols,
             index=":",
@@ -268,7 +271,6 @@ class LAMMPS_BAL(MolecularDynamics):
         # Back up the trajectory into the .xyz file
         self.backup(trj)
 
-
     def backup(self, curr_trj):
         """
         Back up the current trajectory into .xyz file. The atomic positions,
@@ -286,25 +288,27 @@ class LAMMPS_BAL(MolecularDynamics):
 
         if self.traj_xyz_file in os.listdir():
             previous_trj = read(self.traj_xyz_file, index=":")
-            assert thermostat.shape[0] == 2 * (len(previous_trj) + len(curr_trj)) - 2 * n_iters
+            assert (
+                thermostat.shape[0]
+                == 2 * (len(previous_trj) + len(curr_trj)) - 2 * n_iters
+            )
         else:
             assert thermostat.shape[0] == 2 * len(curr_trj) - 2 * n_iters
 
-        # Extract energy, stress and step from dumped log file and write to 
+        # Extract energy, stress and step from dumped log file and write to
         # the frames in .xyz
-        curr_thermo = thermostat[-len(curr_trj):]
+        curr_thermo = thermostat[-len(curr_trj) :]
         for i, frame in enumerate(curr_trj):
             frame.pbc = True
             frame.info["step"] = curr_thermo[i][0]
             frame.calc.results["energy"] = curr_thermo[i][3]
 
-            stress = - curr_thermo[i][5:11] # pxx pyy pzz pyz pxz pxy
+            stress = -curr_thermo[i][5:11]  # pxx pyy pzz pyz pxz pxy
             frame.calc.results["stress"] = convert(
                 stress, "pressure", self.parameters["units"], "ASE"
             )
 
         write(self.traj_xyz_file, curr_trj, append=True, format="extxyz")
-
 
     def todict(self):
         dct = super().todict()
@@ -339,11 +343,12 @@ DEFAULT_TIMESTEP = {
 #                                                                              #
 ################################################################################
 
+
 def check_sgp_match(atoms, sgp_calc, logger, specorder):
     """
     Check if the lammps trajectory or calculator matches the SGP predictions
     """
-    # if atoms are from a lammps trajectory, then directly use the 
+    # if atoms are from a lammps trajectory, then directly use the
     # energy/forces/stress/stds from the trajectory to compare with sgp
     assert isinstance(atoms.calc, SinglePointCalculator), type(atoms.calc)
     lmp_energy = atoms.potential_energy
@@ -388,7 +393,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
         assert np.allclose(lmp_energy, gp_energy, atol=1e-3)
         assert np.allclose(lmp_forces, gp_forces, atol=1e-3)
         assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
-        assert np.allclose(lmp_stds, gp_stds[0], atol=1e-4)  
+        assert np.allclose(lmp_stds, gp_stds[0], atol=1e-4)
     except:
         # if the trajectory does not match sgp, this is probably because the dumped
         # atomic positions in LAMMPS lose precision. Then build a new lammps calc
@@ -411,7 +416,10 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
 
 
 def get_ase_lmp_calc(
-    ff_preset: str, specorder: list, coeff_dir: str, lmp_command: str = None,
+    ff_preset: str,
+    specorder: list,
+    coeff_dir: str,
+    lmp_command: str = None,
     tmp_dir: str = "./tmp/",
 ):
     """
