@@ -136,10 +136,8 @@ class LAMMPS_BAL(MolecularDynamics):
         self.thermo_file = "thermo.txt"
         self.traj_xyz_file = "traj.xyz"
         self.potential_file = "lmp.flare"
-        print("self.potential_file", self.potential_file)
         self.dump_cols = ["id", "type", "x", "y", "z", "vx", "vy", "vz", "fx", "fy", "fz", "c_unc"]
         self.initial_parameters = deepcopy(parameters)
-        print("self.potential_file", self.potential_file)
 
         # Set up ASE calculator parameters
         if "specorder" not in parameters:  # user must provide the unique species
@@ -152,9 +150,7 @@ class LAMMPS_BAL(MolecularDynamics):
         parameters.setdefault("dump_period", 1)
         self.parameters = parameters
 
-        print("self.potential_file", self.potential_file)
-        self.set_bayesian_active_learning_parameters()
-        
+        self.initial_parameters = deepcopy(parameters)
 
         super().__init__(atoms, timestep, **kwargs)
         self.curr_atoms = self.atoms.copy()
@@ -164,7 +160,6 @@ class LAMMPS_BAL(MolecularDynamics):
         self.parameters.setdefault("pair_style", "mgp")
         self.parameters.setdefault("compute", [])
 
-        print("beginset self.potential_file", self.potential_file)
         # The flare uncertainty command should not be set by user
         for cmd in self.parameters["compute"]:
             if ("uncertainty/atom" in cmd) or ("flare/std/atom" in cmd):
@@ -186,7 +181,6 @@ class LAMMPS_BAL(MolecularDynamics):
 
         # Set up default potential and uncertainty command for flare
         elif self.parameters["pair_style"] == "flare":
-            print("set self.potential_file", self.potential_file)
             self.parameters["newton"] = "on"
             self.parameters["pair_coeff"] = [f"* * {self.potential_file}"]
 
@@ -218,13 +212,9 @@ class LAMMPS_BAL(MolecularDynamics):
         now = datetime.now()
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
 
-        lmp_calc = LAMMPS_MOD(
-            label=label,
-            files=[self.potential_file] + self.uncertainty_file.split(),
-            keep_tmp_files=True,
-            tmp_dir="tmp",
-        )
+        # Set up pair_style and compute commands
         self.parameters = deepcopy(self.initial_parameters)
+        self.set_bayesian_active_learning_parameters()
 
         # Get lammps commands for running Bayesian MD to monitor uncertainty
         # Append the bayesian command after the "timestep" command
@@ -240,6 +230,12 @@ class LAMMPS_BAL(MolecularDynamics):
         )
 
         # Run lammps with the customized parameters
+        lmp_calc = LAMMPS_MOD(
+            label=label,
+            files=[self.potential_file] + self.uncertainty_file.split(),
+            keep_tmp_files=True,
+            tmp_dir="tmp",
+        )
         lmp_calc.set(**self.parameters)
         atoms = deepcopy(self.curr_atoms)
         lmp_calc.calculate(atoms, set_atoms=True)
@@ -312,7 +308,8 @@ class LAMMPS_BAL(MolecularDynamics):
 
     def todict(self):
         dct = super().todict()
-        dct["parameters"] = self.initial_parameters
+        dct["parameters"] = deepcopy(self.initial_parameters)
+        dct["nsteps"] = self.nsteps
         return dct
 
 

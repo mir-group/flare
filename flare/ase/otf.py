@@ -413,10 +413,7 @@ class ASE_OTF(OTF):
             if not new_otf.md.initialized:
                 new_otf.md.initialize()
         elif new_otf.md_engine == "LAMMPS":
-            new_otf.md.curr_step = dct["md"]["curr_step"]
-            assert new_otf.md.curr_step == new_otf.curr_step
-            new_otf.md.curr_iter = dct["md"]["curr_iter"]
-            new_otf.md.above_tol = dct["md"]["above_tol"]
-            new_otf.md.curr_tol = dct["md"]["curr_tol"]
+            new_otf.md.nsteps = dct["md"]["nsteps"]
+            assert new_otf.md.nsteps == new_otf.curr_step
 
         return new_otf
