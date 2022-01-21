@@ -290,6 +290,10 @@ class OTF:
 
                     # run MD step & record the state
                     self.record_state()
+
+                    # record DFT data into an .xyz file with filename self.dft_xyz.
+                    # the file includes the structure, e/f/s labels and atomic
+                    # indices of environments added to gp
                     self.record_dft_data(self.structure, target_atoms)
 
                     # compute mae and write to output
