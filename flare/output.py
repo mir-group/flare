@@ -170,8 +170,8 @@ class Output:
 
             f.info(f"flare_pp {flare_pp.__version__}")
         except AttributeError:
-            import flare_pp
 
+            import flare_pp
             dirs = flare_pp.__path__[0].split("/")
             dirs[-1] = "setup.py"
             setup_path = "/".join(dirs)
@@ -181,6 +181,8 @@ class Output:
                     if "version=" in line:
                         f.info(f"flare_pp {line[9:len(line)-2]}")
                         break
+        except ModuleNotFoundError:
+            pass
 
         # Write uncertainty tolerance
         if isinstance(std_tolerance, tuple):
