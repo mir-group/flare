@@ -1,4 +1,5 @@
 import pytest
+
 pmgout = pytest.importorskip("pymatgen.io.vasp.outputs")
 Vasprun = pmgout.Vasprun
 import os
@@ -10,6 +11,7 @@ from flare.utils.flare_io import md_trajectory_to_file, md_trajectory_from_file
 pytestmark = pytest.mark.filterwarnings(
     "ignore::UserWarning", "ignore::pymatgen.io.vasp.outputs.UnconvergedVASPWarning"
 )
+
 
 def test_read_write_trajectory():
     structures = md_trajectory_from_vasprun("test_files/test_vasprun.xml")

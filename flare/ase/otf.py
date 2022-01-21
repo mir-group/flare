@@ -67,7 +67,8 @@ class ASE_OTF(OTF):
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
-
+            If 4, write after each training and end of run, and back up
+            after each write.
         std_tolerance_factor (float, optional): Threshold that determines
             when DFT is called. Specifies a multiple of the current noise
             hyperparameter. If the epistemic uncertainty on a force
@@ -249,9 +250,6 @@ class ASE_OTF(OTF):
 
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
-            if self.md_engine == "LAMMPS":
-                raise NotImplementedError("Rescaling temperature not supported")
-
             rescale_ind = self.rescale_steps.index(self.curr_step)
             new_temp = self.rescale_temps[rescale_ind]
             temp_fac = new_temp / self.temperature
@@ -294,10 +292,16 @@ class ASE_OTF(OTF):
             dft_energy = None
             flare_stress = None
 
-        # update gp model
+        # The structure will be added to self.gp.training_structures (struc.Structure).
+        # Create a new structure by deepcopy to avoid the forces of the saved
+        # structure get modified.
         try:
             struc_to_add = deepcopy(self.structure)
         except TypeError:
+            # The structure might be attached with a non-picklable calculator,
+            # e.g., when we use LAMMPS empirical potential for training. 
+            # When deepcopy fails, create a SinglePointCalculator to store results
+
             from ase.calculators.singlepoint import SinglePointCalculator
 
             properties = ["forces", "energy", "stress"]
@@ -313,6 +317,7 @@ class ASE_OTF(OTF):
             struc_to_add.calc = SinglePointCalculator(struc_to_add, **results)
             self.structure.calc = calc
 
+        # update gp model
         self.gp.update_db(
             struc_to_add,
             dft_frcs,
@@ -328,7 +333,7 @@ class ASE_OTF(OTF):
             self.train_gp()
 
         # update mgp model
-        if (self.flare_calc.use_mapping) or (self.md_engine == "LAMMPS"):
+        if self.flare_calc.use_mapping:
             self.flare_calc.build_map()
 
         # write model
@@ -344,7 +349,7 @@ class ASE_OTF(OTF):
 
     def as_dict(self):
 
-        # DFT module and Trajectory are not pickable
+        # DFT module and Trajectory are not picklable
         self.dft_module = self.dft_module.__name__
         md = self.md
         self.md = None
@@ -392,9 +397,15 @@ class ASE_OTF(OTF):
     @staticmethod
     def from_dict(dct):
         flare_calc_dict = json.load(open(dct["flare_calc"]))
+
+        # Build FLARE_Calculator from dict 
         if flare_calc_dict["class"] == "FLARE_Calculator":
             flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
             _kernels = None
+        # Build SGP_Calculator from dict
+        # TODO: we still have the issue that the c++ kernel needs to be 
+        # in the current space, otherwise there is Seg Fault
+        # That's why there is the _kernels
         elif flare_calc_dict["class"] == "SGP_Calculator":
             from flare_pp.sparse_gp_calculator import SGP_Calculator
 

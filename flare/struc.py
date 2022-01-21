@@ -516,7 +516,7 @@ class Structure:
             if dft_energy is not None:
                 xyz_str += f" DFT_PE={dft_energy}"
             if target_atoms is not None:
-                indices = " ".join(target_atoms)
+                indices = " ".join([str(t) for t in target_atoms])
                 xyz_str += f' target_atoms="{indices}"'
             xyz_str += f' Proprties="species:S:1:pos:R:3'
 

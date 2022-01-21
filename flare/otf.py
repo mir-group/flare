@@ -43,6 +43,8 @@ class OTF:
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
+            If 4, write after each training and end of run, and back up
+            after each write.
         force_only (bool, optional): If True, only use forces for training.
             Default to False, use forces, energy and stress for training.
 
@@ -209,7 +211,7 @@ class OTF:
             self.pred_func = predict.predict_on_structure_efs
 
         # set logger
-        self.output = Output(output_name, always_flush=True)
+        self.output = Output(output_name, always_flush=True, print_as_xyz=True)
         self.output_name = output_name
         self.gp_name = self.output_name + "_gp.json"
         self.checkpt_name = self.output_name + "_checkpt.json"
@@ -288,6 +290,10 @@ class OTF:
 
                     # run MD step & record the state
                     self.record_state()
+
+                    # record DFT data into an .xyz file with filename self.dft_xyz.
+                    # the file includes the structure, e/f/s labels and atomic
+                    # indices of environments added to gp
                     self.record_dft_data(self.structure, target_atoms)
 
                     # compute mae and write to output
@@ -494,22 +500,24 @@ class OTF:
     ):
 
         f = logging.getLogger(self.output.basename + "log")
+        f.info("Mean absolute errors & Mean absolute values")
 
         # compute energy/forces/stress mean absolute error and value
-        e_mae = np.mean(np.abs(dft_energy - gp_energy))
-        e_mav = np.mean(np.abs(dft_energy))
-        f.info(f"energy mae: {e_mae:.4f} eV")
-        f.info(f"energy mav: {e_mav:.4f} eV")
+        if not self.force_only:
+            e_mae = np.mean(np.abs(dft_energy - gp_energy))
+            e_mav = np.mean(np.abs(dft_energy))
+            f.info(f"energy mae: {e_mae:.4f} eV")
+            f.info(f"energy mav: {e_mav:.4f} eV")
+
+            s_mae = np.mean(np.abs(dft_stress - gp_stress))
+            s_mav = np.mean(np.abs(dft_stress))
+            f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+            f.info(f"stress mav: {s_mav:.4f} eV/A^3")
 
         f_mae = np.mean(np.abs(dft_forces - gp_forces))
         f_mav = np.mean(np.abs(dft_forces))
         f.info(f"forces mae: {f_mae:.4f} eV/A")
         f.info(f"forces mav: {f_mav:.4f} eV/A")
-
-        s_mae = np.mean(np.abs(dft_stress - gp_stress))
-        s_mav = np.mean(np.abs(dft_stress))
-        f.info(f"stress mae: {s_mae:.4f} eV/A^3")
-        f.info(f"stress mav: {s_mav:.4f} eV/A^3")
 
         # compute the per-species MAE
         unique_species = list(set(self.structure.coded_species))
@@ -620,7 +628,7 @@ class OTF:
         return new_otf
 
     def backup_checkpoint(self):
-        dir_name = f"ckpt_{self.curr_step}"
+        dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
         os.mkdir(dir_name)
         for f in self.checkpt_files:
             shutil.copyfile(f, f"{dir_name}/{f}")
