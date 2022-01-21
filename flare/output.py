@@ -7,6 +7,7 @@ import datetime
 import logging
 import time
 import sys
+import copy
 import numpy as np
 
 from logging import FileHandler, StreamHandler, Logger
@@ -157,14 +158,25 @@ class Output:
             f.info(f"flare {flare.__version__}")
         except AttributeError:  # using customized package not from pip install
             dirs = flare.__path__[0].split("/")
-            dirs[-1] = "setup.py"
-            setup_path = "/".join(dirs)
-            with open(setup_path) as setup_py:
-                for line in setup_py.readlines():
-                    line = line.strip()
-                    if "version=" in line:
-                        f.info(f"flare {line[9:len(line)-2]}")
-                        break
+            dirs_rep = copy.copy(dirs)
+            dirs_rep[-1] = "setup.py"
+            try:
+                setup_path = "/".join(dirs_rep)
+                setup_py = open(setup_path)
+            # In the Github Action test of the flare++ tutorial,
+            # flare.__version__ throws an AttributeError, but there isn't a flare/flare subdirectory. So we need another exception block.
+            except FileNotFoundError:
+                dirs_add = dirs + ["setup.py"]
+                setup_path = "/".join(dirs_add)
+                setup_py = open(setup_path)
+
+            for line in setup_py.readlines():
+                line = line.strip()
+                if "version=" in line:
+                    f.info(f"flare {line[9:len(line)-2]}")
+                    break
+            setup_py.close()
+
         try:
             import flare_pp
 
@@ -173,14 +185,23 @@ class Output:
             import flare_pp
 
             dirs = flare_pp.__path__[0].split("/")
-            dirs[-1] = "setup.py"
-            setup_path = "/".join(dirs)
-            with open(setup_path) as setup_py:
-                for line in setup_py.readlines():
-                    line = line.strip()
-                    if "version=" in line:
-                        f.info(f"flare_pp {line[9:len(line)-2]}")
-                        break
+            dirs_rep = copy.copy(dirs)
+            dirs_rep[-1] = "setup.py"
+            try:
+                setup_path = "/".join(dirs_rep)
+                setup_py = open(setup_path)
+            except FileNotFoundError:
+                dirs_add = dirs + ["setup.py"]
+                setup_path = "/".join(dirs_add)
+                setup_py = open(setup_path)
+
+            for line in setup_py.readlines():
+                line = line.strip()
+                if "version=" in line:
+                    f.info(f"flare_pp {line[9:len(line)-2]}")
+                    break
+            setup_py.close()
+
         except ModuleNotFoundError:
             pass
 
