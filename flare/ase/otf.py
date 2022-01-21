@@ -26,6 +26,7 @@ from flare.otf import OTF
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
+from flare.ase.lammps import LAMMPS_MD, check_sgp_match
 
 
 class ASE_OTF(OTF):
@@ -124,6 +125,8 @@ class ASE_OTF(OTF):
             MD = Langevin
         elif md_engine == "NoseHoover":
             MD = NoseHoover
+        elif md_engine == "LAMMPS":
+            MD = LAMMPS_MD
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
@@ -216,9 +219,27 @@ class ASE_OTF(OTF):
             self.structure.calc = self.flare_calc
 
         # Take MD step.
-        # Inside the step() function, get_forces() is called
-        self.md.step()
-        self.curr_step += 1
+        if self.md_engine == "LAMMPS":
+            if self.std_tolerance < 0:
+                tol = -self.std_tolerance
+            else:
+                tol = np.abs(self.gp.force_noise) * self.std_tolerance
+            f = logging.getLogger(self.output.basename + "log")
+            self.md.step(tol, self.number_of_steps)
+            self.curr_step = self.md.nsteps
+            self.structure = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
+            self.dft_input = self.structure
+
+            # check if the lammps energy/forces/stress/stds match sgp
+            f = logging.getLogger(self.output.basename + "log")
+            check_sgp_match(
+                self.structure, self.flare_calc, f, self.md.params["specorder"]
+            )
+
+        else:
+            # Inside the step() function, get_forces() is called
+            self.md.step()
+            self.curr_step += 1
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -387,6 +408,7 @@ class ASE_OTF(OTF):
         # That's why there is the _kernels
         elif flare_calc_dict["class"] == "SGP_Calculator":
             from flare_pp.sparse_gp_calculator import SGP_Calculator
+
             flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
         else:
             raise TypeError(
@@ -413,4 +435,8 @@ class ASE_OTF(OTF):
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:
                 new_otf.md.initialize()
+        elif new_otf.md_engine == "LAMMPS":
+            new_otf.md.nsteps = dct["md"]["nsteps"]
+            assert new_otf.md.nsteps == new_otf.curr_step
+
         return new_otf

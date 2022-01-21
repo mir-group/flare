@@ -12,7 +12,6 @@ from numpy import allclose, isclose
 from flare import struc, env, gp
 from flare.parameters import Parameters
 from flare.mgp import MappedGaussianProcess
-from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _Z_to_element, _element_to_Z
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.atoms import FLARE_Atoms

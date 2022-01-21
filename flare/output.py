@@ -170,8 +170,8 @@ class Output:
 
             f.info(f"flare_pp {flare_pp.__version__}")
         except AttributeError:
-            import flare_pp
 
+            import flare_pp
             dirs = flare_pp.__path__[0].split("/")
             dirs[-1] = "setup.py"
             setup_path = "/".join(dirs)
