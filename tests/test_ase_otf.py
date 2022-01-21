@@ -54,6 +54,7 @@ md_list = [
     "Langevin",
     "NoseHoover",
 ]
+write_list = [1, 2, 3, 4]
 number_of_steps = 5
 
 
@@ -175,7 +176,7 @@ def qe_calc():
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-@pytest.mark.parametrize("write_model", [1, 2, 3])
+@pytest.mark.parametrize("write_model", write_list)
 def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_model):
     np.random.seed(12345)
 
@@ -242,7 +243,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-@pytest.mark.parametrize("write_model", [1, 2, 3])
+@pytest.mark.parametrize("write_model", write_list)
 def test_load_checkpoint(md_engine, write_model):
     output_name = f"{md_engine}_{write_model}"
     new_otf = ASE_OTF.from_checkpoint(output_name + "_checkpt.json")
@@ -252,7 +253,7 @@ def test_load_checkpoint(md_engine, write_model):
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-@pytest.mark.parametrize("write_model", [1, 2, 3])
+@pytest.mark.parametrize("write_model", write_list)
 def test_otf_parser(md_engine, write_model):
     output_name = f"{md_engine}_{write_model}"
     otf_traj = OtfAnalysis(output_name + ".out")
@@ -270,3 +271,5 @@ def test_otf_parser(md_engine, write_model):
 
     for f in glob.glob(output_name + "*"):
         os.remove(f)
+    for f in glob.glob("*_ckpt_*"):
+        shutil.rmtree(f, ignore_errors=True)

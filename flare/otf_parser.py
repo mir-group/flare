@@ -57,7 +57,7 @@ class OtfAnalysis:
         self.gp_hyp_list = [self.header["hyps"]]
 
         self.mae_list = []
-        self.maf_list = []
+        self.mav_list = []
 
         self.parse_pos_otf(blocks[1:])
 
@@ -190,7 +190,7 @@ class OtfAnalysis:
                     extract_gp_info(
                         post_frame,
                         self.mae_list,
-                        self.maf_list,
+                        self.mav_list,
                         self.gp_atom_list,
                         self.gp_hyp_list,
                         self.noh,
@@ -540,12 +540,23 @@ def extract_gp_info(block, mae_list, maf_list, atoms_list, hyps_list, noh):
     :return:
     """
     for ind, line in enumerate(block):
-        if "mean absolute error" in line:
-            value = float(line.split()[3])
-            mae_list.append(value)
-        if "mean absolute dft component" in line:
-            value = float(line.split()[4])
-            maf_list.append(value)
+        if "Mean absolute errors & Mean absolute values":
+            efs_mae = np.zeros(3)
+            efs_mav = np.zeros(3)
+        if line.startswith("energy mae"):
+            efs_mae[0] = float(line.split()[2])
+        if line.startswith("energy mav"):
+            efs_mav[0] = float(line.split()[2])
+        if line.startswith("stress mae"):
+            efs_mae[1] = float(line.split()[2])
+        if line.startswith("stress mav"):
+            efs_mav[1] = float(line.split()[2])
+        if line.startswith("forces mae"):
+            efs_mae[2] = float(line.split()[2])
+            mae_list.append(efs_mae)
+        if line.startswith("forces mav"):
+            efs_mav[2] = float(line.split()[2])
+            maf_list.append(efs_mav)
 
         # keep track of atom number
         if line.startswith("Adding atom"):

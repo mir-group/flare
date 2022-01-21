@@ -1,4 +1,6 @@
 import logging
+import os
+import shutil
 import json
 import numpy as np
 import time
@@ -41,6 +43,8 @@ class OTF:
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
+            If 4, write after each training and end of run, and back up
+            after each write.
         force_only (bool, optional): If True, only use forces for training.
             Default to False, use forces, energy and stress for training.
 
@@ -185,7 +189,7 @@ class OTF:
         # other args
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
-        self.steps_since_dft = 0
+        self.last_dft_step = 0
 
         # Set the prediction function based on user inputs.
         # Force only prediction.
@@ -207,10 +211,12 @@ class OTF:
             self.pred_func = predict.predict_on_structure_efs
 
         # set logger
-        self.output = Output(output_name, always_flush=True)
+        self.output = Output(output_name, always_flush=True, print_as_xyz=True)
         self.output_name = output_name
         self.gp_name = self.output_name + "_gp.json"
         self.checkpt_name = self.output_name + "_checkpt.json"
+        self.dft_xyz = self.output_name + "_dft.xyz"
+        self.checkpt_files = [self.checkpt_name, self.gp_name, self.dft_xyz]
 
         self.write_model = write_model
 
@@ -265,17 +271,18 @@ class OTF:
                     update_threshold=self.update_threshold,
                 )
 
-                if (not std_in_bound) and (
-                    self.steps_since_dft > self.min_steps_with_model
-                ):
+                steps_since_dft = self.curr_step - self.last_dft_step
+                if (not std_in_bound) and (steps_since_dft > self.min_steps_with_model):
                     # record GP forces
                     self.update_temperature()
                     self.record_state()
-                    gp_frcs = deepcopy(self.structure.forces)
+                    gp_energy = self.structure.potential_energy
+                    gp_forces = deepcopy(self.structure.forces)
+                    gp_stress = deepcopy(self.structure.stress)
 
                     # run DFT and record forces
                     self.dft_step = True
-                    self.steps_since_dft = 0
+                    self.last_dft_step = self.curr_step
                     self.run_dft()
                     dft_frcs = deepcopy(self.structure.forces)
                     dft_stress = deepcopy(self.structure.stress)
@@ -284,8 +291,20 @@ class OTF:
                     # run MD step & record the state
                     self.record_state()
 
+                    # record DFT data into an .xyz file with filename self.dft_xyz.
+                    # the file includes the structure, e/f/s labels and atomic
+                    # indices of environments added to gp
+                    self.record_dft_data(self.structure, target_atoms)
+
                     # compute mae and write to output
-                    self.compute_mae(gp_frcs, dft_frcs)
+                    self.compute_mae(
+                        gp_energy,
+                        gp_forces,
+                        gp_stress,
+                        dft_energy,
+                        dft_frcs,
+                        dft_stress,
+                    )
 
                     # add max uncertainty atoms to training set
                     self.update_gp(
@@ -294,6 +313,10 @@ class OTF:
                         dft_stress=dft_stress,
                         dft_energy=dft_energy,
                     )
+
+                    if self.write_model == 4:
+                        self.checkpoint()
+                        self.backup_checkpoint()
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -304,10 +327,7 @@ class OTF:
             counter += 1
             # TODO: Reinstate velocity rescaling.
             self.md_step()  # update positions by Verlet
-            self.steps_since_dft += 1
             self.rescale_temperature(self.structure.positions)
-
-            self.curr_step += 1
 
             if self.write_model == 3:
                 self.checkpoint()
@@ -341,6 +361,7 @@ class OTF:
 
         self.update_temperature()
         self.record_state()
+        self.record_dft_data(self.structure, self.init_atoms)
 
         # make initial gp model and predict forces
         self.update_gp(
@@ -359,6 +380,7 @@ class OTF:
         Take an MD step. This updates the positions of the structure.
         """
         md.update_positions(self.dt, self.noa, self.structure)
+        self.curr_step += 1
 
     def write_gp(self):
         self.gp.write_model(self.gp_name)
@@ -467,13 +489,55 @@ class OTF:
             hyps_mask=self.gp.hyps_mask,
         )
 
-    def compute_mae(self, gp_frcs, dft_frcs):
-        mae = np.mean(np.abs(gp_frcs - dft_frcs))
-        mac = np.mean(np.abs(dft_frcs))
+    def compute_mae(
+        self,
+        gp_energy,
+        gp_forces,
+        gp_stress,
+        dft_energy,
+        dft_forces,
+        dft_stress,
+    ):
 
         f = logging.getLogger(self.output.basename + "log")
-        f.info(f"mean absolute error: {mae:.4f} eV/A")
-        f.info(f"mean absolute dft component: {mac:.4f} eV/A")
+        f.info("Mean absolute errors & Mean absolute values")
+
+        # compute energy/forces/stress mean absolute error and value
+        if not self.force_only:
+            e_mae = np.mean(np.abs(dft_energy - gp_energy))
+            e_mav = np.mean(np.abs(dft_energy))
+            f.info(f"energy mae: {e_mae:.4f} eV")
+            f.info(f"energy mav: {e_mav:.4f} eV")
+
+            s_mae = np.mean(np.abs(dft_stress - gp_stress))
+            s_mav = np.mean(np.abs(dft_stress))
+            f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+            f.info(f"stress mav: {s_mav:.4f} eV/A^3")
+
+        f_mae = np.mean(np.abs(dft_forces - gp_forces))
+        f_mav = np.mean(np.abs(dft_forces))
+        f.info(f"forces mae: {f_mae:.4f} eV/A")
+        f.info(f"forces mav: {f_mav:.4f} eV/A")
+
+        # compute the per-species MAE
+        unique_species = list(set(self.structure.coded_species))
+        per_species_mae = np.zeros(len(unique_species))
+        per_species_mav = np.zeros(len(unique_species))
+        per_species_num = np.zeros(len(unique_species))
+        for a in range(self.structure.nat):
+            species_ind = unique_species.index(self.structure.coded_species[a])
+            per_species_mae[species_ind] += np.mean(
+                np.abs(dft_forces[a] - gp_forces[a])
+            )
+            per_species_mav[species_ind] += np.mean(np.abs(dft_forces[a]))
+            per_species_num[species_ind] += 1
+        per_species_mae /= per_species_num
+        per_species_mav /= per_species_num
+
+        for s in range(len(unique_species)):
+            curr_species = unique_species[s]
+            f.info(f"type {curr_species} forces mae: {per_species_mae[s]:.4f} eV/A")
+            f.info(f"type {curr_species} forces mav: {per_species_mav[s]:.4f} eV/A")
 
     def rescale_temperature(self, new_pos: "ndarray"):
         """Change the previous positions to update the temperature
@@ -514,6 +578,18 @@ class OTF:
             self.velocities,
         )
 
+    def record_dft_data(self, structure, target_atoms):
+        # write xyz and energy/forces/stress
+        self.output.write_xyz_config(
+            self.curr_step,
+            self.structure,
+            self.structure.forces,
+            self.structure.stds,
+            dft_forces=self.structure.forces,
+            dft_energy=self.structure.potential_energy,
+            target_atoms=target_atoms,
+        )
+
     def as_dict(self):
         self.dft_module = self.dft_module.__name__
         out_dict = deepcopy(dict(vars(self)))
@@ -550,6 +626,12 @@ class OTF:
         new_otf.curr_step = in_dict["curr_step"]
         new_otf.std_tolerance = in_dict["std_tolerance"]
         return new_otf
+
+    def backup_checkpoint(self):
+        dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
+        os.mkdir(dir_name)
+        for f in self.checkpt_files:
+            shutil.copyfile(f, f"{dir_name}/{f}")
 
     def checkpoint(self):
         name = self.checkpt_name

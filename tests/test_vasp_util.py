@@ -1,4 +1,5 @@
 import pytest
+
 pmgin = pytest.importorskip("pymatgen.io.vasp.inputs")
 pmgout = pytest.importorskip("pymatgen.io.vasp.outputs")
 Poscar = pmgin.Poscar
@@ -26,6 +27,7 @@ pytestmark = pytest.mark.filterwarnings(
 
 TEST_DIR = os.path.dirname(__file__)
 TEST_FILE_DIR = os.path.join(TEST_DIR, "test_files")
+
 
 def cleanup_vasp_run():
     os.system("rm POSCAR")
