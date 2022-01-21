@@ -6,6 +6,8 @@ import os
 import sys
 import pickle
 import logging
+import os
+import shutil
 import json
 import time
 import warnings
@@ -30,6 +32,7 @@ from flare.utils.learner import is_std_in_bound
 from flare.utils.element_coder import NumpyEncoder
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
+from flare.ase.lammps import LAMMPS_MD, check_sgp_match
 
 
 class OTF:
@@ -67,6 +70,8 @@ class OTF:
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
+            If 4, write after each training and end of run, and back up
+            after each write.
         force_only (bool, optional): If True, only use forces for training.
             Default to False, use forces, energy and stress for training.
 
@@ -183,6 +188,7 @@ class OTF:
         # set flare
         self.gp = self.flare_calc.gp_model
         self.force_only = force_only
+        self._kernels = None
 
         # set otf
         self.std_tolerance = std_tolerance_factor
@@ -207,16 +213,24 @@ class OTF:
         # other args
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
-        self.steps_since_dft = 0
+        self.last_dft_step = 0
 
         # set logger
-        self.output = Output(output_name, always_flush=True)
+        self.output = Output(output_name, always_flush=True, print_as_xyz=True)
         self.output_name = output_name
 
         self.checkpt_name = self.output_name + "_checkpt.json"
         self.flare_name = self.output_name + "_flare.json"
         self.dft_name = self.output_name + "_dft.pickle"
         self.atoms_name = self.output_name + "_atoms.json"
+        self.dft_xyz = self.output_name + "_dft.xyz"
+        self.checkpt_files = [
+            self.checkpt_name,
+            self.flare_name,
+            self.dft_name,
+            self.atoms_name,
+            self.dft_xyz,
+        ]
 
         self.write_model = write_model
 
@@ -271,18 +285,21 @@ class OTF:
                     update_threshold=self.update_threshold,
                 )
 
-                if (not std_in_bound) and (
-                    self.steps_since_dft > self.min_steps_with_model
-                ):
+                steps_since_dft = self.curr_step - self.last_dft_step
+                if (not std_in_bound) and (steps_since_dft > self.min_steps_with_model):
                     # record GP forces
                     self.update_temperature()
                     self.record_state()
-                    gp_frcs = deepcopy(self.atoms.forces)
+
+                    gp_energy = self.atoms.potential_energy
+                    gp_forces = deepcopy(self.atoms.forces)
+                    gp_stress = deepcopy(self.atoms.stress)
 
                     # run DFT and record forces
                     self.dft_step = True
-                    self.steps_since_dft = 0
+                    self.last_dft_step = self.curr_step
                     self.run_dft()
+
                     dft_frcs = deepcopy(self.atoms.forces)
                     dft_stress = deepcopy(self.atoms.stress)
                     dft_energy = self.atoms.potential_energy
@@ -290,8 +307,20 @@ class OTF:
                     # run MD step & record the state
                     self.record_state()
 
+                    # record DFT data into an .xyz file with filename self.dft_xyz.
+                    # the file includes the structure, e/f/s labels and atomic
+                    # indices of environments added to gp
+                    self.record_dft_data(self.atoms, target_atoms)
+
                     # compute mae and write to output
-                    self.compute_mae(gp_frcs, dft_frcs)
+                    self.compute_mae(
+                        gp_energy,
+                        gp_forces,
+                        gp_stress,
+                        dft_energy,
+                        dft_frcs,
+                        dft_stress,
+                    )
 
                     # add max uncertainty atoms to training set
                     self.update_gp(
@@ -300,6 +329,10 @@ class OTF:
                         dft_stress=dft_stress,
                         dft_energy=dft_energy,
                     )
+
+                    if self.write_model == 4:
+                        self.checkpoint()
+                        self.backup_checkpoint()
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -310,10 +343,7 @@ class OTF:
             counter += 1
             # TODO: Reinstate velocity rescaling.
             self.md_step()  # update positions by Verlet
-            self.steps_since_dft += 1
             self.rescale_temperature(self.atoms.positions)
-
-            self.curr_step += 1
 
             if self.write_model == 3:
                 self.checkpoint()
@@ -342,6 +372,7 @@ class OTF:
 
         self.update_temperature()
         self.record_state()
+        self.record_dft_data(self.atoms, self.init_atoms)
 
         # make initial gp model and predict forces
         self.update_gp(
@@ -390,8 +421,28 @@ class OTF:
             self.flare_calc.reset()
             self.atoms.calc = self.flare_calc
 
-        # Take MD step. Inside the step() function, get_forces() is called
-        self.md.step()
+        # Take MD step.
+        if self.md_engine == "LAMMPS":
+            if self.std_tolerance < 0:
+                tol = -self.std_tolerance
+            else:
+                tol = np.abs(self.gp.force_noise) * self.std_tolerance
+            f = logging.getLogger(self.output.basename + "log")
+            self.md.step(tol, self.number_of_steps)
+            self.curr_step = self.md.nsteps
+            self.atoms = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
+            self.dft_input = self.atoms
+
+            # check if the lammps energy/forces/stress/stds match sgp
+            f = logging.getLogger(self.output.basename + "log")
+            check_sgp_match(
+                self.atoms, self.flare_calc, f, self.md.params["specorder"]
+            )
+
+        else:
+            # Inside the step() function, get_forces() is called
+            self.md.step()
+            self.curr_step += 1
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -476,9 +527,34 @@ class OTF:
             dft_energy = None
             flare_stress = None
 
+        # The structure will be added to self.gp.training_structures (struc.Structure).
+        # Create a new structure by deepcopy to avoid the forces of the saved
+        # structure get modified.
+        try:
+            struc_to_add = deepcopy(self.atoms)
+        except TypeError:
+            # The structure might be attached with a non-picklable calculator,
+            # e.g., when we use LAMMPS empirical potential for training. 
+            # When deepcopy fails, create a SinglePointCalculator to store results
+
+            from ase.calculators.singlepoint import SinglePointCalculator
+
+            properties = ["forces", "energy", "stress"]
+            results = {
+                "forces": self.atoms.forces,
+                "energy": self.atoms.potential_energy,
+                "stress": self.atoms.stress,
+            }
+
+            calc = self.atoms.calc
+            self.atoms.calc = None
+            struc_to_add = deepcopy(self.atoms)
+            struc_to_add.calc = SinglePointCalculator(struc_to_add, **results)
+            self.atoms.calc = calc
+
         # update gp model
         self.gp.update_db(
-            self.atoms,
+            struc_to_add,
             dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
@@ -493,7 +569,7 @@ class OTF:
 
         # update mgp model
         if self.flare_calc.use_mapping:
-            self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
+            self.flare_calc.build_map()
 
         # write model
         if (self.dft_count - 1) < self.freeze_hyps:
@@ -521,13 +597,55 @@ class OTF:
             hyps_mask=self.gp.hyps_mask,
         )
 
-    def compute_mae(self, gp_frcs, dft_frcs):
-        mae = np.mean(np.abs(gp_frcs - dft_frcs))
-        mac = np.mean(np.abs(dft_frcs))
+    def compute_mae(
+        self,
+        gp_energy,
+        gp_forces,
+        gp_stress,
+        dft_energy,
+        dft_forces,
+        dft_stress,
+    ):
 
         f = logging.getLogger(self.output.basename + "log")
-        f.info(f"mean absolute error: {mae:.4f} eV/A")
-        f.info(f"mean absolute dft component: {mac:.4f} eV/A")
+        f.info("Mean absolute errors & Mean absolute values")
+
+        # compute energy/forces/stress mean absolute error and value
+        if not self.force_only:
+            e_mae = np.mean(np.abs(dft_energy - gp_energy))
+            e_mav = np.mean(np.abs(dft_energy))
+            f.info(f"energy mae: {e_mae:.4f} eV")
+            f.info(f"energy mav: {e_mav:.4f} eV")
+
+            s_mae = np.mean(np.abs(dft_stress - gp_stress))
+            s_mav = np.mean(np.abs(dft_stress))
+            f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+            f.info(f"stress mav: {s_mav:.4f} eV/A^3")
+
+        f_mae = np.mean(np.abs(dft_forces - gp_forces))
+        f_mav = np.mean(np.abs(dft_forces))
+        f.info(f"forces mae: {f_mae:.4f} eV/A")
+        f.info(f"forces mav: {f_mav:.4f} eV/A")
+
+        # compute the per-species MAE
+        unique_species = list(set(self.atoms.coded_species))
+        per_species_mae = np.zeros(len(unique_species))
+        per_species_mav = np.zeros(len(unique_species))
+        per_species_num = np.zeros(len(unique_species))
+        for a in range(self.atoms.nat):
+            species_ind = unique_species.index(self.atoms.coded_species[a])
+            per_species_mae[species_ind] += np.mean(
+                np.abs(dft_forces[a] - gp_forces[a])
+            )
+            per_species_mav[species_ind] += np.mean(np.abs(dft_forces[a]))
+            per_species_num[species_ind] += 1
+        per_species_mae /= per_species_num
+        per_species_mav /= per_species_num
+
+        for s in range(len(unique_species)):
+            curr_species = unique_species[s]
+            f.info(f"type {curr_species} forces mae: {per_species_mae[s]:.4f} eV/A")
+            f.info(f"type {curr_species} forces mav: {per_species_mav[s]:.4f} eV/A")
 
     def rescale_temperature(self, new_pos: "ndarray"):
         """Change the previous positions to update the temperature
@@ -578,10 +696,16 @@ class OTF:
             self.velocities,
         )
 
+    def record_dft_data(self, structure, target_atoms):
+        structure.info["target_atoms"] = np.array(target_atoms)
+        write(self.dft_xyz, structure, append=True)
+
     def as_dict(self):
-        # DFT module and Trajectory will cause issue in deepcopy
+        # DFT module and Trajectory are not picklable
         md = self.md
         self.md = None
+        _kernels = self._kernels
+        self._kernels = None
 
         # SGP models aren't picklable. Temporarily set to None before copying.
         flare_calc = self.flare_calc
@@ -595,6 +719,7 @@ class OTF:
 
         # Reset attributes.
         self.md = md
+        self._kernels = _kernels
         self.flare_calc = flare_calc
         self.gp = gp
         self.atoms.calc = flare_calc
@@ -618,15 +743,34 @@ class OTF:
 
     @staticmethod
     def from_dict(dct):
-        dct["atoms"] = read(dct["atoms"])
-        flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        flare_calc_dict = json.load(open(dct["flare_calc"]))
+
+        # Build FLARE_Calculator from dict 
+        if flare_calc_dict["class"] == "FLARE_Calculator":
+            flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+            _kernels = None
+        # Build SGP_Calculator from dict
+        # TODO: we still have the issue that the c++ kernel needs to be 
+        # in the current space, otherwise there is Seg Fault
+        # That's why there is the _kernels
+        elif flare_calc_dict["class"] == "SGP_Calculator":
+            from flare_pp.sparse_gp_calculator import SGP_Calculator
+
+            flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
+        else:
+            raise TypeError(
+                f"The calculator from {dct['flare_calc']} is not recognized."
+            )
+
         flare_calc.reset()
+        dct["atoms"] = read(dct["atoms"])
         dct["flare_calc"] = flare_calc
 
         with open(dct["dft_calc"], "rb") as f:
             dct["dft_calc"] = pickle.load(f)
 
         new_otf = OTF(**dct)
+        new_otf._kernels = _kernels
         new_otf.dft_count = dct["dft_count"]
         new_otf.curr_step = dct["curr_step"]
         new_otf.std_tolerance = dct["std_tolerance"]
@@ -634,8 +778,17 @@ class OTF:
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:
                 new_otf.md.initialize()
+        elif new_otf.md_engine == "LAMMPS":
+            new_otf.md.nsteps = dct["md"]["nsteps"]
+            assert new_otf.md.nsteps == new_otf.curr_step
 
         return new_otf
+
+    def backup_checkpoint(self):
+        dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
+        os.mkdir(dir_name)
+        for f in self.checkpt_files:
+            shutil.copyfile(f, f"{dir_name}/{f}")
 
     def checkpoint(self):
         name = self.checkpt_name

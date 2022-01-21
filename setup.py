@@ -11,6 +11,7 @@ setuptools.setup(
     name="mir-flare",
     packages=setuptools.find_packages(exclude=["tests"]),
     version="1.0.0",
+    version="0.2.0",
     author="Materials Intelligence Research",
     author_email="mir@g.harvard.edu",
     description="Fast Learning of Atomistic Rare Events",
