@@ -6,6 +6,7 @@ or running an MD simulation updated on-the-fly.
 import datetime
 import logging
 import time
+import sys
 import numpy as np
 
 from logging import FileHandler, StreamHandler, Logger
@@ -13,6 +14,7 @@ from os.path import isfile
 from shutil import move as movefile
 from typing import Union, List
 
+import flare
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
@@ -134,6 +136,55 @@ class Output:
         f = logging.getLogger(self.basename + "log")
         f.info(f"{datetime.datetime.now()}")
 
+        # Write package version numbers
+        f.info(f"python {sys.version}")
+        f.info(f"numpy {np.__version__}")
+        try:
+            import ase
+
+            f.info(f"ase {ase.__version__}")
+        except:
+            pass
+
+        try:
+            import pymatgen
+
+            f.info(f"pymatgen {pymatgen.__version__}")
+        except:
+            pass
+
+        try:
+            f.info(f"flare {flare.__version__}")
+        except AttributeError:  # using customized package not from pip install
+            dirs = flare.__path__[0].split("/")
+            dirs[-1] = "setup.py"
+            setup_path = "/".join(dirs)
+            with open(setup_path) as setup_py:
+                for line in setup_py.readlines():
+                    line = line.strip()
+                    if "version=" in line:
+                        f.info(f"flare {line[9:len(line)-2]}")
+                        break
+        try:
+            import flare_pp
+
+            f.info(f"flare_pp {flare_pp.__version__}")
+        except AttributeError:
+            import flare_pp
+
+            dirs = flare_pp.__path__[0].split("/")
+            dirs[-1] = "setup.py"
+            setup_path = "/".join(dirs)
+            with open(setup_path) as setup_py:
+                for line in setup_py.readlines():
+                    line = line.strip()
+                    if "version=" in line:
+                        f.info(f"flare_pp {line[9:len(line)-2]}")
+                        break
+        except ModuleNotFoundError:
+            pass
+
+        # Write uncertainty tolerance
         if isinstance(std_tolerance, tuple):
             std_string = (
                 "Relative uncertainty tolerance: "
@@ -330,6 +381,7 @@ class Output:
         dft_forces: np.array = None,
         dft_energy=0,
         predict_energy=float("nan"),
+        target_atoms=None,
     ):
         """write atomic configuration in xyz file
 
@@ -354,6 +406,7 @@ class Output:
             timestep=curr_step,
             write_file="",
             append=False,
+            target_atoms=target_atoms,
         )
 
         logger = logging.getLogger(self.basename + "xyz")

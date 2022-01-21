@@ -11,6 +11,7 @@ try:
     from pymatgen.io.vasp.outputs import Vasprun
     from pymatgen.io.vasp.sets import VaspInputSet
     from pymatgen.core.periodic_table import Element
+
     _pmg_present = True
 except:
     _pmg_present = False
@@ -191,9 +192,7 @@ def parse_dft_forces_and_energy(vasprun):
     return np.array(istep["forces"]), istep["electronic_steps"][-1]["e_0_energy"]
 
 
-def md_trajectory_from_vasprun(
-    vasprun, ionic_step_skips=1, vasprun_kwargs: dict = {}
-):
+def md_trajectory_from_vasprun(vasprun, ionic_step_skips=1, vasprun_kwargs: dict = {}):
     """
     Returns a list of flare Structure objects decorated with forces, stress,
     and total energy from a MD trajectory performed in VASP.
