@@ -19,7 +19,7 @@ from flare.predict import (
     predict_on_structure_efs,
     predict_on_structure_efs_par,
 )
-from flare.utils.element_coder import NumpyEncoder
+from flare.utils import NumpyEncoder
 
 from ase.calculators.calculator import Calculator, all_changes
 

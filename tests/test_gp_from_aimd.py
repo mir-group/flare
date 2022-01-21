@@ -12,13 +12,13 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
-from flare.utils.element_coder import Z_to_element
 from flare.gp_from_aimd import (
     TrajectoryTrainer,
     parse_trajectory_trainer_output,
     structures_from_gpfa_output,
 )
 from flare.utils.learner import subset_of_frame_by_element
+from ase.data import chemical_symbols
 
 from tests.test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
@@ -387,7 +387,7 @@ def test_passive_learning():
     tt = TrajectoryTrainer(frames=None, gp=cur_gp)
 
     # TEST ENVIRONMENT ADDITION
-    envs_species = set(Z_to_element(env.ctype) for env in envs)
+    envs_species = set(chemical_symbols[env.ctype] for env in envs)
     tt.run_passive_learning(environments=envs, post_build_matrices=False)
 
     assert cur_gp.training_statistics["N"] == len(envs)

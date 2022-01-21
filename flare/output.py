@@ -16,7 +16,7 @@ from typing import Union, List
 
 import flare
 from flare.struc import Structure
-from flare.utils.element_coder import Z_to_element
+from ase.data import chemical_symbols
 
 
 # Unit conversions.
@@ -544,14 +544,14 @@ class Output:
 
         mae_per_species = {}
         count_per_species = {}
-        species = [Z_to_element(Z) for Z in set(frame.coded_species)]
+        species = [chemical_symbols[Z] for Z in set(frame.coded_species)]
         for ele in species:
             mae_per_species[ele] = 0
             count_per_species[ele] = 0
 
         for atom in range(frame.nat):
             Z = frame.coded_species[atom]
-            ele = Z_to_element(Z)
+            ele = chemical_symbols[Z]
             if np.isnan(np.sum(error[atom, :])):
                 continue
             mae_per_species[ele] += np.sum(error[atom, :])

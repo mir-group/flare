@@ -119,7 +119,7 @@ from typing import List, Callable, Union
 
 from flare.output import set_logger
 from flare.parameters import Parameters
-from flare.utils.element_coder import element_to_Z, Z_to_element
+from ase.data import chemical_symbols, atomic_numbers
 
 
 class ParameterHelper:
@@ -837,7 +837,7 @@ class ParameterHelper:
             # default is nspecie-1
             for idt in range(self.nspecie):
                 for ele in self.groups["specie"][idt]:
-                    atom_n = element_to_Z(ele)
+                    atom_n = atomic_numbers[ele]
                     if atom_n >= len(self.species_mask):
                         new_mask = np.ones(atom_n, dtype=np.int) * (nspecie - 1)
                         new_mask[: len(self.species_mask)] = self.species_mask
@@ -1129,7 +1129,7 @@ class ParameterHelper:
                 if len(elelist) > 0:
                     for ele in elelist:
                         if ele != 0:
-                            elename = Z_to_element(ele)
+                            elename = chemical_symbols[ele]
                             if len(init_spec) > 0:
                                 if elename in init_spec:
                                     pm.define_group("specie", i, [elename])

@@ -11,12 +11,12 @@ from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
 from flare.utils.parameter_helper import ParameterHelper
-from flare.utils.element_coder import _Z_to_mass, _Z_to_element, _element_to_Z
 
 from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
 from flare_pp.sparse_gp import SGP_Wrapper
 from flare_pp.sparse_gp_calculator import SGP_Calculator
 
+from ase.data import atomic_numbers, atomic_masses
 from ase.constraints import FixAtoms
 from ase import units
 from ase.spacegroup import crystal
@@ -114,7 +114,7 @@ def qe_calc():
     specie_symbol_list = " ".join(species)
     # masses = [["1 28", "2 12"]
     masses = [
-        f"{i} {_Z_to_mass[_element_to_Z[species[i]]]}" for i in range(len(species))
+        f"{i} {atomic_masses[atomic_numbers[species[i]]]}" for i in range(len(species))
     ]
     coef_name = "SiC.tersoff"
     rootdir = os.getcwd()

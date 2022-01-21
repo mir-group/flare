@@ -1,5 +1,5 @@
 import json
-from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
+from flare.utils import NumpyEncoder
 
 import os, logging, warnings
 import numpy as np

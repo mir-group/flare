@@ -30,10 +30,11 @@ from flare.kernels.utils import (
 from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
-from flare.utils.element_coder import NumpyEncoder, Z_to_element
+from flare.utils import NumpyEncoder
 from numpy.random import random
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
+from ase.data import chemical_symbols
 
 
 class GaussianProcess:
@@ -1299,7 +1300,7 @@ class GaussianProcess:
         # Count all of the present species in the atomic env. data
         present_species = []
         for env, _ in zip(self.training_data, self.training_labels):
-            present_species.append(Z_to_element(env.structure.coded_species[env.atom]))
+            present_species.append(chemical_symbols[env.structure.coded_species[env.atom]])
 
         # Summarize the relevant information
         data["species"] = list(set(present_species))

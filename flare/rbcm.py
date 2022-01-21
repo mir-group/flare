@@ -40,8 +40,9 @@ from flare.kernels.utils import from_mask_to_args
 from flare.output import set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
-from flare.utils.element_coder import NumpyEncoder, Z_to_element
+from flare.utils import NumpyEncoder
 from typing import Union
+from ase.data import chemical_symbols
 
 
 class RobustBayesianCommitteeMachine(GaussianProcess):
@@ -958,7 +959,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             data[f"N_{i}"] = self.n_envs_prev[i]
             for env, _ in zip(self.training_data[i], self.training_labels[i]):
                 present_species.append(
-                    Z_to_element(env.structure.coded_species[env.atom])
+                    chemical_symbols[env.structure.coded_species[env.atom]]
                 )
 
         # Summarize the relevant information

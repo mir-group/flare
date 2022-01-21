@@ -52,7 +52,7 @@ from flare.predict import (
     predict_on_structure_mgp,
 )
 from flare.struc import Structure, Trajectory
-from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils import NumpyEncoder
 from flare.utils.learner import (
     subset_of_frame_by_element,
     is_std_in_bound_per_species,
@@ -61,6 +61,7 @@ from flare.utils.learner import (
 )
 from flare.mgp import MappedGaussianProcess
 from flare.parameters import Parameters
+from ase.data import chemical_symbols, atomic_numbers
 
 
 class TrajectoryTrainer:
@@ -233,7 +234,7 @@ class TrajectoryTrainer:
             pre_train_species = list(self.pre_train_env_per_species.keys())
             for key in pre_train_species:
                 self.pre_train_env_per_species[
-                    element_to_Z(key)
+                    atomic_numbers[key]
                 ] = self.pre_train_env_per_species[key]
 
         # Output parameters
@@ -299,9 +300,9 @@ class TrajectoryTrainer:
         for cur_dict in [max_elts_per_frame, max_model_elts]:
             for key in list(cur_dict.keys()):
                 if isinstance(key, int):
-                    cur_dict[Z_to_element(key)] = cur_dict[key]
+                    cur_dict[chemical_symbols[key]] = cur_dict[key]
                 elif isinstance(key, str):
-                    cur_dict[element_to_Z(key)] = cur_dict[key]
+                    cur_dict[atomic_numbers[key]] = cur_dict[key]
 
         # Main frame loop
         total_added = 0
@@ -313,7 +314,7 @@ class TrajectoryTrainer:
             for species_i in set(frame.coded_species):
                 # Get a randomized set of atoms of species i from the frame
                 # So that it is not always the lowest-indexed atoms chosen
-                elt = Z_to_element(species_i)
+                elt = chemical_symbols[species_i]
                 atoms_of_specie = frame.indices_of_specie(species_i)
                 n_at = len(atoms_of_specie)
                 # Determine how many to add based on user defined cutoffs
@@ -940,7 +941,7 @@ class TrajectoryTrainer:
             return
 
         # Group added atoms by species for easier output
-        added_species = [Z_to_element(frame.coded_species[at]) for at in train_atoms]
+        added_species = [chemical_symbols[frame.coded_species[at]] for at in train_atoms]
         added_atoms = {spec: [] for spec in set(added_species)}
 
         for atom, spec in zip(train_atoms, added_species):

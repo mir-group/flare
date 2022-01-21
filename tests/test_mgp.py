@@ -12,10 +12,10 @@ from numpy import allclose, isclose
 from flare import struc, env, gp
 from flare.parameters import Parameters
 from flare.mgp import MappedGaussianProcess
-from flare.utils.element_coder import _Z_to_mass, _Z_to_element, _element_to_Z
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
+from ase.data import atomic_numbers, atomic_masses
 
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
@@ -78,7 +78,7 @@ def all_lmp():
     species = ["H", "He"]
     specie_symbol_list = " ".join(species)
     masses = [
-        f"{i} {_Z_to_mass[_element_to_Z[species[i]]]}" for i in range(len(species))
+        f"{i} {atomic_masses[atomic_numbers[species[i]]]}" for i in range(len(species))
     ]
     parameters = {
         "command": os.environ.get("lmp"),  # set up executable for ASE

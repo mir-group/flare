@@ -15,10 +15,11 @@ from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
+from flare.utils import NumpyEncoder
 
 from flare.mgp.map2b import Map2body
 from flare.mgp.map3b import Map3body
+from ase.data import chemical_symbols, atomic_numbers
 
 
 class MappedGaussianProcess:
@@ -121,10 +122,10 @@ class MappedGaussianProcess:
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
                 species_labels.append(ele)
-                coded_species.append(element_to_Z(ele))
+                coded_species.append(atomic_numbers[ele])
             elif isinstance(ele, int):
                 coded_species.append(ele)
-                species_labels.append(Z_to_element(ele))
+                species_labels.append(chemical_symbols[ele])
             else:
                 print("element type not accepted", ele, type(ele))
         sort_id = np.argsort(coded_species)

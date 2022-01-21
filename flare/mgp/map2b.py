@@ -4,12 +4,12 @@ from numba import njit
 from typing import List
 
 from flare.struc import Structure
-from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.grid_kernels import grid_kernel, self_kernel
 
 from flare.kernels.utils import from_mask_to_args
+from ase.data import chemical_symbols
 
 
 class Map2body(MapXbody):
@@ -71,7 +71,7 @@ class SingleMap2body(SingleMapXbody):
         self.set_bounds(None, None)
 
         spc = self.species
-        self.species_code = Z_to_element(spc[0]) + "_" + Z_to_element(spc[1])
+        self.species_code = chemical_symbols[spc[0]] + "_" + Z_to_element[spc[1]]
 
     def set_bounds(self, lower_bound, upper_bound):
         """

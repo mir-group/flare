@@ -5,12 +5,12 @@ from math import floor, ceil
 from typing import List
 
 from flare.struc import Structure
-from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.grid_kernels import grid_kernel, self_kernel
 
 from flare.kernels.utils import from_mask_to_args
+from ase.data import chemical_symbols
 
 
 class Map3body(MapXbody):
@@ -74,7 +74,7 @@ class SingleMap3body(SingleMapXbody):
         self.set_bounds(None, None)
 
         spc = self.species
-        self.species_code = "_".join([Z_to_element(spc) for spc in self.species])
+        self.species_code = "_".join([chemical_symbols[spc] for spc in self.species])
         self.kv3name = f"kv3_{self.species_code}"
 
     def set_bounds(self, lower_bound, upper_bound):

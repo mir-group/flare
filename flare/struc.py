@@ -13,8 +13,9 @@ from abc import abstractmethod
 import pickle as pickle
 import numpy as np
 
-from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils import NumpyEncoder
 from flare.utils.learner import get_max_cutoff
+from ase.data import atomic_numbers, chemical_symbols
 
 try:
     # Used for to_pmg_structure method
@@ -81,7 +82,7 @@ class Structure:
             self.species_labels = species
         else:
             self.species_labels = species_labels
-        self.coded_species = np.array([element_to_Z(spec) for spec in species])
+        self.coded_species = np.array([atomic_numbers[spec] for spec in species])
         self.nat = len(species)
 
         # Default: atoms have no velocity
@@ -123,7 +124,7 @@ class Structure:
             keys = list(mass_dict.keys())
             for elt in keys:
                 if isinstance(elt, str):
-                    mass_dict[element_to_Z(elt)] = mass_dict[elt]
+                    mass_dict[atomic_numbers[elt]] = mass_dict[elt]
                     if elt.isnumeric():
                         mass_dict[int(elt)] = mass_dict[elt]
 
@@ -497,7 +498,7 @@ class Structure:
         :param write_file:
         :return:
         """
-        species_list = [Z_to_element(x) for x in self.coded_species]
+        species_list = [chemical_symbols[x] for x in self.coded_species]
         xyz_str = ""
         xyz_str += f"{len(self.coded_species)} \n"
 

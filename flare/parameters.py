@@ -17,7 +17,6 @@ from sys import stdout
 from os import devnull
 
 from flare.output import set_logger
-from flare.utils.element_coder import element_to_Z, Z_to_element
 
 
 class Parameters:
