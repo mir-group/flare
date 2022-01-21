@@ -321,7 +321,7 @@ class ASE_OTF(OTF):
 
     def as_dict(self):
 
-        # DFT module and Trajectory are not pickable
+        # DFT module and Trajectory are not picklable
         self.dft_module = self.dft_module.__name__
         md = self.md
         self.md = None
