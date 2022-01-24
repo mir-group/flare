@@ -198,6 +198,8 @@ class Output:
                 setup_py.close()
             except FileNotFoundError:
                 pass
+        except ModuleNotFoundError:
+            pass
 
         # Write uncertainty tolerance
         if isinstance(std_tolerance, tuple):
