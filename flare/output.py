@@ -161,18 +161,19 @@ class Output:
             dirs_rep = copy.copy(dirs)
             dirs_rep[-1] = "setup.py"
             setup_path = "/".join(dirs_rep)
-            setup_py = open(setup_path)
+            try:
+                setup_py = open(setup_path)
 
-            for line in setup_py.readlines():
-                line = line.strip()
-                if "version=" in line:
-                    f.info(f"flare {line[9:len(line)-2]}")
-                    break
-            setup_py.close()
-        # Catch case where the version can't be found.
-        # (This happens in the Action test of the flare++ tutorial.)
-        except:
-            pass
+                for line in setup_py.readlines():
+                    line = line.strip()
+                    if "version=" in line:
+                        f.info(f"flare {line[9:len(line)-2]}")
+                        break
+                setup_py.close()
+            # Catch case where the version can't be found.
+            # (This happens in the Action test of the flare++ tutorial.)
+            except FileNotFoundError:
+                pass
 
         try:
             import flare_pp
@@ -185,16 +186,18 @@ class Output:
             dirs_rep = copy.copy(dirs)
             dirs_rep[-1] = "setup.py"
             setup_path = "/".join(dirs_rep)
-            setup_py = open(setup_path)
 
-            for line in setup_py.readlines():
-                line = line.strip()
-                if "version=" in line:
-                    f.info(f"flare_pp {line[9:len(line)-2]}")
-                    break
-            setup_py.close()
-        except:
-            pass
+            try:
+                setup_py = open(setup_path)
+
+                for line in setup_py.readlines():
+                    line = line.strip()
+                    if "version=" in line:
+                        f.info(f"flare_pp {line[9:len(line)-2]}")
+                        break
+                setup_py.close()
+            except FileNotFoundError:
+                pass
 
         # Write uncertainty tolerance
         if isinstance(std_tolerance, tuple):
