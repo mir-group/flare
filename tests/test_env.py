@@ -4,7 +4,7 @@ import numpy as np
 from json import dumps
 from copy import deepcopy
 from os import remove
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from flare.env import AtomicEnvironment
 from flare.utils import NumpyEncoder
 
@@ -22,7 +22,7 @@ cutoff_mask_list = [  # (True, np.array([1]), [10]),
 
 
 @pytest.fixture(scope="module")
-def structure() -> Structure:
+def structure() -> FLARE_Atoms:
     """
     Returns a GP instance with a two-body numba-based kernel
     """
@@ -33,7 +33,7 @@ def structure() -> Structure:
     positions = np.array(
         [[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1], [0.75, 0.75, 0.75]]
     )
-    struc_test = Structure(cell, species, positions)
+    struc_test = FLARE_Atoms(cell=cell, numbers=species, positions=positions)
 
     yield struc_test
     del struc_test
@@ -207,7 +207,7 @@ def test_auto_sweep():
         ]
     )
     species = np.array([1, 2, 3, 4, 5])
-    arbitrary_structure = Structure(cell, species, positions)
+    arbitrary_structure = FLARE_Atoms(cell=cell, numbers=species, positions=positions)
 
     # Construct an environment.
     cutoffs = np.array([4.0, 3.0])

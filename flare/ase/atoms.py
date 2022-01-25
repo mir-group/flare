@@ -7,6 +7,7 @@ from copy import deepcopy
 import numpy as np
 from ase import Atoms
 from ase.io import read, write
+from ase.calculators.singlepoint import SinglePointCalculator
 from flare.utils.learner import get_max_cutoff
 
 
@@ -24,6 +25,7 @@ class FLARE_Atoms(Atoms):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.prev_positions = np.zeros_like(self.positions)
+        self.pbc = True # by default set periodic boundary
 
     @staticmethod
     def from_ase_atoms(atoms):
@@ -50,11 +52,20 @@ class FLARE_Atoms(Atoms):
 
     @property
     def forces(self):
-        return self.get_forces()
+        if self.calc is not None:
+            return self.get_forces()
+        else:
+            return None
 
     @forces.setter
     def forces(self, forces_array):
-        pass
+        assert forces_array.shape[0] == len(self)
+        assert forces_array.shape[1] == 3
+        if self.calc is None: # attach calculator if there is none
+            calc = SinglePointCalculator(self, forces=forces_array)
+            self.calc = calc
+        else: # update the forces in the calculator
+            self.calc.results["forces"] = forces_array
 
     @property
     def potential_energy(self):

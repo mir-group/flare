@@ -11,8 +11,8 @@ import pickle as pickle
 import numpy as np
 
 import flare.kernels.cutoffs as cf
+from flare.ase.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
-from flare.struc import Structure
 from flare.utils.env_getarray import (
     get_2_body_arrays,
     get_3_body_arrays,
@@ -25,16 +25,13 @@ class AtomicEnvironment:
     including arrays of pair and triplet distances and the chemical
     species of atoms in the environment.
 
-    :param structure: Structure of atoms.
-    :type structure: struc.Structure
-    :param atom: Index of the atom in the structure.
-    :type atom: int
-    :param cutoffs: 2- and 3-body cutoff radii. 2-body if one cutoff is
-    given, 2+3-body if two are passed.
-    :type cutoffs: np.ndarray
-    :param cutoffs_mask: a dictionary to store multiple cutoffs if neede
-                         it should be exactly the same as the hyps mask
-    :type cutoffs_mask: dict
+    Args:
+        structure (FLARE_Atoms): Structure of atoms.
+        atom (int): Index of the atom in the structure.
+        cutoffs (np.ndarray): 2- and 3-body cutoff radii. 2-body if one cutoff is
+            given, 2+3-body if two are passed.
+        cutoffs_mask (dict): a dictionary to store multiple cutoffs if neede
+            it should be exactly the same as the hyps mask
 
     The cutoffs_mask allows the user to define multiple cutoffs for different
     bonds, triples, and many body interaction. This dictionary should be
@@ -85,7 +82,7 @@ class AtomicEnvironment:
     all_kernel_types = ["twobody", "threebody", "manybody"]
     ndim = {"twobody": 2, "threebody": 3, "manybody": 2, "cut3b": 2}
 
-    def __init__(self, structure: Structure, atom: int, cutoffs, cutoffs_mask=None):
+    def __init__(self, structure: FLARE_Atoms, atom: int, cutoffs, cutoffs_mask=None):
 
         self.structure = structure
         self.positions = structure.wrapped_positions
@@ -313,10 +310,10 @@ class AtomicEnvironment:
         # TODO Instead of re-computing 2 and 3 body environment,
         # directly load in, this would be much more efficient
 
-        struc = Structure(
+        struc = FLARE_Atoms(
             cell=np.array(dictionary["cell"]),
             positions=dictionary["positions"],
-            species=dictionary["species"],
+            symbols=dictionary["species"],
         )
         index = dictionary["atom"]
 
