@@ -24,7 +24,6 @@ from flare.gp_algebra import (
     _global_training_structures,
 )
 from flare.parameters import Parameters
-from flare.struc import Structure
 
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 

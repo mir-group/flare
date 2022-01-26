@@ -29,7 +29,7 @@ from flare.kernels.utils import (
 )
 from flare.output import Output, set_logger
 from flare.parameters import Parameters
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 from numpy.random import random
 from scipy.linalg import solve_triangular
@@ -44,7 +44,7 @@ class GaussianProcess:
 
     Methods within GaussianProcess allow you to make predictions on
     AtomicEnvironment objects (see env.py) generated from
-    FLARE Structures (see struc.py), and after data points are added,
+    FLARE FLARE_Atoms (see ase/atoms.py), and after data points are added,
     optimize hyperparameters based on available training data (train method).
 
     Args:
@@ -332,7 +332,7 @@ class GaussianProcess:
 
     def update_db(
         self,
-        struc: Structure,
+        struc: FLARE_Atoms,
         forces: "ndarray" = None,
         custom_range: List[int] = (),
         energy: float = None,
@@ -343,7 +343,7 @@ class GaussianProcess:
         entire structure to the training set.
 
         Args:
-            struc (Structure): Input structure. Local environments of atoms
+            struc (FLARE_Atoms): Input structure. Local environments of atoms
                 in this structure will be added to the training set of the GP.
 
             forces (np.ndarray): Forces on atoms in the structure.
@@ -1110,7 +1110,7 @@ class GaussianProcess:
 
     def remove_force_data(
         self, indexes: Union[int, List[int]], update_matrices: bool = True
-    ) -> Tuple[List[Structure], List["ndarray"]]:
+    ) -> Tuple[List[FLARE_Atoms], List["ndarray"]]:
         """
         Remove force components from the model. Convenience function which
         deletes individual data points.

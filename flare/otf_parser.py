@@ -3,7 +3,6 @@ import numpy as np
 
 from copy import deepcopy
 from typing import List, Tuple
-from flare import gp, env, struc, otf
 from flare.gp import GaussianProcess
 
 
@@ -136,7 +135,7 @@ class OtfAnalysis:
             self.gp_species_list[:call_no],
         ):
 
-            struc_curr = struc.Structure(cell, species, positions)
+            struc_curr = FLARE_Atoms(cell=cell, symbols=species, positions=positions)
 
             gp_model.update_db(struc_curr, forces, custom_range=atoms)
 
@@ -244,13 +243,13 @@ class OtfAnalysis:
             else:
                 energy = self.energies[i]
 
-            cur_struc = struc.Structure(
+            cur_struc = FLARE_Atoms(
                 cell=cell,
-                species=species,
+                symbols=species,
                 positions=self.position_list[i],
-                forces=self.force_list[i],
-                stds=self.uncertainty_list[i],
             )
+            cur_struc.forces = self.force_list[i],
+            cur_struc.stds = self.uncertainty_list[i],
             cur_struc.energy = energy
             # cur_struc.stress = self.stress_list[i]
             structures.append(cur_struc)

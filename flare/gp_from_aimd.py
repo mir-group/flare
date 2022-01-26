@@ -51,7 +51,7 @@ from flare.predict import (
     predict_on_structure_par_en,
     predict_on_structure_mgp,
 )
-from flare.struc import Structure, Trajectory
+from flare.ase.atoms import FLARE_Atoms, Trajectory
 from flare.utils import NumpyEncoder
 from flare.utils.learner import (
     subset_of_frame_by_element,
@@ -67,7 +67,7 @@ from ase.data import chemical_symbols, atomic_numbers
 class TrajectoryTrainer:
     def __init__(
         self,
-        frames: List[Structure] = None,
+        frames: List[FLARE_Atoms] = None,
         gp: Union[GaussianProcess, MappedGaussianProcess] = None,
         rel_std_tolerance: float = 4,
         abs_std_tolerance: float = 1,
@@ -88,7 +88,7 @@ class TrajectoryTrainer:
         shuffle_frames: bool = False,
         verbose: str = "INFO",
         pre_train_on_skips: int = -1,
-        pre_train_seed_frames: List[Structure] = None,
+        pre_train_seed_frames: List[FLARE_Atoms] = None,
         pre_train_seed_envs: List[Tuple[AtomicEnvironment, "np.array"]] = None,
         pre_train_atoms_per_element: dict = None,
         train_atoms_per_element: dict = None,
@@ -258,7 +258,7 @@ class TrajectoryTrainer:
 
     def run_passive_learning(
         self,
-        frames: List[Structure] = (),
+        frames: List[FLARE_Atoms] = (),
         environments: List[AtomicEnvironment] = (),
         max_atoms_per_frame: int = np.inf,
         post_training_iterations: int = 0,
@@ -365,7 +365,7 @@ class TrajectoryTrainer:
 
     def run_active_learning(
         self,
-        frames: Union[List[Structure], Trajectory] = (),
+        frames: Union[List[FLARE_Atoms], Trajectory] = (),
         rel_std_tolerance: float = 4,
         abs_std_tolerance: float = 0,
         abs_force_tolerance: float = 0.15,
@@ -921,7 +921,7 @@ class TrajectoryTrainer:
 
     def update_gp_and_print(
         self,
-        frame: Structure,
+        frame: FLARE_Atoms,
         train_atoms: List[int],
         uncertainties: List[int] = None,
         train: bool = True,
@@ -930,7 +930,7 @@ class TrajectoryTrainer:
         Update the internal GP model training set with a list of training
         atoms indexing atoms within the frame. If train is True, re-train
         the GP by optimizing hyperparameters.
-        :param frame: Structure to train on
+        :param frame: FLARE_Atoms to train on
         :param train_atoms: Index atoms to train on
         :param uncertainties: Uncertainties to print, pass in [] to silence
         :param train: Train or not
@@ -1178,7 +1178,7 @@ def parse_trajectory_trainer_output(
     return frames, gp_data
 
 
-def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[Structure]:
+def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[FLARE_Atoms]:
     """
     Takes as input the first output from the `parse_trajectory_trainer_output`
     function and turns it into a series of FLARE structures, with DFT forces mapped
@@ -1191,7 +1191,7 @@ def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[Structur
     structures = []
     for frame in frame_dictionaries:
         structures.append(
-            Structure(
+            FLARE_Atoms(
                 cell=frame["cell"],
                 species=frame["species"],
                 positions=frame["positions"],

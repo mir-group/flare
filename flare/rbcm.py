@@ -39,7 +39,6 @@ from flare.gp_algebra import (
 from flare.kernels.utils import from_mask_to_args
 from flare.output import set_logger
 from flare.parameters import Parameters
-from flare.struc import Structure
 from flare.utils import NumpyEncoder
 from typing import Union
 from ase.data import chemical_symbols
@@ -276,7 +275,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
     def update_db(
         self,
-        struc: Structure,
+        struc,
         forces: List = None,
         custom_range: List[int] = (),
         energy: float = None,
@@ -288,7 +287,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         gets the new data.
 
         Args:
-            struc (Structure): Input structure. Local environments of atoms
+            struc (FLARE_Atoms): Input structure. Local environments of atoms
                 in this structure will be added to the training set of the GP.
             forces (np.ndarray): Forces on atoms in the structure.
             custom_range (List[int]): Indices of atoms whose local

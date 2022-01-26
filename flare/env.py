@@ -26,7 +26,7 @@ class AtomicEnvironment:
     species of atoms in the environment.
 
     Args:
-        structure (FLARE_Atoms): Structure of atoms.
+        structure (FLARE_Atoms): structure of atoms.
         atom (int): Index of the atom in the structure.
         cutoffs (np.ndarray): 2- and 3-body cutoff radii. 2-body if one cutoff is
             given, 2+3-body if two are passed.

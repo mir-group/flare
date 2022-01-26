@@ -10,12 +10,12 @@ from typing import Tuple, List, Union
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from math import nan
 
 
 def predict_on_atom(
-    param: Tuple[Structure, int, GaussianProcess]
+    param: Tuple[FLARE_Atoms, int, GaussianProcess]
 ) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
@@ -23,9 +23,9 @@ def predict_on_atom(
     environment. In order to work with other functions,
     all arguments are passed in as a tuple.
 
-    :param param: tuple of FLARE Structure, atom index, and Gaussian Process
+    :param param: tuple of FLARE FLARE_Atoms, atom index, and Gaussian Process
         object
-    :type param: Tuple(Structure, integer, GaussianProcess)
+    :type param: Tuple(FLARE_Atoms, integer, GaussianProcess)
     :return: 3-element force array and associated uncertainties
     :rtype: (np.ndarray, np.ndarray)
     """
@@ -42,7 +42,7 @@ def predict_on_atom(
 
 
 def predict_on_atom_en(
-    param: Tuple[Structure, int, GaussianProcess]
+    param: Tuple[FLARE_Atoms, int, GaussianProcess]
 ) -> ("np.ndarray", "np.ndarray", float):
     """
     Return the forces/std. dev. uncertainty / energy associated with an
@@ -50,9 +50,9 @@ def predict_on_atom_en(
     chemical environment. In order to work with other functions,
     all arguments are passed in as a tuple.
 
-    :param param: tuple of FLARE Structure, atom index, and Gaussian Process
+    :param param: tuple of FLARE FLARE_Atoms, atom index, and Gaussian Process
         object
-    :type param: Tuple(Structure, integer, GaussianProcess)
+    :type param: Tuple(FLARE_Atoms, integer, GaussianProcess)
     :return: 3-element force array, associated uncertainties, and local energy
     :rtype: (np.ndarray, np.ndarray, float)
     """
@@ -93,7 +93,7 @@ def predict_on_atom_efs(param):
 
 
 def predict_on_structure(
-    structure: Structure,
+    structure: FLARE_Atoms,
     gp: GaussianProcess,
     n_cpus: int = None,
     write_to_structure: bool = True,
@@ -150,7 +150,7 @@ def predict_on_structure(
 
 
 def predict_on_structure_par(
-    structure: Structure,
+    structure: FLARE_Atoms,
     gp: GaussianProcess,
     n_cpus: int = None,
     write_to_structure: bool = True,
@@ -229,7 +229,7 @@ def predict_on_structure_par(
 
 
 def predict_on_structure_efs(
-    structure: Structure,
+    structure: FLARE_Atoms,
     gp: GaussianProcess,
     n_cpus: int = None,
     write_to_structure: bool = True,
@@ -292,7 +292,7 @@ def predict_on_structure_efs(
 
 
 def predict_on_structure_efs_par(
-    structure: Structure,
+    structure: FLARE_Atoms,
     gp: GaussianProcess,
     n_cpus: int = None,
     write_to_structure: bool = True,
@@ -425,7 +425,7 @@ def write_efs_to_structure(
 
 
 def predict_on_structure_en(
-    structure: Structure,
+    structure: FLARE_Atoms,
     gp: GaussianProcess,
     n_cpus: int = None,
     write_to_structure: bool = True,
@@ -484,7 +484,7 @@ def predict_on_structure_en(
 
 
 def predict_on_structure_par_en(
-    structure: Structure,
+    structure: FLARE_Atoms,
     gp: GaussianProcess,
     n_cpus: int = None,
     write_to_structure: bool = True,
@@ -583,7 +583,7 @@ def predict_on_atom_mgp(atom: int, structure, mgp, write_to_structure=False):
 
 
 def predict_on_structure_mgp(
-    structure: Structure,
+    structure: FLARE_Atoms,
     mgp: MappedGaussianProcess,
     output=None,
     output_name=None,

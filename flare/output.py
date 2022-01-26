@@ -15,7 +15,6 @@ from shutil import move as movefile
 from typing import Union, List
 
 import flare
-from flare.struc import Structure
 from ase.data import chemical_symbols
 
 
@@ -115,7 +114,7 @@ class Output:
         gp_str: str,
         dt: float = None,
         Nsteps: int = None,
-        structure: Structure = None,
+        structure = None,
         std_tolerance: Union[float, int] = None,
         optional: dict = None,
     ):
@@ -386,7 +385,7 @@ class Output:
         """write atomic configuration in xyz file
 
         :param curr_step: Int, number of frames to note in the comment line
-        :param structure: Structure, contain positions and forces
+        :param structure: FLARE_Atoms, contain positions and forces
         :param forces: Optional list of forces to xyz file
         :param stds: Optional list of uncertanties to xyz file
         :param dft_forces: Optional second list of forces (e.g. DFT forces)
@@ -483,7 +482,7 @@ class Output:
         """Write the comparison to logfile.
 
         :param curr_step: current timestep
-        :param frame: Structure object that contains the current GP calculation
+        :param frame: FLARE_Atoms object that contains the current GP calculation
             results.
         :param start_time: start time for time profiling
         :param dft_forces: list of forces computed by DFT

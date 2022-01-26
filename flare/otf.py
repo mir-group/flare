@@ -527,7 +527,7 @@ class OTF:
             dft_energy = None
             flare_stress = None
 
-        # The structure will be added to self.gp.training_structures (struc.Structure).
+        # The structure will be added to self.gp.training_structures (FLARE_Atoms).
         # Create a new structure by deepcopy to avoid the forces of the saved
         # structure get modified.
         try:

@@ -4,8 +4,6 @@ from math import floor, ceil
 
 from typing import List
 
-from flare.struc import Structure
-
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.grid_kernels import grid_kernel, self_kernel
 
