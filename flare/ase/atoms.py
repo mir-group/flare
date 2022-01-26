@@ -1,6 +1,8 @@
 import os
 import sys
 import inspect
+from typing import List, Union, Any
+from abc import abstractmethod
 from time import time
 from copy import deepcopy
 
@@ -61,27 +63,56 @@ class FLARE_Atoms(Atoms):
     def forces(self, forces_array):
         assert forces_array.shape[0] == len(self)
         assert forces_array.shape[1] == 3
+        self.label_setter("forces", forces_array)
+
+    def label_setter(self, key, value):
         if self.calc is None: # attach calculator if there is none
-            calc = SinglePointCalculator(self, forces=forces_array)
+            results = {key: value}
+            calc = SinglePointCalculator(self, **results)
             self.calc = calc
-        else: # update the forces in the calculator
-            self.calc.results["forces"] = forces_array
+        else: # update the results in the calculator
+            self.calc.results[key] = value
 
     @property
     def potential_energy(self):
         return self.get_potential_energy()
 
+    @potential_energy.setter
+    def potential_energy(self, energy_label):
+        self.label_setter("energy", energy_label)
+
+    @property
+    def energy(self):
+        return self.get_potential_energy()
+
+    @energy.setter
+    def energy(self, energy_label):
+        self.label_setter("energy", energy_label)
+
     @property
     def stress(self):
         return self.get_stress()
+
+    @stress.setter
+    def stress(self, stress_array):
+        assert len(stress_array) == 6
+        self.label_setter("stress", stress_array)
 
     @property
     def stress_stds(self):
         return None  # TODO: to implement
 
+    @stress_stds.setter
+    def stress_stds(self, stress_stds_label):
+        self.label_setter("stress_stds", stress_stds_label)
+
     @property
     def local_energy_stds(self):
         return None  # TODO: to implement
+
+    @local_energy_stds.setter
+    def local_energy_stds(self, local_en_stds_label):
+        self.label_setter("local_energy_stds", local_en_stds_label)
 
     @property
     def stds(self):
@@ -90,6 +121,10 @@ class FLARE_Atoms(Atoms):
         except:
             stds = np.zeros_like(self.positions)
         return stds
+
+    @stds.setter
+    def stds(self, stds_label):
+        self.label_setter("stds", stds_label)
 
     def wrap_positions(self):
         return self.get_positions(wrap=True)
@@ -109,3 +144,92 @@ class FLARE_Atoms(Atoms):
     def from_dict(dct):
         atoms = Atoms.fromdict(dct)
         return FLARE_Atoms.from_ase_atoms(atoms)
+
+
+class StructureSource(object):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_next_structure(self) -> FLARE_Atoms:
+        raise NotImplementedError
+
+    def write_file(self):
+        raise NotImplementedError
+
+
+class ForceSource(object):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_next_force(self, *args, **kwargs) -> "np.ndarray":
+        raise NotImplementedError
+
+    def pre_force(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class Trajectory(StructureSource, ForceSource):
+    def __init__(
+        self, frames: List[FLARE_Atoms] = None, iterate_strategy: Union[int, str] = 1
+    ):
+        if frames is None:
+            frames = []
+        self.frames = frames
+        self.cur_idx = 0
+        self.iterate_strategy = iterate_strategy
+        self.seen_before = []
+
+        if self.iterate_strategy == "shuffle":
+            self.frames = np.random.shuffle(frames)
+        if isinstance(iterate_strategy, int):
+            self.frames = frames[::iterate_strategy]
+
+    def get_next_structure(self) -> Union[FLARE_Atoms, None]:
+
+        if self.cur_idx == len(self):
+            self.cur_idx = 0
+            return None
+
+        cur_frame = self.frames[self.cur_idx]
+        self.cur_idx += 1
+        return cur_frame
+
+    @property
+    def cur_frame(self):
+        return self.frames[self.cur_idx]
+
+    @property
+    def cur_forces(self):
+        return self.frames[self.cur_idx].forces
+
+    def get_next_force(self, index: int = -1) -> "np.ndarray":
+        """
+        Return the forces associated with a current structure,
+        and if an index is passed, that atom.
+        :param index:
+        :return:
+        """
+        if index != 1:
+            return self.cur_frame.forces[index]
+        return self.cur_frame.forces
+
+    def __getitem__(self, item):
+        return self.frames[item]
+
+    def __len__(self):
+        return len(self.frames)
+
+    def __next__(self):
+        struc = self.get_next_structure()
+        if struc is None:
+            raise StopIteration()
+        return struc
+
+    def __iter__(self):
+        self.cur_idx = 0
+        return self
+
+    def append(self, frame: FLARE_Atoms):
+        self.frames.append(frame)
