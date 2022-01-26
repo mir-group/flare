@@ -31,7 +31,7 @@ class FLARE_Atoms(Atoms):
         self.pbc = True # by default set periodic boundary
 
     @staticmethod
-    def from_ase_atoms(atoms):
+    def from_ase_atoms(atoms, copy_calc_results=False):
         """
         Args:
             atoms (ASE Atoms): the ase atoms to build from
@@ -39,6 +39,8 @@ class FLARE_Atoms(Atoms):
         new_atoms = deepcopy(atoms)
         new_atoms.__class__ = FLARE_Atoms
         new_atoms.prev_positions = np.zeros_like(new_atoms.positions)
+        if copy_calc_results:
+            new_atoms.calc.results = deepcopy(atoms.calc.results)
         return new_atoms
 
     @property
@@ -58,19 +60,28 @@ class FLARE_Atoms(Atoms):
         if self.calc is not None:
             return self.get_forces()
         else:
-            return None
+            return np.zeros_like(self.positions)
 
     @forces.setter
     def forces(self, forces_array):
-        assert forces_array.shape[0] == len(self)
+        assert forces_array.shape[0] == len(self), (forces_array.shape[0], len(self))
         assert forces_array.shape[1] == 3
         self.label_setter("forces", forces_array)
 
     def label_setter(self, key, value):
         if self.calc is None: # attach calculator if there is none
+            results = {
+                "forces": np.zeros((len(self), 3)),
+                "energy": 0,
+                "stress": np.zeros(6),
+                "stds": np.zeros((len(self), 3)),
+                "local_energy_stds": np.zeros(len(self)),
+                "stress_stds": np.zeros(6),
+            }
+            results.update({key: value})
             calc = SinglePointCalculator(self)
-            calc.results = {key: value}
             self.calc = calc
+            self.calc.results = results
         else: # update the results in the calculator
             self.calc.results[key] = value
 
@@ -84,7 +95,10 @@ class FLARE_Atoms(Atoms):
 
     @property
     def energy(self):
-        return self.get_potential_energy()
+        try:
+            return self.get_potential_energy()
+        except:
+            return 0
 
     @energy.setter
     def energy(self, energy_label):
@@ -137,6 +151,16 @@ class FLARE_Atoms(Atoms):
     @property
     def max_cutoff(self):
         return get_max_cutoff(self.cell)
+
+    def indices_of_specie(self, specie: Union[int, str]) -> List[int]:
+        """
+        Return the indices of a given species within atoms of the structure.
+
+        :param specie: Element to target, can be string or integer
+        :return: The indices in the structure at which this element occurs
+        :rtype: List[str]
+        """
+        return [i for i, spec in enumerate(self.coded_species) if spec == specie]
 
     def as_dict(self):
         return self.todict()

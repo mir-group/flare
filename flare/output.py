@@ -16,6 +16,7 @@ from typing import Union, List
 
 import flare
 from ase.data import chemical_symbols
+from ase.io import write
 
 
 # Unit conversions.
@@ -392,26 +393,8 @@ class Output:
 
         :return:
         """
-
-        xyz_str = structure.to_xyz(
-            extended_xyz=True,
-            print_stds=True,
-            print_forces=True,
-            print_max_stds=False,
-            print_energies=True,
-            predict_energy=predict_energy,
-            dft_forces=dft_forces,
-            dft_energy=dft_energy,
-            timestep=curr_step,
-            write_file="",
-            append=False,
-            target_atoms=target_atoms,
-        )
-
-        logger = logging.getLogger(self.basename + "xyz")
-        logger.info(xyz_str)
-        if self.always_flush:
-            logger.handlers[0].flush()
+        structure.info["target_atoms"] = np.array(target_atoms)
+        write(self.basename + ".xyz", structure, append=True)
 
     def write_hyps(
         self, hyp_labels, hyps, start_time, like, like_grad, name="log", hyps_mask=None
