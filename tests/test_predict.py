@@ -5,7 +5,7 @@ cast atoms into their respective atomic environments.
 """
 import numpy as np
 from flare.gp import GaussianProcess
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from copy import deepcopy
 from flare.predict import (
     predict_on_structure_par,
@@ -60,8 +60,8 @@ def two_plus_three_gp() -> GaussianProcess:
 _fake_gp = GaussianProcess(
     kernel_name="2+3", cutoffs=[5.0, 5.0], hyps=[1.0, 1.0, 1.0, 1.0, 1.0]
 )
-_fake_structure = Structure(
-    cell=np.eye(3), species=[1, 1, 1], positions=np.random.uniform(0, 1, size=(3, 3))
+_fake_structure = FLARE_Atoms(
+    cell=np.eye(3), symbols=[1, 1, 1], positions=np.random.uniform(0, 1, size=(3, 3))
 )
 _fake_gp.predict = fake_predict
 _fake_gp.predict_local_energy = fake_predict_local_energy

@@ -9,6 +9,7 @@ from copy import deepcopy
 import numpy as np
 from ase import Atoms
 from ase.io import read, write
+from ase.calculators.calculator import Calculator, all_properties
 from ase.calculators.singlepoint import SinglePointCalculator
 from flare.utils.learner import get_max_cutoff
 
@@ -67,8 +68,8 @@ class FLARE_Atoms(Atoms):
 
     def label_setter(self, key, value):
         if self.calc is None: # attach calculator if there is none
-            results = {key: value}
-            calc = SinglePointCalculator(self, **results)
+            calc = SinglePointCalculator(self)
+            calc.results = {key: value}
             self.calc = calc
         else: # update the results in the calculator
             self.calc.results[key] = value

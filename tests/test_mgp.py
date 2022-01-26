@@ -9,7 +9,7 @@ import shutil
 from copy import deepcopy
 from numpy import allclose, isclose
 
-from flare import struc, env, gp
+from flare import env, gp
 from flare.parameters import Parameters
 from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
@@ -330,7 +330,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
             print("mgp_var, gp_var", mgp_var, gp_var)
             assert np.allclose(mgp_var, gp_var, rtol=1e-2)
 
-    print("struc_test positions", struc_test.positions, struc_test.species_labels)
+    print("struc_test positions", struc_test.positions, struc_test.symbols)
 
 
 @pytest.mark.skipif(

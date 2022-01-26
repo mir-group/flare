@@ -5,7 +5,7 @@ import numpy as np
 import flare.gp_algebra
 from flare.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from flare.kernels.mc_simple import (
     two_plus_three_body_mc,
     two_plus_three_body_mc_grad,
@@ -126,7 +126,7 @@ def get_random_training_set(nenv, nstruc):
     for _ in range(nenv):
         positions = np.random.uniform(-1, 1, [noa, 3])
         species = np.random.randint(0, len(unique_species), noa) + 1
-        struc = Structure(cell, species, positions)
+        struc = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
         training_data += [AtomicEnvironment(struc, 1, cutoffs)]
         training_labels += [np.random.uniform(-1, 1, 3)]
     training_labels = np.hstack(training_labels)
@@ -137,7 +137,7 @@ def get_random_training_set(nenv, nstruc):
     for _ in range(nstruc):
         positions = np.random.uniform(-1, 1, [noa, 3])
         species = np.random.randint(0, len(unique_species), noa) + 1
-        struc = Structure(cell, species, positions)
+        struc = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
         struc_envs = []
         for n in range(noa):
             struc_envs.append(AtomicEnvironment(struc, n, cutoffs))

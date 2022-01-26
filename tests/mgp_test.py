@@ -1,6 +1,7 @@
 import os, shutil, re
 import numpy as np
-from flare import env, struc
+from flare import env
+from flare.ase.atoms import FLARE_Atoms
 
 
 def clean(prefix="tmp"):
@@ -64,7 +65,7 @@ def get_grid_env(GP, species, bodies):
         max_cut = np.max(GP.cutoffs)
     big_cell = np.eye(3) * 100
     positions = [[(i + 1) / (bodies + 1) * 0.1, 0, 0] for i in range(bodies)]
-    grid_struc = struc.Structure(big_cell, species, positions)
+    grid_struc = FLARE_Atoms(symbols=species, positions=positions, cell=big_cell)
     grid_env = env.AtomicEnvironment(
         grid_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask
     )
@@ -95,8 +96,8 @@ def predict_atom_diag_var_2b(atom_env, gp_model, force_kernel):
         cell = np.eye(3) * 100
         positions = np.array([np.zeros(3), ri1 * ci1])
         species = np.array([ctype, etype1])
-        spc_struc = struc.Structure(cell, species, positions)
-        spc_struc.coded_species = np.array(species)
+        spc_struc = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
+        spc_struc.numbers = np.array(species)
         env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
         coord = np.copy(env12.bond_array_2[0, 1:])
@@ -141,8 +142,8 @@ def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
             cell = np.eye(3) * 100
             positions = np.array([np.zeros(3), ri1 * ci1, ri2 * ci2])
             species = np.array([ctype, etype1, etype2])
-            spc_struc = struc.Structure(cell, species, positions)
-            spc_struc.coded_species = np.array(species)
+            spc_struc = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
+            spc_struc.numbers = np.array(species)
             env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
             #            env12.bond_array_3[0, 1:] = np.array([1., 0., 0.])

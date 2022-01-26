@@ -33,7 +33,7 @@ def structure() -> FLARE_Atoms:
     positions = np.array(
         [[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1], [0.75, 0.75, 0.75]]
     )
-    struc_test = FLARE_Atoms(cell=cell, numbers=species, positions=positions)
+    struc_test = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
 
     yield struc_test
     del struc_test
@@ -207,7 +207,7 @@ def test_auto_sweep():
         ]
     )
     species = np.array([1, 2, 3, 4, 5])
-    arbitrary_structure = FLARE_Atoms(cell=cell, numbers=species, positions=positions)
+    arbitrary_structure = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
 
     # Construct an environment.
     cutoffs = np.array([4.0, 3.0])

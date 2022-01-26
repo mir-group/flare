@@ -3,7 +3,7 @@ import pytest
 
 from pytest import raises
 
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from flare.utils.learner import (
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,
@@ -15,7 +15,7 @@ from tests.test_gp import get_random_structure
 
 def test_std_in_bound_per_species():
     test_structure, _ = get_random_structure(np.eye(3), ["H", "O"], 3)
-    test_structure.species_labels = ["H", "H", "O"]
+    test_structure.symbols = ["H", "H", "O"]
     test_structure.stds = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
     # Test that 'test mode' works
     result, target_atoms = is_std_in_bound_per_species(
@@ -134,7 +134,7 @@ def test_std_in_bound_per_species():
 
 def test_force_in_bound_per_species():
     test_structure, _ = get_random_structure(np.eye(3), ["H", "O"], 3)
-    test_structure.species_labels = ["H", "H", "O"]
+    test_structure.symbols = ["H", "H", "O"]
     test_structure.forces = np.array([[0, 0, 0], [2, 0, 0], [3, 0, 0]])
     true_forces = np.array([[0.001, 0, 0], [1, 0, 0], [5, 0, 0]])
 
@@ -250,8 +250,8 @@ def test_force_in_bound_per_species():
 
 def test_subset_of_frame_by_element():
     spec_list = ["H", "H", "O", "O", "O", "C"]
-    test_struc_1 = Structure(
-        cell=np.eye(3), species=spec_list, positions=np.zeros(shape=(len(spec_list), 3))
+    test_struc_1 = FLARE_Atoms(
+        cell=np.eye(3), symbols=spec_list, positions=np.zeros(shape=(len(spec_list), 3))
     )
 
     assert np.array_equal(

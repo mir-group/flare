@@ -11,7 +11,7 @@ from flare.env import AtomicEnvironment
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound, quadratic_cutoff
 from flare.parameters import Parameters
-from flare.struc import Structure
+from flare.ase.atoms import FLARE_Atoms
 from flare.utils.parameter_helper import ParameterHelper
 
 from tests.fake_gp import generate_mb_envs, generate_mb_twin_envs
@@ -147,12 +147,12 @@ def get_grid_env(species, parameter, kernel_name, same_hyps):
 
     if kernel_name == "twobody":
         positions = [[0, 0, 0], [r1, 0, 0]]
-        grid_struc = Structure(big_cell, species, positions)
+        grid_struc = FLARE_Atoms(symbols=species[:2], cell=big_cell, positions=positions)
         env = AtomicEnvironment(grid_struc, 0, hm["cutoffs"], hm)
         grid = np.array([[r1]])
     elif kernel_name == "threebody":
         positions = [[0, 0, 0], [r1, 0, 0], [0, r2, 0]]
-        grid_struc = Structure(big_cell, species, positions)
+        grid_struc = FLARE_Atoms(symbols=species, cell=big_cell, positions=positions)
         env = AtomicEnvironment(grid_struc, 0, hm["cutoffs"], hm)
         env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
         grid = np.array([[r1, r2, np.sqrt(r1 ** 2 + r2 ** 2)]])
