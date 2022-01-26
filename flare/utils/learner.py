@@ -12,7 +12,7 @@ import numpy as np
 def is_std_in_bound(
     std_tolerance: float,
     noise: float,
-    structure: "flare.struc.Structure",
+    structure: "FLARE_Atoms",
     max_atoms_added: int = inf,
     update_style: str = "add_n",
     update_threshold: float = None,
@@ -81,7 +81,7 @@ def is_std_in_bound_per_species(
     rel_std_tolerance: float,
     abs_std_tolerance: float,
     noise: float,
-    structure: "flare.struc.Structure",
+    structure: "FLARE_Atoms",
     max_atoms_added: int = inf,
     max_by_species: dict = {},
 ) -> (bool, List[int]):
@@ -255,7 +255,7 @@ def is_force_in_bound_per_species(
 
 
 def subset_of_frame_by_element(
-    frame: "flare.Structure", predict_atoms_per_element: dict
+    frame: "FLARE_Atoms", predict_atoms_per_element: dict
 ) -> List[int]:
     """
     Given a structure and a dictionary formatted as {"Symbol":int,
@@ -350,7 +350,7 @@ def evaluate_training_atoms(
     noise: float = 0,
     abs_force_tolerance: float = 0.15,
     max_force_error: float = inf,
-    structure: "flare.struc.Structure" = None,
+    structure: "FLARE_Atoms" = None,
     max_atoms_from_frame: int = None,
     max_elts_per_frame: dict = None,
     max_model_elts: dict = None,
