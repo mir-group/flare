@@ -49,7 +49,7 @@ def test_2bspecies_count(structure, mask, cutoff, result):
     env_test = AtomicEnvironment(
         structure=structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask
     )
-    assert len(structure.positions) == len(structure.coded_species)
+    assert len(structure.positions) == len(structure.numbers)
     print(env_test.__dict__)
 
     assert len(env_test.bond_array_2) == len(env_test.etypes)

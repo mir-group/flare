@@ -311,7 +311,7 @@ class TrajectoryTrainer:
             available_to_add = max_model_size - current_stats["N"]
 
             train_atoms = []
-            for species_i in set(frame.coded_species):
+            for species_i in set(frame.numbers):
                 # Get a randomized set of atoms of species i from the frame
                 # So that it is not always the lowest-indexed atoms chosen
                 elt = chemical_symbols[species_i]
@@ -397,7 +397,7 @@ class TrajectoryTrainer:
                 "interest."
             )
             self.run_passive_learning(
-                frames[0:1], max_model_elts={elt: 1 for elt in frames[0].species_labels}
+                frames[0:1], max_model_elts={elt: 1 for elt in frames[0].symbols}
             )
 
         if isinstance(frames, list):
@@ -655,7 +655,7 @@ class TrajectoryTrainer:
         atom_count = 0
         for frame in self.seed_frames:
             train_atoms = []
-            for species_i in set(frame.coded_species):
+            for species_i in set(frame.numbers):
                 # Get a randomized set of atoms of species i from the frame
                 # So that it is not always the lowest-indexed atoms chosen
                 atoms_of_specie = frame.indices_of_specie(species_i)
@@ -941,7 +941,7 @@ class TrajectoryTrainer:
             return
 
         # Group added atoms by species for easier output
-        added_species = [chemical_symbols[frame.coded_species[at]] for at in train_atoms]
+        added_species = [chemical_symbols[frame.numbers[at]] for at in train_atoms]
         added_atoms = {spec: [] for spec in set(added_species)}
 
         for atom, spec in zip(train_atoms, added_species):

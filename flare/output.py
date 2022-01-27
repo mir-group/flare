@@ -210,7 +210,7 @@ class Output:
         headerstring += f"Number of frames: {Nsteps}\n"
         if structure is not None:
             headerstring += f"Number of atoms: {structure.nat}\n"
-            headerstring += f"System species: {set(structure.species_labels)}\n"
+            headerstring += f"System species: {set(structure.symbols)}\n"
             headerstring += "Periodic cell (A): \n"
             headerstring += str(np.array(structure.cell)) + "\n"
 
@@ -222,7 +222,7 @@ class Output:
         if structure is not None:
             headerstring += "\nPrevious positions (A):\n"
             for i in range(len(structure.positions)):
-                headerstring += f"{structure.species_labels[i]:5}"
+                headerstring += f"{structure.symbols[i]:5}"
                 for j in range(3):
                     headerstring += f"{structure.prev_positions[i][j]:10.4f}"
                 headerstring += "\n"
@@ -289,7 +289,7 @@ class Output:
 
         # Construct atom-by-atom description
         for i in range(len(structure.positions)):
-            string += f"{structure.species_labels[i]:5}"
+            string += f"{structure.symbols[i]:5}"
             # string += '\t'
             for j in range(3):
                 string += f"{structure.positions[i][j]:10.4f}"
@@ -494,7 +494,7 @@ class Output:
 
         # Construct atom-by-atom description
         for i in range(len(frame.positions)):
-            string += f"{frame.species_labels[i]} "
+            string += f"{frame.symbols[i]} "
             for j in range(3):
                 string += f"{frame.positions[i][j]:10.5} "
             string += "\t"
@@ -526,13 +526,13 @@ class Output:
 
         mae_per_species = {}
         count_per_species = {}
-        species = [chemical_symbols[Z] for Z in set(frame.coded_species)]
+        species = [chemical_symbols[Z] for Z in set(frame.numbers)]
         for ele in species:
             mae_per_species[ele] = 0
             count_per_species[ele] = 0
 
         for atom in range(frame.nat):
-            Z = frame.coded_species[atom]
+            Z = frame.numbers[atom]
             ele = chemical_symbols[Z]
             if np.isnan(np.sum(error[atom, :])):
                 continue

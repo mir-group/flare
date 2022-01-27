@@ -139,7 +139,7 @@ def is_std_in_bound_per_species(
     # Sort from greatest to smallest max. std component
     std_arg_sorted = np.flip(np.argsort(max_std_components))
 
-    present_species = {spec: 0 for spec in set(structure.species_labels)}
+    present_species = {spec: 0 for spec in set(structure.symbols)}
 
     # Loop through atoms and add until cutoffs are met.
     for i in std_arg_sorted:
@@ -155,7 +155,7 @@ def is_std_in_bound_per_species(
             continue
 
         # Only add up to species allowance, if it exists
-        cur_spec = structure.species_labels[i]
+        cur_spec = structure.symbols[i]
         if present_species[cur_spec] < max_by_species.get(cur_spec, inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
@@ -223,7 +223,7 @@ def is_force_in_bound_per_species(
     # Sort from greatest to smallest error
     force_arg_sorted = np.flip(np.argsort(max_error_components))
 
-    present_species = {spec: 0 for spec in set(structure.species_labels)}
+    present_species = {spec: 0 for spec in set(structure.symbols)}
 
     # Only add atoms up to the bound
     for i in force_arg_sorted:
@@ -236,7 +236,7 @@ def is_force_in_bound_per_species(
         ):
             break
 
-        cur_spec = structure.species_labels[i]
+        cur_spec = structure.symbols[i]
 
         # Only add up to species allowance, if it exists
         if (
@@ -276,7 +276,7 @@ def subset_of_frame_by_element(
     return_atoms = []
     considered_atoms = set([])
 
-    species = frame.species_labels
+    species = frame.symbols
 
     # Main loop: Obtain the number of relevant atoms for each element
     for elt, n in predict_atoms_per_element.items():
@@ -372,7 +372,7 @@ def evaluate_training_atoms(
         for key, val in max_elts_per_frame.items():
             max_atoms_by_elt[key] = min(max_atoms_by_elt.get(key, inf), val)
     if not max_atoms_by_elt:
-        for spec in structure.species_labels:
+        for spec in structure.symbols:
             max_atoms_by_elt[spec] = inf
 
     std_in_bound, std_train_atoms = is_std_in_bound_per_species(

@@ -1300,7 +1300,7 @@ class GaussianProcess:
         # Count all of the present species in the atomic env. data
         present_species = []
         for env, _ in zip(self.training_data, self.training_labels):
-            present_species.append(chemical_symbols[env.structure.coded_species[env.atom]])
+            present_species.append(chemical_symbols[env.structure.numbers[env.atom]])
 
         # Summarize the relevant information
         data["species"] = list(set(present_species))

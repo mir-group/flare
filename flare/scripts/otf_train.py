@@ -30,7 +30,7 @@ with open(sys.argv[1], "r") as f:
 
 # -------------- Set up Supercell from ASE Atoms --------------
 # parse parameters
-atoms_config = config["ase_atoms"]
+atoms_config = config["supercell"]
 atoms_file = atoms_config.get("file")
 atoms_format = atoms_config.get("format")
 replicate = ase_config.get("replicate", [1, 1, 1])
@@ -46,9 +46,9 @@ for atom_pos in super_cell.positions:
 
 # ----------------- Set up ASE DFT calculator -----------------
 # find the module including the ASE DFT calculator class by name
-ase_dft_calc_name = config["ase_dft_calc"]["name"]
-ase_dft_calc_kwargs = config["ase_dft_calc"]["kwargs"]
-ase_dft_calc_params = config["ase_dft_calc"]["params"]
+ase_dft_calc_name = config["dft_calc"]["name"]
+ase_dft_calc_kwargs = config["dft_calc"]["kwargs"]
+ase_dft_calc_params = config["dft_calc"]["params"]
 
 dft_module_name = ""
 for importer, modname, ispkg in pkgutil.iter_modules(ase_calculators.__path__):
@@ -66,7 +66,7 @@ for name, obj in inspect.getmembers(dft_module, inspect.isclass):
 dft_calc.set(**ase_dft_calc_params)
 
 # ---------- create gaussian process model -------------------
-flare_config = config["ase_flare_calc"]
+flare_config = config["flare_calc"]
 kernels = flare_config.get("kernels")
 random_init_hyps = flare_config.get("random_init_hyps", True)
 gp_parameters = flare_config.get("gp_parameters")

@@ -48,14 +48,6 @@ class FLARE_Atoms(Atoms):
         return len(self)
 
     @property
-    def species_labels(self):
-        return self.symbols
-
-    @property
-    def coded_species(self):
-        return self.numbers
-
-    @property
     def forces(self):
         if self.calc is not None:
             return self.get_forces()
@@ -160,7 +152,7 @@ class FLARE_Atoms(Atoms):
         :return: The indices in the structure at which this element occurs
         :rtype: List[str]
         """
-        return [i for i, spec in enumerate(self.coded_species) if spec == specie]
+        return [i for i, spec in enumerate(self.numbers) if spec == specie]
 
     def as_dict(self):
         return self.todict()

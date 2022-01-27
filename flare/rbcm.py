@@ -958,7 +958,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             data[f"N_{i}"] = self.n_envs_prev[i]
             for env, _ in zip(self.training_data[i], self.training_labels[i]):
                 present_species.append(
-                    chemical_symbols[env.structure.coded_species[env.atom]]
+                    chemical_symbols[env.structure.numbers[env.atom]]
                 )
 
         # Summarize the relevant information

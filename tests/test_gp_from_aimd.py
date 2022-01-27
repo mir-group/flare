@@ -359,7 +359,7 @@ def test_parse_gpfa_output():
     # Ensure that structures can correctly be read from the GPFA output
     structures = structures_from_gpfa_output(frames)
     for struc, frame in zip(structures, frames):
-        assert np.array_equal(struc.species_labels, frame["species"])
+        assert np.array_equal(struc.symbols, frame["species"])
         assert np.array_equal(struc.positions, frame["positions"])
         assert np.array_equal(struc.forces, frame["dft_forces"])
 

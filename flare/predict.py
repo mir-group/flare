@@ -609,7 +609,7 @@ def predict_on_structure_mgp(
             continue
 
         forces[n, :], stds[n, :], local_energy[n] = predict_on_atom_mgp(
-            n, structure, mgp, write_to_structure
+            n, structure, mgp
         )
 
     if write_to_structure:

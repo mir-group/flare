@@ -487,8 +487,8 @@ def test_training_statistics():
     data = gp.training_statistics
 
     assert data["N"] == 10
-    assert len(data["species"]) == len(set(test_structure.coded_species))
-    assert len(data["envs_by_species"]) == len(set(test_structure.coded_species))
+    assert len(data["species"]) == len(set(test_structure.numbers))
+    assert len(data["envs_by_species"]) == len(set(test_structure.numbers))
 
 
 def test_remove_force_data():

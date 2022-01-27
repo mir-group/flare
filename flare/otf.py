@@ -628,12 +628,12 @@ class OTF:
         f.info(f"forces mav: {f_mav:.4f} eV/A")
 
         # compute the per-species MAE
-        unique_species = list(set(self.atoms.coded_species))
+        unique_species = list(set(self.atoms.numbers))
         per_species_mae = np.zeros(len(unique_species))
         per_species_mav = np.zeros(len(unique_species))
         per_species_num = np.zeros(len(unique_species))
         for a in range(self.atoms.nat):
-            species_ind = unique_species.index(self.atoms.coded_species[a])
+            species_ind = unique_species.index(self.atoms.numbers[a])
             per_species_mae[species_ind] += np.mean(
                 np.abs(dft_forces[a] - gp_forces[a])
             )

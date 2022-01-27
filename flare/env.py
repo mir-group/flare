@@ -87,7 +87,7 @@ class AtomicEnvironment:
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = np.array(structure.cell)
-        self.species = structure.coded_species
+        self.species = structure.numbers
 
         # backward compatability
         if not isinstance(cutoffs, dict):
@@ -109,7 +109,7 @@ class AtomicEnvironment:
         self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
 
         self.atom = atom
-        self.ctype = structure.coded_species[atom]
+        self.ctype = structure.numbers[atom]
 
         self.twobody_cutoff = 0
         self.threebody_cutoff = 0
