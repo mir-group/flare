@@ -24,14 +24,14 @@ from ase import io
 
 md_list = [
     "VelocityVerlet",
-    "NVTBerendsen",
-    "NPTBerendsen",
+#    "NVTBerendsen",
+#    "NPTBerendsen",
     "NPT",
-    "Langevin",
-    "NoseHoover",
+#    "Langevin",
+#    "NoseHoover",
 ]
 number_of_steps = 5
-write_model_list = [1, 2, 3, 4]
+write_model_list = [1, 4] #[1, 2, 3, 4]
 
 np.random.seed(12345)
 
@@ -257,4 +257,7 @@ def test_otf_parser(md_engine, write_model):
         assert np.allclose(otf_traj.position_list[-1], otf_traj_old.position_list[-1])
 
     for f in glob.glob(output_name + "*"):
-        os.remove(f)
+        if "ckpt" in f and "json" not in f:
+            shutil.rmtree(f)
+        else:
+            os.remove(f)
