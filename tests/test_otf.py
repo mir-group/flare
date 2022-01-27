@@ -31,6 +31,7 @@ md_list = [
     "NoseHoover",
 ]
 number_of_steps = 5
+write_model_list = [1, 2, 3, 4]
 
 np.random.seed(12345)
 
@@ -81,10 +82,13 @@ def super_cell():
     )
 
     # jitter positions to give nonzero force on first frame
-    for atom_pos in atoms.positions:
-        for coord in range(3):
-            atom_pos[coord] += (2 * np.random.random() - 1) * 0.5
-
+    perturb = np.array([
+         [ 0.3112, -0.2531,  0.2194],
+         [-0.2929, -0.0678, -0.1316],
+         [ 0.2068,  0.0473, -0.4642],
+         [ 0.1764,  0.3988, -0.3893],
+    ])
+    atoms.positions += perturb
     atoms.set_constraint(FixAtoms(indices=[0]))
 
     yield atoms
@@ -104,7 +108,8 @@ def flare_calc():
         pm = ParameterHelper(kernels=kernels, random=True, parameters=parameters)
 
         hm = pm.as_dict()
-        hyps = hm["hyps"]
+        #hyps = hm["hyps"]
+        hyps = [0.64034029, 0.16867265, 0.0539972,  0.4098916,  0.05      ]
         cut = hm["cutoffs"]
         print("hyps", hyps)
 
@@ -152,7 +157,7 @@ def qe_calc():
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-@pytest.mark.parametrize("write_model", [1, 2, 3])
+@pytest.mark.parametrize("write_model", write_model_list)
 def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_model):
     flare_calculator = flare_calc[md_engine]
     output_name = f"{md_engine}_{write_model}"
@@ -166,15 +171,17 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
         "freeze_hyps": 10,
         "write_model": write_model,
     }
-    #                  'use_mapping': flare_calculator.use_mapping}
 
     md_kwargs = md_params[md_engine]
 
     # intialize velocity
     temperature = md_params["temperature"]
-    MaxwellBoltzmannDistribution(super_cell, temperature * units.kB)
-    Stationary(super_cell)  # zero linear momentum
-    ZeroRotation(super_cell)  # zero angular momentum
+    super_cell.set_velocities(np.array([
+        [  0.0000,    0.0000,    0.0000],
+        [-27.9996,    8.6139,   17.7284],
+        [ 19.1748,   -2.2556,   27.9928],
+        [ 20.5866,    1.0869,  -12.2575],
+    ])/ 100)
 
     super_cell.calc = flare_calculator
     test_otf = OTF(
@@ -217,7 +224,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc, write_mod
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-@pytest.mark.parametrize("write_model", [1, 2, 3])
+@pytest.mark.parametrize("write_model", write_model_list)
 def test_load_checkpoint(md_engine, write_model):
     output_name = f"{md_engine}_{write_model}"
     new_otf = OTF.from_checkpoint(output_name + "_checkpt.json")
@@ -227,7 +234,7 @@ def test_load_checkpoint(md_engine, write_model):
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-@pytest.mark.parametrize("write_model", [1, 2, 3])
+@pytest.mark.parametrize("write_model", write_model_list)
 def test_otf_parser(md_engine, write_model):
     output_name = f"{md_engine}_{write_model}"
     otf_traj = OtfAnalysis(output_name + ".out")
@@ -243,5 +250,11 @@ def test_otf_parser(md_engine, write_model):
     comp2 = otf_traj.force_list[-1][1, 0]
     assert comp1 != comp2
 
-#    for f in glob.glob(output_name + "*"):
-#        os.remove(f)
+    # Test the new merged OTF matches the output of previous ASE_OTF
+    if md_engine in ["VelocityVerlet", "NPT"] and write_model == 1:
+        otf_traj_old = OtfAnalysis(f"test_files/{output_name}.out")
+        assert np.allclose(otf_traj.force_list[-1], otf_traj_old.force_list[-1])
+        assert np.allclose(otf_traj.position_list[-1], otf_traj_old.position_list[-1])
+
+    for f in glob.glob(output_name + "*"):
+        os.remove(f)
