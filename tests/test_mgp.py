@@ -367,11 +367,10 @@ def test_lmp_predict(all_lmp, all_gp, all_mgp, bodies, multihyps):
     struc_test, f = get_random_structure(cell, unique_species, nenv)
 
     # build ase atom from struc
-    ase_atoms_flare = struc_test.to_ase_atoms()
-    ase_atoms_flare = FLARE_Atoms.from_ase_atoms(ase_atoms_flare)
+    ase_atoms_flare = deepcopy(struc_test)
     ase_atoms_flare.calc = ase_calculator
 
-    ase_atoms_lmp = deepcopy(struc_test).to_ase_atoms()
+    ase_atoms_lmp = deepcopy(struc_test)
     ase_atoms_lmp.calc = lmp_calculator
 
     try:
