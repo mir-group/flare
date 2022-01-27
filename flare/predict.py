@@ -142,9 +142,9 @@ def predict_on_structure(
         forces[n] = force
         stds[n] = std
 
-        if write_to_structure:
-            structure.forces[n] = force
-            structure.stds[n] = std
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds
 
@@ -221,9 +221,10 @@ def predict_on_structure_par(
         r = results[i].get()
         forces[i] = r[0]
         stds[i] = r[1]
-        if write_to_structure:
-            structure.forces[i] = r[0]
-            structure.stds[i] = r[1]
+
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds
 
@@ -474,11 +475,11 @@ def predict_on_structure_en(
             forces[n] = force
             stds[n] = std
 
-            if write_to_structure and structure.forces is not None:
-                structure.forces[n] = force
-                structure.stds[n] = std
-
         local_energies[n] = gp.predict_local_energy(chemenv)
+
+    if write_to_structure and structure.forces is not None:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds, local_energies
 
@@ -556,14 +557,14 @@ def predict_on_structure_par_en(
         stds[i][:] = r[1]
         local_energies[i] = r[2]
 
-        if write_to_structure:
-            structure.forces[i] = forces[i]
-            structure.stds[i] = stds[i]
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds, local_energies
 
 
-def predict_on_atom_mgp(atom: int, structure, mgp, write_to_structure=False):
+def predict_on_atom_mgp(atom: int, structure, mgp):
     chemenv = AtomicEnvironment(
         structure, atom, mgp.cutoffs, cutoffs_mask=mgp.hyps_mask
     )
@@ -571,13 +572,6 @@ def predict_on_atom_mgp(atom: int, structure, mgp, write_to_structure=False):
     force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
     stds = np.sqrt(np.absolute(var))
-
-    if write_to_structure:
-        structure.forces[atom][:] = force
-        structure.stds[atom][:] = stds
-        if structure.local_energy is None:
-            structure.local_energy = np.zeros(structure.nat)
-        structure.local_energy[atom] = local_energy
 
     return comps, stds, local_energy
 
@@ -617,6 +611,10 @@ def predict_on_structure_mgp(
         forces[n, :], stds[n, :], local_energy[n] = predict_on_atom_mgp(
             n, structure, mgp, write_to_structure
         )
+
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     if energy:
         return forces, stds, local_energy

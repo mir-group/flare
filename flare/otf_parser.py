@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 from typing import List, Tuple
 from flare.gp import GaussianProcess
+from flare.ase.atoms import FLARE_Atoms
 
 
 class OtfAnalysis:
@@ -248,8 +249,8 @@ class OtfAnalysis:
                 symbols=species,
                 positions=self.position_list[i],
             )
-            cur_struc.forces = self.force_list[i],
-            cur_struc.stds = self.uncertainty_list[i],
+            cur_struc.forces = np.array(self.force_list[i])
+            cur_struc.stds = np.array(self.uncertainty_list[i])
             cur_struc.energy = energy
             # cur_struc.stress = self.stress_list[i]
             structures.append(cur_struc)
@@ -267,11 +268,8 @@ class OtfAnalysis:
         from ase.io import write
 
         struc_trj = self.output_md_structures()
-        trj = []
-        for s in struc_trj:
-            trj.append(s.to_ase_atoms())
-        write(xyz_file, trj, format="extxyz")
-        return trj
+        write(xyz_file, struc_trj, format="extxyz")
+        return struc_trj
 
 
 def split_blocks(filename):

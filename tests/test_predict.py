@@ -153,8 +153,6 @@ def test_predict_on_structure_par(n_cpu):
     # Get new examples to also test the results not being written
     selective_atoms = [0, 1]
 
-    selective_atoms = [0, 1]
-
     forces, stds = predict_on_structure_par(
         _fake_structure,
         _fake_gp,
@@ -170,11 +168,8 @@ def test_predict_on_structure_par(n_cpu):
     for x in stds.flatten():
         assert isinstance(x, float)
 
-    assert np.array_equal(_fake_structure.forces[:2][:], forces[:2][:])
-    assert not np.array_equal(_fake_structure.forces[2][:], forces[2][:])
-
-    assert np.array_equal(_fake_structure.stds[:2][:], stds[:2][:])
-    assert not np.array_equal(_fake_structure.stds[2][:], stds[2][:])
+    assert np.array_equal(_fake_structure.forces, forces)
+    assert np.array_equal(_fake_structure.stds, stds)
 
 
 def test_predict_efs(two_plus_three_gp):
@@ -254,8 +249,8 @@ def test_predict_on_structure_en(n_cpus, write_to_structure, selective_atoms):
     if write_to_structure:
 
         if selective_atoms == [1]:
-            assert np.array_equal(old_structure.forces[0], used_structure.forces[0])
-            assert np.array_equal(old_structure.forces[2], used_structure.forces[2])
+            assert np.array_equal(np.zeros(3), used_structure.forces[0])
+            assert np.array_equal(np.zeros(3), used_structure.forces[2])
 
             assert np.array_equal(used_structure.forces[1], forces[1])
 
