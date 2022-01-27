@@ -46,6 +46,8 @@ from flare.gp_algebra import (
 from tests.fake_gp import get_tstp
 
 
+n_cpus = 2
+
 @pytest.fixture(scope="module")
 def params():
 
@@ -182,7 +184,7 @@ def ky_mat_ref(params):
         kernel[3],
         energy_noise,
         cutoffs,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=5,
     )
     print("compute ky_mat parallel", time.time() - time0)
@@ -224,10 +226,10 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
         energy_noise,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=20,
     )
-    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=2", time.time() - time0)
+    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus={n_cpus}", time.time() - time0)
     assert np.isclose(
         ky_mat, ky_mat_ref, rtol=1e-3
     ).all(), f"multi hyps  parallel implementation is wrong with case {ihyps}"
@@ -285,7 +287,7 @@ def test_ky_mat_update(params, ihyps):
         energy_noise,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=20,
     )
     assert np.isclose(ky_mat, ky_mat0, rtol=1e-10).all(), "update function is wrong"
@@ -320,7 +322,7 @@ def test_kernel_vector(params, ihyps):
         hyps,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=100,
     )
 
@@ -353,7 +355,7 @@ def test_en_kern_vec(params, ihyps):
         hyps,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=100,
     )
 
@@ -389,7 +391,7 @@ def test_efs_kern_vec(params, ihyps):
         hyps,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=100,
     )
 
@@ -411,7 +413,7 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
     # serial version
     hypmat_ser, ky_mat_ser = func(hyps, name, kernel[1], cutoffs, hyps_mask)
     # parallel version
-    hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs, hyps_mask, n_cpus=2)
+    hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs, hyps_mask, n_cpus=n_cpus)
 
     ref = ky_mat_ref[: ky_mat_ser.shape[0], : ky_mat_ser.shape[1]]
 

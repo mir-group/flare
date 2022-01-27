@@ -20,7 +20,7 @@ from .fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy
 
 multihyps_list = [True, False]
-
+n_cpus = 2
 
 @pytest.fixture(scope="class")
 def all_gps() -> GaussianProcess:
@@ -152,7 +152,7 @@ class TestDataUpdating:
 
 
 class TestTraining:
-    @pytest.mark.parametrize("par, n_cpus", [(False, 1), (True, 2)])
+    @pytest.mark.parametrize("par, n_cpus", [(False, 1), (True, n_cpus)])
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_train(self, all_gps, params, par, n_cpus, multihyps):
 
@@ -239,7 +239,7 @@ class TestConstraint:
 class TestAlgebra:
     @pytest.mark.parametrize(
         "par, per_atom_par, n_cpus",
-        [(False, False, 1), (True, True, 2), (True, False, 2)],
+        [(False, False, 1), (True, True, n_cpus), (True, False, n_cpus)],
     )
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_predict(
@@ -255,7 +255,7 @@ class TestAlgebra:
 
     @pytest.mark.parametrize(
         "par, per_atom_par, n_cpus",
-        [(False, False, 1), (True, True, 2), (True, False, 2)],
+        [(False, False, 1), (True, True, n_cpus), (True, False, n_cpus)],
     )
     def test_predict_efs(
         self, two_plus_three_gp, validation_env, par, per_atom_par, n_cpus
@@ -284,7 +284,7 @@ class TestAlgebra:
         assert np.isclose(force_pred[0], force_pred_2)
         assert np.isclose(force_var[0], force_var_2)
 
-    @pytest.mark.parametrize("par, n_cpus", [(True, 2), (False, 1)])
+    @pytest.mark.parametrize("par, n_cpus", [(True, n_cpus), (False, 1)])
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_set_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
         test_gp = all_gps[multihyps]
@@ -292,7 +292,7 @@ class TestAlgebra:
         test_gp.n_cpus = n_cpus
         test_gp.set_L_alpha()
 
-    @pytest.mark.parametrize("par, n_cpus", [(True, 2), (False, 1)])
+    @pytest.mark.parametrize("par, n_cpus", [(True, n_cpus), (False, 1)])
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
         # set up gp model
