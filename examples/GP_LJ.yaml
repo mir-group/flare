@@ -1,9 +1,12 @@
+# Super cell is read from a file such as POSCAR, xyz, lammps-data
+# or any format that ASE supports
 supercell: # Super cell
     file: POSCAR
     format: vasp
     replicate: [1, 1, 1]
     jitter: 0.1
 
+# Set up FLARE calculator with (sparse) Gaussian process
 flare_calc: # FLARE calculator
     gp: GaussianProcess
     kernels:
@@ -26,6 +29,7 @@ flare_calc: # FLARE calculator
             grid_num: [16, 16, 16]
     var_map: pca
 
+# Set up DFT calculator, it can be any calculator supported by ASE
 dft_calc: # DFT calculaotr
     name: LennardJones
     kwargs: {}
@@ -33,6 +37,7 @@ dft_calc: # DFT calculaotr
         sigma: 3.0
         rc: 9.0
 
+# Set up On-the-fly training and MD
 otf: # On-the-fly training and MD
     md_engine: VelocityVerlet
     md_kwargs: {}

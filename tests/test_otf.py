@@ -24,11 +24,11 @@ from ase import io
 
 md_list = [
     "VelocityVerlet",
-#    "NVTBerendsen",
-#    "NPTBerendsen",
-#    "NPT",
-#    "Langevin",
-#    "NoseHoover",
+    "NVTBerendsen",
+    "NPTBerendsen",
+    "NPT",
+    "Langevin",
+    "NoseHoover",
 ]
 number_of_steps = 5
 

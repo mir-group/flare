@@ -1,0 +1,79 @@
+# Super cell is read from a file such as POSCAR, xyz, lammps-data
+# or any format that ASE supports
+supercell: 
+    file: POSCAR
+    format: vasp
+    replicate: [1, 1, 1]
+    jitter: 0.1
+
+# Set up FLARE calculator with (sparse) Gaussian process
+flare_calc:
+    gp: SGP_Wrapper
+    kernels:
+        - name: NormalizedDotProduct
+          sigma: 2.0
+          power: 1
+    descriptors:
+        - name: B2
+          nmax: 8
+          lmax: 3
+          cutoff_function: quadratic
+          radial_basis: chebyshev
+    energy_noise: 0.001
+    forces_noise: 0.05
+    stress_noise: 0.006
+    species:
+        - 6
+        - 8 
+    single_atom_energies:
+        - 0
+        - 0
+    cutoff: 5.0
+    variance_type: local
+
+# Set up DFT calculator, it can be any calculator supported by ASE
+# For VASP, please set the environment variable VASP_PP_PATH to be
+# the directory of pseudo-potentials, and VASP_COMMAND to be the
+# location of the VASP executable
+# point the user to the ASE documentation
+dft_calc:
+    name: VASP
+    kwargs: 
+        directory: dft
+        xc: PBE
+        kpts: [1, 1, 1]
+        # below are all the parameters in INCAR
+        prec: Accurate
+        kpar: 2
+        npar: 4
+        istart: 0
+        lreal: auto
+        encut: 450
+        ediff: 1e-5
+        nelm: 100
+        nelmin: 6
+        nelmdl: -9
+        algo: Very_Fast
+        ismear: 2
+        sigma: 0.2
+        ispin: 1
+    params: {}
+
+# Set up On-the-fly training and MD
+otf: 
+    md_engine: NPT
+    md_kwargs: 
+        temperature: 1000
+        externalstress: 0
+        ttime: 25
+        pfactor: 1.0
+    temperature: 1000
+    dt: 0.001 # timestep is 1 fs
+    number_of_steps: 5
+    output_name: myotf
+    init_atoms: [0, 1, 2, 3]
+    std_tolerance_factor: 1.0
+    max_atoms_added: -1
+    freeze_hyps: 10
+    write_model: 4
+    store_dft_output: [OUTCAR, vasprun.xml]

@@ -80,6 +80,8 @@ flare_config = config["flare_calc"]
 kernels = flare_config.get("kernels")
 random_init_hyps = flare_config.get("random_init_hyps", True)
 opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
+max_iterations = flare_config.get("max_iterations", 20)
+bounds = flare_config.get("bounds", None)
 
 if flare_config["gp"] == "GaussianProcess":
     from flare.gp import GaussianProcess
@@ -137,7 +139,57 @@ if flare_config["gp"] == "GaussianProcess":
     )
 
 elif flare_config["gp"] == "SGP_Wrapper":
-    pass
+    from flare_pp._C_flare import NormalizedDotProduct, B2, SquaredExponential
+    from flare_pp.sparse_gp import SGP_Wrapper
+    from flare_pp.sparse_gp_calculator import SGP_Calculator
+    
+    # Define kernels.
+    kernels = []
+    for k in flare_config["kernels"]:
+        if k["name"] == "NormalizedDotProduct":
+            kernels.append(NormalizedDotProduct(k["sigma"], k["power"]))
+        elif k["name"] == "SquaredExponential":
+            kernels.append(SquaredExponential(k["sigma"], k["ls"]))
+        else:
+            raise NotImplementedError(f"{k['name']} kernel is not implemented")
+    
+    # Define descriptor calculators.
+    descriptors = []
+    for d in flare_config["descriptors"]:
+        if d["name"] == "B2":
+            radial_hyps = [0.0, flare_config["cutoff"]]
+            cutoff_hyps = []
+            descriptor_settings = [len(flare_config["species"]), d["nmax"], d["lmax"]]
+            b2_calc = B2(
+                d["radial_basis"], 
+                d["cutoff_function"], 
+                radial_hyps, 
+                cutoff_hyps,
+                descriptor_settings
+            )
+            descriptors.append(b2_calc)
+   
+    # Define remaining parameters for the SGP wrapper.
+    species_map = {flare_config["species"][i]: i for i in range(len(flare_config["species"]))}
+    single_atom_energies = {i: flare_config["single_atom_energies"][i] for i in range(len(flare_config["single_atom_energies"]))}
+    assert len(species_map) == len(single_atom_energies)
+
+    sgp = SGP_Wrapper(
+        kernels, 
+        descriptors, 
+        flare_config["cutoff"], 
+        flare_config["energy_noise"], 
+        flare_config["forces_noise"], 
+        flare_config["stress_noise"], 
+        species_map,
+        single_atom_energies=single_atom_energies, 
+        variance_type=flare_config["variance_type"],
+        opt_method=opt_algorithm, 
+        bounds=bounds,
+        max_iterations=max_iterations,
+    )
+
+    flare_calc = SGP_Calculator(sgp)
 
 else:
     raise NotImplementedError(f"{flare_config['gp']} is not implemented")
