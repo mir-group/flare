@@ -22,11 +22,10 @@ def test_lmp_calc():
     NiH = Ni + H
 
     os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
-    os.system("wget https://openkim.org/files/MO_418978237058_005/NiAlH_jea.eam.alloy")
-    files = ["NiAlH_jea.eam.alloy"]
+    files = []
     param_dict = {
-        "pair_style": "eam/alloy",
-        "pair_coeff": ["* * NiAlH_jea.eam.alloy H Ni"],
+        "pair_style": "lj/cut 2.5",
+        "pair_coeff": ["* * 1 1"],
         "compute": ["1 all pair/local dist", "2 all reduce max c_1"],
         "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
         "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
@@ -54,5 +53,3 @@ def test_lmp_calc():
     assert np.allclose(ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy())
     assert np.allclose(ase_atoms.get_forces(), mod_atoms.get_forces())
     assert np.allclose(ase_atoms.get_stress(), mod_stress)
-
-    os.remove("NiAlH_jea.eam.alloy")
