@@ -102,8 +102,10 @@ class FLARE_Atoms(Atoms):
 
     @stress.setter
     def stress(self, stress_array):
-        assert len(stress_array) == 6
-        self.label_setter("stress", stress_array)
+        if (stress_array is None) or (len(stress_array) == 6):
+            self.label_setter("stress", stress_array)
+        else:
+            raise ValueError("stress_array should be None or array of length 6")
 
     @property
     def stress_stds(self):
@@ -155,11 +157,26 @@ class FLARE_Atoms(Atoms):
         return [i for i, spec in enumerate(self.numbers) if spec == specie]
 
     def as_dict(self):
-        return self.todict()
+        dct = self.todict()
+        if self.calc is not None:
+            dct["results"] = self.calc.results
+
+        return dct
 
     @staticmethod
     def from_dict(dct):
+        if "results" in dct:
+            results = dct.pop("results")
+            results["forces"] = np.array(results["forces"])
+            results["stress"] = np.array(results["stress"])
+        else:
+            results = None
+
         atoms = Atoms.fromdict(dct)
+        if results is not None:
+            atoms.calc = SinglePointCalculator(atoms)
+            atoms.calc.results = results
+
         return FLARE_Atoms.from_ase_atoms(atoms)
 
 
