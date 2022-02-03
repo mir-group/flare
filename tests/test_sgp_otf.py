@@ -23,15 +23,24 @@ from ase.md.velocitydistribution import (
 from ase.calculators import lammpsrun
 from ase import io
 
+if not os.environ.get("lmp", None):
+    pytest.skip(
+        "lmp not found in environment: Please install LAMMPS "
+        "and set the $lmp env. variable to point to the executatble.",
+        allow_module_level=True,
+    )
+
+
 np.random.seed(12345)
 
 os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
-md_list = ["PyLAMMPS"] #["VelocityVerlet", "PyLAMMPS"]
+md_list = ["VelocityVerlet", "PyLAMMPS"]
+#md_list = ["PyLAMMPS"]
 number_of_steps = 5
 
 @pytest.fixture(scope="module")
 def super_cell():
-    atoms = io.read("test_files/4H_SiC_jittered.xyz") * np.array([2, 2, 1])
+    atoms = io.read("test_files/4H_SiC_jittered.xyz")
 
     yield atoms
     del atoms
@@ -72,27 +81,28 @@ def flare_calc():
     settings = [len(atom_types), 8, 4]
     calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings)
  
-    gp = SGP_Wrapper(
-        [kernel],
-        [calc],
-        cutoff,
-        sigma_e=0.01,
-        sigma_f=0.05,
-        sigma_s=0.005,
-        species_map={14:0, 6:1},
-        variance_type="local",
-        single_atom_energies=None,
-        energy_training=True,
-        force_training=True,
-        stress_training=True,
-        max_iterations=1,
-    )
-
     for md_engine in md_list:
+        gp = SGP_Wrapper(
+            [kernel],
+            [calc],
+            cutoff,
+            sigma_e=0.01,
+            sigma_f=0.05,
+            sigma_s=0.005,
+            species_map={14:0, 6:1},
+            variance_type="local",
+            single_atom_energies=None,
+            energy_training=True,
+            force_training=True,
+            stress_training=True,
+            max_iterations=1,
+        )
+
         if md_engine == "PyLAMMPS":
             use_mapping = True
         else:
             use_mapping = False
+
         flare_calc_dict[md_engine] = SGP_Calculator(sgp_model=gp, use_mapping=use_mapping)
 
     yield flare_calc_dict
@@ -141,6 +151,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
             os.remove(f)
 
     flare_calculator = flare_calc[md_engine]
+    print(md_engine, "use mapping", flare_calculator.use_mapping)
     # set up OTF MD engine
     otf_params = {
         "init_atoms": np.arange(12).tolist(),
@@ -155,10 +166,6 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     }
 
     md_kwargs = md_params[md_engine]
-
-    MaxwellBoltzmannDistribution(super_cell, 300 * units.kB)
-    Stationary(super_cell)  # zero linear momentum
-    ZeroRotation(super_cell)  # zero angular momentum
 
     test_otf = OTF(
         super_cell,
@@ -208,6 +215,23 @@ def test_load_checkpoint(md_engine):
     new_otf.number_of_steps = new_otf.number_of_steps + 3
     new_otf.run()
 
+@pytest.mark.skipif(("PyLAMMPS" not in md_list) or ("VelocityVerlet" not in md_list), reason="md_list does not include both PyLAMMPS and VelocityVerlet")
+def test_lammps_match_ase_verlet():
+    lammps_traj = OtfAnalysis("PyLAMMPS.out")
+    verlet_traj = OtfAnalysis("VelocityVerlet.out")
+    pos1 = lammps_traj.position_list[0]
+    pos2 = verlet_traj.position_list[0]
+    cell1 = lammps_traj.cell_list[0]
+    cell2 = verlet_traj.cell_list[0]
+
+    # check the volumes are the same
+    assert np.linalg.det(cell1) == np.linalg.det(cell2)
+
+    # check the positions only differ by a multiple of cell
+    pos_diff = (pos1 - pos2) @ np.linalg.inv(cell1)
+    for i in np.reshape(pos_diff.round(4), -1):
+        assert i.is_integer()
+
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_parser(md_engine):
@@ -225,5 +249,8 @@ def test_otf_parser(md_engine):
     comp2 = otf_traj.force_list[-1][1, 0]
 #    assert (comp1 != comp2)
 
-#    for f in glob.glob(md_engine + "*"): 
-#        os.remove(f)
+    for f in glob.glob(output_name + "*"):
+        if "ckpt" in f and "json" not in f:
+            shutil.rmtree(f)
+        else:
+            os.remove(f)
