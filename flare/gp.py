@@ -27,7 +27,7 @@ from flare.kernels.utils import (
     from_mask_to_args,
     kernel_str_to_array,
 )
-from flare.output import Output, set_logger
+from flare.io.output import Output, set_logger
 from flare.utils.parameters import Parameters
 from flare.ase.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder

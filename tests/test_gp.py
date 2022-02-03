@@ -14,7 +14,7 @@ from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 import flare.kernels.sc as en
 import flare.kernels.mc_simple as mc_simple
-from flare.otf_parser import OtfAnalysis
+from flare.io.otf_parser import OtfAnalysis
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy

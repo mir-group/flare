@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 import numpy as np
 
-from flare.otf_parser import OtfAnalysis
+from flare.io.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator

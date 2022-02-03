@@ -37,7 +37,7 @@ from flare.gp_algebra import (
     kernel_distance_mat,
 )
 from flare.kernels.utils import from_mask_to_args
-from flare.output import set_logger
+from flare.io.output import set_logger
 from flare.utils.parameters import Parameters
 from flare.utils import NumpyEncoder
 from typing import Union

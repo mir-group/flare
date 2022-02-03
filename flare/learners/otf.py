@@ -27,7 +27,7 @@ from flare.ase.nosehoover import NoseHoover
 from ase import units
 from ase.io import read, write
 
-from flare.output import Output
+from flare.io.output import Output
 from flare.learners.utils import is_std_in_bound
 from flare.utils import NumpyEncoder
 from flare.ase.atoms import FLARE_Atoms

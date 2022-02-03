@@ -45,7 +45,7 @@ from random import sample
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.output import Output
+from flare.io.output import Output
 from flare.predict import (
     predict_on_structure_par,
     predict_on_structure_par_en,

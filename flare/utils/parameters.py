@@ -16,7 +16,7 @@ from warnings import warn
 from sys import stdout
 from os import devnull
 
-from flare.output import set_logger
+from flare.io.output import set_logger
 
 
 class Parameters:
