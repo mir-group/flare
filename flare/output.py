@@ -154,26 +154,7 @@ class Output:
         except:
             pass
 
-        try:
-            f.info(f"flare {flare.__version__}")
-        except AttributeError:  # using customized package not from pip install
-            dirs = flare.__path__[0].split("/")
-            dirs_rep = copy.copy(dirs)
-            dirs_rep[-1] = "setup.py"
-            setup_path = "/".join(dirs_rep)
-            try:
-                setup_py = open(setup_path)
-
-                for line in setup_py.readlines():
-                    line = line.strip()
-                    if "version=" in line:
-                        f.info(f"flare {line[9:len(line)-2]}")
-                        break
-                setup_py.close()
-            # Catch case where the version can't be found.
-            # (This happens in the Action test of the flare++ tutorial.)
-            except FileNotFoundError:
-                pass
+        f.info(f"flare {flare.__version__}")
 
         try:
             import flare_pp

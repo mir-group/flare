@@ -422,7 +422,7 @@ class OTF:
             self.atoms.calc = self.flare_calc
 
         # Take MD step.
-        if self.md_engine == "LAMMPS":
+        if self.md_engine == "PyLAMMPS":
             if self.std_tolerance < 0:
                 tol = -self.std_tolerance
             else:
@@ -778,7 +778,7 @@ class OTF:
         if new_otf.md_engine == "NPT":
             if not new_otf.md.initialized:
                 new_otf.md.initialize()
-        elif new_otf.md_engine == "LAMMPS":
+        elif new_otf.md_engine == "PyLAMMPS":
             new_otf.md.nsteps = dct["md"]["nsteps"]
             assert new_otf.md.nsteps == new_otf.curr_step
 

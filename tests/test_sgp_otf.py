@@ -30,7 +30,7 @@ from ase.md.velocitydistribution import (
 
 np.random.seed(12345)
 
-md_list = ["LAMMPS"]
+md_list = ["PyLAMMPS"]
 #md_list = ["VelocityVerlet"]
 number_of_steps = 30
 
