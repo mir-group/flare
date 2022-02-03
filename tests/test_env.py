@@ -5,7 +5,7 @@ from json import dumps
 from copy import deepcopy
 from os import remove
 from flare.atoms import FLARE_Atoms
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.utils import NumpyEncoder
 
 np.random.seed(0)
