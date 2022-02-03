@@ -7,8 +7,8 @@ import numpy as np
 from flare import otf, kernels
 from flare.io.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.ase.calculator import FLARE_Calculator
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.bffs.gp.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
 from flare.utils.parameter_helper import ParameterHelper
 

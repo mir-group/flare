@@ -8,8 +8,8 @@ from copy import deepcopy
 from typing import List, Union, Tuple
 
 import numpy as np
-from flare.env import AtomicEnvironment
-from flare.gp_algebra import (
+from flare.descriptors.env import AtomicEnvironment
+from .gp_algebra import (
     get_like_from_mats,
     get_neg_like_grad,
     get_ky_mat_update,

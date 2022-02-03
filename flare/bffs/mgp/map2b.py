@@ -3,8 +3,8 @@ from numba import njit
 
 from typing import List
 
-from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.grid_kernels import grid_kernel, self_kernel
+from .mapxb import MapXbody, SingleMapXbody
+from .grid_kernels import grid_kernel, self_kernel
 
 from flare.kernels.utils import from_mask_to_args
 from ase.data import chemical_symbols

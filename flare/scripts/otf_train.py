@@ -6,7 +6,7 @@ import importlib
 import inspect
 import numpy as np
 
-from flare.otf import OTF
+from flare.learners.otf import OTF
 
 from ase import units
 import ase.calculators as ase_calculators
@@ -84,9 +84,9 @@ max_iterations = flare_config.get("max_iterations", 20)
 bounds = flare_config.get("bounds", None)
 
 if flare_config["gp"] == "GaussianProcess":
-    from flare.gp import GaussianProcess
-    from flare.mgp import MappedGaussianProcess
-    from flare.ase.calculator import FLARE_Calculator
+    from flare.bffs.gp import GaussianProcess
+    from flare.bffs.mgp import MappedGaussianProcess
+    from flare.bffs.gp.calculator import FLARE_Calculator
     from flare.utils.parameter_helper import ParameterHelper
 
     # create gaussian process model

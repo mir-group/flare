@@ -2,7 +2,7 @@
 """
 import numpy as np
 import numpy
-from flare.mgp.cubic_splines_numba import *
+from .cubic_splines_numba import *
 
 
 class PCASplines:

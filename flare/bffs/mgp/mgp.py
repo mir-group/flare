@@ -13,12 +13,12 @@ import multiprocessing as mp
 from copy import deepcopy
 from typing import List
 
-from flare.env import AtomicEnvironment
-from flare.gp import GaussianProcess
+from flare.descriptors.env import AtomicEnvironment
+from flare.bffs.gp import GaussianProcess
 from flare.utils import NumpyEncoder
 
-from flare.mgp.map2b import Map2body
-from flare.mgp.map3b import Map3body
+from .map2b import Map2body
+from .map3b import Map3body
 from ase.data import chemical_symbols, atomic_numbers
 
 

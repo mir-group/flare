@@ -1,11 +1,11 @@
-from flare.rbcm import RobustBayesianCommitteeMachine
-from flare.gp import GaussianProcess
+from flare.bffs.rbcm import RobustBayesianCommitteeMachine
+from flare.bffs.gp import GaussianProcess
 import os as os
 import numpy as np
 from flare.atoms import FLARE_Atoms
 from ase.io import read
-from flare.env import AtomicEnvironment
-from flare.gp_algebra import get_kernel_vector
+from flare.descriptors.env import AtomicEnvironment
+from flare.bffs.gp.gp_algebra import get_kernel_vector
 
 TEST_DIR = os.path.dirname(__file__)
 TEST_FILE_DIR = os.path.join(TEST_DIR, "test_files")

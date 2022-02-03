@@ -8,10 +8,10 @@ from json import loads
 from glob import glob
 from os import remove, path
 
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.atoms import FLARE_Atoms
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.mgp import MappedGaussianProcess
 from flare.learners.gp_from_aimd import (
     TrajectoryTrainer,
     parse_trajectory_trainer_output,

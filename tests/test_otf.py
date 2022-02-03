@@ -4,9 +4,9 @@ import pytest
 import numpy as np
 
 from flare.io.otf_parser import OtfAnalysis
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.ase.calculator import FLARE_Calculator
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.bffs.gp.calculator import FLARE_Calculator
 from flare.learners.otf import OTF
 from flare.utils.parameter_helper import ParameterHelper
 

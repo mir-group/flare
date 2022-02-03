@@ -2,8 +2,7 @@ import time
 import pytest
 import numpy as np
 
-import flare.gp_algebra
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
 from flare.atoms import FLARE_Atoms
 from flare.kernels.mc_simple import (
@@ -23,7 +22,7 @@ from flare.kernels.mc_sephyps import (
 from flare.kernels import mc_sephyps
 from flare.utils.parameter_helper import ParameterHelper
 
-from flare.gp_algebra import (
+from flare.bffs.gp.gp_algebra import (
     get_like_grad_from_mats,
     get_force_block,
     get_force_energy_block,
@@ -41,6 +40,10 @@ from flare.gp_algebra import (
     update_energy_block,
     update_force_energy_block,
     efs_kern_vec,
+    _global_training_data,
+    _global_training_labels,
+    _global_training_structures,
+    _global_energy_labels,
 )
 
 from tests.fake_gp import get_tstp
@@ -149,10 +152,10 @@ def get_random_training_set(nenv, nstruc):
 
     # store it as global variables
     name = "unit_test"
-    flare.gp_algebra._global_training_data[name] = training_data
-    flare.gp_algebra._global_training_labels[name] = training_labels
-    flare.gp_algebra._global_training_structures[name] = training_structures
-    flare.gp_algebra._global_energy_labels[name] = energy_labels
+    _global_training_data[name] = training_data
+    _global_training_labels[name] = training_labels
+    _global_training_structures[name] = training_structures
+    _global_energy_labels[name] = energy_labels
 
     energy_noise = 0.01
 
@@ -246,10 +249,10 @@ def test_ky_mat_update(params, ihyps):
     # prepare old data set as the starting point
     n = 5
     s = 1
-    training_data = flare.gp_algebra._global_training_data[name]
-    training_structures = flare.gp_algebra._global_training_structures[name]
-    flare.gp_algebra._global_training_data["old"] = training_data[:n]
-    flare.gp_algebra._global_training_structures["old"] = training_structures[:s]
+    training_data = _global_training_data[name]
+    training_structures = _global_training_structures[name]
+    _global_training_data["old"] = training_data[:n]
+    _global_training_structures["old"] = training_structures[:s]
     func = [get_Ky_mat, get_ky_mat_update]
 
     # get the reference
@@ -301,8 +304,8 @@ def test_kernel_vector(params, ihyps):
     np.random.seed(10)
     test_point = get_tstp()
 
-    size1 = len(flare.gp_algebra._global_training_data[name])
-    size2 = len(flare.gp_algebra._global_training_structures[name])
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
 
     hyps_mask = hyps_mask_list[ihyps]
     hyps = hyps_mask["hyps"]
@@ -341,8 +344,8 @@ def test_en_kern_vec(params, ihyps):
     np.random.seed(10)
     test_point = get_tstp()
 
-    size1 = len(flare.gp_algebra._global_training_data[name])
-    size2 = len(flare.gp_algebra._global_training_structures[name])
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
 
     # test the parallel implementation for multihyps
     vec = en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs, hyps_mask)
@@ -370,8 +373,8 @@ def test_efs_kern_vec(params, ihyps):
     np.random.seed(10)
     test_point = get_tstp()
 
-    size1 = len(flare.gp_algebra._global_training_data[name])
-    size2 = len(flare.gp_algebra._global_training_structures[name])
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
 
     hyps_mask = hyps_mask_list[ihyps]
     hyps = hyps_mask["hyps"]

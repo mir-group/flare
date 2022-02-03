@@ -10,10 +10,10 @@ import numpy as np
 import multiprocessing as mp
 import json
 
-from flare.env import AtomicEnvironment
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.predict import (
+from flare.descriptors.env import AtomicEnvironment
+from . import GaussianProcess
+from ..mgp import MappedGaussianProcess
+from .predict import (
     predict_on_structure_par_en,
     predict_on_structure_en,
     predict_on_structure_efs,

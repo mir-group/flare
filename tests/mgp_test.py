@@ -1,6 +1,6 @@
 import os, shutil, re
 import numpy as np
-from flare import env
+from flare.descriptors import env
 from flare.atoms import FLARE_Atoms
 
 

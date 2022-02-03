@@ -15,9 +15,9 @@ from flare.utils.parameter_helper import ParameterHelper
 
 from tests.fake_gp import generate_mb_envs, generate_mb_twin_envs
 from tests.test_mc_sephyps import generate_same_hm, generate_diff_hm
-import flare.mgp.map2b as m2
-import flare.mgp.map3b as m3
-from flare.mgp.grid_kernels import grid_kernel
+import flare.bffs.mgp.map2b as m2
+import flare.bffs.mgp.map3b as m3
+from flare.bffs.mgp.grid_kernels import grid_kernel
 
 # multi_cut = [False, True]
 bodies = [2, 3]

@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
-from flare.gp import GaussianProcess
-from flare.env import AtomicEnvironment
+from flare.bffs.gp import GaussianProcess
+from flare.descriptors.env import AtomicEnvironment
 from flare.atoms import FLARE_Atoms
 from flare.utils.parameter_helper import ParameterHelper
 
