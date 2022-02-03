@@ -26,12 +26,12 @@ md_list = [
     "VelocityVerlet",
 #    "NVTBerendsen",
 #    "NPTBerendsen",
-    "NPT",
+#    "NPT",
 #    "Langevin",
 #    "NoseHoover",
 ]
 number_of_steps = 5
-write_model_list = [1, 4] #[1, 2, 3, 4]
+write_model_list = [1] #[1, 2, 3, 4]
 
 np.random.seed(12345)
 
@@ -43,7 +43,10 @@ def md_params():
 
     for md_engine in md_list:
         for f in glob.glob(md_engine + "*"):
-            os.remove(f)
+            if "_ckpt" not in f:
+                os.remove(f)
+            else:
+                shutil.rmtree(f)
 
         if md_engine == "VelocityVerlet":
             md_dict[md_engine] = {}
@@ -121,6 +124,7 @@ def flare_calc():
             hyp_labels=["sig2", "ls2", "sig3", "ls3", "noise"],
             opt_algorithm="L-BFGS-B",
             n_cpus=1,
+            maxiter=1,
         )
 
         # ----------- create mapped gaussian process ------------------
