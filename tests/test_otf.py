@@ -24,14 +24,14 @@ from ase import io
 
 md_list = [
     "VelocityVerlet",
-#    "NVTBerendsen",
-#    "NPTBerendsen",
-#    "NPT",
-#    "Langevin",
-#    "NoseHoover",
+    "NVTBerendsen",
+    "NPTBerendsen",
+    "NPT",
+    "Langevin",
+    "NoseHoover",
 ]
 number_of_steps = 5
-write_model_list = [1] #[1, 2, 3, 4]
+write_model_list = [1, 2, 3, 4]
 
 np.random.seed(12345)
 
