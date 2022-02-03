@@ -4,7 +4,6 @@ import pytest
 import numpy as np
 from numpy.random import random, randint
 
-from flare import env, gp
 from flare.kernels.utils import str_to_kernel_set as stks
 
 

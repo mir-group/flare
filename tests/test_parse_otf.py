@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from flare.io.otf_parser import OtfAnalysis
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 from ase.io import read
 

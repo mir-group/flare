@@ -3,7 +3,7 @@ from flare.kernels.two_body_mc_simple import TwoBodyKernel
 from flare.kernels.three_body_mc_simple import ThreeBodyKernel
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.atoms import FLARE_Atoms
-from flare import env
+from flare.descriptors import env
 import numpy as np
 
 
