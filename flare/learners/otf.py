@@ -22,8 +22,9 @@ from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
-from flare.ase.npt import NPT_mod
-from flare.ase.nosehoover import NoseHoover
+from flare.md.npt import NPT_mod
+from flare.md.nosehoover import NoseHoover
+from flare.md.lammps import LAMMPS_MD, check_sgp_match
 from ase import units
 from ase.io import read, write
 
@@ -32,7 +33,6 @@ from flare.learners.utils import is_std_in_bound
 from flare.utils import NumpyEncoder
 from flare.atoms import FLARE_Atoms
 from flare.bffs.gp.calculator import FLARE_Calculator
-from flare.ase.lammps import LAMMPS_MD, check_sgp_match
 
 
 class OTF:

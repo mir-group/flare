@@ -4,12 +4,8 @@ import pytest
 flare_pp = pytest.importorskip("flare_pp")
 import numpy as np
 
-from flare import otf, kernels
 from flare.io.otf_parser import OtfAnalysis
-from flare.gp import GaussianProcess
-from flare.bffs.mgp import MappedGaussianProcess
-from flare.bffs.gp.calculator import FLARE_Calculator
-from flare.ase.otf import ASE_OTF
+from flare.learners.otf import OTF
 from flare.utils.parameter_helper import ParameterHelper
 
 from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
