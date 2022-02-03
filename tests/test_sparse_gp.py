@@ -8,8 +8,8 @@ from flare_pp._C_flare import SparseGP, NormalizedDotProduct, B2, Structure
 from flare_pp.sparse_gp import SGP_Wrapper
 from flare_pp.sparse_gp_calculator import SGP_Calculator
 
-from flare.ase.calculator import FLARE_Calculator
-from flare.ase.atoms import FLARE_Atoms
+from flare.bffs.gp.calculator import FLARE_Calculator
+from flare.atoms import FLARE_Atoms
 
 from ase.calculators.lj import LennardJones
 from ase.build import bulk

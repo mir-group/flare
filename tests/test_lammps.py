@@ -1,8 +1,7 @@
 import pytest
 import os, shutil
 import numpy as np
-from flare.utils.element_coder import _Z_to_mass, _Z_to_element, _element_to_Z
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
 

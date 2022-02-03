@@ -1,5 +1,5 @@
 from ase.calculators.calculator import Calculator, all_changes
-from flare.utils.element_coder import NumpyEncoder
+from flare.utils import NumpyEncoder
 from flare_pp._C_flare import Structure
 from flare_pp.sparse_gp import SGP_Wrapper
 import numpy as np
@@ -33,7 +33,7 @@ class SGP_Calculator(Calculator):
 
         # Convert coded species to 0, 1, 2, etc.
         coded_species = []
-        for spec in atoms.coded_species:
+        for spec in atoms.numbers:
             coded_species.append(self.gp_model.species_map[spec])
 
         # Create structure descriptor.
