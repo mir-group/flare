@@ -74,6 +74,12 @@ def test_write_potential(n_species, n_types, power, multicut):
     forces_lmp = test_structure.get_forces()
     stress_lmp = test_structure.get_stress()
 
+    # add back single_atom_energies to lammps energy
+    if sgp_model.gp_model.single_atom_energies is not None:
+        for spec in test_structure.numbers:
+            coded_spec = sgp_model.gp_model.species_map[spec]
+            energy_lmp += sgp_model.gp_model.single_atom_energies[coded_spec]
+
     thresh = 1e-6
     print(energy, energy_lmp)
     assert(np.abs(energy - energy_lmp) < thresh)
