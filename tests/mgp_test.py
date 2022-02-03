@@ -1,7 +1,7 @@
 import os, shutil, re
 import numpy as np
 from flare import env
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 
 
 def clean(prefix="tmp"):

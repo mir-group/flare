@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 from typing import List, Tuple
 from flare.gp import GaussianProcess
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 
 
 class OtfAnalysis:

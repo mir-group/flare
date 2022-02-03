@@ -51,7 +51,7 @@ from flare.predict import (
     predict_on_structure_par_en,
     predict_on_structure_mgp,
 )
-from flare.ase.atoms import FLARE_Atoms, Trajectory
+from flare.atoms import FLARE_Atoms, Trajectory
 from flare.utils import NumpyEncoder
 from flare.learners.utils import (
     subset_of_frame_by_element,

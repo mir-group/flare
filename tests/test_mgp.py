@@ -13,7 +13,7 @@ from flare import env, gp
 from flare.utils.parameters import Parameters
 from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
 from ase.data import atomic_numbers, atomic_masses
 

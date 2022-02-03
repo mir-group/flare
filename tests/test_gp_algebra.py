@@ -5,7 +5,7 @@ import numpy as np
 import flare.gp_algebra
 from flare.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.kernels.mc_simple import (
     two_plus_three_body_mc,
     two_plus_three_body_mc_grad,

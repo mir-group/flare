@@ -10,7 +10,7 @@ from typing import Tuple, List, Union
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from math import nan
 
 

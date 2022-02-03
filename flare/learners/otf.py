@@ -30,7 +30,7 @@ from ase.io import read, write
 from flare.io.output import Output
 from flare.learners.utils import is_std_in_bound
 from flare.utils import NumpyEncoder
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.lammps import LAMMPS_MD, check_sgp_match
 

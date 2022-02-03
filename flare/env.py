@@ -11,7 +11,7 @@ import pickle as pickle
 import numpy as np
 
 import flare.kernels.cutoffs as cf
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 from flare.utils.env_getarray import (
     get_2_body_arrays,

@@ -10,7 +10,7 @@ from numpy.random import random, randint
 from flare.env import AtomicEnvironment
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound, quadratic_cutoff
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.utils.parameter_helper import ParameterHelper
 
 from tests.fake_gp import generate_mb_envs, generate_mb_twin_envs

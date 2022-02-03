@@ -5,7 +5,7 @@ from numpy.random import random, randint, permutation
 
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.utils.parameter_helper import ParameterHelper
 
 

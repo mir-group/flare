@@ -9,7 +9,7 @@ from glob import glob
 from os import remove, path
 
 from flare.env import AtomicEnvironment
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.learners.gp_from_aimd import (

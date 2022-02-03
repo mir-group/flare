@@ -29,7 +29,7 @@ from flare.kernels.utils import (
 )
 from flare.io.output import Output, set_logger
 from flare.utils.parameters import Parameters
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 from numpy.random import random
 from scipy.linalg import solve_triangular
