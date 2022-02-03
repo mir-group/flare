@@ -7,6 +7,7 @@ import datetime
 import logging
 import time
 import sys
+import copy
 import numpy as np
 
 from logging import FileHandler, StreamHandler, Logger
@@ -157,14 +158,23 @@ class Output:
             f.info(f"flare {flare.__version__}")
         except AttributeError:  # using customized package not from pip install
             dirs = flare.__path__[0].split("/")
-            dirs[-1] = "setup.py"
-            setup_path = "/".join(dirs)
-            with open(setup_path) as setup_py:
+            dirs_rep = copy.copy(dirs)
+            dirs_rep[-1] = "setup.py"
+            setup_path = "/".join(dirs_rep)
+            try:
+                setup_py = open(setup_path)
+
                 for line in setup_py.readlines():
                     line = line.strip()
                     if "version=" in line:
                         f.info(f"flare {line[9:len(line)-2]}")
                         break
+                setup_py.close()
+            # Catch case where the version can't be found.
+            # (This happens in the Action test of the flare++ tutorial.)
+            except FileNotFoundError:
+                pass
+
         try:
             import flare_pp
 
@@ -173,14 +183,21 @@ class Output:
 
             import flare_pp
             dirs = flare_pp.__path__[0].split("/")
-            dirs[-1] = "setup.py"
-            setup_path = "/".join(dirs)
-            with open(setup_path) as setup_py:
+            dirs_rep = copy.copy(dirs)
+            dirs_rep[-1] = "setup.py"
+            setup_path = "/".join(dirs_rep)
+
+            try:
+                setup_py = open(setup_path)
+
                 for line in setup_py.readlines():
                     line = line.strip()
                     if "version=" in line:
                         f.info(f"flare_pp {line[9:len(line)-2]}")
                         break
+                setup_py.close()
+            except FileNotFoundError:
+                pass
         except ModuleNotFoundError:
             pass
 
