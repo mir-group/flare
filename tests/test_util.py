@@ -4,7 +4,7 @@ import pytest
 from pytest import raises
 
 from flare.ase.atoms import FLARE_Atoms
-from flare.utils.learner import (
+from flare.learners.utils import (
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,
     subset_of_frame_by_element,

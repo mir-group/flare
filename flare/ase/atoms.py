@@ -11,7 +11,7 @@ from ase import Atoms
 from ase.io import read, write
 from ase.calculators.calculator import Calculator, all_properties
 from ase.calculators.singlepoint import SinglePointCalculator
-from flare.utils.learner import get_max_cutoff
+from flare.learners.utils import get_max_cutoff
 
 
 class FLARE_Atoms(Atoms):

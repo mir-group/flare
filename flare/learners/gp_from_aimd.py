@@ -53,7 +53,7 @@ from flare.predict import (
 )
 from flare.ase.atoms import FLARE_Atoms, Trajectory
 from flare.utils import NumpyEncoder
-from flare.utils.learner import (
+from flare.learners.utils import (
     subset_of_frame_by_element,
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,

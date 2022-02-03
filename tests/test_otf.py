@@ -7,7 +7,7 @@ from flare.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
-from flare.otf import OTF
+from flare.learners.otf import OTF
 from flare.utils.parameter_helper import ParameterHelper
 
 from ase.constraints import FixAtoms
