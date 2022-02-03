@@ -60,7 +60,7 @@ from flare.learners.utils import (
     evaluate_training_atoms,
 )
 from flare.mgp import MappedGaussianProcess
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 from ase.data import chemical_symbols, atomic_numbers
 
 

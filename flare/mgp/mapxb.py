@@ -23,7 +23,7 @@ from flare.gp_algebra import (
     _global_training_data,
     _global_training_structures,
 )
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 

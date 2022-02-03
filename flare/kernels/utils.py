@@ -1,7 +1,7 @@
 import numpy as np
 
 from flare.kernels import sc, mc_simple, mc_sephyps
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 
 """
 This module includes interface functions between kernels and gp/gp_algebra

@@ -38,7 +38,7 @@ from flare.gp_algebra import (
 )
 from flare.kernels.utils import from_mask_to_args
 from flare.output import set_logger
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 from flare.utils import NumpyEncoder
 from typing import Union
 from ase.data import chemical_symbols

@@ -118,7 +118,7 @@ from numpy.random import random as nprandom
 from typing import List, Callable, Union
 
 from flare.output import set_logger
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 from ase.data import chemical_symbols, atomic_numbers
 
 
