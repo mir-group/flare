@@ -150,6 +150,7 @@ class SGP_Wrapper:
 
         # save hyps
         out_dict["hyps"], out_dict["hyp_labels"] = self.hyps_and_labels
+        out_dict["Kuu_jitter"] = self.sparse_gp.Kuu_jitter
 
         # only save kernel type and hyps
         kernel_list = []
@@ -253,6 +254,7 @@ class SGP_Wrapper:
             opt_method=in_dict["opt_method"],
             bounds=in_dict["bounds"],
         )
+        gp.sparse_gp.Kuu_jitter = in_dict["Kuu_jitter"]
 
         # update db
         training_data = in_dict["training_structures"]
