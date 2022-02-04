@@ -249,7 +249,7 @@ def test_otf_parser(md_engine):
     comp2 = otf_traj.force_list[-1][1, 0]
 #    assert (comp1 != comp2)
 
-    for f in glob.glob(output_name + "*"):
+    for f in glob.glob(md_engine + "*"):
         if "ckpt" in f and "json" not in f:
             shutil.rmtree(f)
         else:
