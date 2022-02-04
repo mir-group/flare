@@ -10,11 +10,11 @@ class SGP_Calculator(Calculator):
 
     implemented_properties = ["energy", "forces", "stress", "stds"]
 
-    def __init__(self, sgp_model):
+    def __init__(self, sgp_model, use_mapping=False):
         super().__init__()
         self.gp_model = sgp_model
         self.results = {}
-        self.use_mapping = False
+        self.use_mapping = use_mapping
         self.mgp_model = None
 
     # TODO: Figure out why this is called twice per MD step.
