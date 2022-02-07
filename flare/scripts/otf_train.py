@@ -6,7 +6,7 @@ import importlib
 import inspect
 import numpy as np
 
-from flare.otf import OTF
+from flare.learners.otf import OTF
 
 from ase import units
 import ase.calculators as ase_calculators
@@ -50,11 +50,11 @@ for atom_pos in super_cell.positions:
 #                                                                              #
 ################################################################################
 
-# find the module including the ASE DFT calculator class by name
 dft_calc_name = config["dft_calc"]["name"]
 dft_calc_kwargs = config["dft_calc"]["kwargs"]
 dft_calc_params = config["dft_calc"]["params"]
 
+# find the module including the ASE DFT calculator class by name
 dft_module_name = ""
 for importer, modname, ispkg in pkgutil.iter_modules(ase_calculators.__path__):
     module_info = pyclbr.readmodule("ase.calculators." + modname)
@@ -83,10 +83,10 @@ opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
 max_iterations = flare_config.get("max_iterations", 20)
 bounds = flare_config.get("bounds", None)
 
-if flare_config["gp"] == "GaussianProcess":
-    from flare.gp import GaussianProcess
-    from flare.mgp import MappedGaussianProcess
-    from flare.ase.calculator import FLARE_Calculator
+if flare_config.get("gp") == "GaussianProcess":
+    from flare.bffs.gp import GaussianProcess
+    from flare.bffs.mgp import MappedGaussianProcess
+    from flare.bffs.gp.calculator import FLARE_Calculator
     from flare.utils.parameter_helper import ParameterHelper
 
     # create gaussian process model
@@ -110,9 +110,17 @@ if flare_config["gp"] == "GaussianProcess":
         component="mc",
         hyps=hm["hyps"],
         cutoffs=hm["cutoffs"],
+        hyps_mask=None,
         hyp_labels=hm["hyp_labels"],
         opt_algorithm=opt_algorithm,
+        maxiter=max_iterations,
+        parallel=n_cpus > 1,
+        per_atom_par=flare_config.get("per_atom_par", True),
         n_cpus=n_cpus,
+        n_sample=flare_config.get("n_sample", 100),
+        output=None,
+        name=flare_config.get("name", "default_gp"),
+        energy_noise=flare_config.get("energy_noise", 0.01),
     )
     
     # create mapped gaussian process
@@ -138,8 +146,9 @@ if flare_config["gp"] == "GaussianProcess":
         use_mapping=use_mapping,
     )
 
-elif flare_config["gp"] == "SGP_Wrapper":
-    from flare_pp._C_flare import NormalizedDotProduct, B2, SquaredExponential
+elif flare_config.get("gp") == "SGP_Wrapper":
+    from flare_pp._C_flare import NormalizedDotProduct, SquaredExponential
+    from flare_pp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody
     from flare_pp.sparse_gp import SGP_Wrapper
     from flare_pp.sparse_gp_calculator import SGP_Calculator
     
@@ -154,39 +163,82 @@ elif flare_config["gp"] == "SGP_Wrapper":
             raise NotImplementedError(f"{k['name']} kernel is not implemented")
     
     # Define descriptor calculators.
+    n_species = len(flare_config["species"])
+    cutoff = flare_config["cutoff"]
     descriptors = []
     for d in flare_config["descriptors"]:
         if d["name"] == "B2":
-            radial_hyps = [0.0, flare_config["cutoff"]]
+            radial_hyps = [0.0, cutoff]
             cutoff_hyps = []
-            descriptor_settings = [len(flare_config["species"]), d["nmax"], d["lmax"]]
-            b2_calc = B2(
+            descriptor_settings = [n_species, d["nmax"], d["lmax"]]
+            if "cutoff_matrix" in d: # multiple cutoffs
+                desc_calc = B2(
+                    d["radial_basis"], 
+                    d["cutoff_function"], 
+                    radial_hyps, 
+                    cutoff_hyps,
+                    descriptor_settings,
+                    d["cutoff_matrix"],
+                )
+            else:
+                desc_calc = B2(
+                    d["radial_basis"], 
+                    d["cutoff_function"], 
+                    radial_hyps, 
+                    cutoff_hyps,
+                    descriptor_settings,
+                )
+
+        elif d["name"] == "B3":
+            radial_hyps = [0.0, cutoff]
+            cutoff_hyps = []
+            descriptor_settings = [n_species, d["nmax"], d["lmax"]]
+            desc_calc = B3(
                 d["radial_basis"], 
                 d["cutoff_function"], 
                 radial_hyps, 
                 cutoff_hyps,
-                descriptor_settings
+                descriptor_settings,
             )
-            descriptors.append(b2_calc)
-   
+
+        elif d["name"] == "TwoBody":
+            desc_calc = TwoBody(cutoff, n_species, d["cutoff_function"], cutoff_hyps)
+
+        elif d["name"] == "ThreeBody":
+            desc_calc = ThreeBody(cutoff, n_species, d["cutoff_function"], cutoff_hyps)
+
+        elif d["name"] == "FourBody":
+            desc_calc = FourBody(cutoff, n_species, d["cutoff_function"], cutoff_hyps)
+
+        else:
+            raise NotImplementedError(f"{d['name'] descriptor is not supported}")
+
+        descriptors.append(desc_calc)
+
+  
     # Define remaining parameters for the SGP wrapper.
-    species_map = {flare_config["species"][i]: i for i in range(len(flare_config["species"]))}
-    single_atom_energies = {i: flare_config["single_atom_energies"][i] for i in range(len(flare_config["single_atom_energies"]))}
-    assert len(species_map) == len(single_atom_energies)
+    species_map = {flare_config.get("species")[i]: i for i in range(n_species)}
+    sae_dct = flare_config.get("single_atom_energies", None)
+    if sae_dct is not None:
+        assert n_species == len(sae_dct), "'single_atom_energies' should be the same length as 'species'"
+        single_atom_energies = {i: sae_dct[i] for i in range(n_species)}
 
     sgp = SGP_Wrapper(
-        kernels, 
-        descriptors, 
-        flare_config["cutoff"], 
-        flare_config["energy_noise"], 
-        flare_config["forces_noise"], 
-        flare_config["stress_noise"], 
-        species_map,
+        kernels=kernels, 
+        descriptor_calculators=descriptors, 
+        cutoff=cutoff,
+        sigma_e=flare_config.get("energy_noise"), 
+        sigma_f=flare_config.get("forces_noise"), 
+        sigma_s=flare_config.get("stress_noise"), 
+        species_map=species_map,
+        variance_type=flare_config.get("variance_type", "local"),
         single_atom_energies=single_atom_energies, 
-        variance_type=flare_config["variance_type"],
+        energy_training=flare_config.get("energy_training", True),
+        force_training=flare_config.get("force_training", True),
+        stress_training=flare_config.get("stress_training", True),
+        max_iterations=max_iterations,
         opt_method=opt_algorithm, 
         bounds=bounds,
-        max_iterations=max_iterations,
     )
 
     flare_calc = SGP_Calculator(sgp)
@@ -201,10 +253,15 @@ else:
 ################################################################################
 
 # intialize velocity
-temperature = config["otf"].get("temperature", 0)
-MaxwellBoltzmannDistribution(super_cell, temperature * units.kB)
-Stationary(super_cell)  # zero linear momentum
-ZeroRotation(super_cell)  # zero angular momentum
+# The "file" option uses the velocities read from the supercell file.
+initial_velocity = config["otf"].get("initial_velocity", "file")
+if initial_velocity != "file": 
+    # Otherwise, the initial_velocity is a number specifying the temperature
+    # to initialize the velocity with Boltzmann distribution
+    init_temp = float(initial_velocity)
+    MaxwellBoltzmannDistribution(super_cell, init_temp * units.kB)
+    Stationary(super_cell) 
+    ZeroRotation(super_cell)
 
 test_otf = OTF(
     super_cell,

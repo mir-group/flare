@@ -1,7 +1,7 @@
 import numpy as np
 from flare.kernels.kernels import force_helper, force_energy_helper, grad_helper
 from numba import njit
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from typing import Callable
 import flare.kernels.cutoffs as cf
 from math import exp

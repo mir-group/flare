@@ -4,10 +4,10 @@ corresponding to atoms in structures. These functions automatically
 cast atoms into their respective atomic environments.
 """
 import numpy as np
-from flare.gp import GaussianProcess
-from flare.ase.atoms import FLARE_Atoms
+from flare.bffs.gp import GaussianProcess
+from flare.atoms import FLARE_Atoms
 from copy import deepcopy
-from flare.predict import (
+from flare.bffs.gp.predict import (
     predict_on_structure_par,
     predict_on_atom,
     predict_on_atom_en,
@@ -15,7 +15,7 @@ from flare.predict import (
 )
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
-from flare.predict import (
+from flare.bffs.gp.predict import (
     predict_on_structure,
     predict_on_structure_par,
     predict_on_structure_efs,

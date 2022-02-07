@@ -7,18 +7,17 @@ from itertools import combinations_with_replacement, permutations
 from numpy import isclose
 from numpy.random import random, randint
 
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound, quadratic_cutoff
-from flare.parameters import Parameters
-from flare.ase.atoms import FLARE_Atoms
+from flare.atoms import FLARE_Atoms
 from flare.utils.parameter_helper import ParameterHelper
 
 from tests.fake_gp import generate_mb_envs, generate_mb_twin_envs
 from tests.test_mc_sephyps import generate_same_hm, generate_diff_hm
-import flare.mgp.map2b as m2
-import flare.mgp.map3b as m3
-from flare.mgp.grid_kernels import grid_kernel
+import flare.bffs.mgp.map2b as m2
+import flare.bffs.mgp.map3b as m3
+from flare.bffs.mgp.grid_kernels import grid_kernel
 
 # multi_cut = [False, True]
 bodies = [2, 3]

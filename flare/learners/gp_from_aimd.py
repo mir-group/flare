@@ -43,24 +43,24 @@ from math import inf
 from typing import List, Tuple, Union, Dict
 from random import sample
 
-from flare.env import AtomicEnvironment
-from flare.gp import GaussianProcess
-from flare.output import Output
-from flare.predict import (
+from flare.descriptors.env import AtomicEnvironment
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.gp.predict import (
     predict_on_structure_par,
     predict_on_structure_par_en,
     predict_on_structure_mgp,
 )
-from flare.ase.atoms import FLARE_Atoms, Trajectory
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.io.output import Output
+from flare.atoms import FLARE_Atoms, Trajectory
 from flare.utils import NumpyEncoder
-from flare.utils.learner import (
+from flare.learners.utils import (
     subset_of_frame_by_element,
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,
     evaluate_training_atoms,
 )
-from flare.mgp import MappedGaussianProcess
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 from ase.data import chemical_symbols, atomic_numbers
 
 

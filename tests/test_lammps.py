@@ -5,7 +5,7 @@ from copy import deepcopy
 from ase import Atom, Atoms
 from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
-from flare.ase.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
+from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),

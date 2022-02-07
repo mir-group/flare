@@ -8,8 +8,8 @@ from copy import deepcopy
 from typing import List, Union, Tuple
 
 import numpy as np
-from flare.env import AtomicEnvironment
-from flare.gp_algebra import (
+from flare.descriptors.env import AtomicEnvironment
+from .gp_algebra import (
     get_like_from_mats,
     get_neg_like_grad,
     get_ky_mat_update,
@@ -27,9 +27,9 @@ from flare.kernels.utils import (
     from_mask_to_args,
     kernel_str_to_array,
 )
-from flare.output import Output, set_logger
-from flare.parameters import Parameters
-from flare.ase.atoms import FLARE_Atoms
+from flare.io.output import Output, set_logger
+from flare.utils.parameters import Parameters
+from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 from numpy.random import random
 from scipy.linalg import solve_triangular

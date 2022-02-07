@@ -8,16 +8,16 @@ from json import loads
 from glob import glob
 from os import remove, path
 
-from flare.env import AtomicEnvironment
-from flare.ase.atoms import FLARE_Atoms
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.gp_from_aimd import (
+from flare.descriptors.env import AtomicEnvironment
+from flare.atoms import FLARE_Atoms
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.learners.gp_from_aimd import (
     TrajectoryTrainer,
     parse_trajectory_trainer_output,
     structures_from_gpfa_output,
 )
-from flare.utils.learner import subset_of_frame_by_element
+from flare.learners.utils import subset_of_frame_by_element
 from ase.data import chemical_symbols
 from ase.io import read
 

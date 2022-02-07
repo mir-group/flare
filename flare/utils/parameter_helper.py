@@ -117,8 +117,8 @@ from numpy import max as npmax
 from numpy.random import random as nprandom
 from typing import List, Callable, Union
 
-from flare.output import set_logger
-from flare.parameters import Parameters
+from flare.io.output import set_logger
+from flare.utils.parameters import Parameters
 from ase.data import chemical_symbols, atomic_numbers
 
 

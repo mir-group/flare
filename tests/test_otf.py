@@ -3,11 +3,11 @@ from copy import deepcopy
 import pytest
 import numpy as np
 
-from flare.otf_parser import OtfAnalysis
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.ase.calculator import FLARE_Calculator
-from flare.otf import OTF
+from flare.io.otf_parser import OtfAnalysis
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.bffs.gp.calculator import FLARE_Calculator
+from flare.learners.otf import OTF
 from flare.utils.parameter_helper import ParameterHelper
 
 from ase.constraints import FixAtoms
@@ -24,14 +24,14 @@ from ase import io
 
 md_list = [
     "VelocityVerlet",
-#    "NVTBerendsen",
-#    "NPTBerendsen",
-#    "NPT",
-#    "Langevin",
-#    "NoseHoover",
+    "NVTBerendsen",
+    "NPTBerendsen",
+    "NPT",
+    "Langevin",
+    "NoseHoover",
 ]
 number_of_steps = 5
-write_model_list = [1] #[1, 2, 3, 4]
+write_model_list = [1, 2, 3, 4]
 
 np.random.seed(12345)
 

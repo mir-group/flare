@@ -22,17 +22,17 @@ from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
-from flare.ase.npt import NPT_mod
-from flare.ase.nosehoover import NoseHoover
+from flare.md.npt import NPT_mod
+from flare.md.nosehoover import NoseHoover
+from flare.md.lammps import LAMMPS_MD, check_sgp_match
 from ase import units
 from ase.io import read, write
 
-from flare.output import Output
-from flare.utils.learner import is_std_in_bound
+from flare.io.output import Output
+from flare.learners.utils import is_std_in_bound
 from flare.utils import NumpyEncoder
-from flare.ase.atoms import FLARE_Atoms
-from flare.ase.calculator import FLARE_Calculator
-from flare.ase.lammps import LAMMPS_MD, check_sgp_match
+from flare.atoms import FLARE_Atoms
+from flare.bffs.gp.calculator import FLARE_Calculator
 
 
 class OTF:
@@ -162,6 +162,8 @@ class OTF:
             MD = Langevin
         elif md_engine == "NoseHoover":
             MD = NoseHoover
+        elif md_engine == "PyLAMMPS":
+            MD = LAMMPS_MD
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
@@ -431,7 +433,6 @@ class OTF:
             self.md.step(tol, self.number_of_steps)
             self.curr_step = self.md.nsteps
             self.atoms = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
-            self.dft_input = self.atoms
 
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
@@ -739,6 +740,9 @@ class OTF:
         for key in ["output", "md"]:
             dct.pop(key)
 
+        if self.md_engine == "PyLAMMPS":
+            dct["md_nsteps"] = self.md.nsteps
+
         return dct
 
     @staticmethod
@@ -779,7 +783,7 @@ class OTF:
             if not new_otf.md.initialized:
                 new_otf.md.initialize()
         elif new_otf.md_engine == "PyLAMMPS":
-            new_otf.md.nsteps = dct["md"]["nsteps"]
+            new_otf.md.nsteps = dct["md_nsteps"]
             assert new_otf.md.nsteps == new_otf.curr_step
 
         return new_otf

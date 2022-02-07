@@ -7,10 +7,10 @@ import numpy as np
 import multiprocessing as mp
 
 from typing import Tuple, List, Union
-from flare.env import AtomicEnvironment
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.ase.atoms import FLARE_Atoms
+from flare.descriptors.env import AtomicEnvironment
+from . import GaussianProcess
+from ..mgp import MappedGaussianProcess
+from flare.atoms import FLARE_Atoms
 from math import nan
 
 

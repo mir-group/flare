@@ -10,11 +10,11 @@ from math import ceil, floor
 from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 import flare.kernels.cutoffs as cf
-from flare.gp import GaussianProcess
-from flare.gp_algebra import (
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.gp.gp_algebra import (
     partition_vector,
     energy_force_vector_unit,
     force_energy_vector_unit,
@@ -23,9 +23,9 @@ from flare.gp_algebra import (
     _global_training_data,
     _global_training_structures,
 )
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 
-from flare.mgp.splines_methods import PCASplines, CubicSpline
+from .splines_methods import PCASplines, CubicSpline
 
 
 class MapXbody:

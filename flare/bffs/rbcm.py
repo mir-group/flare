@@ -21,9 +21,9 @@ import matplotlib.pyplot as plt
 
 plt.switch_backend("agg")
 
-from flare.env import AtomicEnvironment
-from flare.gp import GaussianProcess
-from flare.gp_algebra import (
+from flare.descriptors.env import AtomicEnvironment
+from .gp import GaussianProcess
+from .gp.gp_algebra import (
     get_like_from_mats,
     get_neg_like_grad,
     get_ky_mat_update,
@@ -37,8 +37,8 @@ from flare.gp_algebra import (
     kernel_distance_mat,
 )
 from flare.kernels.utils import from_mask_to_args
-from flare.output import set_logger
-from flare.parameters import Parameters
+from flare.io.output import set_logger
+from flare.utils.parameters import Parameters
 from flare.utils import NumpyEncoder
 from typing import Union
 from ase.data import chemical_symbols
