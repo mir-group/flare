@@ -20,83 +20,101 @@ from ase.symbols import symbols2numbers
 
 import yaml
 
-with open(sys.argv[1], "r") as f:
-    config = yaml.safe_load(f)
 
-################################################################################
-#                                                                              #
-#                        Set up Supercell from ASE Atoms                       #
-#                                                                              #
-################################################################################
+def get_super_cell(atoms_config):
+    """
+    Set up Supercell from ASE Atoms
+    """
+    # parse parameters
+    atoms_file = atoms_config.get("file")
+    atoms_format = atoms_config.get("format", None)
+    replicate = atoms_config.get("replicate", [1, 1, 1])
+    jitter = atoms_config.get("jitter", 0)
 
-# parse parameters
-atoms_config = config["supercell"]
-atoms_file = atoms_config.get("file")
-atoms_format = atoms_config.get("format")
-replicate = ase_config.get("replicate", [1, 1, 1])
-jitter = atoms_config.gt("jitter", 0)
+    if atoms_format is not None:
+        super_cell = io.read(atoms_file, format=atoms_format)
+    else:
+        super_cell = io.read(atoms_file)
+    super_cell *= replicate
 
-super_cell = io.read(atoms_file, format=atoms_format)
-super_cell *= replicate
+    # jitter positions to give nonzero force on first frame
+    super_cell.positions += (2 * np.random.rand(len(super_cell), 3) - 1) * jitter
+    return super_cell
 
-# jitter positions to give nonzero force on first frame
-for atom_pos in super_cell.positions:
-    for coord in range(3):
-        atom_pos[coord] += (2 * np.random.random() - 1) * jitter
 
-################################################################################
-#                                                                              #
-#                           Set up ASE DFT calculator                          #
-#                                                                              #
-################################################################################
+def get_dft_calc(dft_config):
+    """
+    Set up ASE DFT calculator
+    """
+    dft_calc_name = dft_config.get("name", "LennardJones")
+    dft_calc_kwargs = dft_config.get("kwargs", {})
+    dft_calc_params = dft_config.get("params", {})
 
-dft_calc_name = config["dft_calc"]["name"]
-dft_calc_kwargs = config["dft_calc"]["kwargs"]
-dft_calc_params = config["dft_calc"]["params"]
+    # find the module including the ASE DFT calculator class by name
+    dft_module_name = ""
+    for importer, modname, ispkg in pkgutil.iter_modules(ase_calculators.__path__):
+        module_info = pyclbr.readmodule("ase.calculators." + modname)
+        if dft_calc_name in module_info:
+            dft_module_name = modname
+            break
 
-# find the module including the ASE DFT calculator class by name
-dft_module_name = ""
-for importer, modname, ispkg in pkgutil.iter_modules(ase_calculators.__path__):
-    module_info = pyclbr.readmodule("ase.calculators." + modname)
-    if dft_calc_name in module_info:
-        dft_module_name = modname
-        break
+    # import ASE DFT calculator module, and build a DFT calculator class object
+    dft_calc = None
+    dft_module = importlib.import_module("ase.calculators." + dft_module_name)
+    for name, obj in inspect.getmembers(dft_module, inspect.isclass):
+        if name == dft_calc_name:
+            dft_calc = obj(**dft_calc_kwargs)
+    dft_calc.set(**dft_calc_params)
+    return dft_calc
 
-# import ASE DFT calculator module, and build a DFT calculator class object
-dft_calc = None
-dft_module = importlib.import_module("ase.calculators." + dft_module_name)
-for name, obj in inspect.getmembers(dft_module, inspect.isclass):
-    if name == dft_calc_name:
-        dft_calc = obj(**dft_calc_kwargs)
-dft_calc.set(**dft_calc_params)
 
-################################################################################
-#                                                                              #
-#                           Set up ASE flare calculator                        #
-#                                                                              #
-################################################################################
+def get_flare_calc(flare_config):
+    """
+    Set up ASE flare calculator
+    """
+    gp_name = flare_config.get("gp")
+    if gp_name == "GaussianProcess":
+        return get_gp_calc(flare_config)
+    elif gp_name == "SGP_Wrapper":
+        return get_sgp_calc(flare_config)
+    else:
+        raise NotImplementedError(f"{gp_name} is not implemented")
 
-flare_config = config["flare_calc"]
-kernels = flare_config.get("kernels")
-random_init_hyps = flare_config.get("random_init_hyps", True)
-opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
-max_iterations = flare_config.get("max_iterations", 20)
-bounds = flare_config.get("bounds", None)
 
-if flare_config.get("gp") == "GaussianProcess":
+def get_gp_calc(flare_config):
+    """
+    Return a FLARE_Calculator with gp from GaussianProcess
+    """
     from flare.bffs.gp import GaussianProcess
     from flare.bffs.mgp import MappedGaussianProcess
     from flare.bffs.gp.calculator import FLARE_Calculator
     from flare.utils.parameter_helper import ParameterHelper
 
-    # create gaussian process model
+    gp_file = flare_config.get("file", None)
+
+    # Load GP from file
+    if gp_file is not None:
+        gp, _ = GaussianProcess.from_file(gp_file)
+
+        # TODO: allow changing some of the parameters
+
+        flare_calc = FLARE_Calculator(gp)
+        return flare_calc
+
+    # Create gaussian process model
+    kernels = flare_config.get("kernels")
+    random_init_hyps = flare_config.get("random_init_hyps", True)
+    opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
+    max_iterations = flare_config.get("max_iterations", 20)
+    bounds = flare_config.get("bounds", None)
+
     gp_parameters = flare_config.get("gp_parameters")
     n_cpus = flare_config.get("n_cpus", 1)
     use_mapping = flare_config.get("use_mapping", False)
     if use_mapping:
         grid_params = flare_config.get("grid_params")
         vap_map = flare_config.get("var_map", "pca")
-    
+
     # set up GP hyperparameters
     pm = ParameterHelper(
         kernels=kernels,
@@ -104,7 +122,7 @@ if flare_config.get("gp") == "GaussianProcess":
         parameters=gp_parameters,
     )
     hm = pm.as_dict()
-    
+
     gp_model = GaussianProcess(
         kernels=kernels,
         component="mc",
@@ -122,7 +140,7 @@ if flare_config.get("gp") == "GaussianProcess":
         name=flare_config.get("name", "default_gp"),
         energy_noise=flare_config.get("energy_noise", 0.01),
     )
-    
+
     # create mapped gaussian process
     if use_mapping:
         unique_species = []
@@ -138,20 +156,42 @@ if flare_config.get("gp") == "GaussianProcess":
         )
     else:
         mgp_model = None
-    
+
     flare_calc = FLARE_Calculator(
         gp_model=gp_model,
         mgp_model=mgp_model,
         par=n_cpus > 1,
         use_mapping=use_mapping,
     )
+    return flare_calc
 
-elif flare_config.get("gp") == "SGP_Wrapper":
+
+def get_sgp_calc(flare_config):
+    """
+    Return a SGP_Calculator with sgp from SparseGP
+    """
     from flare_pp._C_flare import NormalizedDotProduct, SquaredExponential
     from flare_pp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody
     from flare_pp.sparse_gp import SGP_Wrapper
     from flare_pp.sparse_gp_calculator import SGP_Calculator
-    
+
+    sgp_file = flare_config.get("file", None)
+
+    # Load sparse GP from file
+    if sgp_file is not None:
+        sgp, _ = SGP_Wrapper.from_file(sgp_file)
+
+        # TODO: allow changing some of the parameters
+
+        flare_calc = SGP_Calculator(sgp)
+        return flare_calc
+
+    kernels = flare_config.get("kernels")
+    random_init_hyps = flare_config.get("random_init_hyps", True)
+    opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
+    max_iterations = flare_config.get("max_iterations", 20)
+    bounds = flare_config.get("bounds", None)
+
     # Define kernels.
     kernels = []
     for k in flare_config["kernels"]:
@@ -161,7 +201,7 @@ elif flare_config.get("gp") == "SGP_Wrapper":
             kernels.append(SquaredExponential(k["sigma"], k["ls"]))
         else:
             raise NotImplementedError(f"{k['name']} kernel is not implemented")
-    
+
     # Define descriptor calculators.
     n_species = len(flare_config["species"])
     cutoff = flare_config["cutoff"]
@@ -171,20 +211,20 @@ elif flare_config.get("gp") == "SGP_Wrapper":
             radial_hyps = [0.0, cutoff]
             cutoff_hyps = []
             descriptor_settings = [n_species, d["nmax"], d["lmax"]]
-            if "cutoff_matrix" in d: # multiple cutoffs
+            if "cutoff_matrix" in d:  # multiple cutoffs
                 desc_calc = B2(
-                    d["radial_basis"], 
-                    d["cutoff_function"], 
-                    radial_hyps, 
+                    d["radial_basis"],
+                    d["cutoff_function"],
+                    radial_hyps,
                     cutoff_hyps,
                     descriptor_settings,
                     d["cutoff_matrix"],
                 )
             else:
                 desc_calc = B2(
-                    d["radial_basis"], 
-                    d["cutoff_function"], 
-                    radial_hyps, 
+                    d["radial_basis"],
+                    d["cutoff_function"],
+                    radial_hyps,
                     cutoff_hyps,
                     descriptor_settings,
                 )
@@ -194,9 +234,9 @@ elif flare_config.get("gp") == "SGP_Wrapper":
             cutoff_hyps = []
             descriptor_settings = [n_species, d["nmax"], d["lmax"]]
             desc_calc = B3(
-                d["radial_basis"], 
-                d["cutoff_function"], 
-                radial_hyps, 
+                d["radial_basis"],
+                d["cutoff_function"],
+                radial_hyps,
                 cutoff_hyps,
                 descriptor_settings,
             )
@@ -211,64 +251,103 @@ elif flare_config.get("gp") == "SGP_Wrapper":
             desc_calc = FourBody(cutoff, n_species, d["cutoff_function"], cutoff_hyps)
 
         else:
-            raise NotImplementedError(f"{d['name'] descriptor is not supported}")
+            raise NotImplementedError(f"{d['name']} descriptor is not supported")
 
         descriptors.append(desc_calc)
 
-  
     # Define remaining parameters for the SGP wrapper.
     species_map = {flare_config.get("species")[i]: i for i in range(n_species)}
     sae_dct = flare_config.get("single_atom_energies", None)
     if sae_dct is not None:
-        assert n_species == len(sae_dct), "'single_atom_energies' should be the same length as 'species'"
+        assert n_species == len(
+            sae_dct
+        ), "'single_atom_energies' should be the same length as 'species'"
         single_atom_energies = {i: sae_dct[i] for i in range(n_species)}
 
     sgp = SGP_Wrapper(
-        kernels=kernels, 
-        descriptor_calculators=descriptors, 
+        kernels=kernels,
+        descriptor_calculators=descriptors,
         cutoff=cutoff,
-        sigma_e=flare_config.get("energy_noise"), 
-        sigma_f=flare_config.get("forces_noise"), 
-        sigma_s=flare_config.get("stress_noise"), 
+        sigma_e=flare_config.get("energy_noise"),
+        sigma_f=flare_config.get("forces_noise"),
+        sigma_s=flare_config.get("stress_noise"),
         species_map=species_map,
         variance_type=flare_config.get("variance_type", "local"),
-        single_atom_energies=single_atom_energies, 
+        single_atom_energies=single_atom_energies,
         energy_training=flare_config.get("energy_training", True),
         force_training=flare_config.get("force_training", True),
         stress_training=flare_config.get("stress_training", True),
         max_iterations=max_iterations,
-        opt_method=opt_algorithm, 
+        opt_method=opt_algorithm,
         bounds=bounds,
     )
 
     flare_calc = SGP_Calculator(sgp)
+    return flare_calc
 
-else:
-    raise NotImplementedError(f"{flare_config['gp']} is not implemented")
 
-################################################################################
-#                                                                              #
-#                           Set up OTF training engine                         #
-#                                                                              #
-################################################################################
+def run_otf_from_scratch(config):
+    """
+    Set up MD and OTF training engine
+    """
 
-# intialize velocity
-# The "file" option uses the velocities read from the supercell file.
-initial_velocity = config["otf"].get("initial_velocity", "file")
-if initial_velocity != "file": 
-    # Otherwise, the initial_velocity is a number specifying the temperature
-    # to initialize the velocity with Boltzmann distribution
-    init_temp = float(initial_velocity)
-    MaxwellBoltzmannDistribution(super_cell, init_temp * units.kB)
-    Stationary(super_cell) 
-    ZeroRotation(super_cell)
+    super_cell = get_super_cell(atoms_config)
+    dft_calc = get_dft_calc(config["dft_calc"])
+    flare_calc = get_flare_calc(config["flare_calc"])
+    otf_config = config.get("otf")
 
-test_otf = OTF(
-    super_cell,
-    flare_calc=flare_calc,
-    dft_calc=dft_calc,
-    **config.get("otf"),
-)
+    # intialize velocity
+    # The "file" option uses the velocities read from the supercell file.
+    initial_velocity = otf_config.get("initial_velocity", "file")
+    if initial_velocity != "file":
+        # Otherwise, the initial_velocity is a number specifying the temperature
+        # to initialize the velocity with Boltzmann distribution
+        init_temp = float(initial_velocity)
+        MaxwellBoltzmannDistribution(super_cell, init_temp * units.kB)
+        Stationary(super_cell)
+        ZeroRotation(super_cell)
 
-# run on-the-fly training
-test_otf.run()
+    otf = OTF(
+        super_cell,
+        flare_calc=flare_calc,
+        dft_calc=dft_calc,
+        **otf_config,
+    )
+
+    otf.run()
+
+
+def restart_otf(config):
+    """
+    Set up MD and OTF training engine. Restart with checkpoint files
+    """
+
+    otf_config = config.get("otf")
+    checkpoint = otf_config.get("checkpoint")
+    otf = OTF.from_checkpoint(checkpoint)
+
+    # allow modification of some parameters
+    for attr in [
+        "number_of_steps",
+        "rescale_steps",
+        "rescale_temps",
+        "write_model",
+        "freeze_hyps",
+        "store_dft_output",
+    ]:
+        if attr in otf_config:
+            otf.setattr(attr, otf_config.get(attr))
+
+    otf.run()
+
+
+if __name__ == "__main__":
+    with open(sys.argv[1], "r") as f:
+        config = yaml.safe_load(f)
+
+    mode = config.get("otf").get("mode", "scratch")
+    if mode == "scratch":
+        run_otf_from_scratch(config)
+    elif mode == "restart":
+        restart_otf(config)
+
