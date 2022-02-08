@@ -1862,7 +1862,7 @@ def get_neg_like(
         l_mat = np.linalg.cholesky(ky_mat)
     except np.linalg.LinAlgError:
         number_of_hyps = len(hyps)
-        return -1e8, np.zeros(number_of_hyps)
+        return -1e8
 
     labels = _global_training_labels[name]
 
