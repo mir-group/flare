@@ -1,0 +1,5 @@
+# Set up On-the-fly training and MD
+otf: # On-the-fly training and MD
+    mode: restart
+    number_of_steps: 8
+    checkpoint: VelocityVerlet_checkpt.json

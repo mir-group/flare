@@ -103,7 +103,7 @@ def get_gp_calc(flare_config):
 
     # Create gaussian process model
     kernels = flare_config.get("kernels")
-    random_init_hyps = flare_config.get("random_init_hyps", True)
+    hyps = flare_config.get("hyps", "random")
     opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
     max_iterations = flare_config.get("max_iterations", 20)
     bounds = flare_config.get("bounds", None)
@@ -111,22 +111,21 @@ def get_gp_calc(flare_config):
     gp_parameters = flare_config.get("gp_parameters")
     n_cpus = flare_config.get("n_cpus", 1)
     use_mapping = flare_config.get("use_mapping", False)
-    if use_mapping:
-        grid_params = flare_config.get("grid_params")
-        vap_map = flare_config.get("var_map", "pca")
 
     # set up GP hyperparameters
     pm = ParameterHelper(
         kernels=kernels,
-        random=random_init_hyps,
+        random=True,
         parameters=gp_parameters,
     )
     hm = pm.as_dict()
+    if hyps == "random":
+        hyps = hm["hyps"]
 
     gp_model = GaussianProcess(
         kernels=kernels,
         component="mc",
-        hyps=hm["hyps"],
+        hyps=hyps,
         cutoffs=hm["cutoffs"],
         hyps_mask=None,
         hyp_labels=hm["hyp_labels"],
@@ -143,10 +142,9 @@ def get_gp_calc(flare_config):
 
     # create mapped gaussian process
     if use_mapping:
-        unique_species = []
-        for s in super_cell.symbols:
-            if s not in unique_species:
-                unique_species.append(s)
+        grid_params = flare_config.get("grid_params")
+        var_map = flare_config.get("var_map", "pca")
+        unique_species = flare_config.get("unique_species")
         coded_unique_species = symbols2numbers(unique_species)
         mgp_model = MappedGaussianProcess(
             grid_params=grid_params,
@@ -286,12 +284,12 @@ def get_sgp_calc(flare_config):
     return flare_calc
 
 
-def run_otf_from_scratch(config):
+def fresh_start_otf(config):
     """
     Set up MD and OTF training engine
     """
 
-    super_cell = get_super_cell(atoms_config)
+    super_cell = get_super_cell(config["supercell"])
     dft_calc = get_dft_calc(config["dft_calc"])
     flare_calc = get_flare_calc(config["flare_calc"])
     otf_config = config.get("otf")
@@ -336,7 +334,7 @@ def restart_otf(config):
         "store_dft_output",
     ]:
         if attr in otf_config:
-            otf.setattr(attr, otf_config.get(attr))
+            setattr(otf, attr, otf_config.get(attr))
 
     otf.run()
 
@@ -345,9 +343,9 @@ if __name__ == "__main__":
     with open(sys.argv[1], "r") as f:
         config = yaml.safe_load(f)
 
-    mode = config.get("otf").get("mode", "scratch")
-    if mode == "scratch":
-        run_otf_from_scratch(config)
+    mode = config.get("otf").get("mode", "fresh")
+    if mode == "fresh":
+        fresh_start_otf(config)
     elif mode == "restart":
         restart_otf(config)
 
