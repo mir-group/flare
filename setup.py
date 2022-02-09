@@ -37,4 +37,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Development Status :: 4 - Beta",
     ],
+    entry_points = {
+        "console_scripts": ["flare-otf=flare.scripts.otf_train:main"],
+    }
 )

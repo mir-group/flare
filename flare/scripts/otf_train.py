@@ -339,7 +339,7 @@ def restart_otf(config):
     otf.run()
 
 
-if __name__ == "__main__":
+def main():
     with open(sys.argv[1], "r") as f:
         config = yaml.safe_load(f)
 
