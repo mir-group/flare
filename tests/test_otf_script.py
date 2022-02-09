@@ -6,6 +6,7 @@ import yaml
 
 from flare.io.otf_parser import OtfAnalysis
 from flare.scripts.otf_train import fresh_start_otf, restart_otf
+from flare.bffs.gp.calculator import FLARE_Calculator
 
 md_list = ["VelocityVerlet", "NPT"]
 number_of_steps = 5
