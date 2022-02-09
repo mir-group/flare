@@ -3,25 +3,12 @@ from copy import deepcopy
 import pytest
 flare_pp = pytest.importorskip("flare_pp")
 import numpy as np
+import yaml
 
 from flare.io.otf_parser import OtfAnalysis
 from flare.learners.otf import OTF
-from flare.utils.parameter_helper import ParameterHelper
+from flare.scripts.otf_train import fresh_start_otf, restart_otf
 
-from flare_pp._C_flare import NormalizedDotProduct, B2, SparseGP, Structure
-from flare_pp.sparse_gp import SGP_Wrapper
-from flare_pp.sparse_gp_calculator import SGP_Calculator
-
-from ase.data import atomic_numbers, atomic_masses
-from ase.constraints import FixAtoms
-from ase import units
-from ase.md.velocitydistribution import (
-    MaxwellBoltzmannDistribution,
-    Stationary,
-    ZeroRotation,
-)
-from ase.calculators import lammpsrun
-from ase import io
 
 if not os.environ.get("lmp", None):
     pytest.skip(
@@ -38,151 +25,38 @@ md_list = ["VelocityVerlet", "PyLAMMPS"]
 #md_list = ["PyLAMMPS"]
 number_of_steps = 5
 
-@pytest.fixture(scope="module")
-def super_cell():
-    atoms = io.read("test_files/4H_SiC_jittered.xyz")
-
-    yield atoms
-    del atoms
-
-@pytest.fixture(scope="module")
-def md_params(super_cell):
-    # Set up LAMMPS MD parameters
-    md_kwargs = {
-        "specorder": ["Si", "C"],
-        "dump_period": 1,
-        "timestep": 0.001,
-        "pair_style": "flare",
-        "fix": ["1 all nve"],
-        "keep_alive": False,
-    }
-    
-    md_dict = {}
-    md_dict["PyLAMMPS"] = {"params": md_kwargs}
-    md_dict["VelocityVerlet"] = {}
-
-    yield md_dict
-    del md_dict
-
-@pytest.fixture(scope="module")
-def flare_calc():
-    flare_calc_dict = {}
-    
-    # Initialize GP settings
-    sigma = 2.0
-    power = 2
-    kernel = NormalizedDotProduct(sigma, power)
-    cutoff_function = "quadratic"
-    cutoff = 4.0
-    radial_basis = "chebyshev"
-    radial_hyps = [0.0, cutoff]
-    cutoff_hyps = []
-    atom_types = [14, 6]
-    settings = [len(atom_types), 8, 4]
-    calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps, settings)
- 
-    for md_engine in md_list:
-        gp = SGP_Wrapper(
-            [kernel],
-            [calc],
-            cutoff,
-            sigma_e=0.01,
-            sigma_f=0.05,
-            sigma_s=0.005,
-            species_map={14:0, 6:1},
-            variance_type="local",
-            single_atom_energies=None,
-            energy_training=True,
-            force_training=True,
-            stress_training=True,
-            max_iterations=1,
-        )
-
-        if md_engine == "PyLAMMPS":
-            use_mapping = True
-        else:
-            use_mapping = False
-
-        flare_calc_dict[md_engine] = SGP_Calculator(sgp_model=gp, use_mapping=use_mapping)
-
-    yield flare_calc_dict
-    del flare_calc_dict
-
-
-@pytest.fixture(scope="module")
-def qe_calc():
-    species = ["Si", "C"]
-    specie_symbol_list = " ".join(species)
-    masses = [
-        f"{i} {atomic_masses[atomic_numbers[species[i]]]}" for i in range(len(species))
-    ]
-    coef_name = "SiC.tersoff"
-    rootdir = os.getcwd()
-    parameters = {
-        "command": os.environ.get("lmp"),  # set up executable for ASE
-        "keep_alive": False,
-        "newton": "on",
-        "pair_style": "tersoff",
-        "pair_coeff": [f"* * {rootdir}/tmp/{coef_name} Si C"],
-        "mass": masses,
-    }
-
-    # set up input params
-    label = "sic"
-    files = [f"test_files/{coef_name}"]
-
-    dft_calculator = lammpsrun.LAMMPS(
-        label=label,
-        keep_tmp_files=True,
-        tmp_dir="./tmp/",
-        files=files,
-        specorder=species,
-    )
-    dft_calculator.set(**parameters)
-
-    yield dft_calculator
-    del dft_calculator
-
-
 @pytest.mark.parametrize("md_engine", md_list)
-def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
+def test_otf_md(md_engine):
+    # Clean up old files
     for f in ["restart.dat", "thermo.txt", "traj.xyz"]:
         if f in os.listdir():
             os.remove(f)
 
-    flare_calculator = flare_calc[md_engine]
-    print(md_engine, "use mapping", flare_calculator.use_mapping)
-    # set up OTF MD engine
-    otf_params = {
-        "init_atoms": np.arange(12).tolist(),
-        "output_name": md_engine,
-        "std_tolerance_factor": -0.02,
-        "max_atoms_added": len(super_cell.positions),
-        "freeze_hyps": 0,
-        "write_model": 4,
-        "update_style": "threshold",
-        "update_threshold": 0.01,
-        "force_only": False,
-    }
+    for f in glob.glob(md_engine + "*"):
+        if "_ckpt" not in f:
+            os.remove(f)
+        else:
+            shutil.rmtree(f)
 
-    md_kwargs = md_params[md_engine]
+    # Modify the config for different MD engines 
+    with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
+        config = yaml.safe_load(f)
 
-    test_otf = OTF(
-        super_cell,
-        dt=0.001, # ps
-        number_of_steps=number_of_steps,
-        flare_calc=flare_calculator,
-        dft_calc=qe_calc,
-        md_engine=md_engine,
-        md_kwargs=md_kwargs,
-        trajectory=md_engine + "_otf.traj",
-        **otf_params,
-    )
+    if md_engine == "PyLAMMPS":
+        config["flare_calc"]["use_mapping"] = True
+    else:
+        config["flare_calc"]["use_mapping"] = False
+        config["otf"]["md_engine"] = md_engine
+        config["otf"]["md_kwargs"] = {}
 
-    # TODO: test if mgp matches gp
-    # TODO: see if there's difference between MD timestep & OTF timestep
+    config["otf"]["output_name"] = md_engine
 
-    test_otf.run()
+    print("fresh start")
+
+    # Run OTF
+    fresh_start_otf(config)
+
+    print("done fresh start")
 
     # Check that the GP forces change.
     output_name = f"{md_engine}.out"
@@ -191,29 +65,23 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     #comp2 = otf_traj.force_list[-1][1, 0]
     #assert (comp1 != comp2)
 
-    for f in glob.glob("scf*.pw*"):
-        os.remove(f)
-    for f in glob.glob("*.npy"):
-        os.remove(f)
-    for f in glob.glob("kv3*"):
-        shutil.rmtree(f)
-    for f in glob.glob("otf_data"):
-        shutil.rmtree(f, ignore_errors=True)
-    for f in glob.glob("out"):
-        shutil.rmtree(f, ignore_errors=True)
-    for f in os.listdir("./"):
-        if ".mgp" in f or ".var" in f:
-            os.remove(f)
-        if "slurm" in f:
-            os.remove(f)
-
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):
-    new_otf = OTF.from_checkpoint(md_engine + "_checkpt.json")
-    assert new_otf.curr_step == number_of_steps
-    new_otf.number_of_steps = new_otf.number_of_steps + 3
-    new_otf.run()
+    with open("../examples/test_restart.yaml", "r") as f:
+        config = yaml.safe_load(f)
+
+    config["otf"]["checkpoint"] = md_engine + "_checkpt.json"
+    restart_otf(config)
+
+    for tmpfile in ["*.npy", "*.mgp", "*.var"]:
+        for f in glob.glob(tmpfile):
+            os.remove(f)
+
+    for tmpdir in ["kv3*", "otf_data", "out", "mgp_grids"]:
+        for f in glob.glob(tmpdir):
+            shutil.rmtree(f, ignore_errors=True)
+
 
 @pytest.mark.skipif(("PyLAMMPS" not in md_list) or ("VelocityVerlet" not in md_list), reason="md_list does not include both PyLAMMPS and VelocityVerlet")
 def test_lammps_match_ase_verlet():
@@ -237,11 +105,6 @@ def test_lammps_match_ase_verlet():
 def test_otf_parser(md_engine):
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
-#    try:
-#        replicated_gp = otf_traj.make_gp()
-#    except:
-#        init_flare, _ = SGP_Calculator.from_file(md_engine + "_flare.json")
-#        replicated_gp = otf_traj.make_gp(init_gp=init_flare.gp_model)
 
     print("ase otf traj parsed")
     # Check that the GP forces change.
@@ -249,8 +112,11 @@ def test_otf_parser(md_engine):
     comp2 = otf_traj.force_list[-1][1, 0]
 #    assert (comp1 != comp2)
 
-    for f in glob.glob(md_engine + "*"):
-        if "ckpt" in f and "json" not in f:
+    for tmpdir in [md_engine + "*ckpt_*", "tmp"]:
+        for f in glob.glob(tmpdir):
             shutil.rmtree(f)
-        else:
+
+    for tmpfile in ["*.flare", "log.*", "traj.xyz", "thermo.txt", md_engine + "*"]:
+        for f in glob.glob(tmpfile):
             os.remove(f)
+

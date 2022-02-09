@@ -103,19 +103,19 @@ class LAMMPS_MD(MolecularDynamics):
 
     """
 
-    def __init__(self, atoms, timestep, params, **kwargs):
+    def __init__(self, atoms, timestep, trajectory=None, **kwargs):
         self.thermo_file = "thermo.txt"
         self.traj_xyz_file = "traj.xyz"
         self.potential_file = "lmp.flare"
         self.dump_cols = "id type x y z vx vy vz fx fy fz c_unc"
 
         # Set up ASE calculator parameters
-        if "specorder" not in params:  # user must provide the unique species
+        self.params = kwargs
+        self.initial_params = deepcopy(kwargs)
+        if "specorder" not in self.params:  # user must provide the unique species
             raise ValueError("Please set 'specorder' to a list of unique species")
-        self.params = params
-        self.initial_params = deepcopy(params)
 
-        super().__init__(atoms, timestep, **kwargs)
+        super().__init__(atoms, timestep, trajectory) #, **kwargs)
         self.curr_atoms = self.atoms.copy()
 
     def set_otf_parameters(self, label, N_steps, std_tolerance):
