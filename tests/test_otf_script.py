@@ -5,24 +5,7 @@ import numpy as np
 import yaml
 
 from flare.io.otf_parser import OtfAnalysis
-from flare.bffs.gp import GaussianProcess
-from flare.bffs.mgp import MappedGaussianProcess
-from flare.bffs.gp.calculator import FLARE_Calculator
-from flare.learners.otf import OTF
-from flare.utils.parameter_helper import ParameterHelper
 from flare.scripts.otf_train import fresh_start_otf, restart_otf
-
-from ase.constraints import FixAtoms
-from ase import units
-from ase.md.velocitydistribution import (
-    MaxwellBoltzmannDistribution,
-    Stationary,
-    ZeroRotation,
-)
-from ase.spacegroup import crystal
-from ase.calculators.espresso import Espresso
-from ase import io
-
 
 md_list = ["VelocityVerlet", "NPT"]
 number_of_steps = 5
@@ -81,7 +64,7 @@ def test_otf_md(md_engine, md_params, write_model):
 @pytest.mark.parametrize("md_engine", md_list)
 @pytest.mark.parametrize("write_model", write_model_list)
 def test_load_checkpoint(md_engine, write_model):
-    with open("../examples/test_GP_LJ_restart.yaml", "r") as f:
+    with open("../examples/test_restart.yaml", "r") as f:
         config = yaml.safe_load(f)
 
     output_name = f"{md_engine}_{write_model}"

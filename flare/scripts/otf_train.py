@@ -161,7 +161,7 @@ def get_gp_calc(flare_config):
         par=n_cpus > 1,
         use_mapping=use_mapping,
     )
-    return flare_calc
+    return flare_calc, kernels
 
 
 def get_sgp_calc(flare_config):
@@ -185,10 +185,10 @@ def get_sgp_calc(flare_config):
         return flare_calc
 
     kernels = flare_config.get("kernels")
-    random_init_hyps = flare_config.get("random_init_hyps", True)
     opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
     max_iterations = flare_config.get("max_iterations", 20)
     bounds = flare_config.get("bounds", None)
+    use_mapping = flare_config.get("use_mapping", False)
 
     # Define kernels.
     kernels = []
@@ -280,8 +280,8 @@ def get_sgp_calc(flare_config):
         bounds=bounds,
     )
 
-    flare_calc = SGP_Calculator(sgp)
-    return flare_calc
+    flare_calc = SGP_Calculator(sgp, use_mapping)
+    return flare_calc, kernels
 
 
 def fresh_start_otf(config):
@@ -291,7 +291,7 @@ def fresh_start_otf(config):
 
     super_cell = get_super_cell(config["supercell"])
     dft_calc = get_dft_calc(config["dft_calc"])
-    flare_calc = get_flare_calc(config["flare_calc"])
+    flare_calc, kernels = get_flare_calc(config["flare_calc"])
     otf_config = config.get("otf")
 
     # intialize velocity
