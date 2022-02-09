@@ -3,9 +3,14 @@ scipy
 memory_profiler
 numba
 ase
-nptyping
-nbsphinx
 IPython
 pytest>=4.6
 pytest-mock
 pyyaml
+# some dependencies of sphinx and notebook
+docutils==0.17.1
+alabaster==0.7.12 
+babel
+pygments==2.11.2
+nptyping
+nbsphinx
