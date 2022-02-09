@@ -270,6 +270,11 @@ class OTF:
                 # When DFT is called, ASE energy, forces, and stresses should
                 # get updated.
                 self.initialize_train()
+                self.initialize_md()
+
+            # starting MD with a non-empty GP
+            elif (self.curr_step == 0) and (len(self.gp.training_data) > 0):
+                self.initialize_md()
 
             # after step 1, try predicting with GP model
             else:
@@ -381,6 +386,7 @@ class OTF:
             self.init_atoms, dft_frcs, dft_stress=dft_stress, dft_energy=dft_energy
         )
 
+    def initialize_md(self):
         # TODO: Turn this into a "reset" method.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.flare_calc.reset()
