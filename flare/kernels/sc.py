@@ -44,7 +44,7 @@ The kernel functions to choose:
 
 import numpy as np
 from math import exp
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 
 import flare.kernels.cutoffs as cf
 

@@ -2,7 +2,8 @@ import pytest
 from flare.kernels.two_body_mc_simple import TwoBodyKernel
 from flare.kernels.three_body_mc_simple import ThreeBodyKernel
 from flare.kernels.cutoffs import quadratic_cutoff
-from flare import struc, env
+from flare.atoms import FLARE_Atoms
+from flare.descriptors import env
 import numpy as np
 
 
@@ -34,8 +35,8 @@ def strucs():
     np.random.seed(0)
     positions_1 = np.random.rand(n_atoms, 3)
     positions_2 = np.random.rand(n_atoms, 3)
-    structure_1 = struc.Structure(cell, species, positions_1)
-    structure_2 = struc.Structure(cell, species, positions_2)
+    structure_1 = FLARE_Atoms(cell=cell, symbols=species, positions=positions_1)
+    structure_2 = FLARE_Atoms(cell=cell, symbols=species, positions=positions_2)
     strucs = [structure_1, structure_2]
 
     yield strucs
@@ -70,8 +71,8 @@ def force_envs(strucs):
             for dim in dims:
                 positions_pert = np.copy(structure.positions)
                 positions_pert[0, dim] += delta * sign
-                struc_pert = struc.Structure(
-                    structure.cell, structure.coded_species, positions_pert
+                struc_pert = FLARE_Atoms(
+                    cell=structure.cell, symbols=structure.numbers, positions=positions_pert
                 )
                 atom_envs = []
                 for n in range(structure.nat):
@@ -107,8 +108,8 @@ def stress_envs(strucs):
                     for k in range(structure.nat):
                         positions_pert[k, m] += structure.positions[k, n] * delta * sign
 
-                    struc_pert = struc.Structure(
-                        cell_pert, structure.coded_species, positions_pert
+                    struc_pert = FLARE_Atoms(
+                        cell=cell_pert, symbols=structure.numbers, positions=positions_pert
                     )
 
                     atom_envs = []

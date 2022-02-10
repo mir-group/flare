@@ -10,7 +10,7 @@ and AtomicEnvironment (if you also set up different cutoffs).  A simple example 
 Examples:
 
     >>> from flare.util.parameter_helper import ParameterHelper
-    >>> from flare.gp import GaussianProcess
+    >>> from flare.bffs.gp import GaussianProcess
 
     >>> pm = ParameterHelper(species=['O', 'C', 'H'],
     ...                      kernels={'twobody':[['*', '*'], ['O','O']],

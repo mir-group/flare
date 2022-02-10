@@ -5,7 +5,6 @@ import numpy as np
 from numpy import isclose
 from numpy.random import random, randint
 
-from flare import env, struc, gp
 from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs

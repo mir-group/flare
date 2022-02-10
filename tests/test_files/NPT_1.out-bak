@@ -1,0 +1,383 @@
+2022-02-03 11:36:04.621072
+python 3.6.10 |Anaconda, Inc.| (default, Jan  7 2020, 21:14:29) 
+[GCC 7.3.0]
+numpy 1.19.2
+ase 3.21.1
+flare 0.2.4
+flare_pp 0.1.2
+
+Number of cpu cores: 1
+Kernel: ['twobody', 'threebody']
+Training points: 0
+Cutoffs: {'twobody': 10.0, 'threebody': 6.0}
+Number of hyperparameters: 5
+Hyperparameter array: [0.64034029 0.16867265 0.0539972  0.4098916  0.05      ]
+sig2: 0.64034029 
+ls2: 0.16867265 
+sig3: 0.0539972 
+ls3: 0.4098916 
+noise: 0.05 
+
+Uncertainty tolerance: 1.0 times noise hyperparameter 
+Timestep (ps): 0.001
+Number of frames: 5
+Number of atoms: 4
+System species: {'H', 'He'}
+Periodic cell (A): 
+[[10.  0.  0.]
+ [ 0.  5.  0.]
+ [ 0.  0.  5.]]
+Restart: 0 
+
+Previous positions (A):
+H        0.3112   -0.2531    0.2194
+He       2.2071    2.4322    2.3684
+H        5.2068    0.0473   -0.4642
+He       7.6764    2.8988    2.1107
+--------------------------------------------------------------------------------
+
+Calling DFT...
+
+DFT run complete.
+Number of DFT calls: 1
+Wall time from start: 0.01 s
+
+*-Frame: 0 
+Simulation Time:      0.000 ps 
+El            Position (A)                    DFT Force (ev/A)                  Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.2071    2.4322    2.3684       -0.6846    0.0431   -0.0717        0.0000    0.0000    0.0000      -26.8686    6.2185   14.3394
+H        5.2068    0.0473   -0.4642        0.2333   -0.1469   -0.1053        0.0000    0.0000    0.0000       21.3546  -11.1210   15.2876
+He       7.6764    2.8988    2.1107        0.2457    0.3546   -0.1431        0.0000    0.0000    0.0000       20.8562   -1.1751  -15.1148
+
+Periodic cell (A): 
+[[10.  0.  0.]
+ [ 0.  5.  0.]
+ [ 0.  0.  5.]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    10.863    10.879    10.890     0.071    -0.014    -0.099
+
+Pressure (GPa): 10.877337 
+Temperature (K): 981.99 
+Kinetic energy (eV): 0.380797 
+Potential energy (eV): -9.330240 
+Total energy (eV): -8.949443 
+
+Wall time from start: 0.02 s
+Adding atom [0, 1, 2, 3] to the training set.
+Uncertainty: [0. 0. 0.]
+
+GP hyperparameters: 
+Hyp0 : sig2                           = 0.6386
+Hyp1 : ls2                            = 0.3421
+Hyp2 : sig3                           = 0.0538
+Hyp3 : ls3                            = 0.4100
+Hyp4 : noise                          = 1.0348
+Likelihood: -50.5081
+Likelihood gradient: [-13.87097575  43.62924316  -2.56678403   0.36571435  -2.85624954]
+Wall time from start: 0.08 s
+--------------------------------------------------------------------------------
+-Frame: 1 
+Simulation Time:      0.001 ps 
+El            Position (A)                    GP Force (ev/A)                   Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000       72.7577    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.1795    2.4384    2.3828       -0.6396   -0.0130   -0.0014       66.8787    0.0000    0.0000      -28.4001    6.1766   14.3497
+H        5.2295    0.0352   -0.4490        0.2876   -0.2228    0.0115       67.4362    0.0000    0.0000       24.0939  -13.1895   15.2217
+He       7.6976    2.8980    2.0955        0.2891    0.2872   -0.0756       65.6847    0.0000    0.0000       21.5623   -0.4772  -15.2813
+
+Periodic cell (A): 
+[[10.  0.  0.]
+ [ 0.  5.  0.]
+ [ 0.  0.  5.]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    -0.055    -0.231    -0.183    -0.152    -0.053    -0.160
+
+Pressure (GPa): -0.156440 
+Temperature (K): 1068.54 
+Kinetic energy (eV): 0.414356 
+Potential energy (eV): 0.295117 
+Total energy (eV): 0.709473 
+
+Wall time from start: 0.54 s
+
+Calling DFT...
+
+DFT run complete.
+Number of DFT calls: 2
+Wall time from start: 0.56 s
+
+*-Frame: 1 
+Simulation Time:      0.001 ps 
+El            Position (A)                    DFT Force (ev/A)                  Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.1795    2.4384    2.3828       -0.7431    0.0507   -0.0673        0.0000    0.0000    0.0000      -28.4001    6.1766   14.3497
+H        5.2295    0.0352   -0.4490        0.2771   -0.1588   -0.0852        0.0000    0.0000    0.0000       24.0939  -13.1895   15.2217
+He       7.6976    2.8980    2.0955        0.2773    0.3531   -0.1542        0.0000    0.0000    0.0000       21.5623   -0.4772  -15.2813
+
+Periodic cell (A): 
+[[10.  0.  0.]
+ [ 0.  5.  0.]
+ [ 0.  0.  5.]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    10.833    10.874    10.897     0.089    -0.003    -0.111
+
+Pressure (GPa): 10.868069 
+Temperature (K): 1068.54 
+Kinetic energy (eV): 0.414356 
+Potential energy (eV): -9.362981 
+Total energy (eV): -8.948624 
+
+Wall time from start: 0.56 s
+Mean absolute errors & Mean absolute values
+forces mae: 0.0467 eV/A
+forces mav: 0.1806 eV/A
+type 1 forces mae: 0.0285 eV/A
+type 1 forces mav: 0.0869 eV/A
+type 2 forces mae: 0.0649 eV/A
+type 2 forces mav: 0.2743 eV/A
+Adding atom [3, 1, 2, 0] to the training set.
+Uncertainty: [65.68465723  0.          0.        ]
+
+GP hyperparameters: 
+Hyp0 : sig2                           = 0.6322
+Hyp1 : ls2                            = 1.3416
+Hyp2 : sig3                           = 0.0533
+Hyp3 : ls3                            = 0.4395
+Hyp4 : noise                          = 1.0245
+Likelihood: -48.7920
+Likelihood gradient: [  -6.72610717    5.88125253 -136.81374872   24.88537799  -12.0632889 ]
+Wall time from start: 0.78 s
+--------------------------------------------------------------------------------
+-Frame: 2 
+Simulation Time:      0.002 ps 
+El            Position (A)                    GP Force (ev/A)                   Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000      100.1892    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.1504    2.4447    2.3972       -0.7357   -0.0051    0.0085       97.4946    0.0000    0.0000      -30.0561    6.1550   14.3579
+H        5.2552    0.0210   -0.4339        0.3410   -0.2277    0.0198       95.6651    0.0000    0.0000       27.1006  -15.3450   15.3711
+He       7.7199    2.8980    2.0801        0.3542    0.2885   -0.0884       96.9613    0.0000    0.0000       22.3364    0.2165  -15.4785
+
+Periodic cell (A): 
+[[ 1.00004709e+01  1.00100505e-04 -1.86926370e-04]
+ [ 0.00000000e+00  5.00015900e+00  1.19901827e-04]
+ [ 0.00000000e+00  0.00000000e+00  5.00020807e+00]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    -0.312    -0.606    -0.349     0.119    -0.055    -0.223
+
+Pressure (GPa): -0.422235 
+Temperature (K): 1171.26 
+Kinetic energy (eV): 0.454190 
+Potential energy (eV): 0.801426 
+Total energy (eV): 1.255617 
+
+Wall time from start: 1.55 s
+
+Calling DFT...
+
+DFT run complete.
+Number of DFT calls: 3
+Wall time from start: 1.56 s
+
+*-Frame: 2 
+Simulation Time:      0.002 ps 
+El            Position (A)                    DFT Force (ev/A)                  Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.1504    2.4447    2.3972       -0.8049    0.0580   -0.0627        0.0000    0.0000    0.0000      -30.0561    6.1550   14.3579
+H        5.2552    0.0210   -0.4339        0.3262   -0.1720   -0.0647        0.0000    0.0000    0.0000       27.1006  -15.3450   15.3711
+He       7.7199    2.8980    2.0801        0.3073    0.3510   -0.1634        0.0000    0.0000    0.0000       22.3364    0.2165  -15.4785
+
+Periodic cell (A): 
+[[ 1.00004709e+01  1.00100505e-04 -1.86926370e-04]
+ [ 0.00000000e+00  5.00015900e+00  1.19901827e-04]
+ [ 0.00000000e+00  0.00000000e+00  5.00020807e+00]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    10.796    10.866    10.902     0.110     0.012    -0.128
+
+Pressure (GPa): 10.854524 
+Temperature (K): 1171.26 
+Kinetic energy (eV): 0.454190 
+Potential energy (eV): -9.400619 
+Total energy (eV): -8.946429 
+
+Wall time from start: 1.57 s
+Mean absolute errors & Mean absolute values
+forces mae: 0.0452 eV/A
+forces mav: 0.1925 eV/A
+type 1 forces mae: 0.0258 eV/A
+type 1 forces mav: 0.0938 eV/A
+type 2 forces mae: 0.0646 eV/A
+type 2 forces mav: 0.2912 eV/A
+Adding atom [2, 3, 1, 0] to the training set.
+Uncertainty: [95.66506131  0.          0.        ]
+
+GP hyperparameters: 
+Hyp0 : sig2                           = 0.6133
+Hyp1 : ls2                            = 1.5348
+Hyp2 : sig3                           = 0.0517
+Hyp3 : ls3                            = 1.4200
+Hyp4 : noise                          = 0.9939
+Likelihood: -53.6502
+Likelihood gradient: [ -9.85780337   7.23487598 -62.26448243   1.87685065 -26.74443791]
+Wall time from start: 2.02 s
+--------------------------------------------------------------------------------
+-Frame: 3 
+Simulation Time:      0.003 ps 
+El            Position (A)                    GP Force (ev/A)                   Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000       96.4994    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.1198    2.4512    2.4117       -0.8269   -0.0083    0.0218       94.4276    0.0000    0.0000      -31.9381    6.1391   14.3924
+H        5.2847    0.0047   -0.4185        0.4033   -0.2277    0.0427       93.8785    0.0000    0.0000       30.6614  -17.5245   15.6723
+He       7.7437    2.8992    2.0645        0.3884    0.2808   -0.1028       94.2648    0.0000    0.0000       23.2303    0.9025  -15.7076
+
+Periodic cell (A): 
+[[ 1.00018732e+01  3.43416800e-04 -2.74872183e-04]
+ [ 0.00000000e+00  5.00082168e+00 -1.14248800e-04]
+ [ 0.00000000e+00  0.00000000e+00  5.00065133e+00]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    -0.314    -0.509    -0.314    -0.015     0.039    -0.178
+
+Pressure (GPa): -0.378879 
+Temperature (K): 1298.73 
+Kinetic energy (eV): 0.503621 
+Potential energy (eV): -1.558064 
+Total energy (eV): -1.054443 
+
+Wall time from start: 3.18 s
+
+Calling DFT...
+
+DFT run complete.
+Number of DFT calls: 4
+Wall time from start: 3.20 s
+
+*-Frame: 3 
+Simulation Time:      0.003 ps 
+El            Position (A)                    DFT Force (ev/A)                  Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.1198    2.4512    2.4117       -0.8705    0.0647   -0.0580        0.0000    0.0000    0.0000      -31.9381    6.1391   14.3924
+H        5.2847    0.0047   -0.4185        0.3813   -0.1863   -0.0438        0.0000    0.0000    0.0000       30.6614  -17.5245   15.6723
+He       7.7437    2.8992    2.0645        0.3356    0.3478   -0.1703        0.0000    0.0000    0.0000       23.2303    0.9025  -15.7076
+
+Periodic cell (A): 
+[[ 1.00018732e+01  3.43416800e-04 -2.74872183e-04]
+ [ 0.00000000e+00  5.00082168e+00 -1.14248800e-04]
+ [ 0.00000000e+00  0.00000000e+00  5.00065133e+00]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    10.749    10.851    10.901     0.134     0.030    -0.149
+
+Pressure (GPa): 10.833764 
+Temperature (K): 1298.73 
+Kinetic energy (eV): 0.503621 
+Potential energy (eV): -9.442328 
+Total energy (eV): -8.938707 
+
+Wall time from start: 3.20 s
+Mean absolute errors & Mean absolute values
+forces mae: 0.0445 eV/A
+forces mav: 0.2049 eV/A
+type 1 forces mae: 0.0250 eV/A
+type 1 forces mav: 0.1019 eV/A
+type 2 forces mae: 0.0639 eV/A
+type 2 forces mav: 0.3078 eV/A
+Adding atom [2, 3, 1, 0] to the training set.
+Uncertainty: [93.87852386  0.          0.        ]
+
+GP hyperparameters: 
+Hyp0 : sig2                           = 0.5408
+Hyp1 : ls2                            = 2.4831
+Hyp2 : sig3                           = 0.0456
+Hyp3 : ls3                            = 1.7059
+Hyp4 : noise                          = 0.8765
+Likelihood: -55.9563
+Likelihood gradient: [ -8.77234673   3.01260483 -88.95795033   1.94762707 -44.41337609]
+Wall time from start: 4.04 s
+--------------------------------------------------------------------------------
+-Frame: 4 
+Simulation Time:      0.004 ps 
+El            Position (A)                    GP Force (ev/A)                   Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000       93.4400    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.0870    2.4574    2.4263       -0.8979   -0.0050    0.0380       92.1642    0.0000    0.0000      -34.0262    6.1259   14.4696
+H        5.3178   -0.0139   -0.4030        0.4506   -0.2298    0.0648       91.7735    0.0000    0.0000       34.7575  -19.7213   16.1919
+He       7.7682    2.9005    2.0486        0.4301    0.2881   -0.1247       92.1532    0.0000    0.0000       24.2233    1.5880  -15.9870
+
+Periodic cell (A): 
+[[ 1.00028393e+01  4.29138676e-04 -9.40068610e-04]
+ [ 0.00000000e+00  5.00096453e+00  2.82083829e-04]
+ [ 0.00000000e+00  0.00000000e+00  5.00095190e+00]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+     3.342     3.350     3.461     0.119     0.117    -0.142
+
+Pressure (GPa): 3.384366 
+Temperature (K): 1453.71 
+Kinetic energy (eV): 0.563718 
+Potential energy (eV): -5.427905 
+Total energy (eV): -4.864187 
+
+Wall time from start: 5.76 s
+
+Calling DFT...
+
+DFT run complete.
+Number of DFT calls: 5
+Wall time from start: 5.78 s
+
+*-Frame: 4 
+Simulation Time:      0.004 ps 
+El            Position (A)                    DFT Force (ev/A)                  Std. Dev (ev/A)                  Velocities (A/ps)       
+H        0.3112   -0.2531    0.2194        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000        0.0000    0.0000    0.0000
+He       2.0870    2.4574    2.4263       -0.9420    0.0716   -0.0504        0.0000    0.0000    0.0000      -34.0262    6.1259   14.4696
+H        5.3178   -0.0139   -0.4030        0.4430   -0.2014   -0.0225        0.0000    0.0000    0.0000       34.7575  -19.7213   16.1919
+He       7.7682    2.9005    2.0486        0.3634    0.3408   -0.1761        0.0000    0.0000    0.0000       24.2233    1.5880  -15.9870
+
+Periodic cell (A): 
+[[ 1.00028393e+01  4.29138676e-04 -9.40068610e-04]
+ [ 0.00000000e+00  5.00096453e+00  2.82083829e-04]
+ [ 0.00000000e+00  0.00000000e+00  5.00095190e+00]]
+
+Stress tensor (GPa):
+       xx        yy        zz        yz        xz        xy
+    10.692    10.834    10.899     0.157     0.060    -0.169
+
+Pressure (GPa): 10.808177 
+Temperature (K): 1453.71 
+Kinetic energy (eV): 0.563718 
+Potential energy (eV): -9.496756 
+Total energy (eV): -8.933038 
+
+Wall time from start: 5.78 s
+Mean absolute errors & Mean absolute values
+forces mae: 0.0419 eV/A
+forces mav: 0.2176 eV/A
+type 1 forces mae: 0.0205 eV/A
+type 1 forces mav: 0.1112 eV/A
+type 2 forces mae: 0.0633 eV/A
+type 2 forces mav: 0.3241 eV/A
+Adding atom [2, 3, 1, 0] to the training set.
+Uncertainty: [91.77351633  0.          0.        ]
+
+GP hyperparameters: 
+Hyp0 : sig2                           = 0.0808
+Hyp1 : ls2                            = 5.1525
+Hyp2 : sig3                           = 0.0068
+Hyp3 : ls3                            = 3.6906
+Hyp4 : noise                          = 0.1318
+Likelihood: 43.3071
+Likelihood gradient: [-1.59470423e+01  3.80082501e-02 -3.02187209e+02  9.21328000e-02
+ -2.84203348e+02]
+Wall time from start: 8.98 s
+--------------------
+Run complete.

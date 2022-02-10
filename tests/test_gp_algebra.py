@@ -2,10 +2,9 @@ import time
 import pytest
 import numpy as np
 
-import flare.gp_algebra
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
-from flare.struc import Structure
+from flare.atoms import FLARE_Atoms
 from flare.kernels.mc_simple import (
     two_plus_three_body_mc,
     two_plus_three_body_mc_grad,
@@ -23,7 +22,7 @@ from flare.kernels.mc_sephyps import (
 from flare.kernels import mc_sephyps
 from flare.utils.parameter_helper import ParameterHelper
 
-from flare.gp_algebra import (
+from flare.bffs.gp.gp_algebra import (
     get_like_grad_from_mats,
     get_force_block,
     get_force_energy_block,
@@ -41,10 +40,16 @@ from flare.gp_algebra import (
     update_energy_block,
     update_force_energy_block,
     efs_kern_vec,
+    _global_training_data,
+    _global_training_labels,
+    _global_training_structures,
+    _global_energy_labels,
 )
 
 from tests.fake_gp import get_tstp
 
+
+n_cpus = 2
 
 @pytest.fixture(scope="module")
 def params():
@@ -126,7 +131,7 @@ def get_random_training_set(nenv, nstruc):
     for _ in range(nenv):
         positions = np.random.uniform(-1, 1, [noa, 3])
         species = np.random.randint(0, len(unique_species), noa) + 1
-        struc = Structure(cell, species, positions)
+        struc = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
         training_data += [AtomicEnvironment(struc, 1, cutoffs)]
         training_labels += [np.random.uniform(-1, 1, 3)]
     training_labels = np.hstack(training_labels)
@@ -137,7 +142,7 @@ def get_random_training_set(nenv, nstruc):
     for _ in range(nstruc):
         positions = np.random.uniform(-1, 1, [noa, 3])
         species = np.random.randint(0, len(unique_species), noa) + 1
-        struc = Structure(cell, species, positions)
+        struc = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
         struc_envs = []
         for n in range(noa):
             struc_envs.append(AtomicEnvironment(struc, n, cutoffs))
@@ -147,10 +152,10 @@ def get_random_training_set(nenv, nstruc):
 
     # store it as global variables
     name = "unit_test"
-    flare.gp_algebra._global_training_data[name] = training_data
-    flare.gp_algebra._global_training_labels[name] = training_labels
-    flare.gp_algebra._global_training_structures[name] = training_structures
-    flare.gp_algebra._global_energy_labels[name] = energy_labels
+    _global_training_data[name] = training_data
+    _global_training_labels[name] = training_labels
+    _global_training_structures[name] = training_structures
+    _global_energy_labels[name] = energy_labels
 
     energy_noise = 0.01
 
@@ -182,7 +187,7 @@ def ky_mat_ref(params):
         kernel[3],
         energy_noise,
         cutoffs,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=5,
     )
     print("compute ky_mat parallel", time.time() - time0)
@@ -224,10 +229,10 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
         energy_noise,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=20,
     )
-    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=2", time.time() - time0)
+    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus={n_cpus}", time.time() - time0)
     assert np.isclose(
         ky_mat, ky_mat_ref, rtol=1e-3
     ).all(), f"multi hyps  parallel implementation is wrong with case {ihyps}"
@@ -244,10 +249,10 @@ def test_ky_mat_update(params, ihyps):
     # prepare old data set as the starting point
     n = 5
     s = 1
-    training_data = flare.gp_algebra._global_training_data[name]
-    training_structures = flare.gp_algebra._global_training_structures[name]
-    flare.gp_algebra._global_training_data["old"] = training_data[:n]
-    flare.gp_algebra._global_training_structures["old"] = training_structures[:s]
+    training_data = _global_training_data[name]
+    training_structures = _global_training_structures[name]
+    _global_training_data["old"] = training_data[:n]
+    _global_training_structures["old"] = training_structures[:s]
     func = [get_Ky_mat, get_ky_mat_update]
 
     # get the reference
@@ -285,7 +290,7 @@ def test_ky_mat_update(params, ihyps):
         energy_noise,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=20,
     )
     assert np.isclose(ky_mat, ky_mat0, rtol=1e-10).all(), "update function is wrong"
@@ -299,8 +304,8 @@ def test_kernel_vector(params, ihyps):
     np.random.seed(10)
     test_point = get_tstp()
 
-    size1 = len(flare.gp_algebra._global_training_data[name])
-    size2 = len(flare.gp_algebra._global_training_structures[name])
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
 
     hyps_mask = hyps_mask_list[ihyps]
     hyps = hyps_mask["hyps"]
@@ -320,7 +325,7 @@ def test_kernel_vector(params, ihyps):
         hyps,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=100,
     )
 
@@ -339,8 +344,8 @@ def test_en_kern_vec(params, ihyps):
     np.random.seed(10)
     test_point = get_tstp()
 
-    size1 = len(flare.gp_algebra._global_training_data[name])
-    size2 = len(flare.gp_algebra._global_training_structures[name])
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
 
     # test the parallel implementation for multihyps
     vec = en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs, hyps_mask)
@@ -353,7 +358,7 @@ def test_en_kern_vec(params, ihyps):
         hyps,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=100,
     )
 
@@ -368,8 +373,8 @@ def test_efs_kern_vec(params, ihyps):
     np.random.seed(10)
     test_point = get_tstp()
 
-    size1 = len(flare.gp_algebra._global_training_data[name])
-    size2 = len(flare.gp_algebra._global_training_structures[name])
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
 
     hyps_mask = hyps_mask_list[ihyps]
     hyps = hyps_mask["hyps"]
@@ -389,7 +394,7 @@ def test_efs_kern_vec(params, ihyps):
         hyps,
         cutoffs,
         hyps_mask,
-        n_cpus=2,
+        n_cpus=n_cpus,
         n_sample=100,
     )
 
@@ -411,7 +416,7 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
     # serial version
     hypmat_ser, ky_mat_ser = func(hyps, name, kernel[1], cutoffs, hyps_mask)
     # parallel version
-    hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs, hyps_mask, n_cpus=2)
+    hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs, hyps_mask, n_cpus=n_cpus)
 
     ref = ky_mat_ref[: ky_mat_ser.shape[0], : ky_mat_ser.shape[1]]
 

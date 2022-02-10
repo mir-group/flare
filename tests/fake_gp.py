@@ -3,9 +3,9 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
-from flare.gp import GaussianProcess
-from flare.env import AtomicEnvironment
-from flare.struc import Structure
+from flare.bffs.gp import GaussianProcess
+from flare.descriptors.env import AtomicEnvironment
+from flare.atoms import FLARE_Atoms
 from flare.utils.parameter_helper import ParameterHelper
 
 
@@ -20,7 +20,7 @@ def get_random_structure(cell, unique_species, noa, set_seed: int = None):
         unique_species[np.random.randint(0, len(unique_species))] for i in range(noa)
     ]
 
-    test_structure = Structure(cell, species, positions)
+    test_structure = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
 
     return test_structure, forces
 
@@ -213,7 +213,7 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
 
     test_struc = []
     for i in range(3):
-        test_struc += [Structure(cell, species_1, positions[i])]
+        test_struc += [FLARE_Atoms(symbols=species_1, positions=positions[i], cell=cell)]
 
     env_0 = []
     env_p = []
@@ -241,9 +241,9 @@ def generate_envs(cutoffs, delta):
     pos_3[0][0] = -delta
 
     species_1 = [1, 2, 1, 1]  # , 1, 1, 2, 1, 2]
-    test_structure_1 = Structure(cell, species_1, pos_1)
-    test_structure_2 = Structure(cell, species_1, pos_2)
-    test_structure_3 = Structure(cell, species_1, pos_3)
+    test_structure_1 = FLARE_Atoms(symbols=species_1, positions=pos_1, cell=cell)
+    test_structure_2 = FLARE_Atoms(symbols=species_1, positions=pos_2, cell=cell)
+    test_structure_3 = FLARE_Atoms(symbols=species_1, positions=pos_3, cell=cell)
 
     env1_1 = AtomicEnvironment(test_structure_1, atom_1, cutoffs)
     env1_2 = AtomicEnvironment(test_structure_2, atom_1, cutoffs)
@@ -260,9 +260,9 @@ def generate_envs(cutoffs, delta):
     atom_2 = 0
     species_2 = [1, 1, 2, 1]  # , 2, 1, 2, 2, 2]
 
-    test_structure_1 = Structure(cell, species_2, pos_1)
-    test_structure_2 = Structure(cell, species_2, pos_2)
-    test_structure_3 = Structure(cell, species_2, pos_3)
+    test_structure_1 = FLARE_Atoms(symbols=species_2, positions=pos_1, cell=cell)
+    test_structure_2 = FLARE_Atoms(symbols=species_2, positions=pos_2, cell=cell)
+    test_structure_3 = FLARE_Atoms(symbols=species_2, positions=pos_3, cell=cell)
 
     env2_1 = AtomicEnvironment(test_structure_1, atom_2, cutoffs)
     env2_2 = AtomicEnvironment(test_structure_2, atom_2, cutoffs)
@@ -287,9 +287,9 @@ def another_env(cutoffs, delt):
 
     species_1 = [1, 1, 1, 1]
 
-    test_structure_1 = Structure(cell, species_1, pos_1)
-    test_structure_2 = Structure(cell, species_1, pos_2)
-    test_structure_3 = Structure(cell, species_1, pos_3)
+    test_structure_1 = FLARE_Atoms(symbols=species_1, positions=pos_1, cell=cell)
+    test_structure_2 = FLARE_Atoms(symbols=species_1, positions=pos_2, cell=cell)
+    test_structure_3 = FLARE_Atoms(symbols=species_1, positions=pos_3, cell=cell)
 
     # atom 0, original position
     env1_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
@@ -319,7 +319,7 @@ def another_env(cutoffs, delt):
 
     species_2 = [1, 2, 2, 1]
 
-    test_structure_1 = Structure(cell, species_2, pos_1)
+    test_structure_1 = FLARE_Atoms(symbols=species_2, positions=pos_1, cell=cell)
 
     env2_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
 

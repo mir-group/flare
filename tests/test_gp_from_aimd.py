@@ -8,17 +8,18 @@ from json import loads
 from glob import glob
 from os import remove, path
 
-from flare.env import AtomicEnvironment
-from flare.struc import Structure
-from flare.gp import GaussianProcess
-from flare.mgp import MappedGaussianProcess
-from flare.utils.element_coder import Z_to_element
-from flare.gp_from_aimd import (
+from flare.descriptors.env import AtomicEnvironment
+from flare.atoms import FLARE_Atoms
+from flare.bffs.gp import GaussianProcess
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.learners.gp_from_aimd import (
     TrajectoryTrainer,
     parse_trajectory_trainer_output,
     structures_from_gpfa_output,
 )
-from flare.utils.learner import subset_of_frame_by_element
+from flare.learners.utils import subset_of_frame_by_element
+from ase.data import chemical_symbols
+from ase.io import read
 
 from tests.test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
@@ -82,8 +83,8 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
 
 
 def test_load_trained_gp_and_run(methanol_gp):
-    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
-        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+    frames = read(path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+    frames = [FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in frames]
 
     tt = TrajectoryTrainer(
         frames,
@@ -117,8 +118,8 @@ def test_load_one_frame_and_run():
         opt_algorithm="L-BFGS-B",
     )
 
-    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
-        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+    frames = read(path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+    frames = [FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in frames]
 
     tt = TrajectoryTrainer(
         frames,
@@ -153,8 +154,8 @@ def test_seed_and_run():
         opt_algorithm="L-BFGS-B",
     )
 
-    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
-        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+    frames = read(path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+    frames = [FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in frames]
 
     with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
         data_dicts = [loads(s) for s in f.readlines()[:6]]
@@ -212,8 +213,8 @@ def test_pred_on_elements():
         opt_algorithm="L-BFGS-B",
     )
 
-    with open(path.join(TEST_FILE_DIR, "methanol_frames.json"), "r") as f:
-        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+    frames = read(path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+    frames = [FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in frames]
 
     with open(path.join(TEST_FILE_DIR, "methanol_envs.json"), "r") as f:
         data_dicts = [loads(s) for s in f.readlines()[:6]]
@@ -358,7 +359,7 @@ def test_parse_gpfa_output():
     # Ensure that structures can correctly be read from the GPFA output
     structures = structures_from_gpfa_output(frames)
     for struc, frame in zip(structures, frames):
-        assert np.array_equal(struc.species_labels, frame["species"])
+        assert np.array_equal(struc.symbols, frame["species"])
         assert np.array_equal(struc.positions, frame["positions"])
         assert np.array_equal(struc.forces, frame["dft_forces"])
 
@@ -381,13 +382,15 @@ def test_passive_learning():
         opt_algorithm="L-BFGS-B",
     )
 
-    frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
+    frames = read(path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+    frames = [FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in frames]
+
     envs = AtomicEnvironment.from_file(path.join(TEST_FILE_DIR, "methanol_envs.json"))
     cur_gp = deepcopy(the_gp)
     tt = TrajectoryTrainer(frames=None, gp=cur_gp)
 
     # TEST ENVIRONMENT ADDITION
-    envs_species = set(Z_to_element(env.ctype) for env in envs)
+    envs_species = set(chemical_symbols[env.ctype] for env in envs)
     tt.run_passive_learning(environments=envs, post_build_matrices=False)
 
     assert cur_gp.training_statistics["N"] == len(envs)
@@ -443,7 +446,8 @@ def test_active_learning_simple_run():
         opt_algorithm="L-BFGS-B",
     )
 
-    frames = Structure.from_file(path.join(TEST_FILE_DIR, "methanol_frames.json"))
+    frames = read(path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+    frames = [FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in frames]
 
     # Assign fake energies to structures
     for frame in frames:

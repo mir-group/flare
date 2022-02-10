@@ -91,6 +91,13 @@ def test_write_potential(n_species, n_types, power, multicut):
     os.remove(potential_name)
     os.system("rm -r tmp")
 
+import os
+import numpy as np
+from copy import deepcopy
+from ase import Atom, Atoms
+from ase.build import bulk
+from ase.calculators.lammpsrun import LAMMPS
+from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -134,7 +141,7 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
         L_inv_file = f"Linv_{n_species}_{n_types}.txt"
         sgp_model.gp_model.sparse_gp.write_L_inverse(
             L_inv_file, contributor)
-    
+
         sparse_desc_file = f"sparse_desc_{n_species}_{n_types}.txt"
         sgp_model.gp_model.sparse_gp.write_sparse_descriptors(
             sparse_desc_file, contributor)
@@ -151,24 +158,24 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
         mass_str = "mass 1 12\nmass 2 16"
     test_atoms = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
 
-    # compute uncertainty 
+    # compute uncertainty
     in_lmp = f"""
-atom_style atomic 
+atom_style atomic
 units metal
-boundary p p p 
-atom_modify sort 0 0.0 
+boundary p p p
+atom_modify sort 0 0.0
 
-read_data data.lammps 
+read_data data.lammps
 
 ### interactions
-pair_style flare 
+pair_style flare
 pair_coeff * * {potential_file}
 {mass_str}
 
 ### run
 fix fix_nve all nve
 compute unc all flare/std/atom {coeff_str}
-dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc 
+dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc
 thermo_style custom step temp press cpu pxx pyy pzz pxy pxz pyz ke pe etotal vol lx ly lz atoms
 thermo_modify flush yes format float %23.16g
 thermo 1
@@ -205,3 +212,41 @@ run 0
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")
+
+def test_lmp_calc():
+    Ni = bulk("Ni", cubic=True)
+    H = Atom("H", position=Ni.cell.diagonal() / 2)
+    NiH = Ni + H
+
+    os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
+    files = []
+    param_dict = {
+        "pair_style": "lj/cut 2.5",
+        "pair_coeff": ["* * 1 1"],
+        "compute": ["1 all pair/local dist", "2 all reduce max c_1"],
+        "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
+        "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
+        "dump_period": 1,
+        "timestep": 0.001,
+    }
+
+    ase_lmp_calc = LAMMPS(
+        label="ase", files=files, keep_tmp_files=True, tmp_dir="tmp"
+    )
+    ase_lmp_calc.set(**param_dict)
+    ase_atoms = deepcopy(NiH)
+    ase_atoms.calc = ase_lmp_calc
+    ase_lmp_calc.calculate(ase_atoms)
+
+    mod_lmp_calc = LAMMPS_MOD(
+        label="mod", files=files, keep_tmp_files=True, tmp_dir="tmp"
+    )
+    mod_lmp_calc.set(**param_dict)
+    mod_atoms = deepcopy(NiH)
+    mod_atoms.calc = mod_lmp_calc
+    mod_lmp_calc.calculate(mod_atoms, set_atoms=True)
+    mod_stress = mod_atoms.get_stress() + get_kinetic_stress(mod_atoms)
+
+    assert np.allclose(ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy())
+    assert np.allclose(ase_atoms.get_forces(), mod_atoms.get_forces())
+    assert np.allclose(ase_atoms.get_stress(), mod_stress)

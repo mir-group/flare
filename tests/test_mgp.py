@@ -9,14 +9,14 @@ import shutil
 from copy import deepcopy
 from numpy import allclose, isclose
 
-from flare import struc, env, gp
-from flare.parameters import Parameters
-from flare.mgp import MappedGaussianProcess
-from flare.lammps import lammps_calculator
-from flare.utils.element_coder import _Z_to_mass, _Z_to_element, _element_to_Z
-from flare.ase.calculator import FLARE_Calculator
-from flare.ase.atoms import FLARE_Atoms
+from flare.descriptors import env
+from flare.bffs import gp
+from flare.utils.parameters import Parameters
+from flare.bffs.mgp import MappedGaussianProcess
+from flare.bffs.gp.calculator import FLARE_Calculator
+from flare.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
+from ase.data import atomic_numbers, atomic_masses
 
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
@@ -79,7 +79,7 @@ def all_lmp():
     species = ["H", "He"]
     specie_symbol_list = " ".join(species)
     masses = [
-        f"{i} {_Z_to_mass[_element_to_Z[species[i]]]}" for i in range(len(species))
+        f"{i} {atomic_masses[atomic_numbers[species[i]]]}" for i in range(len(species))
     ]
     parameters = {
         "command": os.environ.get("lmp"),  # set up executable for ASE
@@ -331,7 +331,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
             print("mgp_var, gp_var", mgp_var, gp_var)
             assert np.allclose(mgp_var, gp_var, rtol=1e-2)
 
-    print("struc_test positions", struc_test.positions, struc_test.species_labels)
+    print("struc_test positions", struc_test.positions, struc_test.symbols)
 
 
 @pytest.mark.skipif(
@@ -368,11 +368,10 @@ def test_lmp_predict(all_lmp, all_gp, all_mgp, bodies, multihyps):
     struc_test, f = get_random_structure(cell, unique_species, nenv)
 
     # build ase atom from struc
-    ase_atoms_flare = struc_test.to_ase_atoms()
-    ase_atoms_flare = FLARE_Atoms.from_ase_atoms(ase_atoms_flare)
+    ase_atoms_flare = deepcopy(struc_test)
     ase_atoms_flare.calc = ase_calculator
 
-    ase_atoms_lmp = deepcopy(struc_test).to_ase_atoms()
+    ase_atoms_lmp = deepcopy(struc_test)
     ase_atoms_lmp.calc = lmp_calculator
 
     try:

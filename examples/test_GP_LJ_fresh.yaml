@@ -1,0 +1,54 @@
+# Super cell is read from a file such as POSCAR, xyz, lammps-data
+# or any format that ASE supports
+supercell: # Super cell
+    file: test_files/HHe.json
+    format: json
+    replicate: [1, 1, 1]
+    jitter: 0.0
+
+# Set up FLARE calculator with (sparse) Gaussian process
+flare_calc: # FLARE calculator
+    gp: GaussianProcess
+    kernels:
+        - twobody
+        - threebody
+    opt_algorithm: L-BFGS-B
+    max_iterations: 1
+    gp_parameters: 
+        cutoff_twobody: 10.0
+        cutoff_threebody: 6.0
+    hyps: [0.64034029, 0.16867265, 0.0539972,  0.4098916,  0.05]
+    n_cpus: 1
+    use_mapping: True
+
+    # (Optional, for mapped GP)
+    grid_params:
+        twobody:
+            grid_num: [64]
+        threebody:
+            grid_num: [16, 16, 16]
+    var_map: pca
+    unique_species: [H, He]
+
+# Set up DFT calculator, it can be any calculator supported by ASE
+dft_calc: # DFT calculaotr
+    name: LennardJones
+    kwargs: {}
+    params:
+        sigma: 3.0
+        rc: 9.0
+
+# Set up On-the-fly training and MD
+otf: # On-the-fly training and MD
+    mode: fresh
+    md_engine: VelocityVerlet
+    md_kwargs: {}
+    initial_velocity: file
+    dt: 0.001 # timestep is 1 fs
+    number_of_steps: 5
+    output_name: VelocityVerlet_4
+    init_atoms: [0, 1, 2, 3]
+    std_tolerance_factor: 1.0
+    max_atoms_added: -1
+    freeze_hyps: 10
+    write_model: 4

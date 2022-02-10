@@ -8,7 +8,7 @@ from numpy import isclose
 
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 from flare.utils.parameter_helper import ParameterHelper
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
