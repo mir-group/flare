@@ -8,3 +8,6 @@ nbsphinx
 IPython
 pytest>=4.6
 pytest-mock
+cmake>=3.14.5
+jupyter
+nbconvert
