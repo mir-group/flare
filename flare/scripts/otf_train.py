@@ -58,6 +58,19 @@ def get_dft_calc(dft_config):
             dft_module_name = modname
             break
 
+    # if the module is not found in the current folder, then search the sub-directory
+    if not dft_module_name:
+        for calc_dir in os.listdir(ase_calculators.__path__[0]):
+            dir_path = ase_calculators.__path__[0] + "/" + calc_dir
+            if os.path.isdir(dir_path): 
+                for importer, modname, ispkg in pkgutil.iter_modules([dir_path]):
+                    module_info = pyclbr.readmodule(
+                        "ase.calculators." + calc_dir + "." + modname
+                    )
+                    if dft_calc_name in module_info:
+                        dft_module_name = calc_dir + "." + modname
+                        break
+
     # import ASE DFT calculator module, and build a DFT calculator class object
     dft_calc = None
     dft_module = importlib.import_module("ase.calculators." + dft_module_name)
