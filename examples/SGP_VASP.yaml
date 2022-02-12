@@ -38,7 +38,7 @@ flare_calc:
 # location of the VASP executable
 # point the user to the ASE documentation
 dft_calc:
-    name: VASP
+    name: Vasp
     kwargs: 
         directory: dft
         xc: PBE
@@ -50,7 +50,7 @@ dft_calc:
         istart: 0
         lreal: auto
         encut: 450
-        ediff: 1e-5
+        ediff: 1.0e-5
         nelm: 100
         nelmin: 6
         nelmdl: -9
