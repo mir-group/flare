@@ -25,6 +25,7 @@ from ase.md.langevin import Langevin
 from flare.md.npt import NPT_mod
 from flare.md.nosehoover import NoseHoover
 from flare.md.lammps import LAMMPS_MD, check_sgp_match
+from flare.md.fake import FakeMD
 from ase import units
 from ase.io import read, write
 
@@ -164,6 +165,8 @@ class OTF:
             MD = NoseHoover
         elif md_engine == "PyLAMMPS":
             MD = LAMMPS_MD
+        elif md_engine == "Fake":
+            MD = FakeMD
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
