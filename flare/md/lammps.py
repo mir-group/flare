@@ -186,6 +186,7 @@ class LAMMPS_MD(MolecularDynamics):
             files=[self.potential_file] + self.uncertainty_file.split(),
             keep_tmp_files=True,
             tmp_dir="tmp",
+            keep_alive=False,
         )
         lmp_calc.set(**self.params)
         atoms = deepcopy(self.curr_atoms)
@@ -269,6 +270,8 @@ class LAMMPS_MD(MolecularDynamics):
 BAL_RUN_CMD = """
 fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {thermo_file}
 dump dump_unc all custom {dump_freq} tmp/trjunc_{label}.bin {dump_cols} 
+dump_modify dump_unc sort id
+dump_modify dump_all sort id
 reset_timestep {curr_steps}
 run {N_steps} upto every {dump_freq} "if '$(c_MaxUnc) > {std_tolerance}' then quit"
 unfix thermoprint
@@ -399,7 +402,9 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
             specorder=None, 
             compute_uncertainty=True, 
             params={"timestep": f"0.001\n"\
-                f"dump dump_unc all custom 1 tmp_check/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc"},
+                f"dump dump_unc all custom 1 tmp_check/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc\n"\
+                f"dump_modify dump_unc sort id\n"\
+                f"dump_modify dump_all sort id\n"},
         )
 
         # create ASE calc
@@ -410,6 +415,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
             parameters=params,
             files=files,
             specorder=specorder,
+            keep_alive=False,
         )
 
         os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
@@ -426,7 +432,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
         lmp_stds = lmp_atoms.get_array("c_unc")
 
         assert np.allclose(lmp_energy, gp_energy)
-        assert np.allclose(lmp_forces, gp_forces)
+        assert np.allclose(lmp_forces, gp_forces), (lmp_forces, gp_forces)
         assert np.allclose(lmp_stress, gp_stress)
         atoms.calc = sgp_calc
 
