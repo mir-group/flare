@@ -496,7 +496,7 @@ class OTF:
             for ofile in to_copy:
                 # if the file is in a subdirectory like dft/OUTCAR, then copy it out
                 filename = ofile.split("/")[-1]
-                copyfile(filename, dest + "/" + dt_string + filename)
+                copyfile(ofile, dest + "/" + dt_string + filename)
 
     def update_gp(
         self,
