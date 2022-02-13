@@ -7,6 +7,7 @@ import inspect
 import numpy as np
 
 from flare.learners.otf import OTF
+from flare.md.fake import FakeDFT
 
 from ase import units
 import ase.calculators as ase_calculators
@@ -28,11 +29,12 @@ def get_super_cell(atoms_config):
     # parse parameters
     atoms_file = atoms_config.get("file")
     atoms_format = atoms_config.get("format", None)
+    atoms_index = atoms_config.get("index", -1)
     replicate = atoms_config.get("replicate", [1, 1, 1])
     jitter = atoms_config.get("jitter", 0)
 
     if atoms_format is not None:
-        super_cell = io.read(atoms_file, format=atoms_format)
+        super_cell = io.read(atoms_file, format=atoms_format, index=atoms_index)
     else:
         super_cell = io.read(atoms_file)
     super_cell *= replicate
@@ -49,6 +51,11 @@ def get_dft_calc(dft_config):
     dft_calc_name = dft_config.get("name", "LennardJones")
     dft_calc_kwargs = dft_config.get("kwargs", {})
     dft_calc_params = dft_config.get("params", {})
+
+    if dft_calc_name == "FakeDFT":
+        dft_calc = FakeDFT(**dft_calc_kwargs)
+        dft_calc.set(**dft_calc_params)
+        return dft_calc
 
     # find the module including the ASE DFT calculator class by name
     dft_module_name = ""
