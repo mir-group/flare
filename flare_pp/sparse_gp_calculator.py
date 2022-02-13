@@ -135,7 +135,7 @@ class SGP_Calculator(Calculator):
     @staticmethod
     def from_dict(dct):
         sgp, _ = SGP_Wrapper.from_dict(dct["gp_model"])
-        calc = SGP_Calculator(sgp)
+        calc = SGP_Calculator(sgp, use_mapping=gp_dict["use_mapping"])
         calc.results = dct["results"]
         return calc
 
@@ -150,7 +150,7 @@ class SGP_Calculator(Calculator):
         with open(name, "r") as f:
             gp_dict = json.loads(f.readline())
         sgp, kernels = SGP_Wrapper.from_dict(gp_dict["gp_model"])
-        calc = SGP_Calculator(sgp)
+        calc = SGP_Calculator(sgp, use_mapping=gp_dict["use_mapping"])
 
         return calc, kernels
 
