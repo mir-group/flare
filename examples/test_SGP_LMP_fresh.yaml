@@ -41,6 +41,7 @@ flare_calc:
 dft_calc:
     name: LAMMPS
     kwargs: 
+        command: "mpirun -n <n_cpus> <lammps_executable>"
         label: sic
         keep_tmp_files: True
         tmp_dir: tmp
@@ -58,6 +59,7 @@ otf:
     mode: fresh
     md_engine: PyLAMMPS
     md_kwargs: 
+        command: "mpirun -n <n_cpus> <lammps_executable>"
         specorder: [Si, C]
         dump_period: 1
         pair_style: flare

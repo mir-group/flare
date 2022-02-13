@@ -20,9 +20,8 @@ if not os.environ.get("lmp", None):
 
 np.random.seed(12345)
 
-os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
+#os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
 md_list = ["VelocityVerlet", "PyLAMMPS"]
-#md_list = ["PyLAMMPS"]
 number_of_steps = 5
 
 @pytest.mark.parametrize("md_engine", md_list)
@@ -42,8 +41,11 @@ def test_otf_md(md_engine):
     with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
+    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp")
+
     if md_engine == "PyLAMMPS":
         config["flare_calc"]["use_mapping"] = True
+        config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
     else:
         config["flare_calc"]["use_mapping"] = False
         config["otf"]["md_engine"] = md_engine
@@ -112,7 +114,7 @@ def test_otf_parser(md_engine):
     comp2 = otf_traj.force_list[-1][1, 0]
 #    assert (comp1 != comp2)
 
-    for tmpdir in [md_engine + "*ckpt_*", "tmp"]:
+    for tmpdir in [md_engine + "*ckpt_*", "tmp*"]:
         for f in glob.glob(tmpdir):
             shutil.rmtree(f)
 

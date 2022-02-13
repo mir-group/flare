@@ -58,10 +58,8 @@ class LAMMPS_MOD(LAMMPS):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.nsteps = 0
-        if not os.environ.get("ASE_LAMMPSRUN_COMMAND"):
-            raise Exception(
-                "Please set environment variable 'ASE_LAMMPSRUN_COMMAND' to the lammps executable"
-            )
+        if "command" not in kwargs:
+            raise Exception("Please set 'command' to the lammps executable")
 
     def calculate(
         self, atoms=None, properties=None, system_changes=None, set_atoms=False
@@ -108,6 +106,9 @@ class LAMMPS_MD(MolecularDynamics):
         self.traj_xyz_file = "traj.xyz"
         self.potential_file = "lmp.flare"
         self.dump_cols = "id type x y z vx vy vz fx fy fz c_unc"
+
+        assert "command" in kwargs, "Please set `command` to lammps executable"
+        self.command = kwargs.pop("command")
 
         # Set up ASE calculator parameters
         self.params = kwargs
@@ -182,6 +183,7 @@ class LAMMPS_MD(MolecularDynamics):
 
         # Run lammps with the customized parameters
         lmp_calc = LAMMPS_MOD(
+            command=self.command,
             label=label,
             files=[self.potential_file] + self.uncertainty_file.split(),
             keep_tmp_files=True,
@@ -355,7 +357,7 @@ def get_flare_lammps_settings(
 
     return params
 
-def check_sgp_match(atoms, sgp_calc, logger, specorder):
+def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     """
     Check if the lammps trajectory or calculator matches the SGP predictions
     """
@@ -409,6 +411,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
 
         # create ASE calc
         lmp_calc = LAMMPS_MOD(
+            command=command,
             label=label,
             keep_tmp_files=True,
             tmp_dir="tmp_check",
@@ -418,7 +421,6 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
             keep_alive=False,
         )
 
-        os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
         lmp_calc.calculate(atoms, set_atoms=True)
         lmp_energy = lmp_calc.results["energy"]
         lmp_forces = lmp_calc.results["forces"]
@@ -431,7 +433,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
         )
         lmp_stds = lmp_atoms.get_array("c_unc")
 
-        assert np.allclose(lmp_energy, gp_energy)
+        assert np.allclose(lmp_energy, gp_energy), (lmp_energy, gp_energy)
         assert np.allclose(lmp_forces, gp_forces), (lmp_forces, gp_forces)
         assert np.allclose(lmp_stress, gp_stress)
         atoms.calc = sgp_calc

@@ -40,7 +40,8 @@ flare_calc:
 dft_calc:
     name: Vasp
     kwargs: 
-        directory: dft
+        command: "mpirun -n <n_cpus> <vasp_executable>"
+        directory: ./
         xc: PBE
         kpts: [1, 1, 1]
         # below are all the parameters in INCAR

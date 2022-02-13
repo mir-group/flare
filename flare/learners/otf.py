@@ -446,7 +446,7 @@ class OTF:
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
             check_sgp_match(
-                self.atoms, self.flare_calc, f, self.md.params["specorder"]
+                self.atoms, self.flare_calc, f, self.md.params["specorder"], self.md.command,
             )
 
         else:
