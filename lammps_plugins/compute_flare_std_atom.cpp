@@ -311,6 +311,31 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
    read potential values from a DYNAMO single element funcfl file
 ------------------------------------------------------------------------- */
 
+void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
+  int me = comm->me;
+
+  // Parse the cutoffs.
+  int n_cutoffs = n_species * n_species;
+  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
+  if (me == 0)
+    grab(fptr, n_cutoffs, cutoffs);
+  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Fill in the cutoff matrix.
+  cutoff = -1;
+  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
+  int cutoff_count = 0;
+  for (int i = 0; i < n_species; i++){
+    for (int j = 0; j < n_species; j++){
+      double cutoff_val = cutoffs[cutoff_count];
+      cutoff_matrix(i, j) = cutoff_val;
+      if (cutoff_val > cutoff) cutoff = cutoff_val;
+      cutoff_count ++;
+    }
+  }
+}
+
+
 void ComputeFlareStdAtom::read_file(char *filename) {
   int me = comm->me;
   char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
@@ -364,25 +389,8 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
 
-  // Parse the cutoffs.
-  int n_cutoffs = n_species * n_species;
-  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
-  if (me == 0)
-    grab(fptr, n_cutoffs, cutoffs);
-  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
-
-  // Fill in the cutoff matrix.
-  cutoff = -1;
-  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
-  int cutoff_count = 0;
-  for (int i = 0; i < n_species; i++){
-    for (int j = 0; j < n_species; j++){
-      double cutoff_val = cutoffs[cutoff_count];
-      cutoff_matrix(i, j) = cutoff_val;
-      if (cutoff_val > cutoff) cutoff = cutoff_val;
-      cutoff_count ++;
-    }
-  }
+  // Parse the cutoffs and fill in the cutoff matrix
+  parse_cutoff_matrix(n_species, fptr);
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
@@ -499,25 +507,8 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
 
-  // Parse the cutoffs.
-  int n_cutoffs = n_species * n_species;
-  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
-  if (me == 0)
-    grab(fptr, n_cutoffs, cutoffs);
-  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
-
-  // Fill in the cutoff matrix.
-  cutoff = -1;
-  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
-  int cutoff_count = 0;
-  for (int i = 0; i < n_species; i++){
-    for (int j = 0; j < n_species; j++){
-      double cutoff_val = cutoffs[cutoff_count];
-      cutoff_matrix(i, j) = cutoff_val;
-      if (cutoff_val > cutoff) cutoff = cutoff_val;
-      cutoff_count ++;
-    }
-  }
+  // Parse the cutoffs and fill in the cutoff matrix
+  parse_cutoff_matrix(n_species, fptr);
 
   // Parse number of sparse envs
   if (me == 0) {
