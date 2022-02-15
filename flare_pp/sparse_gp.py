@@ -123,6 +123,11 @@ class SGP_Wrapper:
         with open(name, "w") as f:
             json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        cls_dict = self.as_dict()
+        return cls.from_dict(cls_dict)
+
     def as_dict(self):
         out_dict = {}
         for key in vars(self):
@@ -140,6 +145,7 @@ class SGP_Wrapper:
             "radial_hyps": b2_calc.radial_hyps,
             "cutoff_hyps": b2_calc.cutoff_hyps,
             "descriptor_settings": b2_calc.descriptor_settings,
+            "cutoffs": b2_calc.cutoffs,
         }
         out_dict["descriptor_calculators"] = [b2_dict]
 
@@ -221,6 +227,7 @@ class SGP_Wrapper:
             b2_dict["radial_hyps"],
             b2_dict["cutoff_hyps"],
             b2_dict["descriptor_settings"],
+            b2_dict["cutoffs"],
         )
 
         # change the keys of single_atom_energies and species_map to int

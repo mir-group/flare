@@ -23,7 +23,8 @@ rootdir = os.getcwd()
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("power", power_list)
-def test_write_potential(n_species, n_types, power):
+@pytest.mark.parametrize("multicut", [False, True])
+def test_write_potential(n_species, n_types, power, multicut):
     """Test the flare_pp pair style."""
 
     if n_species > n_types:
@@ -33,7 +34,7 @@ def test_write_potential(n_species, n_types, power):
         pytest.skip()
 
     # Write potential file.
-    sgp_model = get_sgp_calc(n_types, power)
+    sgp_model = get_sgp_calc(n_types, power, multicut)
     potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
     contributor = "Jon"
     kernel_index = 0
@@ -73,6 +74,12 @@ def test_write_potential(n_species, n_types, power):
     forces_lmp = test_structure.get_forces()
     stress_lmp = test_structure.get_stress()
 
+    # add back single_atom_energies to lammps energy
+    if sgp_model.gp_model.single_atom_energies is not None:
+        for spec in test_structure.numbers:
+            coded_spec = sgp_model.gp_model.species_map[spec]
+            energy_lmp += sgp_model.gp_model.single_atom_energies[coded_spec]
+
     thresh = 1e-6
     print(energy, energy_lmp)
     assert(np.abs(energy - energy_lmp) < thresh)
@@ -99,7 +106,8 @@ def test_write_potential(n_species, n_types, power):
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("use_map", [False, True])
 @pytest.mark.parametrize("power", power_list)
-def test_lammps_uncertainty(n_species, n_types, use_map, power):
+@pytest.mark.parametrize("multicut", [False, True])
+def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
     if n_species > n_types:
         pytest.skip()
 
@@ -110,7 +118,7 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power):
     lmp_command = os.environ.get("lmp")
 
     # get sgp & dump coefficient files
-    sgp_model = get_sgp_calc(n_types, power)
+    sgp_model = get_sgp_calc(n_types, power, multicut)
     contributor = "YX"
     kernel_index = 0
 

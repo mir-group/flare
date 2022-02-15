@@ -49,8 +49,8 @@ protected:
 
   int nmax; // number of atoms
   double cutoff;
-  double *beta;
-  Eigen::MatrixXd beta_matrix;
+  double *beta, *cutoffs;
+  Eigen::MatrixXd beta_matrix, cutoff_matrix;
   std::vector<Eigen::MatrixXd> beta_matrices;
 
   Eigen::VectorXd hyperparameters;
@@ -62,6 +62,7 @@ protected:
 
   virtual void allocate();
   virtual void read_file(char *);
+  void parse_cutoff_matrix(int n_species, FILE *fptr);
   void read_L_inverse(char *);
   void read_sparse_descriptors(char *);
   void grab(FILE *, int, double *);

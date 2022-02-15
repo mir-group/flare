@@ -394,6 +394,7 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(const DescriptorValues &struc1,
   double vol_inv_2 = 1 / struc2.volume;
 
   std::vector<int> stress_inds{0, 3, 5};
+  double empty_thresh = 1e-8;
 
   for (int s = 0; s < n_types_1; s++) {
     // Compute dot products.
@@ -415,11 +416,21 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(const DescriptorValues &struc1,
 
     for (int i = 0; i < n_struc1; i++) {
       double norm_i = struc1.descriptor_norms[s](i);
+
+      // Continue if atom j has no neighbors.
+      if (norm_i < empty_thresh)
+        continue;
+
       double norm_i2 = norm_i * norm_i;
       double cut_i = struc1.cutoff_values[s](i);
 
       for (int j = 0; j < n_struc2; j++) {
         double norm_j = struc2.descriptor_norms[s](j);
+
+        // Continue if atom j has no neighbors.
+        if (norm_j < empty_thresh)
+          continue;
+
         double norm_j2 = norm_j * norm_j;
         double cut_j = struc2.cutoff_values[s](j);
 

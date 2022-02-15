@@ -10,11 +10,11 @@ class SGP_Calculator(Calculator):
 
     implemented_properties = ["energy", "forces", "stress", "stds"]
 
-    def __init__(self, sgp_model):
+    def __init__(self, sgp_model, use_mapping=False):
         super().__init__()
         self.gp_model = sgp_model
         self.results = {}
-        self.use_mapping = False
+        self.use_mapping = use_mapping
         self.mgp_model = None
 
     # TODO: Figure out why this is called twice per MD step.
@@ -56,6 +56,11 @@ class SGP_Calculator(Calculator):
         # Set results.
         self.results["energy"] = deepcopy(structure_descriptor.mean_efs[0])
         self.results["forces"] = deepcopy(structure_descriptor.mean_efs[1:-6].reshape(-1, 3))
+
+        # Add back single atom energies
+        if self.gp_model.single_atom_energies is not None:
+            for spec in coded_species:
+                self.results["energy"] += self.gp_model.single_atom_energies[spec]
 
         # Convert stress to ASE format.
         flare_stress = deepcopy(structure_descriptor.mean_efs[-6:])
@@ -110,8 +115,15 @@ class SGP_Calculator(Calculator):
     def calculation_required(self, atoms, quantities):
         return True
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        cls_dict = self.as_dict()
+        cls_dict["results"] = deepcopy(cls_dict["results"])
+        return cls.from_dict(cls_dict)
+
     def as_dict(self):
         out_dict = dict(vars(self))
+        out_dict["class"] = self.__class__.__name__
         out_dict["gp_model"] = self.gp_model.as_dict()
         out_dict.pop("atoms")
 
@@ -123,7 +135,7 @@ class SGP_Calculator(Calculator):
     @staticmethod
     def from_dict(dct):
         sgp, _ = SGP_Wrapper.from_dict(dct["gp_model"])
-        calc = SGP_Calculator(sgp)
+        calc = SGP_Calculator(sgp, use_mapping=gp_dict["use_mapping"])
         calc.results = dct["results"]
         return calc
 
@@ -138,9 +150,17 @@ class SGP_Calculator(Calculator):
         with open(name, "r") as f:
             gp_dict = json.loads(f.readline())
         sgp, kernels = SGP_Wrapper.from_dict(gp_dict["gp_model"])
-        calc = SGP_Calculator(sgp)
+        calc = SGP_Calculator(sgp, use_mapping=gp_dict["use_mapping"])
 
         return calc, kernels
+
+    def build_map(self, filename="lmp.flare", contributor="user"):
+        # write potential file for lammps
+        self.gp_model.sparse_gp.write_mapping_coefficients(filename, contributor, 0)
+
+        # write L_inv and sparse descriptors for variance in lammps
+        self.gp_model.sparse_gp.write_L_inverse(f"L_inv_{filename}", contributor)
+        self.gp_model.sparse_gp.write_sparse_descriptors(f"sparse_desc_{filename}", contributor)
 
 
 def sort_variances(structure_descriptor, variances):

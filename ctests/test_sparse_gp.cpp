@@ -148,9 +148,9 @@ TEST_F(StructureTest, TestAdd){
 
 TEST_F(StructureTest, LikeGrad) {
   // Check that the DTC likelihood gradient is correctly computed.
-  double sigma_e = 0.1;
-  double sigma_f = 0.1;
-  double sigma_s = 0.1;
+  double sigma_e = 0.5;
+  double sigma_f = 0.2;
+  double sigma_s = 0.3;
 
   std::vector<Kernel *> kernels;
   kernels.push_back(&kernel_norm);
@@ -182,7 +182,7 @@ TEST_F(StructureTest, LikeGrad) {
 
   int n_hyps = hyps.size();
   Eigen::VectorXd hyps_up, hyps_down;
-  double pert = 1e-6, like_up, like_down, fin_diff;
+  double pert = 1e-5, like_up, like_down, fin_diff;
 
   for (int i = 0; i < n_hyps; i++) {
     hyps_up = hyps;
@@ -195,7 +195,7 @@ TEST_F(StructureTest, LikeGrad) {
 
     fin_diff = (like_up - like_down) / (2 * pert);
 
-    EXPECT_NEAR(like_grad(i), fin_diff, 2e-4 * abs(fin_diff));
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-3 * abs(fin_diff));
   }
 }
 

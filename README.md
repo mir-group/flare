@@ -15,6 +15,7 @@ An introductory tutorial in Google Colab is available [here](https://colab.resea
 The tutorial takes a few minutes to run on a normal desktop computer or laptop (excluding installation time).
 
 ## Installation guide
+### Pip installation
 The easiest way to install flare++ is with pip. Just run the following command:
 ```
 pip install flare_pp
@@ -26,8 +27,14 @@ If you're installing on Harvard's compute cluster, make sure to load the followi
 module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01
 ```
 
+### Developer's installation guide
+For developers, please check the [installation guide](https://mir-group.github.io/flare_pp/installation.html).
+
 ### Compiling LAMMPS
 See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master/lammps_plugins/README.md).
+
+### Trouble shooting
+If you have problem compiling and installing the code, please check the [FAQs](https://mir-group.github.io/flare_pp/faqs.html) to see if your problem is covered. Otherwise, please open an issue or contact us.
 
 ## System requirements
 ### Software dependencies
