@@ -1,7 +1,7 @@
 # Super cell is read from a file such as POSCAR, xyz, lammps-data
 # or any format that ASE supports
 supercell: 
-    file: test_files/4H_SiC_jittered.xyz 
+    file: test_files/sic_dft.xyz 
     format: extxyz
     index: 0
     replicate: [1, 1, 1]
@@ -38,8 +38,8 @@ flare_calc:
 dft_calc:
     name: FakeDFT
     kwargs: 
-        filename: TODO
-        format: TODO
+        filename: test_files/sic_dft.xyz
+        format: extxyz
         index: ":"
         io_kwargs: {}
     params: {}
@@ -49,15 +49,15 @@ otf:
     mode: fresh
     md_engine: Fake
     md_kwargs: 
-        filename: TODO
-        format: TODO
+        filename: test_files/sic_dft.xyz
+        format: extxyz
         index: ":"
         io_kwargs: {}
     initial_velocity: file
     dt: 0.001 
     number_of_steps: 5
     output_name: myotf
-    init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    init_atoms: [0, 1, 2, 3, 4, 5]
     std_tolerance_factor: -0.02
     max_atoms_added: -1
     freeze_hyps: 1 

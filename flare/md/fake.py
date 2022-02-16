@@ -22,8 +22,7 @@ class FakeMD(MolecularDynamics):
         self.fake_trajectory = iread(filename, index=index, format=format, **io_kwargs)
         self.curr_step = 0 # TODO: This might be wrong if `index` does not start from 0
 
-        MolecularDynamics.__init__(
-            self,
+        super().__init__(
             atoms,
             timestep,
             trajectory,
@@ -32,38 +31,55 @@ class FakeMD(MolecularDynamics):
             append_trajectory=append_trajectory,
         )
 
+        # skip the first frame
+        next(self.fake_trajectory)
+
     def step(self):
         # read the next frame
         new_atoms = next(self.fake_trajectory)
 
+        # update atoms and step
+        array_keys = list(self.atoms.arrays.keys())
+        for key in array_keys: # first remove the original positions, numbers, etc.
+            self.atoms.set_array(key, None)
+        for key in array_keys: # then set new positions, numbers, etc.
+            self.atoms.set_array(key, new_atoms.get_array(key))
+
+        for key in self.atoms.info:
+            self.atoms.info[key] = new_atoms.info.get(key, None)
+
+        self.atoms.set_cell(new_atoms.cell)
+        
         # compute GP predictions
         assert self.atoms.calc.__class__.__name__ in ["FLARE_Calculator", "SGP_Calculator"]
-        new_atoms.calc = self.atoms.calc
-        new_atoms.calc.reset()
-        new_atoms.get_forces()
 
-        # update atoms and step
-        self.atoms = new_atoms
+        self.atoms.calc.reset()
+        self.atoms.get_forces()
+
         self.curr_step += 1
         self.atoms.info["step"] = self.curr_step
 
 
-def FakeDFT(Calculator):
+class FakeDFT(Calculator):
+
+    implemented_properties = ["energy", "forces", "stress"]
 
     def __init__(self, filename=None, format=None, index=":", io_kwargs={}, **kwargs):
         super().__init__(**kwargs)
-        self.fake_trajectory = read(filename, index=index, format=format, **io_kwargs)
-        self.fake_frame = None
+        self.filename = filename
+        self.index = index
+        self.format = format
+        self.io_kwargs = io_kwargs
 
     def calculate(
         self, atoms=None, properties=None, system_changes=None,
     ):
 
-        step = atoms.info.get("step", None)
-        assert step is not None
+        step = atoms.info.get("step", 0)
 
-        self.fake_frame = self.fake_trajectory[step] 
-        assert np.allclose(atoms.positions, self.fake_frame.positions)
-        assert np.allclose(atoms.get_volume(), self.fake_frame.get_volume())
+        fake_trajectory = read(self.filename, index=self.index, format=self.format, **self.io_kwargs)
+        fake_frame = fake_trajectory[step] 
+        assert np.allclose(atoms.positions, fake_frame.positions), (atoms.positions[0], fake_frame.positions[0])
+        assert np.allclose(atoms.get_volume(), fake_frame.get_volume())
 
-        self.results = deepcopy(self.fake_frame.calc.results)
+        self.results = deepcopy(fake_frame.calc.results)

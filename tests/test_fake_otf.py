@@ -8,7 +8,7 @@ import yaml
 from flare.io.otf_parser import OtfAnalysis
 from flare.learners.otf import OTF
 from flare.scripts.otf_train import fresh_start_otf, restart_otf
-
+from ase.io import read, write
 
 np.random.seed(12345)
 
@@ -25,15 +25,8 @@ def test_otf_md(md_engine):
             shutil.rmtree(f)
 
     # Modify the config for different MD engines 
-    with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
+    with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
-
-    if md_engine == "PyLAMMPS":
-        config["flare_calc"]["use_mapping"] = True
-    else:
-        config["flare_calc"]["use_mapping"] = False
-        config["otf"]["md_engine"] = md_engine
-        config["otf"]["md_kwargs"] = {}
 
     config["otf"]["output_name"] = md_engine
 
@@ -47,6 +40,10 @@ def test_otf_md(md_engine):
     # Check that the GP forces change.
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
+
+    dft_traj = read("test_files/sic_dft.xyz", index=":")
+    for i in range(number_of_steps - 1):
+        assert np.allclose(dft_traj[i+1].positions, otf_traj.position_list[i], atol=1e-4), i
     #comp1 = otf_traj.force_list[0][1, 0]
     #comp2 = otf_traj.force_list[-1][1, 0]
     #assert (comp1 != comp2)
@@ -54,6 +51,7 @@ def test_otf_md(md_engine):
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):
+
     with open("../examples/test_restart.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -70,7 +68,9 @@ def test_load_checkpoint(md_engine):
 
 
 @pytest.mark.skipif(("PyLAMMPS" not in md_list) or ("VelocityVerlet" not in md_list), reason="md_list does not include both PyLAMMPS and VelocityVerlet")
-def test_lammps_match_ase_verlet():
+def test_fakemd_match_gpfa():
+    pytest.skip()
+
     lammps_traj = OtfAnalysis("PyLAMMPS.out")
     verlet_traj = OtfAnalysis("VelocityVerlet.out")
     pos1 = lammps_traj.position_list[0]
@@ -89,6 +89,8 @@ def test_lammps_match_ase_verlet():
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_parser(md_engine):
+    pytest.skip()
+
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
 
