@@ -39,7 +39,6 @@ class OtfAnalysis:
         self.dft_frames = []
         self.dft_times = []
         self.times = []
-        self.msds = []
         self.energies = []
         self.thermostat = {}
 
@@ -225,9 +224,11 @@ class OtfAnalysis:
                         post_frame,
                     )
 
-                    self.msds.append(
-                        np.mean((self.position_list[-1] - self.position_list[0]) ** 2)
-                    )
+    def get_msds(self):
+        msds = []
+        for pos in self.position_list:
+            msds.append(np.mean((pos - self.position_list[0]) ** 2))
+        return msds
 
     def output_md_structures(self):
         """
@@ -413,6 +414,18 @@ def append_atom_lists(
 ) -> None:
 
     """Update lists containing atom information at each snapshot."""
+
+    if lines[0].startswith("---"):
+        start_index = 4
+    else:
+        start_index = 3
+
+    noa = 0
+    for line in lines[start_index:]:
+        if line.strip():
+            noa += 1
+        else:
+            break
 
     species, positions, forces, uncertainties, velocities = parse_snapshot(
         lines, index, noa, dft_call, noh
