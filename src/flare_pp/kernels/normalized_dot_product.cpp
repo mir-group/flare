@@ -772,6 +772,8 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
       return mapping_coeffs;
   }
 
+  double empty_thresh = 1e-8;
+
   // Initialize beta vector.
   int p_size = gp_model.sparse_descriptors[kernel_index].n_descriptors;
   int beta_size = p_size * (p_size + 1) / 2;
@@ -801,38 +803,46 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
       double pi_norm =
         gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](i);
 
-        // TODO: include symmetry of i & j
-        // Loop over clusters within each type.
-        for (int j = 0; j < n_types; j++){
-          Eigen::VectorXd pj_current =
-            gp_model.sparse_descriptors[kernel_index].descriptors[s].row(j);
-          double pj_norm =
-            gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
+      // Skip empty environments.
+      if (pi_norm < empty_thresh)
+        continue;
 
-          double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
-          double Kuu_inv_ij_normed = Kuu_inv_ij / pi_norm / pj_norm;
-//          double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
-//          double Sigma_ij_normed = Sigma_ij / pi_norm / pj_norm;
-          int beta_count = 0;
+      // TODO: include symmetry of i & j
+      // Loop over clusters within each type.
+      for (int j = 0; j < n_types; j++){
+        Eigen::VectorXd pj_current =
+          gp_model.sparse_descriptors[kernel_index].descriptors[s].row(j);
+        double pj_norm =
+          gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
 
-          // First loop over descriptor values.
-          for (int k = 0; k < p_size; k++) {
-            double p_ik = pi_current(k);
-    
-            // Second loop over descriptor values.
-            for (int l = 0; l < p_size; l++){
-              double p_jl = pj_current(l);
-    
-              // Update beta vector.
-              double beta_val = sig2 * sig2 * p_ik * p_jl * (- Kuu_inv_ij_normed); // + Sigma_ij_normed); // To match the compute_cluster_uncertainty function
-              mapping_coeffs(s, beta_count) += beta_val;
+        // Skip empty environments.
+        if (pj_norm < empty_thresh)
+          continue;
 
-              if (k == l && i == 0 && j == 0) {
-                mapping_coeffs(s, beta_count) += sig2; // the self kernel term
-              }
+        double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
+        double Kuu_inv_ij_normed = Kuu_inv_ij / pi_norm / pj_norm;
+//        double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
+//        double Sigma_ij_normed = Sigma_ij / pi_norm / pj_norm;
+        int beta_count = 0;
+
+        // First loop over descriptor values.
+        for (int k = 0; k < p_size; k++) {
+          double p_ik = pi_current(k);
     
-              beta_count++;
+          // Second loop over descriptor values.
+          for (int l = 0; l < p_size; l++){
+            double p_jl = pj_current(l);
+    
+            // Update beta vector.
+            double beta_val = sig2 * sig2 * p_ik * p_jl * (- Kuu_inv_ij_normed); // + Sigma_ij_normed); // To match the compute_cluster_uncertainty function
+            mapping_coeffs(s, beta_count) += beta_val;
+
+            if (k == l && i == 0 && j == 0) {
+              mapping_coeffs(s, beta_count) += sig2; // the self kernel term
             }
+    
+            beta_count++;
+          }
         }
       }
     }

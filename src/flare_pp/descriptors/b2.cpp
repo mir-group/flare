@@ -233,9 +233,11 @@ void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
     }
     // Compute descriptor norm and force dot products.
     B2_norms(atom) = sqrt(B2_vals.row(atom).dot(B2_vals.row(atom)));
-    B2_force_dots.segment(force_start, n_atom_neighbors * 3) =
-        B2_force_dervs.block(force_start, 0, n_atom_neighbors * 3, n_d) *
-        B2_vals.row(atom).transpose();
+    if (n_atom_neighbors > 0) {
+      B2_force_dots.segment(force_start, n_atom_neighbors * 3) =
+          B2_force_dervs.block(force_start, 0, n_atom_neighbors * 3, n_d) *
+          B2_vals.row(atom).transpose();
+    }
   }
 }
 
