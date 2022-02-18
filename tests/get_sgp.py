@@ -44,6 +44,22 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
     return flare_atoms
 
 
+def get_isolated_atoms(number):
+
+    """Create a random structure."""
+
+    a = 20.0
+    cell = np.eye(3) * a
+    numbers = [number]
+    positions = np.array([[0, 0, 0]])
+    unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers,
+                      pbc=True)
+    atoms = unit_cell
+    flare_atoms = FLARE_Atoms.from_ase_atoms(atoms)
+
+    return flare_atoms
+
+
 def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
     kernel.power = power
 
@@ -57,7 +73,7 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
     if multiple_cutoff:
         cutoff_matrix += np.eye(n_types) - 1
 
-    descriptor_settings = [n_types, 8, 3]
+    descriptor_settings = [n_types, 3, 2]
     b2_calc = B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
                  descriptor_settings, cutoff_matrix)
 
@@ -76,6 +92,9 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
     elif n_types == 2:
         numbers = [6, 8]
 
+    sgp = get_empty_sgp(n_types, power, multiple_cutoff)
+
+    # add a random structure to the training set
     training_structure = get_random_atoms(numbers=numbers)
     training_structure.calc = LennardJones()
 
@@ -83,9 +102,21 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
-    sgp = get_empty_sgp(n_types, power, multiple_cutoff)
     sgp.update_db(training_structure, forces, custom_range=(1, 2, 3, 4, 5),
                   energy=energy, stress=stress, mode="specific")
+
+    # add an isolated atom to the training data
+    training_structure = get_isolated_atoms(number=6)
+    training_structure.calc = LennardJones()
+
+    forces = training_structure.get_forces()
+    energy = training_structure.get_potential_energy()
+    stress = training_structure.get_stress()
+
+    sgp.update_db(training_structure, forces, custom_range=(0,),
+                  energy=energy, stress=stress, mode="specific")
+
+    print("sparse_indices", sgp.sparse_gp.sparse_indices)
 
     return sgp
 

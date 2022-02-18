@@ -6,7 +6,7 @@ from flare.ase.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
 
-from .get_sgp import get_sgp_calc, get_random_atoms
+from .get_sgp import get_sgp_calc, get_random_atoms, get_isolated_atoms
 
 n_species_list = [1, 2]
 n_desc_types = [1, 2]
@@ -48,7 +48,7 @@ def test_write_potential(n_species, n_types, power, multicut):
     elif n_species == 2:
         numbers = [6, 8]
         species = ["C", "O"]
-    test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
+    test_structure = get_random_atoms(a=1.0, sc_size=2, numbers=numbers)
     test_structure.calc = sgp_model
 
     # Predict with SGP.
@@ -150,7 +150,7 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
         numbers = [6, 8]
         species = ["C", "O"]
         mass_str = "mass 1 12\nmass 2 16"
-    test_atoms = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
+    test_atoms = get_random_atoms(a=3.0, sc_size=2, numbers=numbers)
 
     # compute uncertainty 
     in_lmp = f"""
@@ -202,6 +202,7 @@ run 0
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
     print(sgp_stds)
     print(lmp_stds)
+    print(sgp_model.gp_model.hyps)
     assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), rtol=1e-3)
 
     os.chdir("..")
