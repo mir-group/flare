@@ -44,14 +44,13 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
     return flare_atoms
 
 
-def get_isolated_atoms(number):
+def get_isolated_atoms(numbers=[6, 8]):
 
     """Create a random structure."""
 
-    a = 20.0
+    a = 30.0
     cell = np.eye(3) * a
-    numbers = [number]
-    positions = np.array([[0, 0, 0]])
+    positions = np.array([[0, 0, 0], [a/2, a/2, a/2]])
     unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers,
                       pbc=True)
     atoms = unit_cell
@@ -106,7 +105,7 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
                   energy=energy, stress=stress, mode="specific")
 
     # add an isolated atom to the training data
-    training_structure = get_isolated_atoms(number=6)
+    training_structure = get_isolated_atoms(numbers=numbers)
     training_structure.calc = LennardJones()
 
     forces = training_structure.get_forces()
