@@ -130,6 +130,7 @@ void ComputeFlareStdAtom::compute_peratom() {
 
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces, u;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+  double empty_thresh = 1e-8;
 
   for (ii = 0; ii < ntotal; ii++) {
     stds[ii] = 0.0;
@@ -172,9 +173,14 @@ void ComputeFlareStdAtom::compute_peratom() {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    double variance;
+    double variance = 0.0;
     double sig = hyperparameters(0);
     double sig2 = sig * sig;
+
+    // Continue if the environment is empty.
+    if (B2_norm_squared < empty_thresh)
+      continue;
+
     if (use_map) {
       int power = 2;
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
@@ -200,7 +206,7 @@ void ComputeFlareStdAtom::compute_peratom() {
     }
 
     // Compute the normalized variance, it could be negative
-    if (variance > 0.0) {
+    if (variance >= 0.0) {
       stds[i] = pow(variance, 0.5); 
     } else {
       stds[i] = - pow(abs(variance), 0.5); 
