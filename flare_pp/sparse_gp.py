@@ -355,7 +355,7 @@ class SGP_Wrapper:
                     "The custom_range should be set as [n_added] if mode='uncertain'"
                 )
         elif mode == "specific":
-            if not custom_range:
+            if len(custom_range) == 0:
                 warnings.warn(
                     "The mode='specific' but no custom_range is given, will not add sparse envs"
                 )
@@ -483,7 +483,7 @@ class SGP_Wrapper:
         # add training data
         sparse_indices = self.sparse_gp.sparse_indices
         assert len(sparse_indices) == len(kernels)
-        assert len(sparse_indices[0]) == len(self.training_data)
+        assert len(sparse_indices[0]) == len(self.training_data), (len(sparse_indices[0]), len(self.training_data))
 
         for s in range(len(self.training_data)):
             custom_range = sparse_indices[0][s]

@@ -1345,6 +1345,9 @@ void SparseGP::write_L_inverse(
 
 void SparseGP::write_sparse_descriptors(
   std::string file_name, std::string contributor) {
+  
+  double empty_thresh = 1e-8;
+
   // Make beta file.
   std::ofstream coeff_file;
   coeff_file.open(file_name);
@@ -1382,7 +1385,11 @@ void SparseGP::write_sparse_descriptors(
       coeff_file << n_clusters_by_type << "\n";
       for (int j = 0; j < n_clusters_by_type; j++) {
         for (int k = 0; k < n_descriptors; k++) {
-          coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " "; 
+          if (sparse_descriptors[i].descriptor_norms[s](j) < empty_thresh) {
+            coeff_file << 0.0 << " ";
+          } else {
+            coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " "; 
+          }
 
           // Change line after writing 5 numbers
           if (count % 5 == 0) coeff_file << "\n";
