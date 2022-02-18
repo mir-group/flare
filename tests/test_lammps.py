@@ -88,11 +88,11 @@ def test_write_potential(n_species, n_types, power, struc, multicut):
 
     thresh = 1e-6
     print(energy, energy_lmp)
-    assert(np.abs(energy - energy_lmp) < thresh)
+    assert np.allclose(energy, energy_lmp, atol=thresh)
     print(forces)
     print(forces_lmp)
-    assert(np.max(np.abs(forces - forces_lmp)) < thresh)
-    assert(np.max(np.abs(stress - stress_lmp)) < thresh)
+    assert np.allclose(forces, forces_lmp, atol=thresh)
+    assert np.allclose(stress, stress_lmp, atol=thresh)
 
     # Remove files.
     os.remove(potential_name)
@@ -159,7 +159,7 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, struc, multicut)
         mass_str = "mass 1 12\nmass 2 16"
 
     if struc == "random":
-        test_atoms = get_random_atoms(a=3.0, sc_size=2, numbers=numbers)
+        test_atoms = get_random_atoms(a=2.5, sc_size=2, numbers=numbers)
     elif struc == "isolated":
         test_atoms = get_isolated_atoms(numbers=numbers)
 
@@ -214,7 +214,7 @@ run 0
     print(sgp_stds)
     print(lmp_stds)
     print(sgp_model.gp_model.hyps)
-    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), rtol=1e-3)
+    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), atol=1e-5)
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")

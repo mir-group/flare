@@ -33,7 +33,7 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8],
         np.random.seed(set_seed)
 
     cell = np.eye(3) * a
-    positions = np.array([[0, 0, 0], [a/2, a/2, a/2]])
+    positions = np.array([[0, 0, 0], np.random.rand(3)])
     unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers,
                       pbc=True)
     multiplier = np.identity(3) * sc_size
@@ -50,7 +50,11 @@ def get_isolated_atoms(numbers=[6, 8]):
 
     a = 30.0
     cell = np.eye(3) * a
-    positions = np.array([[0, 0, 0], [a/2, a/2, a/2]])
+    positions = np.array([[0, 0, 0], [1, 1, 1], [a/2, a/2, a/2]])
+    if 8 in numbers:
+        numbers = [6, 8, 8]
+    else:
+        numbers = [6, 6, 6]
     unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers,
                       pbc=True)
     atoms = unit_cell
