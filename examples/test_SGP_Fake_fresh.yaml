@@ -32,7 +32,7 @@ flare_calc:
     cutoff: 4.0
     variance_type: local
     max_iterations: 1
-    use_mapping: True
+    use_mapping: False
 
 # Set up DFT calculator, it can be any calculator supported by ASE
 dft_calc:
