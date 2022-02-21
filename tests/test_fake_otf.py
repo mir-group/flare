@@ -44,10 +44,6 @@ def test_otf_md(md_engine):
     dft_traj = read("test_files/sic_dft.xyz", index=":")
     for i in range(number_of_steps - 1):
         assert np.allclose(dft_traj[i+1].positions, otf_traj.position_list[i], atol=1e-4), i
-    #comp1 = otf_traj.force_list[0][1, 0]
-    #comp2 = otf_traj.force_list[-1][1, 0]
-    #assert (comp1 != comp2)
-
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):
@@ -71,26 +67,24 @@ def test_load_checkpoint(md_engine):
 def test_fakemd_match_gpfa():
     pytest.skip()
 
-    lammps_traj = OtfAnalysis("PyLAMMPS.out")
-    verlet_traj = OtfAnalysis("VelocityVerlet.out")
-    pos1 = lammps_traj.position_list[0]
-    pos2 = verlet_traj.position_list[0]
-    cell1 = lammps_traj.cell_list[0]
-    cell2 = verlet_traj.cell_list[0]
+    #lammps_traj = OtfAnalysis("PyLAMMPS.out")
+    #verlet_traj = OtfAnalysis("VelocityVerlet.out")
+    #pos1 = lammps_traj.position_list[0]
+    #pos2 = verlet_traj.position_list[0]
+    #cell1 = lammps_traj.cell_list[0]
+    #cell2 = verlet_traj.cell_list[0]
 
-    # check the volumes are the same
-    assert np.linalg.det(cell1) == np.linalg.det(cell2)
+    ## check the volumes are the same
+    #assert np.linalg.det(cell1) == np.linalg.det(cell2)
 
-    # check the positions only differ by a multiple of cell
-    pos_diff = (pos1 - pos2) @ np.linalg.inv(cell1)
-    for i in np.reshape(pos_diff.round(4), -1):
-        assert i.is_integer()
+    ## check the positions only differ by a multiple of cell
+    #pos_diff = (pos1 - pos2) @ np.linalg.inv(cell1)
+    #for i in np.reshape(pos_diff.round(4), -1):
+    #    assert i.is_integer()
 
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_parser(md_engine):
-    pytest.skip()
-
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
 
@@ -98,7 +92,7 @@ def test_otf_parser(md_engine):
     # Check that the GP forces change.
     comp1 = otf_traj.force_list[0][1, 0]
     comp2 = otf_traj.force_list[-1][1, 0]
-#    assert (comp1 != comp2)
+    assert (comp1 != comp2)
 
     for tmpdir in [md_engine + "*ckpt_*", "tmp"]:
         for f in glob.glob(tmpdir):
