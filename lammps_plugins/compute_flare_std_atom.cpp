@@ -363,9 +363,12 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
+  }
 
+  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
+  hyperparameters = Eigen::VectorXd::Zero(n_hyps);
+  if (me == 0) {
     fgets(line, MAXLINE, fptr); // hyperparameters
-    hyperparameters = Eigen::VectorXd::Zero(n_hyps);
     double sig, en, fn, sn;
     sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
     hyperparameters(0) = sig;
@@ -383,7 +386,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     cutoff_string_length = strlen(cutoff_string);
   }
 
-  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
@@ -422,6 +424,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   // Parse the beta vectors.
   //memory->create(beta, beta_size * n_species * n_species, "compute:beta");
   memory->create(beta, beta_size * n_species, "compute:beta");
+
   if (me == 0)
   //  grab(fptr, beta_size * n_species * n_species, beta);
     grab(fptr, beta_size * n_species, beta);
@@ -447,7 +450,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
       beta_matrices.push_back(beta_matrix);
 //    }
   }
-
 
 }
 

@@ -1345,7 +1345,6 @@ void SparseGP::write_L_inverse(
 
 void SparseGP::write_sparse_descriptors(
   std::string file_name, std::string contributor) {
-  
   double empty_thresh = 1e-8;
 
   // Make beta file.
