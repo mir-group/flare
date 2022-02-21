@@ -75,6 +75,13 @@ class FakeDFT(Calculator):
         self, atoms=None, properties=None, system_changes=None,
     ):
 
+        super().calculate(
+            atoms=atoms, properties=properties, system_changes=system_changes
+        )
+
+        if properties is None:
+            properties = self.implemented_properties
+
         step = atoms.info.get("step", 0)
 
         fake_trajectory = read(self.filename, index=self.index, format=self.format, **self.io_kwargs)
