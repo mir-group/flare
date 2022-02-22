@@ -40,9 +40,10 @@ class FakeMD(MolecularDynamics):
 
         # update atoms and step
         array_keys = list(self.atoms.arrays.keys())
+        new_array_keys = list(new_atoms.arrays.keys())
         for key in array_keys: # first remove the original positions, numbers, etc.
             self.atoms.set_array(key, None)
-        for key in array_keys: # then set new positions, numbers, etc.
+        for key in new_array_keys: # then set new positions, numbers, etc.
             self.atoms.set_array(key, new_atoms.get_array(key))
 
         for key in self.atoms.info:
