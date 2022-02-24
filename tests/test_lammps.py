@@ -13,7 +13,7 @@ n_desc_types = [1, 2]
 power_list = [1, 2]
 struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
-n_cpus_list = [1, 2]
+n_cpus_list = [1] # [1, 2]
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
