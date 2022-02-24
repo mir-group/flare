@@ -489,6 +489,7 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_member) const{
   int ii = team_member.league_rank();
+  double empty_thresh = 1e-6;
 
   F_FLOAT tmp = 0.0;
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
@@ -500,14 +501,22 @@ void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_mem
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
       tmp += B2(ii, x) * beta_B2(ii, x);
   }, tmp);
-  evdwls(ii) = tmp/B2_norm2s(ii);
+  if (B2_norm2s(ii) > empty_thresh) {
+    evdwls(ii) = tmp/B2_norm2s(ii);
+  } else {
+    evdwls(ii) = 0.0;
+  }
   if (eflag_atom){
     const int i = d_ilist[ii+startatom];
     d_eatom[i] = evdwls(ii);
   }
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x){
-      w(ii, x) = 2*(evdwls(ii) * B2(ii,x) - beta_B2(ii,x))/B2_norm2s(ii);
+      if (B2_norm2s(ii) > empty_thresh) {
+        w(ii, x) = 2*(evdwls(ii) * B2(ii,x) - beta_B2(ii,x))/B2_norm2s(ii);
+      } else {
+        w(ii, x) = 0.0;
+      }
   });
 }
 
