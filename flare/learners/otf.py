@@ -206,7 +206,11 @@ class OTF:
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
+            # detect if there are duplicated atoms 
+            assert len(set(init_atoms)) == len(init_atoms), \
+                    "init_atoms should not include duplicated indices"
             self.init_atoms = init_atoms
+
         self.update_style = update_style
         self.update_threshold = update_threshold
 
