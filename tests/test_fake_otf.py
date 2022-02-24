@@ -15,14 +15,30 @@ np.random.seed(12345)
 md_list = ["Fake"]
 number_of_steps = 5
 
+if not os.environ.get("lmp", None):
+    pytest.skip(
+        "lmp not found in environment: Please install LAMMPS "
+        "and set the $lmp env. variable to point to the executatble.",
+        allow_module_level=True,
+    )
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_md(md_engine):
-    for f in glob.glob(md_engine + "*"):
+    for f in glob.glob(md_engine + "*") + glob.glob("myotf*") + ["traj.xyz", "thermo.txt"]:
         if "_ckpt" not in f:
             os.remove(f)
         else:
             shutil.rmtree(f)
+
+    # Run OTF with real MD 
+    with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
+        config = yaml.safe_load(f)
+
+    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp")
+    config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
+    config["otf"]["output_name"] = "myotf"
+    fresh_start_otf(config)
+    print("Done real OTF")
 
     # Modify the config for different MD engines 
     with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
@@ -30,20 +46,30 @@ def test_otf_md(md_engine):
 
     config["otf"]["output_name"] = md_engine
 
-    print("fresh start")
+    # Make a fake AIMD trajectory from the previous real OTF run
+    otf_traj = OtfAnalysis("myotf.out")
+    md_traj = read("traj.xyz", index=":")
+    dft_traj = read("myotf_dft.xyz", index=":")
+    assert len(dft_traj) == len(otf_traj.dft_frames)
+    for i in range(len(dft_traj)):
+        md_traj[otf_traj.dft_frames[i]] = dft_traj[i]
+    write("myotf_dft.xyz", md_traj)
+    print("Done making dft data")
 
-    # Run OTF
+    # Run fake OTF
     fresh_start_otf(config)
-
-    print("done fresh start")
+    print("Done fake OTF")
 
     # Check that the GP forces change.
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
 
-    dft_traj = read("test_files/sic_dft.xyz", index=":")
-    for i in range(number_of_steps - 1):
-        assert np.allclose(dft_traj[i+1].positions, otf_traj.position_list[i], atol=1e-4), i
+    dft_traj = read("myotf_dft.xyz", index=":")
+    print("number of dft frames: ", len(dft_traj))
+    for i in range(1, number_of_steps):
+        assert np.allclose(dft_traj[i].positions, otf_traj.position_list[i-1], atol=1e-4), i
+        if i in otf_traj.dft_frames:
+            assert np.allclose(dft_traj[i].get_forces(), otf_traj.gp_force_list[otf_traj.dft_frames.index(i)], atol=1e-4), i
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):

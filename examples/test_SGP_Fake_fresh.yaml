@@ -1,7 +1,7 @@
 # Super cell is read from a file such as POSCAR, xyz, lammps-data
 # or any format that ASE supports
 supercell: 
-    file: test_files/sic_dft.xyz 
+    file: myotf_dft.xyz 
     format: extxyz
     index: 0
     replicate: [1, 1, 1]
@@ -32,13 +32,13 @@ flare_calc:
     cutoff: 4.0
     variance_type: local
     max_iterations: 1
-    use_mapping: False
+    use_mapping: True
 
 # Set up DFT calculator, it can be any calculator supported by ASE
 dft_calc:
     name: FakeDFT
     kwargs: 
-        filename: test_files/sic_dft.xyz
+        filename: myotf_dft.xyz
         format: extxyz
         index: ":"
         io_kwargs: {}
@@ -49,7 +49,7 @@ otf:
     mode: fresh
     md_engine: Fake
     md_kwargs: 
-        filename: test_files/sic_dft.xyz
+        filename: myotf_dft.xyz
         format: extxyz
         index: ":"
         io_kwargs: {}
@@ -57,10 +57,10 @@ otf:
     dt: 0.001 
     number_of_steps: 5
     output_name: myotf
-    init_atoms: [0, 1, 2, 3, 4, 5]
+    init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     std_tolerance_factor: -0.02
     max_atoms_added: -1
-    freeze_hyps: 1 
+    freeze_hyps: 1
     write_model: 4
     update_style: threshold
     update_threshold: 0.01
