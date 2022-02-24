@@ -130,6 +130,7 @@ void ComputeFlareStdAtom::compute_peratom() {
 
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces, u;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+  double empty_thresh = 1e-8;
 
   for (ii = 0; ii < ntotal; ii++) {
     stds[ii] = 0.0;
@@ -172,9 +173,14 @@ void ComputeFlareStdAtom::compute_peratom() {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    double variance;
+    double variance = 0.0;
     double sig = hyperparameters(0);
     double sig2 = sig * sig;
+
+    // Continue if the environment is empty.
+    if (B2_norm_squared < empty_thresh)
+      continue;
+
     if (use_map) {
       int power = 2;
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
@@ -200,7 +206,7 @@ void ComputeFlareStdAtom::compute_peratom() {
     }
 
     // Compute the normalized variance, it could be negative
-    if (variance > 0.0) {
+    if (variance >= 0.0) {
       stds[i] = pow(variance, 0.5); 
     } else {
       stds[i] = - pow(abs(variance), 0.5); 
@@ -357,9 +363,12 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
+  }
 
+  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
+  hyperparameters = Eigen::VectorXd::Zero(n_hyps);
+  if (me == 0) {
     fgets(line, MAXLINE, fptr); // hyperparameters
-    hyperparameters = Eigen::VectorXd::Zero(n_hyps);
     double sig, en, fn, sn;
     sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
     hyperparameters(0) = sig;
@@ -377,7 +386,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     cutoff_string_length = strlen(cutoff_string);
   }
 
-  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
@@ -416,6 +424,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   // Parse the beta vectors.
   //memory->create(beta, beta_size * n_species * n_species, "compute:beta");
   memory->create(beta, beta_size * n_species, "compute:beta");
+
   if (me == 0)
   //  grab(fptr, beta_size * n_species * n_species, beta);
     grab(fptr, beta_size * n_species, beta);
@@ -441,7 +450,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
       beta_matrices.push_back(beta_matrix);
 //    }
   }
-
 
 }
 
