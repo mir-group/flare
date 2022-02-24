@@ -227,7 +227,7 @@ run 0
     #print(sgp_stds)
     #print(lmp_stds)
     print(sgp_model.gp_model.hyps)
-    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), atol=1e-5)
+    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), atol=1e-4)
 
     os.chdir("..")
     #os.system("rm -r tmp *.txt")
