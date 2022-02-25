@@ -30,6 +30,7 @@ class LAMMPS_MOD(LAMMPS):
     - pair_style (default: lj/cut 2.5)
     - pair_coeff (default: * * 1 1)
     - *compute
+    - *region
     - group
     - fix
     - timestep
@@ -70,7 +71,14 @@ class LAMMPS_MOD(LAMMPS):
         self.parameters.setdefault("model_post", [])
         self.parameters.setdefault("timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]]))
 
-        # Add "compute" command after "pair_coeff", using `model_post`
+        # Add "region" command after "pair_coeff", using `model_post`
+        if "region" in self.parameters:
+            region_command = ""
+            for cmd in self.parameters["region"]:
+                region_command += "region " + cmd + "\n"
+            self.parameters["model_post"] += region_command
+
+        # Add "compute" command after "group", using `model_post`
         if "compute" in self.parameters:
             compute_command = ""
             for cmd in self.parameters["compute"]:
