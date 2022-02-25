@@ -41,7 +41,7 @@ class FakeMD(MolecularDynamics):
             new_atoms = next(self.fake_trajectory)
         except StopIteration:
             warnings.warn("FakeMD runs out of frames.")
-            return 1
+            raise StopIteration
 
         # update atoms and step
         array_keys = list(self.atoms.arrays.keys())

@@ -274,9 +274,8 @@ class OTF:
 
         counter = 0
         self.start_time = time.time()
-        exit_flag = False
 
-        while (self.curr_step < self.number_of_steps) and (not exit_flag):
+        while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
             if (
                 (self.curr_step == 0)
@@ -372,8 +371,11 @@ class OTF:
 
             counter += 1
             # TODO: Reinstate velocity rescaling.
-            step_status = self.md_step()  # update positions by Verlet
-            exit_flag = step_status == 1
+            try:
+                self.md_step()  # update positions by Verlet
+            except StopIteration:
+                break
+
             self.rescale_temperature(self.atoms.positions)
 
             if self.write_model == 3:
@@ -460,7 +462,7 @@ class OTF:
             else:
                 tol = np.abs(self.gp.force_noise) * self.std_tolerance
             f = logging.getLogger(self.output.basename + "log")
-            step_status = self.md.step(tol, self.number_of_steps)
+            self.md.step(tol, self.number_of_steps)
             self.curr_step = self.md.nsteps
             self.atoms = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
 
@@ -472,9 +474,8 @@ class OTF:
 
         else:
             # Inside the step() function, get_forces() is called
-            step_status = self.md.step()
+            self.md.step()
             self.curr_step += 1
-        return step_status
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
