@@ -177,6 +177,8 @@ class OTF:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
         timestep = dt * units.fs * 1e3 # convert pico-second to ASE timestep units
+        if self.md_engine == "PyLAMMPS":
+            md_kwargs["output_name"] = output_name 
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )

@@ -102,8 +102,9 @@ class LAMMPS_MD(MolecularDynamics):
     """
 
     def __init__(self, atoms, timestep, trajectory=None, **kwargs):
-        self.thermo_file = "thermo.txt"
-        self.traj_xyz_file = "traj.xyz"
+        output_name = kwargs.get("output_name", "")
+        self.thermo_file = output_name + "_thermo.txt"
+        self.traj_xyz_file = output_name + "_md.xyz"
         self.potential_file = "lmp.flare"
         self.dump_cols = "id type x y z vx vy vz fx fy fz c_unc"
 
