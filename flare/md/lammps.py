@@ -1,4 +1,5 @@
 from math import ceil
+import shutil
 import numpy as np
 import glob, os
 import warnings
@@ -31,6 +32,7 @@ class LAMMPS_MOD(LAMMPS):
     - pair_coeff (default: * * 1 1)
     - *compute
     - *region
+    - *dump
     - group
     - fix
     - timestep
@@ -73,14 +75,14 @@ class LAMMPS_MOD(LAMMPS):
 
         # Add "region" command after "pair_coeff", using `model_post`
         if "region" in self.parameters:
-            region_command = ""
+            region_command = "\n"
             for cmd in self.parameters["region"]:
                 region_command += "region " + cmd + "\n"
             self.parameters["model_post"] += region_command
 
         # Add "compute" command after "group", using `model_post`
         if "compute" in self.parameters:
-            compute_command = ""
+            compute_command = "\n"
             for cmd in self.parameters["compute"]:
                 compute_command += "compute " + cmd + "\n"
             self.parameters["model_post"] += compute_command
@@ -89,6 +91,21 @@ class LAMMPS_MOD(LAMMPS):
         if "fix" in self.parameters:
             self.parameters["fix"][-1] += "\nunfix fix_nve"
 
+        # Add "dump" command after "timestep"
+        self.parameters["timestep"] = str(self.parameters["timestep"])
+        if "dump" in self.parameters:
+            dump_command = "\n"
+            for cmd in self.parameters["dump"]:
+                dump_command += "dump " + cmd + "\n"
+            self.parameters["timestep"] += dump_command
+              
+        # Add "dump_modify" command after "dump"
+        if "dump_modify" in self.parameters:
+            dump_mod_command = "\n"
+            for cmd in self.parameters["dump_modify"]:
+                dump_mod_command += "dump_modify " + cmd + "\n"
+            self.parameters["timestep"] += dump_mod_command
+ 
         if properties is None:
             properties = self.implemented_properties
         if system_changes is None:
@@ -128,47 +145,6 @@ class LAMMPS_MD(MolecularDynamics):
         super().__init__(atoms, timestep, trajectory) #, **kwargs)
         self.curr_atoms = self.atoms.copy()
 
-    def set_otf_parameters(self, label, N_steps, std_tolerance):
-        self.params = deepcopy(self.initial_params)
-
-        # Set up default LAMMPS input commands if not given
-        self.params.setdefault("write_velocities", True)
-        self.params.setdefault("units", "metal")
-        self.params.setdefault("dump_period", 1)
-        self.params.setdefault("compute", [])
-        self.params.setdefault("timestep", str(DEFAULT_TIMESTEP[self.params["units"]]))
-
-        self.params.setdefault("pair_style", "mgp")
-
-        # Set up flare pair_style and compute command
-        if self.params["pair_style"] == "mgp":
-            self.uncertainty_file = "lmp.flare.std"
-        elif self.params["pair_style"] == "flare":
-            self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
-
-        flare_params = get_flare_lammps_settings(
-            self.params["pair_style"], 
-            self.potential_file, 
-            self.uncertainty_file, 
-            self.params["specorder"], 
-            compute_uncertainty=True, 
-            params=self.params,
-        )
-        self.params.update(flare_params)
-
-        # Get lammps commands for running Bayesian MD to monitor uncertainty
-        # Append the bayesian command after the "timestep" command
-        self.params["timestep"] = str(self.params["timestep"])
-        self.params["timestep"] += BAL_RUN_CMD.format(
-            dump_freq=self.params["dump_period"],
-            label=label,
-            curr_steps=self.nsteps,
-            N_steps=N_steps,
-            std_tolerance=std_tolerance,
-            thermo_file=self.thermo_file,
-            dump_cols=self.dump_cols,
-        )
-
     def step(self, std_tolerance, N_steps):
         """
         Run lammps until the uncertainty interrupts. Notice this method neither runs
@@ -187,19 +163,77 @@ class LAMMPS_MD(MolecularDynamics):
         now = datetime.now()
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
 
-        # Set up pair_style and compute commands
-        self.set_otf_parameters(label, N_steps, std_tolerance)
+#    def set_otf_parameters(self, label, N_steps, std_tolerance):
+        self.params = deepcopy(self.initial_params)
 
-        # Run lammps with the customized parameters
-        lmp_calc = LAMMPS_MOD(
+        # Set up default LAMMPS input commands if not given
+        self.params.setdefault("write_velocities", True)
+        self.params.setdefault("units", "metal")
+        self.params.setdefault("dump_period", 1)
+        self.params.setdefault("compute", [])
+        self.params.setdefault("timestep", str(DEFAULT_TIMESTEP[self.params["units"]]))
+
+        self.params.setdefault("pair_style", "mgp")
+
+        # Set up flare pair_style and compute command
+        if self.params["pair_style"] == "mgp":
+            self.uncertainty_file = "lmp.flare.std"
+        elif self.params["pair_style"] == "flare":
+            self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
+
+#        flare_params = get_flare_lammps_settings(
+#            self.params["pair_style"], 
+#            self.potential_file, 
+#            self.uncertainty_file, 
+#            self.params["specorder"], 
+#            compute_uncertainty=True, 
+#            params=self.params,
+#        )
+#        self.params.update(flare_params)
+#
+#        # Get lammps commands for running Bayesian MD to monitor uncertainty
+#        # Append the bayesian command after the "timestep" command
+#        self.params["timestep"] = str(self.params["timestep"])
+#        self.params["timestep"] += BAL_RUN_CMD.format(
+#            dump_freq=self.params["dump_period"],
+#            label=label,
+#            curr_steps=self.nsteps,
+#            N_steps=N_steps,
+#            std_tolerance=std_tolerance,
+#            thermo_file=self.thermo_file,
+#            dump_cols=self.dump_cols,
+#        )
+
+        lmp_calc, params = get_flare_lammps_calc(
+            pair_style="flare",
+            potfile=self.potential_file,
+            uncfile=self.uncertainty_file, 
+            specorder=self.params["specorder"], 
             command=self.command,
+            tmp_dir="tmp", 
             label=label,
-            files=[self.potential_file] + self.uncertainty_file.split(),
-            keep_tmp_files=True,
-            tmp_dir="tmp",
-            keep_alive=False,
+            compute_uncertainty=True, 
+            thermo_file=self.thermo_file,
+            params={
+                "model_post": [f"reset_timestep {self.nsteps}"],
+                "run": f"{N_steps} upto every {self.params['dump_period']} "\
+                       f"\"if '$(c_MaxUnc) > {std_tolerance}' then quit\""
+            },
         )
-        lmp_calc.set(**self.params)
+
+        ## Set up pair_style and compute commands
+        #self.set_otf_parameters(label, N_steps, std_tolerance)
+
+        ## Run lammps with the customized parameters
+        #lmp_calc = LAMMPS_MOD(
+        #    command=self.command,
+        #    label=label,
+        #    files=[self.potential_file] + self.uncertainty_file.split(),
+        #    keep_tmp_files=True,
+        #    tmp_dir="tmp",
+        #    keep_alive=False,
+        #)
+        #lmp_calc.set(**self.params)
         atoms = deepcopy(self.curr_atoms)
         lmp_calc.calculate(atoms, set_atoms=True)
 
@@ -243,6 +277,11 @@ class LAMMPS_MD(MolecularDynamics):
                 by ASE.
         """
 
+        #with open(self.thermo_file, "a") as f:
+        #    with open("tmp/" + self.thermo_file) as g:
+        #        f.write(g.read())
+        shutil.copyfile("tmp/" + self.thermo_file, self.thermo_file)
+
         thermostat = np.loadtxt(self.thermo_file)
         with open(self.thermo_file) as f:
             n_iters = f.read().count("#")
@@ -278,15 +317,15 @@ class LAMMPS_MD(MolecularDynamics):
         return dct
 
 
-BAL_RUN_CMD = """
-fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {thermo_file}
-dump dump_unc all custom {dump_freq} tmp/trjunc_{label}.bin {dump_cols} 
-dump_modify dump_unc sort id
-dump_modify dump_all sort id
-reset_timestep {curr_steps}
-run {N_steps} upto every {dump_freq} "if '$(c_MaxUnc) > {std_tolerance}' then quit"
-unfix thermoprint
-"""
+#BAL_RUN_CMD = """
+#fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {thermo_file}
+#dump dump_unc all custom {dump_freq} tmp/trjunc_{label}.bin {dump_cols} 
+#dump_modify dump_unc sort id
+#dump_modify dump_all sort id
+#reset_timestep {curr_steps}
+#run {N_steps} upto every {dump_freq} "if '$(c_MaxUnc) > {std_tolerance}' then quit"
+#unfix thermoprint
+#"""
 
 DEFAULT_TIMESTEP = {
     "lj": 0.005,
@@ -326,11 +365,22 @@ def get_kinetic_stress(atoms):
     kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0], [0, 1, 2, 2, 2, 1]]
     return kinetic_atoms
 
-def get_flare_lammps_settings(
-    pair_style, potfile, uncfile, specorder, compute_uncertainty=False, params={}
+def get_flare_lammps_calc(
+    pair_style="flare",
+    potfile="lmp.flare",
+    uncfile="L_inv_lmp.flare sparse_desc_lmp.flare", 
+    specorder=None, 
+    command=None,
+    tmp_dir="tmp", 
+    label="tmp", 
+    compute_uncertainty=False, 
+    thermo_file=None,
+    params={},
 ):
 
     params.setdefault("compute", [])
+    params.setdefault("dump", [])
+    params.setdefault("dump_modify", [])
 
     # The flare uncertainty command should not be set by user
     for cmd in params["compute"]:
@@ -364,7 +414,30 @@ def get_flare_lammps_settings(
     else:
         raise ValueError("pair_style can only be 'mgp' or 'flare'")
 
-    return params
+    if compute_uncertainty:
+        dump_period = params.get("dump_period", 1)
+        params["dump"] += [f"dump_unc all custom {dump_period} {tmp_dir}/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc"]
+        params["dump_modify"] += ["dump_unc sort id", "dump_all sort id"]
+        if thermo_file is not None:
+            params.setdefault("fix", [])
+            params["fix"] += [f'thermoprint all print {dump_period} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {tmp_dir}/{thermo_file}']
+
+    # Run lammps with the customized parameters
+    if command is None:
+        command = os.environ.get("lmp")
+
+    lmp_calc = LAMMPS_MOD(
+        command=command,
+        label=label,
+        files=[potfile] + uncfile.split(),
+        keep_tmp_files=True,
+        tmp_dir=tmp_dir,
+        specorder=specorder,
+        keep_alive=False,
+    )
+    lmp_calc.set(**params)
+
+    return lmp_calc, params
 
 def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     """
@@ -406,28 +479,42 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         now = datetime.now()
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
  
-        params = get_flare_lammps_settings(
-            pair_style="flare", 
-            potfile="lmp.flare", 
-            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
-            specorder=None, 
-            compute_uncertainty=True, 
-            params={"timestep": f"0.001\n"\
-                f"dump dump_unc all custom 1 tmp_check/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc\n"\
-                f"dump_modify dump_unc sort id\n"\
-                f"dump_modify dump_all sort id\n"},
-        )
+#        params = get_flare_lammps_settings(
+#            pair_style="flare", 
+#            potfile="lmp.flare", 
+#            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
+#            specorder=None, 
+#            tmp_dir="tmp_check",
+#            label=label,
+#            compute_uncertainty=True, 
+#            params={"timestep": f"0.001\n"\
+#                f"dump dump_unc all custom 1 tmp_check/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc\n"\
+#                f"dump_modify dump_unc sort id\n"\
+#                f"dump_modify dump_all sort id\n"},
+#        )
+#
+#        # create ASE calc
+#        lmp_calc = LAMMPS_MOD(
+#            command=command,
+#            label=label,
+#            keep_tmp_files=True,
+#            tmp_dir="tmp_check",
+#            parameters=params,
+#            files=files,
+#            specorder=specorder,
+#            keep_alive=False,
+#        )
 
-        # create ASE calc
-        lmp_calc = LAMMPS_MOD(
+        lmp_calc, params = get_flare_lammps_calc(
+            pair_style="flare",
+            potfile="lmp.flare",
+            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare", 
+            specorder=specorder, 
             command=command,
+            tmp_dir="tmp_check", 
             label=label,
-            keep_tmp_files=True,
-            tmp_dir="tmp_check",
-            parameters=params,
-            files=files,
-            specorder=specorder,
-            keep_alive=False,
+            compute_uncertainty=True, 
+            params={},
         )
 
         lmp_calc.calculate(atoms, set_atoms=True)
