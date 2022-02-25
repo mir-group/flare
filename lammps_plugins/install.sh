@@ -13,6 +13,9 @@ kk=$src/KOKKOS
 
 for f in $(ls kokkos)
 do
+    if [[ "$f" == *mgp* ]];then
+        continue
+    fi
     ln -s $(pwd)/kokkos/$f $kk/$f
 done
 
