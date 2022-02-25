@@ -5,11 +5,11 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils import log
 import subprocess
+import re
 import shlex
 import sys
 
 # parse version number from _version.py without importing flare
-import re
 VERSIONFILE="flare/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
@@ -176,11 +176,11 @@ setuptools.setup(
     author="Materials Intelligence Research",
     author_email="mir@g.harvard.edu",
     description="Fast Learning of Atomistic Rare Events",
+    ext_modules=[CMakeExtension("flare.bffs.sgp._C_flare")],
+    cmdclass=dict(build_ext=CMakeBuild),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mir-group/flare",
-    ext_modules=[CMakeExtension("flare_pp._C_flare")],
-    cmdclass=dict(build_ext=CMakeBuild),
     python_requires=">=3.6",
     install_requires=dependencies,
     license="MIT",

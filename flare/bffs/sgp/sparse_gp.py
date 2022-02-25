@@ -1,8 +1,7 @@
 import json
 from time import time
 import numpy as np
-from flare_pp import _C_flare
-from flare_pp._C_flare import SparseGP, Structure, NormalizedDotProduct
+from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
 from scipy.optimize import minimize
 from typing import List
 import warnings
@@ -135,7 +134,7 @@ class SGP_Wrapper:
 
         # save descriptor_settings
         desc_calc = self.descriptor_calculators
-        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], _C_flare.B2))
+        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], B2))
         b2_calc = desc_calc[0]
         b2_dict = {
             "type": "B2",
@@ -221,7 +220,7 @@ class SGP_Wrapper:
         assert len(desc_calc) == 1
         b2_dict = desc_calc[0]
         assert b2_dict["type"] == "B2"
-        calc = _C_flare.B2(
+        calc = B2(
             b2_dict["radial_basis"],
             b2_dict["cutoff_function"],
             b2_dict["radial_hyps"],

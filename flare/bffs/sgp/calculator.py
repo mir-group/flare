@@ -1,7 +1,7 @@
 from ase.calculators.calculator import Calculator, all_changes
 from flare.utils import NumpyEncoder
-from flare_pp._C_flare import Structure
-from flare_pp.sparse_gp import SGP_Wrapper
+from ._C_flare import Structure
+from .sparse_gp import SGP_Wrapper
 import numpy as np
 import time, json
 from copy import deepcopy
