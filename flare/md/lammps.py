@@ -172,6 +172,7 @@ class LAMMPS_MD(MolecularDynamics):
         self.params.setdefault("dump_period", 1)
         self.params.setdefault("compute", [])
         self.params.setdefault("timestep", str(DEFAULT_TIMESTEP[self.params["units"]]))
+        self.params.setdefault("model_post", [])
 
         self.params.setdefault("pair_style", "mgp")
 
@@ -181,28 +182,9 @@ class LAMMPS_MD(MolecularDynamics):
         elif self.params["pair_style"] == "flare":
             self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
 
-#        flare_params = get_flare_lammps_settings(
-#            self.params["pair_style"], 
-#            self.potential_file, 
-#            self.uncertainty_file, 
-#            self.params["specorder"], 
-#            compute_uncertainty=True, 
-#            params=self.params,
-#        )
-#        self.params.update(flare_params)
-#
-#        # Get lammps commands for running Bayesian MD to monitor uncertainty
-#        # Append the bayesian command after the "timestep" command
-#        self.params["timestep"] = str(self.params["timestep"])
-#        self.params["timestep"] += BAL_RUN_CMD.format(
-#            dump_freq=self.params["dump_period"],
-#            label=label,
-#            curr_steps=self.nsteps,
-#            N_steps=N_steps,
-#            std_tolerance=std_tolerance,
-#            thermo_file=self.thermo_file,
-#            dump_cols=self.dump_cols,
-#        )
+        self.params["model_post"] += [f"reset_timestep {self.nsteps}"]
+        self.params["run"] = f"{N_steps} upto every {self.params['dump_period']} "\
+                             f"\"if '$(c_MaxUnc) > {std_tolerance}' then quit\""
 
         lmp_calc, params = get_flare_lammps_calc(
             pair_style="flare",
@@ -214,26 +196,9 @@ class LAMMPS_MD(MolecularDynamics):
             label=label,
             compute_uncertainty=True, 
             thermo_file=self.thermo_file,
-            params={
-                "model_post": [f"reset_timestep {self.nsteps}"],
-                "run": f"{N_steps} upto every {self.params['dump_period']} "\
-                       f"\"if '$(c_MaxUnc) > {std_tolerance}' then quit\""
-            },
+            params=self.params,
         )
 
-        ## Set up pair_style and compute commands
-        #self.set_otf_parameters(label, N_steps, std_tolerance)
-
-        ## Run lammps with the customized parameters
-        #lmp_calc = LAMMPS_MOD(
-        #    command=self.command,
-        #    label=label,
-        #    files=[self.potential_file] + self.uncertainty_file.split(),
-        #    keep_tmp_files=True,
-        #    tmp_dir="tmp",
-        #    keep_alive=False,
-        #)
-        #lmp_calc.set(**self.params)
         atoms = deepcopy(self.curr_atoms)
         lmp_calc.calculate(atoms, set_atoms=True)
 
@@ -277,9 +242,6 @@ class LAMMPS_MD(MolecularDynamics):
                 by ASE.
         """
 
-        #with open(self.thermo_file, "a") as f:
-        #    with open("tmp/" + self.thermo_file) as g:
-        #        f.write(g.read())
         shutil.copyfile("tmp/" + self.thermo_file, self.thermo_file)
 
         thermostat = np.loadtxt(self.thermo_file)
@@ -316,16 +278,6 @@ class LAMMPS_MD(MolecularDynamics):
         dct["nsteps"] = self.nsteps
         return dct
 
-
-#BAL_RUN_CMD = """
-#fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {thermo_file}
-#dump dump_unc all custom {dump_freq} tmp/trjunc_{label}.bin {dump_cols} 
-#dump_modify dump_unc sort id
-#dump_modify dump_all sort id
-#reset_timestep {curr_steps}
-#run {N_steps} upto every {dump_freq} "if '$(c_MaxUnc) > {std_tolerance}' then quit"
-#unfix thermoprint
-#"""
 
 DEFAULT_TIMESTEP = {
     "lj": 0.005,
@@ -479,32 +431,6 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         now = datetime.now()
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
  
-#        params = get_flare_lammps_settings(
-#            pair_style="flare", 
-#            potfile="lmp.flare", 
-#            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
-#            specorder=None, 
-#            tmp_dir="tmp_check",
-#            label=label,
-#            compute_uncertainty=True, 
-#            params={"timestep": f"0.001\n"\
-#                f"dump dump_unc all custom 1 tmp_check/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc\n"\
-#                f"dump_modify dump_unc sort id\n"\
-#                f"dump_modify dump_all sort id\n"},
-#        )
-#
-#        # create ASE calc
-#        lmp_calc = LAMMPS_MOD(
-#            command=command,
-#            label=label,
-#            keep_tmp_files=True,
-#            tmp_dir="tmp_check",
-#            parameters=params,
-#            files=files,
-#            specorder=specorder,
-#            keep_alive=False,
-#        )
-
         lmp_calc, params = get_flare_lammps_calc(
             pair_style="flare",
             potfile="lmp.flare",
