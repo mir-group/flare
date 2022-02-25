@@ -404,3 +404,16 @@ def evaluate_training_atoms(
     train_atoms = list(set(force_train_atoms).union(std_train_atoms) - {-1})
 
     return in_bound, train_atoms
+
+
+def get_env_indices(
+    std_tolerance: float,
+    noise: float,
+    structure: "FLARE_Atoms",
+    max_atoms_added: int = inf,
+    update_style: str = "add_n",
+    update_threshold: float = None,
+) -> (bool, List[int]):
+    
+    assert "target_atoms" in structure.info, "The current frame does not have target_atoms"
+    return False, structure.info.get("target_atoms")

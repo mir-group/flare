@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from copy import deepcopy
 from ase.md.md import MolecularDynamics
@@ -36,7 +37,11 @@ class FakeMD(MolecularDynamics):
 
     def step(self):
         # read the next frame
-        new_atoms = next(self.fake_trajectory)
+        try:
+            new_atoms = next(self.fake_trajectory)
+        except StopIteration:
+            warnings.warn("FakeMD runs out of frames.")
+            return 1
 
         # update atoms and step
         array_keys = list(self.atoms.arrays.keys())
