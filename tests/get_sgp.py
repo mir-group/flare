@@ -1,7 +1,7 @@
 import numpy as np
-from flare_pp._C_flare import SparseGP, NormalizedDotProduct, B2, Structure
-from flare_pp.sparse_gp import SGP_Wrapper
-from flare_pp.sparse_gp_calculator import SGP_Calculator
+from flare.bffs.sgp._C_flare import NormalizedDotProduct, B2
+from flare.bffs.sgp import SGP_Wrapper
+from flare.bffs.sgp.calculator import SGP_Calculator
 from flare.atoms import FLARE_Atoms
 from ase import Atoms
 from ase.calculators.lj import LennardJones

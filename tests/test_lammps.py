@@ -28,7 +28,7 @@ n_cpus_list = [1] # [1, 2]
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
 def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
-    """Test the flare_pp pair style."""
+    """Test the flare pair style."""
 
     if n_species > n_types:
         pytest.skip()

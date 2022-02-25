@@ -1,10 +1,10 @@
 import time, os, shutil, glob, subprocess
 from copy import deepcopy
 import pytest
-flare_pp = pytest.importorskip("flare_pp")
 import numpy as np
 import yaml
 
+from flare.bffs.sgp.calculator import SGP_Calculator
 from flare.io.otf_parser import OtfAnalysis
 from flare.learners.otf import OTF
 from flare.scripts.otf_train import fresh_start_otf, restart_otf
@@ -109,7 +109,6 @@ def test_otf_md(md_engine):
             assert np.allclose(dft_traj[i].get_forces(), fake_otf_traj.gp_force_list[fake_otf_traj.dft_frames.index(i)], atol=1e-4), i
 
     # Check the final SGPs from real and fake trainings are the same
-    from flare_pp.sparse_gp_calculator import SGP_Calculator
     real_sgp_calc, _ = SGP_Calculator.from_file("myotf_flare.json")
     fake_sgp_calc, _ = SGP_Calculator.from_file(f"{md_engine}_flare.json")
     assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps)
