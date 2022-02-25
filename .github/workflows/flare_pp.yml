@@ -1,7 +1,7 @@
 # Adapted from: https://github.com/satu0king/Github-Documentation-With-Doxygen
 # This is a basic workflow to help you get started with Actions
 
-name: flare_pp
+name: flare
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -34,7 +34,7 @@ jobs:
     - name: Install Sphinx and Breathe
       run: |
         sudo apt-get update
-        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe
+        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
 
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
@@ -51,13 +51,13 @@ jobs:
         ls
         make html
 
-    - name: Publish the docs
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        # Default Doxyfile build documentation to html directory.
-        # Change the directory if changes in Doxyfile
-        publish_dir: ./docs/_build/html
+      #    - name: Publish the docs
+      #      uses: peaceiris/actions-gh-pages@v3
+      #      with:
+      #        github_token: ${{ secrets.GITHUB_TOKEN }}
+      #        # Default Doxyfile build documentation to html directory.
+      #        # Change the directory if changes in Doxyfile
+      #        publish_dir: ./docs/_build/html
 
     - name: Build
       run: |
@@ -82,7 +82,7 @@ jobs:
 
         cmake ..
         cmake --build . -j
-        cp _C_flare* ../flare_pp
+        cp _C_flare* ../flare/bffs/sgp
         cd ctests
         ./tests
 
