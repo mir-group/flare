@@ -130,6 +130,7 @@ void ComputeFlareStdAtom::compute_peratom() {
 
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, beta_p, partial_forces, u;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+  double empty_thresh = 1e-8;
 
   for (ii = 0; ii < ntotal; ii++) {
     stds[ii] = 0.0;
@@ -172,9 +173,14 @@ void ComputeFlareStdAtom::compute_peratom() {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    double variance;
+    double variance = 0.0;
     double sig = hyperparameters(0);
     double sig2 = sig * sig;
+
+    // Continue if the environment is empty.
+    if (B2_norm_squared < empty_thresh)
+      continue;
+
     if (use_map) {
       int power = 2;
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
@@ -200,7 +206,7 @@ void ComputeFlareStdAtom::compute_peratom() {
     }
 
     // Compute the normalized variance, it could be negative
-    if (variance > 0.0) {
+    if (variance >= 0.0) {
       stds[i] = pow(variance, 0.5); 
     } else {
       stds[i] = - pow(abs(variance), 0.5); 
@@ -311,6 +317,31 @@ void ComputeFlareStdAtom::coeff(int narg, char **arg) {
    read potential values from a DYNAMO single element funcfl file
 ------------------------------------------------------------------------- */
 
+void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
+  int me = comm->me;
+
+  // Parse the cutoffs.
+  int n_cutoffs = n_species * n_species;
+  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
+  if (me == 0)
+    grab(fptr, n_cutoffs, cutoffs);
+  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Fill in the cutoff matrix.
+  cutoff = -1;
+  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
+  int cutoff_count = 0;
+  for (int i = 0; i < n_species; i++){
+    for (int j = 0; j < n_species; j++){
+      double cutoff_val = cutoffs[cutoff_count];
+      cutoff_matrix(i, j) = cutoff_val;
+      if (cutoff_val > cutoff) cutoff = cutoff_val;
+      cutoff_count ++;
+    }
+  }
+}
+
+
 void ComputeFlareStdAtom::read_file(char *filename) {
   int me = comm->me;
   char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
@@ -332,9 +363,12 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
+  }
 
+  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
+  hyperparameters = Eigen::VectorXd::Zero(n_hyps);
+  if (me == 0) {
     fgets(line, MAXLINE, fptr); // hyperparameters
-    hyperparameters = Eigen::VectorXd::Zero(n_hyps);
     double sig, en, fn, sn;
     sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
     hyperparameters(0) = sig;
@@ -352,7 +386,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     cutoff_string_length = strlen(cutoff_string);
   }
 
-  MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
@@ -364,25 +397,8 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
 
-  // Parse the cutoffs.
-  int n_cutoffs = n_species * n_species;
-  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
-  if (me == 0)
-    grab(fptr, n_cutoffs, cutoffs);
-  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
-
-  // Fill in the cutoff matrix.
-  cutoff = -1;
-  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
-  int cutoff_count = 0;
-  for (int i = 0; i < n_species; i++){
-    for (int j = 0; j < n_species; j++){
-      double cutoff_val = cutoffs[cutoff_count];
-      cutoff_matrix(i, j) = cutoff_val;
-      if (cutoff_val > cutoff) cutoff = cutoff_val;
-      cutoff_count ++;
-    }
-  }
+  // Parse the cutoffs and fill in the cutoff matrix
+  parse_cutoff_matrix(n_species, fptr);
 
   // Set number of descriptors.
   int n_radial = n_max * n_species;
@@ -408,6 +424,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   // Parse the beta vectors.
   //memory->create(beta, beta_size * n_species * n_species, "compute:beta");
   memory->create(beta, beta_size * n_species, "compute:beta");
+
   if (me == 0)
   //  grab(fptr, beta_size * n_species * n_species, beta);
     grab(fptr, beta_size * n_species, beta);
@@ -433,7 +450,6 @@ void ComputeFlareStdAtom::read_file(char *filename) {
       beta_matrices.push_back(beta_matrix);
 //    }
   }
-
 
 }
 
@@ -499,25 +515,8 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
 
-  // Parse the cutoffs.
-  int n_cutoffs = n_species * n_species;
-  memory->create(cutoffs, n_cutoffs, "compute:cutoffs");
-  if (me == 0)
-    grab(fptr, n_cutoffs, cutoffs);
-  MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
-
-  // Fill in the cutoff matrix.
-  cutoff = -1;
-  cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
-  int cutoff_count = 0;
-  for (int i = 0; i < n_species; i++){
-    for (int j = 0; j < n_species; j++){
-      double cutoff_val = cutoffs[cutoff_count];
-      cutoff_matrix(i, j) = cutoff_val;
-      if (cutoff_val > cutoff) cutoff = cutoff_val;
-      cutoff_count ++;
-    }
-  }
+  // Parse the cutoffs and fill in the cutoff matrix
+  parse_cutoff_matrix(n_species, fptr);
 
   // Parse number of sparse envs
   if (me == 0) {

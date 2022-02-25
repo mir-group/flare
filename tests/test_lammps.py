@@ -5,12 +5,14 @@ from flare.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
 
-from .get_sgp import get_sgp_calc, get_random_atoms
+from .get_sgp import get_sgp_calc, get_random_atoms, get_isolated_atoms
 
 n_species_list = [1, 2]
 n_desc_types = [1, 2]
 power_list = [1, 2]
+struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
+n_cpus_list = [1] # [1, 2]
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -22,8 +24,10 @@ rootdir = os.getcwd()
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("power", power_list)
+@pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
-def test_write_potential(n_species, n_types, power, multicut):
+@pytest.mark.parametrize("n_cpus", n_cpus_list)
+def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     """Test the flare_pp pair style."""
 
     if n_species > n_types:
@@ -47,7 +51,11 @@ def test_write_potential(n_species, n_types, power, multicut):
     elif n_species == 2:
         numbers = [6, 8]
         species = ["C", "O"]
-    test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
+
+    if struc == "random":
+        test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
+    elif struc == "isolated":
+        test_structure = get_isolated_atoms(numbers=numbers)
     test_structure.calc = sgp_model
 
     # Predict with SGP.
@@ -56,11 +64,17 @@ def test_write_potential(n_species, n_types, power, multicut):
     stress = test_structure.get_stress()
 
     # Set up LAMMPS calculator.
+    lmp_command = os.environ.get("lmp")
+    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+        lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
+
+    print(lmp_command)
     parameters = {
-        "command": os.environ.get("lmp"),  # set up executable for ASE
+        "command": lmp_command,  # set up executable for ASE
         "newton": "on",
         "pair_style": "flare",
         "pair_coeff": [f"* * {potential_name}"],
+        "timestep": "0.001\ndump_modify dump_all sort id",
     }
 
     lmp_calc = LAMMPS(tmp_dir="./tmp/", parameters=parameters,
@@ -81,11 +95,10 @@ def test_write_potential(n_species, n_types, power, multicut):
 
     thresh = 1e-6
     print(energy, energy_lmp)
-    assert(np.abs(energy - energy_lmp) < thresh)
-    print(forces)
-    print(forces_lmp)
-    assert(np.max(np.abs(forces - forces_lmp)) < thresh)
-    assert(np.max(np.abs(stress - stress_lmp)) < thresh)
+    assert np.allclose(energy, energy_lmp, atol=thresh)
+    #print(forces, forces_lmp)
+    assert np.allclose(forces, forces_lmp, atol=thresh)
+    assert np.allclose(stress, stress_lmp, atol=thresh)
 
     # Remove files.
     os.remove(potential_name)
@@ -112,8 +125,10 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("use_map", [False, True])
 @pytest.mark.parametrize("power", power_list)
+@pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
-def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
+@pytest.mark.parametrize("n_cpus", n_cpus_list)
+def test_lammps_uncertainty(n_species, n_types, use_map, power, struc, multicut, n_cpus):
     if n_species > n_types:
         pytest.skip()
 
@@ -121,7 +136,11 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
         pytest.skip()
 
     os.chdir(rootdir)
+    # Set up LAMMPS calculator.
     lmp_command = os.environ.get("lmp")
+    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+        lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
+    print(lmp_command)
 
     # get sgp & dump coefficient files
     sgp_model = get_sgp_calc(n_types, power, multicut)
@@ -156,7 +175,11 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, multicut):
         numbers = [6, 8]
         species = ["C", "O"]
         mass_str = "mass 1 12\nmass 2 16"
-    test_atoms = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
+
+    if struc == "random":
+        test_atoms = get_random_atoms(a=2.5, sc_size=2, numbers=numbers)
+    elif struc == "isolated":
+        test_atoms = get_isolated_atoms(numbers=numbers)
 
     # compute uncertainty
     in_lmp = f"""
@@ -175,7 +198,8 @@ pair_coeff * * {potential_file}
 ### run
 fix fix_nve all nve
 compute unc all flare/std/atom {coeff_str}
-dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc
+dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc 
+dump_modify dump_all sort id
 thermo_style custom step temp press cpu pxx pyy pzz pxy pxz pyz ke pe etotal vol lx ly lz atoms
 thermo_modify flush yes format float %23.16g
 thermo 1
@@ -206,9 +230,10 @@ run 0
         test_atoms.calc.gp_model.sparse_gp = sgp_model.gp_model.sgp_var
     test_atoms.calc.reset()
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
-    print(sgp_stds)
-    print(lmp_stds)
-    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), rtol=1e-3)
+    #print(sgp_stds)
+    #print(lmp_stds)
+    print(sgp_model.gp_model.hyps)
+    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), atol=1e-4)
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")
@@ -252,3 +277,4 @@ def test_lmp_calc():
     assert np.allclose(ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy())
     assert np.allclose(ase_atoms.get_forces(), mod_atoms.get_forces())
     assert np.allclose(ase_atoms.get_stress(), mod_stress)
+    os.system("rm -r tmp")
