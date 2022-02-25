@@ -1,5 +1,5 @@
 import numpy as np
-from flare_pp.parsers import parse_otf, parse_outfiles
+from flare.io.parsers import parse_otf, parse_outfiles
 from ase.io.vasp import read_vasp_out
 
 
