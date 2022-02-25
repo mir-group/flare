@@ -58,10 +58,8 @@ class LAMMPS_MOD(LAMMPS):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.nsteps = 0
-        if not os.environ.get("ASE_LAMMPSRUN_COMMAND"):
-            raise Exception(
-                "Please set environment variable 'ASE_LAMMPSRUN_COMMAND' to the lammps executable"
-            )
+        if "command" not in kwargs:
+            raise Exception("Please set 'command' to the lammps executable")
 
     def calculate(
         self, atoms=None, properties=None, system_changes=None, set_atoms=False
@@ -108,6 +106,9 @@ class LAMMPS_MD(MolecularDynamics):
         self.traj_xyz_file = "traj.xyz"
         self.potential_file = "lmp.flare"
         self.dump_cols = "id type x y z vx vy vz fx fy fz c_unc"
+
+        assert "command" in kwargs, "Please set `command` to lammps executable"
+        self.command = kwargs.pop("command")
 
         # Set up ASE calculator parameters
         self.params = kwargs
@@ -182,10 +183,12 @@ class LAMMPS_MD(MolecularDynamics):
 
         # Run lammps with the customized parameters
         lmp_calc = LAMMPS_MOD(
+            command=self.command,
             label=label,
             files=[self.potential_file] + self.uncertainty_file.split(),
             keep_tmp_files=True,
             tmp_dir="tmp",
+            keep_alive=False,
         )
         lmp_calc.set(**self.params)
         atoms = deepcopy(self.curr_atoms)
@@ -196,6 +199,7 @@ class LAMMPS_MD(MolecularDynamics):
             glob.glob(f"tmp/trjunc_{label}*")[0],
             format="lammps-dump-binary",
             specorder=self.params["specorder"],
+            order=False,
             colnames=self.dump_cols.split(),
             index=":",
         )
@@ -268,6 +272,8 @@ class LAMMPS_MD(MolecularDynamics):
 BAL_RUN_CMD = """
 fix thermoprint all print {dump_freq} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {thermo_file}
 dump dump_unc all custom {dump_freq} tmp/trjunc_{label}.bin {dump_cols} 
+dump_modify dump_unc sort id
+dump_modify dump_all sort id
 reset_timestep {curr_steps}
 run {N_steps} upto every {dump_freq} "if '$(c_MaxUnc) > {std_tolerance}' then quit"
 unfix thermoprint
@@ -351,7 +357,7 @@ def get_flare_lammps_settings(
 
     return params
 
-def check_sgp_match(atoms, sgp_calc, logger, specorder):
+def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     """
     Check if the lammps trajectory or calculator matches the SGP predictions
     """
@@ -375,17 +381,6 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
     gp_stress = atoms.get_stress()
     gp_stds = atoms.calc.results["stds"]
 
-    # compute the difference and print to log file
-    de = np.abs(lmp_energy - gp_energy)
-    df = np.max(np.abs(lmp_forces - gp_forces))
-    ds = np.max(np.abs(lmp_stress - gp_stress))
-    du = np.max(np.abs(lmp_stds - gp_stds[:, 0]))
-    logger.info("LAMMPS and SGP maximal absolute difference in prediction:")
-    logger.info(f"Maximal absolute energy difference: {de}")
-    logger.info(f"Maximal absolute forces difference: {df}")
-    logger.info(f"Maximal absolute stress difference: {ds}")
-    logger.info(f"Maximal absolute uncertainty difference: {du}")
-
     try:
         # allow a small discrepancy because the position loses precision during dumping
         assert np.allclose(lmp_energy, gp_energy, atol=1e-3)
@@ -393,37 +388,64 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder):
         assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
         assert np.allclose(lmp_stds, gp_stds[0], atol=1e-4)
     except:
-        # if the trajectory does not match sgp, this is probably because the dumped
-        # atomic positions in LAMMPS lose precision. Then build a new lammps calc
-        # and do a static calculation and compare to SGP
+        # if the trajectory does not match sgp, this is probably because 
+        # 1. the dumped atomic positions in LAMMPS lose precision, or
+        # 2. some groups of atoms have forces zeroed out, e.g. frozen a slab bottom.
+        # Then build a new lammps calc and do a static calculation and compare to SGP
         files = ["lmp.flare"]
-    
+ 
+        now = datetime.now()
+        label = now.strftime("%Y.%m.%d:%H:%M:%S:")
+ 
         params = get_flare_lammps_settings(
             pair_style="flare", 
             potfile="lmp.flare", 
-            uncfile=None, 
+            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
             specorder=None, 
-            compute_uncertainty=False, 
-            params={},
+            compute_uncertainty=True, 
+            params={"timestep": f"0.001\n"\
+                f"dump dump_unc all custom 1 tmp_check/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc\n"\
+                f"dump_modify dump_unc sort id\n"\
+                f"dump_modify dump_all sort id\n"},
         )
 
         # create ASE calc
-        lmp_calc = LAMMPS(
-            label=f"tmp",
+        lmp_calc = LAMMPS_MOD(
+            command=command,
+            label=label,
             keep_tmp_files=True,
-            tmp_dir="tmp",
+            tmp_dir="tmp_check",
             parameters=params,
             files=files,
             specorder=specorder,
+            keep_alive=False,
         )
 
-        os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
-        atoms.calc = lmp_calc
-        lmp_energy = atoms.get_potential_energy()
-        lmp_forces = atoms.get_forces()
-        lmp_stress = atoms.get_stress()
+        lmp_calc.calculate(atoms, set_atoms=True)
+        lmp_energy = lmp_calc.results["energy"]
+        lmp_forces = lmp_calc.results["forces"]
+        lmp_stress = lmp_calc.results["stress"]
+        lmp_atoms = read(
+            f"tmp_check/trjunc_{label}.bin", 
+            format="lammps-dump-binary", 
+            colnames="id type x y z vx vy vz fx fy fz c_unc".split(), 
+            order=False,
+        )
+        lmp_stds = lmp_atoms.get_array("c_unc")
 
-        assert np.allclose(lmp_energy, gp_energy)
-        assert np.allclose(lmp_forces, gp_forces)
+        assert np.allclose(lmp_energy, gp_energy), (lmp_energy, gp_energy)
+        assert np.allclose(lmp_forces, gp_forces), (lmp_forces, gp_forces)
         assert np.allclose(lmp_stress, gp_stress)
         atoms.calc = sgp_calc
+
+    # compute the difference and print to log file
+    de = np.abs(lmp_energy - gp_energy)
+    df = np.max(np.abs(lmp_forces - gp_forces))
+    ds = np.max(np.abs(lmp_stress - gp_stress))
+    du = np.max(np.abs(lmp_stds[:, 0] - gp_stds[:, 0]))
+
+    logger.info("LAMMPS and SGP maximal absolute difference in prediction:")
+    logger.info(f"Maximal absolute energy difference: {de}")
+    logger.info(f"Maximal absolute forces difference: {df}")
+    logger.info(f"Maximal absolute stress difference: {ds}")
+    logger.info(f"Maximal absolute uncertainty difference: {du}")

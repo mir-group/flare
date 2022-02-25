@@ -218,7 +218,6 @@ def test_lmp_calc():
     H = Atom("H", position=Ni.cell.diagonal() / 2)
     NiH = Ni + H
 
-    os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
     files = []
     param_dict = {
         "pair_style": "lj/cut 2.5",
@@ -228,23 +227,26 @@ def test_lmp_calc():
         "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
         "dump_period": 1,
         "timestep": 0.001,
+        "keep_alive": False,
     }
 
     ase_lmp_calc = LAMMPS(
+        command=os.environ.get("lmp"),
         label="ase", files=files, keep_tmp_files=True, tmp_dir="tmp"
     )
     ase_lmp_calc.set(**param_dict)
     ase_atoms = deepcopy(NiH)
     ase_atoms.calc = ase_lmp_calc
-    ase_lmp_calc.calculate(ase_atoms)
+    ase_atoms.calc.calculate(ase_atoms)
 
     mod_lmp_calc = LAMMPS_MOD(
+        command=os.environ.get("lmp"),
         label="mod", files=files, keep_tmp_files=True, tmp_dir="tmp"
     )
     mod_lmp_calc.set(**param_dict)
     mod_atoms = deepcopy(NiH)
     mod_atoms.calc = mod_lmp_calc
-    mod_lmp_calc.calculate(mod_atoms, set_atoms=True)
+    mod_atoms.calc.calculate(mod_atoms, set_atoms=False)
     mod_stress = mod_atoms.get_stress() + get_kinetic_stress(mod_atoms)
 
     assert np.allclose(ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy())

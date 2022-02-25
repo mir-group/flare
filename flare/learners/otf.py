@@ -25,11 +25,12 @@ from ase.md.langevin import Langevin
 from flare.md.npt import NPT_mod
 from flare.md.nosehoover import NoseHoover
 from flare.md.lammps import LAMMPS_MD, check_sgp_match
+from flare.md.fake import FakeMD
 from ase import units
 from ase.io import read, write
 
 from flare.io.output import Output
-from flare.learners.utils import is_std_in_bound
+from flare.learners.utils import is_std_in_bound, get_env_indices
 from flare.utils import NumpyEncoder
 from flare.atoms import FLARE_Atoms
 from flare.bffs.gp.calculator import FLARE_Calculator
@@ -107,6 +108,11 @@ class OTF:
             single file name, or a list of several. Copied files will be
             prepended with the date and time with the format
             'Year.Month.Day:Hour:Minute:Second:'.
+        build_mode (str): default "bayesian", run on-the-fly training.
+            "direct" mode constructs GP model from a given list of frames, with
+            `FakeMD` and `FakeDFT`. Each frame needs to have a global 
+            property called "target_atoms" specifying a list of atomic
+            environments added to the GP model.
     """
 
     def __init__(
@@ -141,6 +147,7 @@ class OTF:
         dft_kwargs=None,
         store_dft_output: Tuple[Union[str, List[str]], str] = None,
         # other args
+        build_mode="bayesian",
         **kwargs,
     ):
 
@@ -164,6 +171,8 @@ class OTF:
             MD = NoseHoover
         elif md_engine == "PyLAMMPS":
             MD = LAMMPS_MD
+        elif md_engine == "Fake":
+            MD = FakeMD
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
@@ -203,7 +212,11 @@ class OTF:
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
+            # detect if there are duplicated atoms 
+            assert len(set(init_atoms)) == len(init_atoms), \
+                    "init_atoms should not include duplicated indices"
             self.init_atoms = init_atoms
+
         self.update_style = update_style
         self.update_threshold = update_threshold
 
@@ -216,6 +229,10 @@ class OTF:
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
         self.last_dft_step = 0
+        self.build_mode = build_mode
+
+        if self.build_mode not in ["bayesian", "direct"]:
+            raise Exception("build_mode needs to be 'bayesian' or 'direct'")
 
         # set logger
         self.output = Output(output_name, always_flush=True, print_as_xyz=True)
@@ -257,8 +274,9 @@ class OTF:
 
         counter = 0
         self.start_time = time.time()
+        exit_flag = False
 
-        while self.curr_step < self.number_of_steps:
+        while (self.curr_step < self.number_of_steps) and (not exit_flag):
             # run DFT and train initial model if first step and DFT is on
             if (
                 (self.curr_step == 0)
@@ -283,7 +301,12 @@ class OTF:
                 self.compute_properties()
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = is_std_in_bound(
+                if self.build_mode == "bayesian":
+                    env_selection = is_std_in_bound
+                elif self.build_mode == "direct":
+                    env_selection = get_env_indices
+
+                std_in_bound, target_atoms = env_selection(
                     self.std_tolerance,
                     self.gp.force_noise,
                     self.atoms,
@@ -349,7 +372,8 @@ class OTF:
 
             counter += 1
             # TODO: Reinstate velocity rescaling.
-            self.md_step()  # update positions by Verlet
+            step_status = self.md_step()  # update positions by Verlet
+            exit_flag = step_status == 1
             self.rescale_temperature(self.atoms.positions)
 
             if self.write_model == 3:
@@ -436,20 +460,21 @@ class OTF:
             else:
                 tol = np.abs(self.gp.force_noise) * self.std_tolerance
             f = logging.getLogger(self.output.basename + "log")
-            self.md.step(tol, self.number_of_steps)
+            step_status = self.md.step(tol, self.number_of_steps)
             self.curr_step = self.md.nsteps
             self.atoms = FLARE_Atoms.from_ase_atoms(self.md.curr_atoms)
 
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
             check_sgp_match(
-                self.atoms, self.flare_calc, f, self.md.params["specorder"]
+                self.atoms, self.flare_calc, f, self.md.params["specorder"], self.md.command,
             )
 
         else:
             # Inside the step() function, get_forces() is called
-            self.md.step()
+            step_status = self.md.step()
             self.curr_step += 1
+        return step_status
 
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
@@ -493,7 +518,7 @@ class OTF:
             for ofile in to_copy:
                 # if the file is in a subdirectory like dft/OUTCAR, then copy it out
                 filename = ofile.split("/")[-1]
-                copyfile(filename, dest + "/" + dt_string + filename)
+                copyfile(ofile, dest + "/" + dt_string + filename)
 
     def update_gp(
         self,
