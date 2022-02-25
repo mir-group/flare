@@ -788,7 +788,7 @@ class OTF:
         # in the current space, otherwise there is Seg Fault
         # That's why there is the _kernels
         elif flare_calc_dict["class"] == "SGP_Calculator":
-            from flare_pp.sparse_gp_calculator import SGP_Calculator
+            from flare.bffs.sgp.calculator import SGP_Calculator
 
             flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
         else:

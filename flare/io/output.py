@@ -156,32 +156,6 @@ class Output:
 
         f.info(f"flare {flare.__version__}")
 
-        try:
-            import flare_pp
-
-            f.info(f"flare_pp {flare_pp.__version__}")
-        except AttributeError:
-
-            import flare_pp
-            dirs = flare_pp.__path__[0].split("/")
-            dirs_rep = copy.copy(dirs)
-            dirs_rep[-1] = "setup.py"
-            setup_path = "/".join(dirs_rep)
-
-            try:
-                setup_py = open(setup_path)
-
-                for line in setup_py.readlines():
-                    line = line.strip()
-                    if "version=" in line:
-                        f.info(f"flare_pp {line[9:len(line)-2]}")
-                        break
-                setup_py.close()
-            except FileNotFoundError:
-                pass
-        except ModuleNotFoundError:
-            pass
-
         # Write uncertainty tolerance
         if isinstance(std_tolerance, tuple):
             std_string = (
