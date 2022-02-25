@@ -101,7 +101,7 @@ jobs:
 
     - name: Pip install
       run: |
-        pip install codecov pytest pytest-cov pytest_mock
+        pip install -U codecov pytest pytest-cov pytest_mock
         pip install -r requirements.txt
 
     - name: Run tests
