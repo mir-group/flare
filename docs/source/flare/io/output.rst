@@ -1,5 +1,5 @@
 Output
-===================
+======
 
-.. automodule:: flare.output
+.. automodule:: flare.io.output
     :members:
