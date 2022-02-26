@@ -1,5 +1,5 @@
 Splines Methods
-=======================
+===============
 
-.. automodule:: flare.mgp.splines_methods
+.. automodule:: flare.bffs.mgp.splines_methods
     :members:

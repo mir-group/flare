@@ -1,5 +1,5 @@
 FLARE ASE Calculator
 ====================
 
-.. automodule:: flare.ase.calculator
+.. automodule:: flare.bffs.gp.calculator
     :members:
