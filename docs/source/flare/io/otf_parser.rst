@@ -1,5 +1,5 @@
 OTF Parser
 ==========
 
-.. automodule:: flare.otf_parser
+.. automodule:: flare.io.otf_parser
     :members:

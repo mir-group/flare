@@ -1,5 +1,5 @@
 NoseHoover (NVT Ensemble)
 =========================
 
-.. automodule:: flare.ase.nosehoover
+.. automodule:: flare.md.nosehoover
     :members:
