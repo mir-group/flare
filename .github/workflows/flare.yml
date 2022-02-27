@@ -130,7 +130,7 @@ jobs:
         # Download datasets needed for the tutorial
         wget http://quantum-machine.org/gdml/data/npz/aspirin_dft.npz
         wget https://www.ctcms.nist.gov/potentials/Download/1999--Mishin-Y-Farkas-D-Mehl-M-J-Papaconstantopoulos-D-A--Al/2/Al99.eam.alloy
-        # Run script
-        pytest -s tuttest.py
-        # Remove output files
-        rm Al* aspirin_dft.npz tutorial.ipynb tuttest.py tutorial.py tutorial.txt
+        ## Run script
+        #pytest -s tuttest.py
+        ## Remove output files
+        #rm Al* aspirin_dft.npz tutorial.ipynb tuttest.py tutorial.py tutorial.txt
