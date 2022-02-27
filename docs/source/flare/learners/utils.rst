@@ -1,6 +1,6 @@
 Conditions to add training data
 ===============================
 
-.. automodule:: flare.utils.learner
+.. automodule:: flare.learners.utils
     :members:
 

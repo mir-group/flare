@@ -96,7 +96,7 @@ jobs:
         cd lammps
         mkdir build
         cd build
-        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON
+        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DPKG_MANYBODY=yes
         make -j4
 
     - name: Pip install

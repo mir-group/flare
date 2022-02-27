@@ -28,7 +28,7 @@ def test_traj_with_varying_sizes(md_engine):
         for f in glob.glob(tmpdir):
             shutil.rmtree(f)
 
-    for tmpfile in ["*.flare", "log.*", "traj.xyz", "thermo.txt", md_engine + "*", "myotf*", "direct*", "*.json", "*.tersoff"]:
+    for tmpfile in ["*.flare", "log.*", md_engine + "*", "myotf*", "direct*", "*.json", "*.tersoff"]:
         for f in glob.glob(tmpfile):
             os.remove(f)
 
@@ -60,7 +60,7 @@ def test_traj_with_varying_sizes(md_engine):
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_md(md_engine):
-    for f in glob.glob(md_engine + "*") + glob.glob("myotf*") + ["traj.xyz", "thermo.txt"]:
+    for f in glob.glob(md_engine + "*") + glob.glob("myotf*"):
         if "_ckpt" not in f:
             if f in os.listdir():
                 os.remove(f)
@@ -85,7 +85,7 @@ def test_otf_md(md_engine):
 
     # Make a fake AIMD trajectory from the previous real OTF run
     otf_traj = OtfAnalysis("myotf.out")
-    md_traj = read("traj.xyz", index=":")
+    md_traj = read("myotf_md.xyz", index=":")
     dft_traj = read("myotf_dft.xyz", index=":")
     assert len(dft_traj) == len(otf_traj.dft_frames)
     for i in range(len(dft_traj)):
@@ -166,7 +166,7 @@ def test_otf_parser(md_engine):
         for f in glob.glob(tmpdir):
             shutil.rmtree(f)
 
-    for tmpfile in ["*.flare", "log.*", "traj.xyz", "thermo.txt", md_engine + "*", "myotf*", "direct*", "*.json", "*.tersoff"]:
+    for tmpfile in ["*.flare", "log.*", md_engine + "*", "myotf*", "direct*", "*.json", "*.tersoff"]:
         for f in glob.glob(tmpfile):
             os.remove(f)
 

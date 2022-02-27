@@ -1,5 +1,5 @@
 Helper functions for GP
 =============================
 
-.. automodule:: flare.gp_algebra
+.. automodule:: flare.bffs.gp.gp_algebra
     :members:
