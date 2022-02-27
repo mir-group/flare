@@ -123,6 +123,7 @@ jobs:
         export fileid="18_pTcWM19AUiksaRyCgg9BCpVyw744xv"
         wget -O tutorial.ipynb 'https://docs.google.com/uc?export=download&id='${fileid}
         # Convert notebook into python script
+        pip install -U jupyter
         jupyter nbconvert --to script tutorial.ipynb
         # Remove bash commands in the notebook
         sed '/!/d' tutorial.txt > tutorial.py
