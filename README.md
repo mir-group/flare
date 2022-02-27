@@ -11,7 +11,7 @@ FLARE is an open-source Python package for creating fast and accurate interatomi
 ## Major Features
 
 <p align="center">
-  <img width="659" height="303" src="https://github.com/mir-group/flare/blob/development/docs/images/Flare_features.png?raw=true">
+  <img src="https://github.com/mir-group/flare/blob/subtree/docs/images/Flare_features.jpg?raw=true">
 </p>
 
 ## Documentations and Tutorials
