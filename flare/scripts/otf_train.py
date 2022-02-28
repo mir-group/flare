@@ -188,10 +188,10 @@ def get_sgp_calc(flare_config):
     """
     Return a SGP_Calculator with sgp from SparseGP
     """
-    from flare_pp._C_flare import NormalizedDotProduct, SquaredExponential
-    from flare_pp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody
-    from flare_pp.sparse_gp import SGP_Wrapper
-    from flare_pp.sparse_gp_calculator import SGP_Calculator
+    from flare.bffs.sgp._C_flare import NormalizedDotProduct, SquaredExponential
+    from flare.bffs.sgp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody
+    from flare.bffs.sgp import SGP_Wrapper
+    from flare.bffs.sgp.calculator import SGP_Calculator
 
     sgp_file = flare_config.get("file", None)
 

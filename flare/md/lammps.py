@@ -352,7 +352,7 @@ def get_flare_lammps_calc(
                 "MaxUnc all reduce max c_unc",
             ]
 
-    # Set up default potential and uncertainty command for flare_pp
+    # Set up default potential and uncertainty command for flare
     elif pair_style == "flare":
         params["newton"] = "on"
         params["pair_style"] = "flare"
