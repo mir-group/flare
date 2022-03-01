@@ -8,5 +8,5 @@ Gaussian Process Force Fields
    gp_algebra
    calculator
 
-.. automodule:: flare.bffs.gp
+.. automodule:: flare.bffs.gp.gp
     :members:

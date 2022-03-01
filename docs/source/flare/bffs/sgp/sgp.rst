@@ -6,5 +6,5 @@ Sparse Gaussian Process Force Fields
 
    calculator
 
-.. automodule:: flare.bffs.sgp
+.. automodule:: flare.bffs.sgp.sparse_gp
     :members:

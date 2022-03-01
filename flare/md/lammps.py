@@ -20,42 +20,48 @@ class LAMMPS_MOD(LAMMPS):
     fix/nvt, fix/npt etc.
 
     Supported customized commands for LAMMPS input:
-    - mass (set by arg `masses`)
-    - package
-    - atom_style, bond_style, angle_style, dihedral_style, improper_style, kspace_style
-    - units (default: metal)
-    - boundary
-    - neighbor
-    - newton
-    - kim_interactions
-    - pair_style (default: lj/cut 2.5)
-    - pair_coeff (default: * * 1 1)
-    - *compute
-    - *region
-    - *dump
-    - group
-    - fix
-    - timestep
-    - minimize
-    - run
+    ```
+    mass (set by arg `masses`)
+    package
+    atom_style, bond_style, angle_style, dihedral_style, improper_style, kspace_style
+    units (default: metal)
+    boundary
+    neighbor
+    newton
+    kim_interactions
+    pair_style (default: lj/cut 2.5)
+    pair_coeff (default: * * 1 1)
+    *compute
+    *region
+    *dump
+    group
+    fix
+    timestep
+    minimize
+    run
+    ```
 
     Note:
-    - additional commands needed at the beginning can be specified in the arg `model_init`
-    - additional commands needed after "pair_coeff" can be specified in the arg `model_post`
+    * additional commands needed at the beginning can be specified in the arg `model_init`
+    * additional commands needed after "pair_coeff" can be specified in the arg `model_post`
 
     Non-customized input commands:
-    - atom_modify sort 0 0.0
-    - read_data
-    - fix fix_nve all nve
-    - dump dump_all all custom trj_file (dump_period) id type x y z vx vy vz fx fy fz
-    - thermo_style custom (thermo_args)
-    - thermo_modify flush yes format float %23.16g
-    - thermo 1
+    ```
+    atom_modify sort 0 0.0
+    read_data
+    fix fix_nve all nve
+    dump dump_all all custom trj_file (dump_period) id type x y z vx vy vz fx fy fz
+    thermo_style custom (thermo_args)
+    thermo_modify flush yes format float %23.16g
+    thermo 1
+    ```
 
     Customized parameters:
-    - dump_period
-    - thermo_args
-    - specorder
+    ```
+    dump_period
+    thermo_args
+    specorder
+    ```
     """
 
     def __init__(self, **kwargs):

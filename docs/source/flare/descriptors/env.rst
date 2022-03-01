@@ -1,5 +1,5 @@
 Atomic Environments
 ===================
 
-.. automodule:: flare.env
+.. automodule:: flare.descriptors.env
     :members:

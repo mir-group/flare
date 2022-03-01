@@ -7,5 +7,5 @@ Mapped Gaussian Process
    splines_methods
    formulas
 
-.. automodule:: flare.bffs.mgp
+.. automodule:: flare.bffs.mgp.mgp
     :members:
