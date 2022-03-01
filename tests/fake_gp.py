@@ -213,7 +213,9 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
 
     test_struc = []
     for i in range(3):
-        test_struc += [FLARE_Atoms(symbols=species_1, positions=positions[i], cell=cell)]
+        test_struc += [
+            FLARE_Atoms(symbols=species_1, positions=positions[i], cell=cell)
+        ]
 
     env_0 = []
     env_p = []

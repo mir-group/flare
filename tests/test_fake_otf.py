@@ -22,17 +22,26 @@ if not os.environ.get("lmp", None):
         allow_module_level=True,
     )
 
+
 @pytest.mark.parametrize("md_engine", md_list)
 def test_traj_with_varying_sizes(md_engine):
     for tmpdir in [md_engine + "*ckpt_*", "myotf*ckpt_*", "direct*ckpt_*", "tmp*"]:
         for f in glob.glob(tmpdir):
             shutil.rmtree(f)
 
-    for tmpfile in ["*.flare", "log.*", md_engine + "*", "myotf*", "direct*", "*.json", "*.tersoff"]:
+    for tmpfile in [
+        "*.flare",
+        "log.*",
+        md_engine + "*",
+        "myotf*",
+        "direct*",
+        "*.json",
+        "*.tersoff",
+    ]:
         for f in glob.glob(tmpfile):
             os.remove(f)
 
-    # Modify the config for different MD engines 
+    # Modify the config for different MD engines
     with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -52,10 +61,15 @@ def test_traj_with_varying_sizes(md_engine):
     dft_traj = read("test_files/sic_dft.xyz", index=":")
     print("number of dft frames: ", len(dft_traj))
     for i in range(1, number_of_steps):
-        assert np.allclose(dft_traj[i].positions, fake_otf_traj.position_list[i-1], atol=1e-4), i
+        assert np.allclose(
+            dft_traj[i].positions, fake_otf_traj.position_list[i - 1], atol=1e-4
+        ), i
         if i in fake_otf_traj.dft_frames:
-            assert np.allclose(dft_traj[i].get_forces(), fake_otf_traj.gp_force_list[fake_otf_traj.dft_frames.index(i)], atol=1e-4), i
-
+            assert np.allclose(
+                dft_traj[i].get_forces(),
+                fake_otf_traj.gp_force_list[fake_otf_traj.dft_frames.index(i)],
+                atol=1e-4,
+            ), i
 
 
 @pytest.mark.parametrize("md_engine", md_list)
@@ -67,7 +81,7 @@ def test_otf_md(md_engine):
         else:
             shutil.rmtree(f)
 
-    # Run OTF with real MD 
+    # Run OTF with real MD
     with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -77,7 +91,7 @@ def test_otf_md(md_engine):
     fresh_start_otf(config)
     print("Done real OTF")
 
-    # Modify the config for different MD engines 
+    # Modify the config for different MD engines
     with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -104,15 +118,23 @@ def test_otf_md(md_engine):
     dft_traj = read("fake_dft.xyz", index=":")
     print("number of dft frames: ", len(dft_traj))
     for i in range(1, number_of_steps):
-        assert np.allclose(dft_traj[i].positions, fake_otf_traj.position_list[i-1], atol=1e-4), i
+        assert np.allclose(
+            dft_traj[i].positions, fake_otf_traj.position_list[i - 1], atol=1e-4
+        ), i
         if i in fake_otf_traj.dft_frames:
-            assert np.allclose(dft_traj[i].get_forces(), fake_otf_traj.gp_force_list[fake_otf_traj.dft_frames.index(i)], atol=1e-4), i
+            assert np.allclose(
+                dft_traj[i].get_forces(),
+                fake_otf_traj.gp_force_list[fake_otf_traj.dft_frames.index(i)],
+                atol=1e-4,
+            ), i
 
     # Check the final SGPs from real and fake trainings are the same
     real_sgp_calc, _ = SGP_Calculator.from_file("myotf_flare.json")
     fake_sgp_calc, _ = SGP_Calculator.from_file(f"{md_engine}_flare.json")
     assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps)
-    assert np.allclose(real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu)
+    assert np.allclose(
+        real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
+    )
 
     # Check fake md with "direct" mode matches "bayesian" mode
     with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
@@ -127,7 +149,9 @@ def test_otf_md(md_engine):
 
     fake_sgp_calc, _ = SGP_Calculator.from_file(f"direct_flare.json")
     assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps)
-    assert np.allclose(real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu)
+    assert np.allclose(
+        real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
+    )
 
 
 @pytest.mark.parametrize("md_engine", md_list)
@@ -151,6 +175,7 @@ def test_load_checkpoint(md_engine):
 def test_fakemd_match_gpfa():
     pytest.skip()
 
+
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_parser(md_engine):
     output_name = f"{md_engine}.out"
@@ -160,13 +185,20 @@ def test_otf_parser(md_engine):
     # Check that the GP forces change.
     comp1 = otf_traj.force_list[0][1, 0]
     comp2 = otf_traj.force_list[-1][1, 0]
-    assert (comp1 != comp2)
+    assert comp1 != comp2
 
     for tmpdir in [md_engine + "*ckpt_*", "myotf*ckpt_*", "direct*ckpt_*", "tmp*"]:
         for f in glob.glob(tmpdir):
             shutil.rmtree(f)
 
-    for tmpfile in ["*.flare", "log.*", md_engine + "*", "myotf*", "direct*", "*.json", "*.tersoff"]:
+    for tmpfile in [
+        "*.flare",
+        "log.*",
+        md_engine + "*",
+        "myotf*",
+        "direct*",
+        "*.json",
+        "*.tersoff",
+    ]:
         for f in glob.glob(tmpfile):
             os.remove(f)
-

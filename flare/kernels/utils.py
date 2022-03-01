@@ -146,11 +146,11 @@ def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
 
     # TO DO , should instead use the non-sephyps kernel
     if n2b == 1:
-        twobody_mask = np.zeros(nspecie ** 2, dtype=int)
+        twobody_mask = np.zeros(nspecie**2, dtype=int)
     if n3b == 1:
-        threebody_mask = np.zeros(nspecie ** 3, dtype=int)
+        threebody_mask = np.zeros(nspecie**3, dtype=int)
     if nmanybody == 1:
-        manybody_mask = np.zeros(nspecie ** 2, dtype=int)
+        manybody_mask = np.zeros(nspecie**2, dtype=int)
 
     cutoff_2b = cutoffs.get("twobody", 0)
     cutoff_3b = cutoffs.get("threebody", 0)
@@ -159,7 +159,7 @@ def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
     if "bond_cutoff_list" in hyps_mask:
         cutoff_2b = hyps_mask["bond_cutoff_list"]
     else:
-        cutoff_2b = np.ones(nspecie ** 2, dtype=float) * cutoff_2b
+        cutoff_2b = np.ones(nspecie**2, dtype=float) * cutoff_2b
 
     if "threebody_cutoff_list" in hyps_mask:
         cutoff_3b = hyps_mask["threebody_cutoff_list"]

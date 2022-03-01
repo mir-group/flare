@@ -12,7 +12,8 @@ n_desc_types = [1, 2]
 power_list = [1, 2]
 struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
-n_cpus_list = [1] # [1, 2]
+n_cpus_list = [1]  # [1, 2]
+
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -42,7 +43,8 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     contributor = "Jon"
     kernel_index = 0
     sgp_model.gp_model.sparse_gp.write_mapping_coefficients(
-        potential_name, contributor, kernel_index)
+        potential_name, contributor, kernel_index
+    )
 
     # Generate random testing structure
     if n_species == 1:
@@ -77,8 +79,12 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
         "timestep": "0.001\ndump_modify dump_all sort id",
     }
 
-    lmp_calc = LAMMPS(tmp_dir="./tmp/", parameters=parameters,
-                      files=[potential_name], specorder=species)
+    lmp_calc = LAMMPS(
+        tmp_dir="./tmp/",
+        parameters=parameters,
+        files=[potential_name],
+        specorder=species,
+    )
 
     print("built lmp_calc")
     # Predict with LAMMPS.
@@ -96,13 +102,14 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     thresh = 1e-6
     print(energy, energy_lmp)
     assert np.allclose(energy, energy_lmp, atol=thresh)
-    #print(forces, forces_lmp)
+    # print(forces, forces_lmp)
     assert np.allclose(forces, forces_lmp, atol=thresh)
     assert np.allclose(stress, stress_lmp, atol=thresh)
 
     # Remove files.
     os.remove(potential_name)
     os.system("rm -r tmp")
+
 
 import os
 import numpy as np
@@ -111,6 +118,7 @@ from ase import Atom, Atoms
 from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
 from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
+
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -128,7 +136,9 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-def test_lammps_uncertainty(n_species, n_types, use_map, power, struc, multicut, n_cpus):
+def test_lammps_uncertainty(
+    n_species, n_types, use_map, power, struc, multicut, n_cpus
+):
     if n_species > n_types:
         pytest.skip()
 
@@ -149,21 +159,23 @@ def test_lammps_uncertainty(n_species, n_types, use_map, power, struc, multicut,
 
     potential_file = f"LJ_{n_species}_{n_types}_{power}.txt"
     sgp_model.gp_model.write_mapping_coefficients(
-        potential_file, contributor, kernel_index)
+        potential_file, contributor, kernel_index
+    )
 
     if use_map:
         varmap_file = f"varmap_{n_species}_{n_types}.txt"
         sgp_model.gp_model.write_varmap_coefficients(
-            varmap_file, contributor, kernel_index)
+            varmap_file, contributor, kernel_index
+        )
         coeff_str = varmap_file
     else:
         L_inv_file = f"Linv_{n_species}_{n_types}.txt"
-        sgp_model.gp_model.sparse_gp.write_L_inverse(
-            L_inv_file, contributor)
+        sgp_model.gp_model.sparse_gp.write_L_inverse(L_inv_file, contributor)
 
         sparse_desc_file = f"sparse_desc_{n_species}_{n_types}.txt"
         sgp_model.gp_model.sparse_gp.write_sparse_descriptors(
-            sparse_desc_file, contributor)
+            sparse_desc_file, contributor
+        )
         coeff_str = f"{L_inv_file} {sparse_desc_file}"
 
     # Generate random testing structure
@@ -230,13 +242,14 @@ run 0
         test_atoms.calc.gp_model.sparse_gp = sgp_model.gp_model.sgp_var
     test_atoms.calc.reset()
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
-    #print(sgp_stds)
-    #print(lmp_stds)
+    # print(sgp_stds)
+    # print(lmp_stds)
     print(sgp_model.gp_model.hyps)
-    assert np.allclose(sgp_stds[:,0], lmp_stds.squeeze(), atol=1e-4)
+    assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), atol=1e-4)
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")
+
 
 def test_lmp_calc():
     Ni = bulk("Ni", cubic=True)
@@ -257,7 +270,10 @@ def test_lmp_calc():
 
     ase_lmp_calc = LAMMPS(
         command=os.environ.get("lmp"),
-        label="ase", files=files, keep_tmp_files=True, tmp_dir="tmp"
+        label="ase",
+        files=files,
+        keep_tmp_files=True,
+        tmp_dir="tmp",
     )
     ase_lmp_calc.set(**param_dict)
     ase_atoms = deepcopy(NiH)
@@ -266,7 +282,10 @@ def test_lmp_calc():
 
     mod_lmp_calc = LAMMPS_MOD(
         command=os.environ.get("lmp"),
-        label="mod", files=files, keep_tmp_files=True, tmp_dir="tmp"
+        label="mod",
+        files=files,
+        keep_tmp_files=True,
+        tmp_dir="tmp",
     )
     mod_lmp_calc.set(**param_dict)
     mod_atoms = deepcopy(NiH)
@@ -274,7 +293,9 @@ def test_lmp_calc():
     mod_atoms.calc.calculate(mod_atoms, set_atoms=False)
     mod_stress = mod_atoms.get_stress() + get_kinetic_stress(mod_atoms)
 
-    assert np.allclose(ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy())
+    assert np.allclose(
+        ase_atoms.get_potential_energy(), mod_atoms.get_potential_energy()
+    )
     assert np.allclose(ase_atoms.get_forces(), mod_atoms.get_forces())
     assert np.allclose(ase_atoms.get_stress(), mod_stress)
     os.system("rm -r tmp")

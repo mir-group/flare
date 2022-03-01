@@ -4,6 +4,7 @@ Utility functions for various tasks.
 from json import JSONEncoder
 import numpy as np
 
+
 class NumpyEncoder(JSONEncoder):
     """
     Special json encoder for numpy types for serialization
@@ -43,5 +44,3 @@ class NumpyEncoder(JSONEncoder):
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
-
-

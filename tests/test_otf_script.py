@@ -14,6 +14,7 @@ write_model_list = [1, 2, 3, 4]
 
 np.random.seed(12345)
 
+
 @pytest.fixture(scope="module")
 def md_params():
     md_dict = {"temperature": 500}

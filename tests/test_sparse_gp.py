@@ -13,11 +13,11 @@ from flare.atoms import FLARE_Atoms
 from ase.calculators.lj import LennardJones
 from ase.build import bulk
 
-from .get_sgp import get_random_atoms, get_empty_sgp, \
-    get_updated_sgp, get_sgp_calc
+from .get_sgp import get_random_atoms, get_empty_sgp, get_updated_sgp, get_sgp_calc
 
 
 multiple_cutoff = [False, True]
+
 
 @pytest.mark.parametrize("multicut", multiple_cutoff)
 def test_update_db(multicut):

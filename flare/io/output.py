@@ -116,7 +116,7 @@ class Output:
         gp_str: str,
         dt: float = None,
         Nsteps: int = None,
-        structure = None,
+        structure=None,
         std_tolerance: Union[float, int] = None,
         optional: dict = None,
     ):
@@ -329,7 +329,7 @@ class Output:
 
         # Report potential energy uncertainty.
         if structure.local_energy_stds is not None:
-            pot_en_std = np.sqrt(np.sum(structure.local_energy_stds ** 2))
+            pot_en_std = np.sqrt(np.sum(structure.local_energy_stds**2))
             string += f"Uncertainty (eV): {pot_en_std:.6f} \n"
 
         # Report total energy.

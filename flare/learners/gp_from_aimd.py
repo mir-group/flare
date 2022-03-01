@@ -1191,10 +1191,10 @@ def structures_from_gpfa_output(frame_dictionaries: List[dict]) -> List[FLARE_At
     structures = []
     for frame in frame_dictionaries:
         struc = FLARE_Atoms(
-                cell=frame["cell"],
-                symbols=frame["species"],
-                positions=frame["positions"],
-            )
+            cell=frame["cell"],
+            symbols=frame["species"],
+            positions=frame["positions"],
+        )
         struc.forces = np.array(frame["dft_forces"])
         structures.append(struc)
     return structures

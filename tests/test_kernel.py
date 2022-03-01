@@ -129,7 +129,7 @@ def test_force(kernels, kernel_type):
                 cal += enm_kernel(env1[2][i], env2[2][j], mhyps, cutoffs)
                 cal -= enm_kernel(env1[1][i], env2[2][j], mhyps, cutoffs)
                 cal -= enm_kernel(env1[2][i], env2[1][j], mhyps, cutoffs)
-        kern_finite_diff += cal / (4 * delta ** 2)
+        kern_finite_diff += cal / (4 * delta**2)
     else:
         # TODO: Establish why 2+3+MB fails (numerical error?)
         return
@@ -143,7 +143,7 @@ def test_force(kernels, kernel_type):
         calc2 = en2_kernel(env1[2][0], env2[2][0], hyps[0 : ntwobody * 2], cutoffs)
         calc3 = en2_kernel(env1[1][0], env2[2][0], hyps[0 : ntwobody * 2], cutoffs)
         calc4 = en2_kernel(env1[2][0], env2[1][0], hyps[0 : ntwobody * 2], cutoffs)
-        kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4 * delta ** 2)
+        kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4 * delta**2)
     else:
         ntwobody = 0
 
@@ -154,7 +154,7 @@ def test_force(kernels, kernel_type):
         calc2 = en3_kernel(env1[2][0], env2[2][0], hyps[ntwobody * 2 :], cutoffs)
         calc3 = en3_kernel(env1[1][0], env2[2][0], hyps[ntwobody * 2 :], cutoffs)
         calc4 = en3_kernel(env1[2][0], env2[1][0], hyps[ntwobody * 2 :], cutoffs)
-        kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4 * delta ** 2)
+        kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4 * delta**2)
 
     kern_analytical = kernel(env1[0][0], env2[0][0], d1, d2, *args)
 

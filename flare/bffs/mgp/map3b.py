@@ -30,7 +30,7 @@ class Map3body(MapXbody):
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         N_spc = len(species_list)
-        self.num_lmp_maps = N_spc ** 3
+        self.num_lmp_maps = N_spc**3
         for spc1 in species_list:
             for spc2 in species_list:
                 for spc3 in species_list:
@@ -241,7 +241,7 @@ def get_triplets(
             spc2 = etypes[ind1]
 
             c12 = np.sum(c1 * c2)
-            r12 = np.sqrt(r1 ** 2 + r2 ** 2 - 2 * r1 * r2 * c12)
+            r12 = np.sqrt(r1**2 + r2**2 - 2 * r1 * r2 * c12)
 
             if spc1 <= spc2:
                 spcs = [ctype, spc1, spc2]

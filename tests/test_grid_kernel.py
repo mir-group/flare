@@ -146,7 +146,9 @@ def get_grid_env(species, parameter, kernel_name, same_hyps):
 
     if kernel_name == "twobody":
         positions = [[0, 0, 0], [r1, 0, 0]]
-        grid_struc = FLARE_Atoms(symbols=species[:2], cell=big_cell, positions=positions)
+        grid_struc = FLARE_Atoms(
+            symbols=species[:2], cell=big_cell, positions=positions
+        )
         env = AtomicEnvironment(grid_struc, 0, hm["cutoffs"], hm)
         grid = np.array([[r1]])
     elif kernel_name == "threebody":
@@ -154,7 +156,7 @@ def get_grid_env(species, parameter, kernel_name, same_hyps):
         grid_struc = FLARE_Atoms(symbols=species, cell=big_cell, positions=positions)
         env = AtomicEnvironment(grid_struc, 0, hm["cutoffs"], hm)
         env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-        grid = np.array([[r1, r2, np.sqrt(r1 ** 2 + r2 ** 2)]])
+        grid = np.array([[r1, r2, np.sqrt(r1**2 + r2**2)]])
     return env, grid
 
 

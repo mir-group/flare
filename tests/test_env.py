@@ -162,7 +162,7 @@ def generate_mask(cutoff):
         # (1, 1) (1, 2) (1, 3) (2, 3) (*, *)
         # correspond to cutoff 0.5, 0.9, 0.8, 0.9, 0.05
         ncut3b = 5
-        tmask = np.ones(nspecie ** 2, dtype=int) * (ncut3b - 1)
+        tmask = np.ones(nspecie**2, dtype=int) * (ncut3b - 1)
         count = 0
         for i, j in [(1, 1), (1, 2), (1, 3), (2, 3)]:
             cs1 = species_mask[i]

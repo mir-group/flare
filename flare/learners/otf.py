@@ -44,7 +44,7 @@ class OTF:
         atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run.
         flare_calc: ASE calculator. Must have "get_uncertainties" method
           implemented.
-        dt: the timestep in MD, in the units of pico-second. 
+        dt: the timestep in MD, in the units of pico-second.
         number_of_steps (int): the total number of steps for MD.
         dft_calc (ASE Calculator): any ASE calculator is supported,
             e.g. Espresso, VASP etc.
@@ -110,7 +110,7 @@ class OTF:
             'Year.Month.Day:Hour:Minute:Second:'.
         build_mode (str): default "bayesian", run on-the-fly training.
             "direct" mode constructs GP model from a given list of frames, with
-            `FakeMD` and `FakeDFT`. Each frame needs to have a global 
+            `FakeMD` and `FakeDFT`. Each frame needs to have a global
             property called "target_atoms" specifying a list of atomic
             environments added to the GP model.
     """
@@ -153,7 +153,7 @@ class OTF:
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
         if flare_calc is not None:
-            self.atoms.calc = flare_calc 
+            self.atoms.calc = flare_calc
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
 
@@ -176,9 +176,9 @@ class OTF:
         else:
             raise NotImplementedError(md_engine + " is not implemented in ASE")
 
-        timestep = dt * units.fs * 1e3 # convert pico-second to ASE timestep units
+        timestep = dt * units.fs * 1e3  # convert pico-second to ASE timestep units
         if self.md_engine == "PyLAMMPS":
-            md_kwargs["output_name"] = output_name 
+            md_kwargs["output_name"] = output_name
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )
@@ -214,9 +214,10 @@ class OTF:
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
-            # detect if there are duplicated atoms 
-            assert len(set(init_atoms)) == len(init_atoms), \
-                    "init_atoms should not include duplicated indices"
+            # detect if there are duplicated atoms
+            assert len(set(init_atoms)) == len(
+                init_atoms
+            ), "init_atoms should not include duplicated indices"
             self.init_atoms = init_atoms
 
         self.update_style = update_style
@@ -471,7 +472,11 @@ class OTF:
             # check if the lammps energy/forces/stress/stds match sgp
             f = logging.getLogger(self.output.basename + "log")
             check_sgp_match(
-                self.atoms, self.flare_calc, f, self.md.params["specorder"], self.md.command,
+                self.atoms,
+                self.flare_calc,
+                f,
+                self.md.params["specorder"],
+                self.md.command,
             )
 
         else:
@@ -496,7 +501,7 @@ class OTF:
 
         # change from FLARE to DFT calculator
         self.atoms.calc = deepcopy(self.dft_calc)
-    
+
         # Calculate DFT energy, forces, and stress.
         # Note that ASE and QE stresses differ by a minus sign.
         forces = self.atoms.get_forces()
@@ -568,7 +573,7 @@ class OTF:
             struc_to_add = deepcopy(self.atoms)
         except TypeError:
             # The structure might be attached with a non-picklable calculator,
-            # e.g., when we use LAMMPS empirical potential for training. 
+            # e.g., when we use LAMMPS empirical potential for training.
             # When deepcopy fails, create a SinglePointCalculator to store results
 
             from ase.calculators.singlepoint import SinglePointCalculator
@@ -611,7 +616,6 @@ class OTF:
                 self.write_gp()
         if self.write_model == 3:
             self.write_gp()
-
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
@@ -691,9 +695,7 @@ class OTF:
             rescale_ind = self.rescale_steps.index(self.curr_step)
             temp_fac = self.rescale_temps[rescale_ind] / self.temperature
             vel_fac = np.sqrt(temp_fac)
-            self.atoms.prev_positions = (
-                new_pos - self.velocities * self.dt * vel_fac
-            )
+            self.atoms.prev_positions = new_pos - self.velocities * self.dt * vel_fac
 
         # update ASE atoms
         if self.curr_step in self.rescale_steps:
@@ -710,8 +712,7 @@ class OTF:
                 self.md_kwargs["temperature"] = new_temp * units.kB
 
     def update_temperature(self):
-        """Updates the instantaneous temperatures of the system.
-        """
+        """Updates the instantaneous temperatures of the system."""
         self.KE = self.atoms.get_kinetic_energy()
         self.temperature = self.atoms.get_temperature()
 
@@ -782,12 +783,12 @@ class OTF:
     def from_dict(dct):
         flare_calc_dict = json.load(open(dct["flare_calc"]))
 
-        # Build FLARE_Calculator from dict 
+        # Build FLARE_Calculator from dict
         if flare_calc_dict["class"] == "FLARE_Calculator":
             flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
             _kernels = None
         # Build SGP_Calculator from dict
-        # TODO: we still have the issue that the c++ kernel needs to be 
+        # TODO: we still have the issue that the c++ kernel needs to be
         # in the current space, otherwise there is Seg Fault
         # That's why there is the _kernels
         elif flare_calc_dict["class"] == "SGP_Calculator":

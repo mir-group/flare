@@ -411,7 +411,7 @@ def write_efs_to_structure(
 
     # Record stress uncertainties.
     stress_stds = (
-        np.sqrt(np.sum(structure.partial_stress_stds ** 2, 0)) / current_volume
+        np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) / current_volume
     )
     structure.stress_stds = np.array(
         [

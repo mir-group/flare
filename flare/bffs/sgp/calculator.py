@@ -6,6 +6,7 @@ import numpy as np
 import time, json
 from copy import deepcopy
 
+
 class SGP_Calculator(Calculator):
 
     implemented_properties = ["energy", "forces", "stress", "stds"]
@@ -55,7 +56,9 @@ class SGP_Calculator(Calculator):
 
         # Set results.
         self.results["energy"] = deepcopy(structure_descriptor.mean_efs[0])
-        self.results["forces"] = deepcopy(structure_descriptor.mean_efs[1:-6].reshape(-1, 3))
+        self.results["forces"] = deepcopy(
+            structure_descriptor.mean_efs[1:-6].reshape(-1, 3)
+        )
 
         # Add back single atom energies
         if self.gp_model.single_atom_energies is not None:
@@ -160,7 +163,9 @@ class SGP_Calculator(Calculator):
 
         # write L_inv and sparse descriptors for variance in lammps
         self.gp_model.sparse_gp.write_L_inverse(f"L_inv_{filename}", contributor)
-        self.gp_model.sparse_gp.write_sparse_descriptors(f"sparse_desc_{filename}", contributor)
+        self.gp_model.sparse_gp.write_sparse_descriptors(
+            f"sparse_desc_{filename}", contributor
+        )
 
 
 def sort_variances(structure_descriptor, variances):

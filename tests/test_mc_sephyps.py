@@ -157,32 +157,32 @@ def test_check_sig_scale(kernels, diff_cutoff):
     result = en_kernel(env1_t, env2_t, *args1)
     print(en_kernel.__name__, result, reference)
     if reference != 0:
-        assert isclose(result / reference, scale ** 2, rtol=tol)
+        assert isclose(result / reference, scale**2, rtol=tol)
 
     reference = force_en_kernel(env1, env2, d1, *args0)
     result = force_en_kernel(env1_t, env2_t, d1, *args1)
     print(force_en_kernel.__name__, result, reference)
     if reference != 0:
-        assert isclose(result / reference, scale ** 2, rtol=tol)
+        assert isclose(result / reference, scale**2, rtol=tol)
 
     reference = kernel(env1, env2, d1, d2, *args0)
     result = kernel(env1_t, env2_t, d1, d2, *args1)
     print(kernel.__name__, result, reference)
     if reference != 0:
-        assert isclose(result / reference, scale ** 2, rtol=tol)
+        assert isclose(result / reference, scale**2, rtol=tol)
 
     reference = kg(env1, env2, d1, d2, *args0)
     result = kg(env1_t, env2_t, d1, d2, *args1)
     print(kg.__name__, result, reference)
     if reference[0] != 0:
-        assert isclose(result[0] / reference[0], scale ** 2, rtol=tol)
+        assert isclose(result[0] / reference[0], scale**2, rtol=tol)
     for idx in range(reference[1].shape[0]):
         # check sig0
         if reference[1][idx] != 0 and (idx % 4) == 0:
             assert isclose(result[1][idx] / reference[1][idx], scale, rtol=tol)
         # check the rest, but skip sig 1
         elif reference[1][idx] != 0 and (idx % 4) != 1:
-            assert isclose(result[1][idx] / reference[1][idx], scale ** 2, rtol=tol)
+            assert isclose(result[1][idx] / reference[1][idx], scale**2, rtol=tol)
 
 
 @pytest.mark.parametrize("kernels", list_to_test)
@@ -373,7 +373,7 @@ def test_force(kernels, diff_cutoff):
                 cal += enm_kernel(env1[2][i], env2[2][j], *margs)
                 cal -= enm_kernel(env1[1][i], env2[2][j], *margs)
                 cal -= enm_kernel(env1[2][i], env2[1][j], *margs)
-        kern_finite_diff += cal / (4 * delta ** 2)
+        kern_finite_diff += cal / (4 * delta**2)
     elif "manybody" in kernels:
         # TODO: Establish why 2+3+MB fails (numerical error?)
         return
@@ -390,7 +390,7 @@ def test_force(kernels, diff_cutoff):
         calc2 = en2_kernel(env1[2][0], env2[2][0], *args2)
         calc3 = en2_kernel(env1[1][0], env2[2][0], *args2)
         calc4 = en2_kernel(env1[2][0], env2[1][0], *args2)
-        kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4 * delta ** 2)
+        kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4 * delta**2)
     else:
         ntwobody = 0
 
@@ -406,7 +406,7 @@ def test_force(kernels, diff_cutoff):
         calc2 = en3_kernel(env1[2][0], env2[2][0], *args3)
         calc3 = en3_kernel(env1[1][0], env2[2][0], *args3)
         calc4 = en3_kernel(env1[2][0], env2[1][0], *args3)
-        kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4 * delta ** 2)
+        kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4 * delta**2)
 
     args = from_mask_to_args(hyps, cutoffs, hm)
     kern_analytical = kernel(env1[0][0], env2[0][0], d1, d2, *args)

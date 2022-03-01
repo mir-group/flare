@@ -414,6 +414,8 @@ def get_env_indices(
     update_style: str = "add_n",
     update_threshold: float = None,
 ) -> (bool, List[int]):
-    
-    assert "target_atoms" in structure.info, "The current frame does not have target_atoms"
+
+    assert (
+        "target_atoms" in structure.info
+    ), "The current frame does not have target_atoms"
     return False, structure.info.get("target_atoms")

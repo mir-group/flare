@@ -231,9 +231,9 @@ class SGP_Wrapper:
 
         # change the keys of single_atom_energies and species_map to int
         if in_dict["single_atom_energies"] is not None:
-             sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
+            sae_dict = {int(k): v for k, v in in_dict["single_atom_energies"].items()}
         else:
-             sae_dict = None
+            sae_dict = None
         species_map = {int(k): v for k, v in in_dict["species_map"].items()}
 
         gp = SGP_Wrapper(
@@ -414,7 +414,7 @@ class SGP_Wrapper:
         )
         n_sgp = len(self.training_data)
         n_sgp_var = len(self.sgp_var.training_structures)
-        is_same_data = n_sgp == n_sgp_var 
+        is_same_data = n_sgp == n_sgp_var
 
         # Add new data if sparse_gp has more data than sgp_var
         if not is_same_data:
@@ -483,7 +483,10 @@ class SGP_Wrapper:
         # add training data
         sparse_indices = self.sparse_gp.sparse_indices
         assert len(sparse_indices) == len(kernels)
-        assert len(sparse_indices[0]) == len(self.training_data), (len(sparse_indices[0]), len(self.training_data))
+        assert len(sparse_indices[0]) == len(self.training_data), (
+            len(sparse_indices[0]),
+            len(self.training_data),
+        )
 
         for s in range(len(self.training_data)):
             custom_range = sparse_indices[0][s]
@@ -509,8 +512,7 @@ class SGP_Wrapper:
         return new_gp, kernels
 
 
-def compute_negative_likelihood(hyperparameters, sparse_gp,
-                                print_vals=False):
+def compute_negative_likelihood(hyperparameters, sparse_gp, print_vals=False):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
 
@@ -526,25 +528,26 @@ def compute_negative_likelihood(hyperparameters, sparse_gp,
     return negative_likelihood
 
 
-def compute_negative_likelihood_grad(hyperparameters, sparse_gp,
-                                     print_vals=False):
+def compute_negative_likelihood_grad(hyperparameters, sparse_gp, print_vals=False):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
 
     assert len(hyperparameters) == len(sparse_gp.hyperparameters)
 
-    negative_likelihood = \
-        -sparse_gp.compute_likelihood_gradient(hyperparameters)
+    negative_likelihood = -sparse_gp.compute_likelihood_gradient(hyperparameters)
     negative_likelihood_gradient = -sparse_gp.likelihood_gradient
 
     if print_vals:
         print_hyps_and_grad(
             hyperparameters, negative_likelihood_gradient, negative_likelihood
-            )
+        )
 
     return negative_likelihood, negative_likelihood_gradient
 
-def compute_negative_likelihood_grad_stable(hyperparameters, sparse_gp, precomputed=False):
+
+def compute_negative_likelihood_grad_stable(
+    hyperparameters, sparse_gp, precomputed=False
+):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
 

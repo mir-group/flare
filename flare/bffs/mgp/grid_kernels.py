@@ -87,7 +87,7 @@ def grid_kernel_env(
 def en_en(bodies, grid_dim, kern_exp, fi, fj, *args):
     """energy map + energy block"""
     fifj = fi @ fj.T  # (n_triplets, n_grids)
-    kern = np.sum(kern_exp * fifj, axis=0) / bodies ** 2  # (n_grids,)
+    kern = np.sum(kern_exp * fifj, axis=0) / bodies**2  # (n_grids,)
     return kern
 
 
@@ -142,8 +142,8 @@ def self_kernel(
         rij = grids - perm_grids
         D = np.sum(rij * rij, axis=1)  # (n_grids, ) adding up three bonds
         kern_exp = np.exp(-D * ls1) * sig2
-        fjfj = fj ** 2
-        kern += kern_exp * np.sum(fjfj, axis=1) / bodies ** 2  # (n_grids,)
+        fjfj = fj**2
+        kern += kern_exp * np.sum(fjfj, axis=1) / bodies**2  # (n_grids,)
 
     return kern
 

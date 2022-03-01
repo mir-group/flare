@@ -69,7 +69,7 @@ def get_dft_calc(dft_config):
     if not dft_module_name:
         for calc_dir in os.listdir(ase_calculators.__path__[0]):
             dir_path = ase_calculators.__path__[0] + "/" + calc_dir
-            if os.path.isdir(dir_path): 
+            if os.path.isdir(dir_path):
                 for importer, modname, ispkg in pkgutil.iter_modules([dir_path]):
                     module_info = pyclbr.readmodule(
                         "ase.calculators." + calc_dir + "." + modname
@@ -368,4 +368,3 @@ def main():
         fresh_start_otf(config)
     elif mode == "restart":
         restart_otf(config)
-

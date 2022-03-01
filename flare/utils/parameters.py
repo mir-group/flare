@@ -200,7 +200,7 @@ class Parameters:
 
                 assert npmax(mask) < n
                 dim = Parameters.ndim[kernel]
-                assert len(mask) == nspecie ** dim, (
+                assert len(mask) == nspecie**dim, (
                     f"wrong dimension of {kernel}_mask: "
                     f" {len(mask)} != nspec ^ {dim} {nspecie**dim}"
                 )

@@ -19,9 +19,10 @@ if not os.environ.get("lmp", None):
 
 np.random.seed(12345)
 
-#os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
+# os.environ["ASE_LAMMPSRUN_COMMAND"] = os.environ.get("lmp")
 md_list = ["VelocityVerlet", "PyLAMMPS"]
 number_of_steps = 5
+
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_md(md_engine):
@@ -36,7 +37,7 @@ def test_otf_md(md_engine):
         else:
             shutil.rmtree(f)
 
-    # Modify the config for different MD engines 
+    # Modify the config for different MD engines
     with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -62,9 +63,9 @@ def test_otf_md(md_engine):
     # Check that the GP forces change.
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
-    #comp1 = otf_traj.force_list[0][1, 0]
-    #comp2 = otf_traj.force_list[-1][1, 0]
-    #assert (comp1 != comp2)
+    # comp1 = otf_traj.force_list[0][1, 0]
+    # comp2 = otf_traj.force_list[-1][1, 0]
+    # assert (comp1 != comp2)
 
 
 @pytest.mark.parametrize("md_engine", md_list)
@@ -84,7 +85,10 @@ def test_load_checkpoint(md_engine):
             shutil.rmtree(f, ignore_errors=True)
 
 
-@pytest.mark.skipif(("PyLAMMPS" not in md_list) or ("VelocityVerlet" not in md_list), reason="md_list does not include both PyLAMMPS and VelocityVerlet")
+@pytest.mark.skipif(
+    ("PyLAMMPS" not in md_list) or ("VelocityVerlet" not in md_list),
+    reason="md_list does not include both PyLAMMPS and VelocityVerlet",
+)
 def test_lammps_match_ase_verlet():
     lammps_traj = OtfAnalysis("PyLAMMPS.out")
     verlet_traj = OtfAnalysis("VelocityVerlet.out")
@@ -111,7 +115,7 @@ def test_otf_parser(md_engine):
     # Check that the GP forces change.
     comp1 = otf_traj.force_list[0][1, 0]
     comp2 = otf_traj.force_list[-1][1, 0]
-#    assert (comp1 != comp2)
+    #    assert (comp1 != comp2)
 
     for tmpdir in [md_engine + "*ckpt_*", "tmp*"]:
         for f in glob.glob(tmpdir):
@@ -120,4 +124,3 @@ def test_otf_parser(md_engine):
     for tmpfile in ["*.flare", "log.*", md_engine + "*", "*SiC.tersoff", "*HHe.json"]:
         for f in glob.glob(tmpfile):
             os.remove(f)
-

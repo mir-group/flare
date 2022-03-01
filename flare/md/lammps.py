@@ -77,7 +77,9 @@ class LAMMPS_MOD(LAMMPS):
 
         self.parameters.setdefault("units", "metal")
         self.parameters.setdefault("model_post", [])
-        self.parameters.setdefault("timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]]))
+        self.parameters.setdefault(
+            "timestep", str(DEFAULT_TIMESTEP[self.parameters["units"]])
+        )
 
         # Add "region" command after "pair_coeff", using `model_post`
         if "region" in self.parameters:
@@ -104,14 +106,14 @@ class LAMMPS_MOD(LAMMPS):
             for cmd in self.parameters["dump"]:
                 dump_command += "dump " + cmd + "\n"
             self.parameters["timestep"] += dump_command
-              
+
         # Add "dump_modify" command after "dump"
         if "dump_modify" in self.parameters:
             dump_mod_command = "\n"
             for cmd in self.parameters["dump_modify"]:
                 dump_mod_command += "dump_modify " + cmd + "\n"
             self.parameters["timestep"] += dump_mod_command
- 
+
         if properties is None:
             properties = self.implemented_properties
         if system_changes is None:
@@ -148,7 +150,7 @@ class LAMMPS_MD(MolecularDynamics):
         if "specorder" not in self.params:  # user must provide the unique species
             raise ValueError("Please set 'specorder' to a list of unique species")
 
-        super().__init__(atoms, timestep, trajectory) #, **kwargs)
+        super().__init__(atoms, timestep, trajectory)  # , **kwargs)
         self.curr_atoms = self.atoms.copy()
 
     def step(self, std_tolerance, N_steps):
@@ -169,7 +171,7 @@ class LAMMPS_MD(MolecularDynamics):
         now = datetime.now()
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
 
-#    def set_otf_parameters(self, label, N_steps, std_tolerance):
+        #    def set_otf_parameters(self, label, N_steps, std_tolerance):
         self.params = deepcopy(self.initial_params)
 
         # Set up default LAMMPS input commands if not given
@@ -189,18 +191,20 @@ class LAMMPS_MD(MolecularDynamics):
             self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
 
         self.params["model_post"] += [f"reset_timestep {self.nsteps}"]
-        self.params["run"] = f"{N_steps} upto every {self.params['dump_period']} "\
-                             f"\"if '$(c_MaxUnc) > {std_tolerance}' then quit\""
+        self.params["run"] = (
+            f"{N_steps} upto every {self.params['dump_period']} "
+            f"\"if '$(c_MaxUnc) > {std_tolerance}' then quit\""
+        )
 
         lmp_calc, params = get_flare_lammps_calc(
             pair_style="flare",
             potfile=self.potential_file,
-            uncfile=self.uncertainty_file, 
-            specorder=self.params["specorder"], 
+            uncfile=self.uncertainty_file,
+            specorder=self.params["specorder"],
             command=self.command,
-            tmp_dir="tmp", 
+            tmp_dir="tmp",
             label=label,
-            compute_uncertainty=True, 
+            compute_uncertainty=True,
             thermo_file=self.thermo_file,
             params=self.params,
         )
@@ -303,6 +307,7 @@ DEFAULT_TIMESTEP = {
 #                                                                              #
 ################################################################################
 
+
 def get_kinetic_stress(atoms):
     """
     LAMMPS stress tensor = virial + kinetic,
@@ -323,15 +328,16 @@ def get_kinetic_stress(atoms):
     kinetic_atoms = kinetic_atoms[[0, 1, 2, 1, 0, 0], [0, 1, 2, 2, 2, 1]]
     return kinetic_atoms
 
+
 def get_flare_lammps_calc(
     pair_style="flare",
     potfile="lmp.flare",
-    uncfile="L_inv_lmp.flare sparse_desc_lmp.flare", 
-    specorder=None, 
+    uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
+    specorder=None,
     command=None,
-    tmp_dir="tmp", 
-    label="tmp", 
-    compute_uncertainty=False, 
+    tmp_dir="tmp",
+    label="tmp",
+    compute_uncertainty=False,
     thermo_file=None,
     params={},
 ):
@@ -374,11 +380,15 @@ def get_flare_lammps_calc(
 
     if compute_uncertainty:
         dump_period = params.get("dump_period", 1)
-        params["dump"] += [f"dump_unc all custom {dump_period} {tmp_dir}/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc"]
+        params["dump"] += [
+            f"dump_unc all custom {dump_period} {tmp_dir}/trjunc_{label}.bin id type x y z vx vy vz fx fy fz c_unc"
+        ]
         params["dump_modify"] += ["dump_unc sort id", "dump_all sort id"]
         if thermo_file is not None:
             params.setdefault("fix", [])
-            params["fix"] += [f'thermoprint all print {dump_period} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {tmp_dir}/{thermo_file}']
+            params["fix"] += [
+                f'thermoprint all print {dump_period} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {tmp_dir}/{thermo_file}'
+            ]
 
     # Run lammps with the customized parameters
     if command is None:
@@ -396,6 +406,7 @@ def get_flare_lammps_calc(
     lmp_calc.set(**params)
 
     return lmp_calc, params
+
 
 def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     """
@@ -428,24 +439,24 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
         assert np.allclose(lmp_stds, gp_stds[0], atol=1e-4)
     except:
-        # if the trajectory does not match sgp, this is probably because 
+        # if the trajectory does not match sgp, this is probably because
         # 1. the dumped atomic positions in LAMMPS lose precision, or
         # 2. some groups of atoms have forces zeroed out, e.g. frozen a slab bottom.
         # Then build a new lammps calc and do a static calculation and compare to SGP
         files = ["lmp.flare"]
- 
+
         now = datetime.now()
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
- 
+
         lmp_calc, params = get_flare_lammps_calc(
             pair_style="flare",
             potfile="lmp.flare",
-            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare", 
-            specorder=specorder, 
+            uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
+            specorder=specorder,
             command=command,
-            tmp_dir="tmp_check", 
+            tmp_dir="tmp_check",
             label=label,
-            compute_uncertainty=True, 
+            compute_uncertainty=True,
             params={},
         )
 
@@ -454,9 +465,9 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         lmp_forces = lmp_calc.results["forces"]
         lmp_stress = lmp_calc.results["stress"]
         lmp_atoms = read(
-            f"tmp_check/trjunc_{label}.bin", 
-            format="lammps-dump-binary", 
-            colnames="id type x y z vx vy vz fx fy fz c_unc".split(), 
+            f"tmp_check/trjunc_{label}.bin",
+            format="lammps-dump-binary",
+            colnames="id type x y z vx vy vz fx fy fz c_unc".split(),
             order=False,
         )
         lmp_stds = lmp_atoms.get_array("c_unc")

@@ -51,6 +51,7 @@ from tests.fake_gp import get_tstp
 
 n_cpus = 2
 
+
 @pytest.fixture(scope="module")
 def params():
 
@@ -232,7 +233,10 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
         n_cpus=n_cpus,
         n_sample=20,
     )
-    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus={n_cpus}", time.time() - time0)
+    print(
+        f"compute ky_mat with multihyps, test {ihyps}, n_cpus={n_cpus}",
+        time.time() - time0,
+    )
     assert np.isclose(
         ky_mat, ky_mat_ref, rtol=1e-3
     ).all(), f"multi hyps  parallel implementation is wrong with case {ihyps}"
@@ -416,7 +420,9 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
     # serial version
     hypmat_ser, ky_mat_ser = func(hyps, name, kernel[1], cutoffs, hyps_mask)
     # parallel version
-    hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs, hyps_mask, n_cpus=n_cpus)
+    hypmat_par, ky_mat_par = func(
+        hyps, name, kernel[1], cutoffs, hyps_mask, n_cpus=n_cpus
+    )
 
     ref = ky_mat_ref[: ky_mat_ser.shape[0], : ky_mat_ser.shape[1]]
 

@@ -72,7 +72,9 @@ def force_envs(strucs):
                 positions_pert = np.copy(structure.positions)
                 positions_pert[0, dim] += delta * sign
                 struc_pert = FLARE_Atoms(
-                    cell=structure.cell, symbols=structure.numbers, positions=positions_pert
+                    cell=structure.cell,
+                    symbols=structure.numbers,
+                    positions=positions_pert,
                 )
                 atom_envs = []
                 for n in range(structure.nat):
@@ -109,7 +111,9 @@ def stress_envs(strucs):
                         positions_pert[k, m] += structure.positions[k, n] * delta * sign
 
                     struc_pert = FLARE_Atoms(
-                        cell=cell_pert, symbols=structure.numbers, positions=positions_pert
+                        cell=cell_pert,
+                        symbols=structure.numbers,
+                        positions=positions_pert,
                     )
 
                     atom_envs = []

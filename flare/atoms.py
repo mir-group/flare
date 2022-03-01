@@ -28,7 +28,7 @@ class FLARE_Atoms(Atoms):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.prev_positions = np.zeros_like(self.positions)
-        self.pbc = True # by default set periodic boundary
+        self.pbc = True  # by default set periodic boundary
 
     @staticmethod
     def from_ase_atoms(atoms, copy_calc_results=False):
@@ -61,7 +61,7 @@ class FLARE_Atoms(Atoms):
         self.label_setter("forces", forces_array)
 
     def label_setter(self, key, value):
-        if self.calc is None: # attach calculator if there is none
+        if self.calc is None:  # attach calculator if there is none
             results = {
                 "forces": np.zeros((len(self), 3)),
                 "energy": 0,
@@ -74,7 +74,7 @@ class FLARE_Atoms(Atoms):
             calc = SinglePointCalculator(self)
             self.calc = calc
             self.calc.results = results
-        else: # update the results in the calculator
+        else:  # update the results in the calculator
             self.calc.results[key] = value
 
     @property

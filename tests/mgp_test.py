@@ -112,7 +112,7 @@ def predict_atom_diag_var_2b(atom_env, gp_model, force_kernel):
 
         var += np.sqrt(v12)
 
-    var = var ** 2
+    var = var**2
     return var
 
 
@@ -163,7 +163,7 @@ def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
                 pred_dict[spc] = np.sqrt(v12)
 
             var += np.sqrt(v12)
-    var = var ** 2
+    var = var**2
     print(pred_dict)
     return var
 

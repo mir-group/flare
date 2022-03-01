@@ -333,7 +333,7 @@ class SingleMapXbody:
 
             if self.var_map == "simple":
                 self_kern = self._gengrid_var_simple(kernel_info)
-                grid_vars = np.sqrt(self_kern - np.sum(grid_vars ** 2, axis=1))
+                grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
                 grid_vars = np.expand_dims(grid_vars, axis=1)
 
             tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
@@ -423,7 +423,7 @@ class SingleMapXbody:
             kern_type = f"energy_energy"
 
         k_v = []
-        chunk_size = 32 ** 3
+        chunk_size = 32**3
         if n_grids > chunk_size:
             n_chunk = ceil(n_grids / chunk_size)
         else:

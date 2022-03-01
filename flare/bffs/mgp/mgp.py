@@ -217,9 +217,9 @@ class MappedGaussianProcess:
             raise ValueError(rebuild_dict, newbound_dict, err_str)
 
         if self.var_map == "simple":
-            variance = v ** 2
+            variance = v**2
         else:
-            variance = kern - np.sum(v ** 2, axis=0)
+            variance = kern - np.sum(v**2, axis=0)
 
         return force, variance, virial, energy
 

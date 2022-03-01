@@ -22,6 +22,7 @@ from copy import deepcopy
 multihyps_list = [True, False]
 n_cpus = 2
 
+
 @pytest.fixture(scope="class")
 def all_gps() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""

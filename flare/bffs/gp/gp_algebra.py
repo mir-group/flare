@@ -661,7 +661,7 @@ def get_force_block(
 
     sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
     force_block = k_mat
-    force_block += sigma_n ** 2 * np.eye(size3)
+    force_block += sigma_n**2 * np.eye(size3)
 
     return force_block
 
@@ -705,7 +705,7 @@ def get_energy_block(
         )
 
     energy_block = k_mat
-    energy_block += (energy_noise ** 2) * np.eye(size)
+    energy_block += (energy_noise**2) * np.eye(size)
 
     return energy_block
 
@@ -857,7 +857,7 @@ def update_force_block(
 
     # add the noise parameter
     sigma_n, _, _ = obtain_noise_len(hyps, hyps_mask)
-    force_block[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3 - old_size3)
+    force_block[old_size3:, old_size3:] += sigma_n**2 * np.eye(size3 - old_size3)
 
     return force_block
 
@@ -915,7 +915,7 @@ def update_energy_block(
         energy_block[:old_size, :old_size] = ky_mat_old[-old_size:, -old_size:]
 
     # add the noise parameter
-    energy_block[old_size:, old_size:] += (energy_noise ** 2) * np.eye(size - old_size)
+    energy_block[old_size:, old_size:] += (energy_noise**2) * np.eye(size - old_size)
 
     return energy_block
 
@@ -1781,7 +1781,7 @@ def get_ky_and_hyp(
         hyp_mat = hyp_mat0
 
     # matrix manipulation
-    ky_mat = k_mat + sigma_n ** 2 * np.eye(size3)
+    ky_mat = k_mat + sigma_n**2 * np.eye(size3)
 
     return hyp_mat, ky_mat
 

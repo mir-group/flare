@@ -19,10 +19,7 @@ def parse_outfiles(output_dir, ase_output_reader):
     output_files.sort()
 
     # Count the number of atoms.
-    traj = list(ase_output_reader(
-        output_dir + output_files[0],
-        index=slice(None))
-        )
+    traj = list(ase_output_reader(output_dir + output_files[0], index=slice(None)))
     n_atoms = len(traj[0])
 
     # Initialize numpy arrays.
@@ -53,10 +50,22 @@ def parse_otf(filename):
     """Parse an ASE OTF output file."""
 
     # Labels of data to be parsed.
-    data_labels = ["positions", "forces", "uncertainties", "frames", "times",
-                   "temperatures", "energies", "calc_types", "cells",
-                   "stresses", "pressures", "store_atoms", "store_natoms",
-                   "store_hyps"]
+    data_labels = [
+        "positions",
+        "forces",
+        "uncertainties",
+        "frames",
+        "times",
+        "temperatures",
+        "energies",
+        "calc_types",
+        "cells",
+        "stresses",
+        "pressures",
+        "store_atoms",
+        "store_natoms",
+        "store_hyps",
+    ]
 
     # Initialize data lists.
     all_data = {}
@@ -66,7 +75,7 @@ def parse_otf(filename):
     header = 0
     n_hyps = 0
 
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         lines = f.readlines()
 
     for index, line in enumerate(lines):
@@ -95,9 +104,8 @@ def parse_otf(filename):
                 header = 1
             else:
                 vectors = []
-                for cell_line in lines[index+1:index+4]:
-                    cell_line = \
-                        cell_line.strip().replace('[', '').replace(']', '')
+                for cell_line in lines[index + 1 : index + 4]:
+                    cell_line = cell_line.strip().replace("[", "").replace("]", "")
                     vec = cell_line.split()
                     vector = [float(vec[0]), float(vec[1]), float(vec[2])]
                     vectors.append(vector)
@@ -193,10 +201,9 @@ def parse_snapshot(lines, index, noa, all_data):
     # Current setting for # of lines to skip after Frame marker
     skip = 3
 
-    for count, frame_line in enumerate(lines[(index+skip):(index+skip+noa)]):
+    for count, frame_line in enumerate(lines[(index + skip) : (index + skip + noa)]):
         # parse frame line
-        spec, position, force, uncertainty, velocity = \
-            parse_frame_line(frame_line)
+        spec, position, force, uncertainty, velocity = parse_frame_line(frame_line)
 
         # update values
         species.append(spec)
