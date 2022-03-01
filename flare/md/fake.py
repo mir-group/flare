@@ -7,6 +7,18 @@ from ase.calculators.calculator import Calculator, all_changes
 
 
 class FakeMD(MolecularDynamics):
+    """
+    Fake MD for offline training with OTF module and AIMD trajectories
+
+    Args:
+        atoms (ASE Atoms): The list of atoms.
+        timestep (float): The time step.
+        filename (str): The name of the trajectory file to read in.
+        format (str): The format supported by ASE IO.
+        index (float or str): The indices of frames to read from the 
+            trajectory. Default is ":", which reads the whole trajectory.
+        io_kwargs (dict): The arguments needed for reading specific format.
+    """
     def __init__(
         self,
         atoms,
@@ -70,6 +82,15 @@ class FakeMD(MolecularDynamics):
 
 
 class FakeDFT(Calculator):
+    """
+    Fake DFT to read energy/forces/stress from a trajectory file.
+
+    Args:
+        filename (str): The name of the trajectory file to read in.
+        format (str): The format supported by ASE IO.
+        index (float or str): The indices of frames to read from the 
+            trajectory. Default is ":", which reads the whole trajectory.
+    """
 
     implemented_properties = ["energy", "forces", "stress"]
 

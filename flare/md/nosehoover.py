@@ -19,21 +19,14 @@ class NoseHoover(MolecularDynamics):
 
     Usage: NoseHoover(atoms, dt, temperature)
 
-    atoms
-        The list of atoms.
-
-    timestep
-        The time step.
-
-    temperature
-        Target temperature of the MD run in [K * units.kB]
-
-    nvt_q
-        Q in the Nose-Hoover equations
+    Args:
+        atoms (ASE Atoms): The list of atoms.
+        timestep (float): The time step.
+        temperature (float): Target temperature of the MD run in [K * units.kB]
+        nvt_q (float): Q in the Nose-Hoover equations.
 
     Example Usage:
-
-        nvt_dyn = NoseHoover(
+    >>> nvt_dyn = NoseHoover(
             atoms=atoms,
             timestep=0.5 * units.fs,
             temperature=300. * units.kB,
