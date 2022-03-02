@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>OTF Parser &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Utility" href="../utils/utils.html" />
+    <link rel="prev" title="Output" href="output.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="io.html">File Input and Output</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="output.html">Output</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">OTF Parser</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="io.html">File Input and Output</a> &raquo;</li>
+        
+      <li>OTF Parser</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/io/otf_parser.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.io.otf_parser">
+<span id="otf-parser"></span><h1>OTF Parser<a class="headerlink" href="#module-flare.io.otf_parser" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="flare.io.otf_parser.OtfAnalysis">
+<em class="property">class </em><code class="descclassname">flare.io.otf_parser.</code><code class="descname">OtfAnalysis</code><span class="sig-paren">(</span><em>filename</em>, <em>calculate_energy=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.OtfAnalysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the OTF log file to get trajectory, training data,
+thermostat, and build GP model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename</strong> (<em>str</em>) – name of the OTF log file.</li>
+<li><strong>calculate_energy</strong> (<em>bool</em>) – if the potential energy is computed and
+needs to be parsed, then set to True. Default False.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="flare.io.otf_parser.OtfAnalysis.make_gp">
+<code class="descname">make_gp</code><span class="sig-paren">(</span><em>cell=None</em>, <em>call_no=None</em>, <em>hyps=None</em>, <em>init_gp=None</em>, <em>hyp_no=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.OtfAnalysis.make_gp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build GP model from the training frames parsed from the log file.
+The cell, hyps and gp can be reset with customized values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cell</strong> (<em>np.ndarray</em>) – Default None to use the cell from the log file.
+A customized cell can be input as a 3x3 numpy array.</li>
+<li><strong>call_no</strong> (<em>int</em>) – Default None to use all the DFT frames as training
+data for building GP. If not None, then the frames 0 to <cite>call_no</cite>
+will be added to GP.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Default None to use the hyperparameters from the
+log file. Customized hyps can be input as an array.</li>
+<li><strong>init_gp</strong> (<em>GaussianProcess</em>) – Default to None to use no initial settings
+or training data. an initial GP can be used, and then the
+frames parsed in the log file will add to the initial GP. Then the
+final GP uses the hyps and kernels of <cite>init_gp</cite>, and consists of
+training data from <cite>init_gp</cite> and the data from the log file.
+<strong>NOTE</strong>: if a log file from restarted OTF is parsed, then an initial
+GP needs to be parsed from the prior log file as the <cite>init_gp</cite> of the
+restarted log file.</li>
+<li><strong>hyp_no</strong> (<em>int</em>) – Default None to use the final optimized hyperparameters to
+build GP. If not None, then use the hyps from the <a href="#id1"><span class="problematic" id="id2">`</span></a>hyp_no`th
+optimization step.</li>
+<li><strong>kwargs</strong> – if a new GP setting is needed without inputing <cite>init_gp</cite>, the GP
+initial args can be input as kwargs.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.otf_parser.OtfAnalysis.output_md_structures">
+<code class="descname">output_md_structures</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.OtfAnalysis.output_md_structures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns structure objects corresponding to the MD frames of an OTF run.
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.otf_parser.OtfAnalysis.parse_pos_otf">
+<code class="descname">parse_pos_otf</code><span class="sig-paren">(</span><em>blocks</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.OtfAnalysis.parse_pos_otf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exclusively parses MD run information
+:param filename:
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.otf_parser.OtfAnalysis.to_xyz">
+<code class="descname">to_xyz</code><span class="sig-paren">(</span><em>xyz_file</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.OtfAnalysis.to_xyz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert OTF trajectory from log file to .xyz file.
+:Parameters: <strong>xyz_file</strong> (<em>str</em>) – the file name of the .xyz file to output</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of <cite>ASE Atoms</cite> objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.otf_parser.append_atom_lists">
+<code class="descclassname">flare.io.otf_parser.</code><code class="descname">append_atom_lists</code><span class="sig-paren">(</span><em>species_list: List[str], position_list: List[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d62334a90&gt;], force_list: List[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d62334ca0&gt;], uncertainty_list: List[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d62334b20&gt;], velocity_list: List[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d62334fa0&gt;], lines: List[str], index: int, noa: int, dft_call: bool, noh: int</em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#flare.io.otf_parser.append_atom_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update lists containing atom information at each snapshot.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.otf_parser.extract_gp_info">
+<code class="descclassname">flare.io.otf_parser.</code><code class="descname">extract_gp_info</code><span class="sig-paren">(</span><em>block</em>, <em>mae_list</em>, <em>maf_list</em>, <em>atoms_list</em>, <em>hyps_list</em>, <em>noh</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.extract_gp_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exclusively parses DFT run information
+:param filename:
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.otf_parser.parse_frame_line">
+<code class="descclassname">flare.io.otf_parser.</code><code class="descname">parse_frame_line</code><span class="sig-paren">(</span><em>frame_line</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.parse_frame_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>parse a line in otf output.
+:param frame_line: frame line to be parsed
+:type frame_line: string
+:return: species, position, force, uncertainty, and velocity of atom
+:rtype: list, np.arrays</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.otf_parser.parse_header_information">
+<code class="descclassname">flare.io.otf_parser.</code><code class="descname">parse_header_information</code><span class="sig-paren">(</span><em>lines</em><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#flare.io.otf_parser.parse_header_information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get information about the run from the header of the file
+:param outfile:
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.otf_parser.parse_snapshot">
+<code class="descclassname">flare.io.otf_parser.</code><code class="descname">parse_snapshot</code><span class="sig-paren">(</span><em>lines</em>, <em>index</em>, <em>noa</em>, <em>dft_call</em>, <em>noh</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.parse_snapshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses snapshot of otf output file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.otf_parser.strip_and_split">
+<code class="descclassname">flare.io.otf_parser.</code><code class="descname">strip_and_split</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.otf_parser.strip_and_split" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function which saves a few lines of code elsewhere
+:param line:
+:return:</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../utils/utils.html" class="btn btn-neutral float-right" title="Utility" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="output.html" class="btn btn-neutral float-left" title="Output" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

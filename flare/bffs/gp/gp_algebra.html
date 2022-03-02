@@ -1,0 +1,601 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Helper functions for GP &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="FLARE ASE Calculator" href="calculator.html" />
+    <link rel="prev" title="Predict" href="predict.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../bffs.html">Bayesian Force Fields</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="gp.html">Gaussian Process Force Fields</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="predict.html">Predict</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Helper functions for GP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="calculator.html">FLARE ASE Calculator</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../mgp/mgp.html">Mapped Gaussian Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sgp/sgp.html">Sparse Gaussian Process Force Fields</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
+        
+          <li><a href="gp.html">Gaussian Process Force Fields</a> &raquo;</li>
+        
+      <li>Helper functions for GP</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/flare/bffs/gp/gp_algebra.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.bffs.gp.gp_algebra">
+<span id="helper-functions-for-gp"></span><h1>Helper functions for GP<a class="headerlink" href="#module-flare.bffs.gp.gp_algebra" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.efs_energy_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">efs_energy_vector</code><span class="sig-paren">(</span><em>name</em>, <em>efs_energy_kernel</em>, <em>x</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.efs_energy_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns covariances between the local eneregy, force components, and
+partial stresses of a test environment and the total energy labels in the
+training set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.efs_force_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">efs_force_vector</code><span class="sig-paren">(</span><em>name</em>, <em>efs_force_kernel</em>, <em>x</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.efs_force_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns covariances between the local eneregy, force components, and
+partial stresses of a test environment and the force labels in the
+training set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.energy_energy_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">energy_energy_vector</code><span class="sig-paren">(</span><em>name</em>, <em>kernel</em>, <em>x</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_energy_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a vector of covariances between the local energy of a test environment
+and the total energy labels in the training set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.energy_energy_vector_unit">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">energy_energy_vector_unit</code><span class="sig-paren">(</span><em>name</em>, <em>s</em>, <em>e</em>, <em>x</em>, <em>kernel</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>d_1=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_energy_vector_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets part of the energy/energy vector.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.energy_force_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">energy_force_vector</code><span class="sig-paren">(</span><em>name</em>, <em>kernel</em>, <em>x</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_force_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the vector of covariances between the local energy of a test
+environment and the force labels in the training set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.energy_force_vector_unit">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">energy_force_vector_unit</code><span class="sig-paren">(</span><em>name</em>, <em>s</em>, <em>e</em>, <em>x</em>, <em>kernel</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>d_1=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_force_vector_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets part of the energy/force vector.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.force_energy_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">force_energy_vector</code><span class="sig-paren">(</span><em>name</em>, <em>kernel</em>, <em>x</em>, <em>d_1</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_energy_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a vector of covariances between a force component of a test environment
+and the total energy labels in the training set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.force_energy_vector_unit">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">force_energy_vector_unit</code><span class="sig-paren">(</span><em>name</em>, <em>s</em>, <em>e</em>, <em>x</em>, <em>kernel</em>, <em>hyps</em>, <em>cutoffs</em>, <em>hyps_mask</em>, <em>d_1</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_energy_vector_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets part of the force/energy vector.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.force_force_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">force_force_vector</code><span class="sig-paren">(</span><em>name</em>, <em>kernel</em>, <em>x</em>, <em>d_1</em>, <em>hyps</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_force_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a vector of covariances between a force component of a test environment
+and the force labels in the training set.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.force_force_vector_unit">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">force_force_vector_unit</code><span class="sig-paren">(</span><em>name</em>, <em>s</em>, <em>e</em>, <em>x</em>, <em>kernel</em>, <em>hyps</em>, <em>cutoffs</em>, <em>hyps_mask</em>, <em>d_1</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_force_vector_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets part of the force/force vector.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_distance_mat_pack">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_distance_mat_pack</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d626ddc10&gt;</em>, <em>name: str</em>, <em>s1: int</em>, <em>e1: int</em>, <em>s2: int</em>, <em>e2: int</em>, <em>same: bool</em>, <em>kernel</em>, <em>cutoffs</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_distance_mat_pack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute covariance matrix element between set1 and set2
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param same: whether the row and column are the same
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters
+:return: covariance matrix</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_force_block">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_force_block</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624ebb50&gt;</em>, <em>name: str</em>, <em>kernel</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>parallel version of get_ky_mat
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">covariance matrix</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_force_block_pack">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_force_block_pack</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d626ddc70&gt;</em>, <em>name: str</em>, <em>s1: int</em>, <em>e1: int</em>, <em>s2: int</em>, <em>e2: int</em>, <em>same: bool</em>, <em>kernel</em>, <em>cutoffs</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block_pack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute covariance matrix element between set1 and set2
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param same: whether the row and column are the same
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">covariance matrix</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_ky_and_hyp">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_ky_and_hyp</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624f90a0&gt;</em>, <em>name</em>, <em>kernel_grad</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp" title="Permalink to this definition">¶</a></dt>
+<dd><p>parallel version of get_ky_and_hyp</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hyps</strong> – list of hyper-parameters</li>
+<li><strong>name</strong> – name of the gp instance.</li>
+<li><strong>kernel_grad</strong> – function object of the kernel gradient</li>
+<li><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</li>
+<li><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</li>
+<li><strong>n_cpus</strong> – number of cpus to use.</li>
+<li><strong>n_sample</strong> – the size of block for matrix to compute</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">hyp_mat, ky_mat</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_ky_and_hyp_pack</code><span class="sig-paren">(</span><em>name</em>, <em>s1</em>, <em>e1</em>, <em>s2</em>, <em>e2</em>, <em>same: bool</em>, <em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624f9040&gt;</em>, <em>kernel_grad</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes a block of ky matrix and its derivative to hyper-parameter
+If the cpu set up is None, it uses as much as posible cpus</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hyps</strong> – list of hyper-parameters</li>
+<li><strong>name</strong> – name of the gp instance.</li>
+<li><strong>kernel_grad</strong> – function object of the kernel gradient</li>
+<li><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</li>
+<li><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">hyp_mat, ky_mat</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_like_from_mats">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_like_from_mats</code><span class="sig-paren">(</span><em>ky_mat</em>, <em>l_mat</em>, <em>alpha</em>, <em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_like_from_mats" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the likelihood from the covariance matrix</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ky_mat</strong> – the covariance matrix</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float, likelihood</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_like_grad_from_mats">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_like_grad_from_mats</code><span class="sig-paren">(</span><em>ky_mat</em>, <em>hyp_mat</em>, <em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_like_grad_from_mats" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the gradient of likelihood to hyper-parameters
+from covariance matrix and its gradient</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ky_mat</strong> (<em>np.array</em>) – covariance matrix</li>
+<li><strong>hyp_mat</strong> (<em>np.array</em>) – dky/d(hyper parameter) matrix</li>
+<li><strong>name</strong> – name of the gp instance.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float, list. the likelihood and its gradients</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_neg_like">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_neg_like</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624f9100&gt;</em>, <em>name: str</em>, <em>force_kernel</em>, <em>logger_name=None</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the log likelihood and its gradients
+:param hyps: list of hyper-parameters
+:type hyps: np.ndarray
+:param name: name of the gp instance.
+:param kernel_grad: function object of the kernel gradient
+:param output: Output object for dumping every hyper-parameter</p>
+<blockquote>
+<div>sets computed</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</li>
+<li><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</li>
+<li><strong>n_cpus</strong> – number of cpus to use.</li>
+<li><strong>n_sample</strong> – the size of block for matrix to compute</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float, np.array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.get_neg_like_grad">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_neg_like_grad</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624f9160&gt;</em>, <em>name: str</em>, <em>kernel_grad</em>, <em>logger_name: str = None</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute the log likelihood and its gradients</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – list of hyper-parameters</li>
+<li><strong>name</strong> – name of the gp instance.</li>
+<li><strong>kernel_grad</strong> – function object of the kernel gradient</li>
+<li><strong>logger_name</strong> (<em>str</em>) – name of logger object for dumping every hyper-parameter
+sets computed</li>
+<li><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</li>
+<li><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</li>
+<li><strong>n_cpus</strong> – number of cpus to use.</li>
+<li><strong>n_sample</strong> – the size of block for matrix to compute</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float, np.array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.kernel_distance_mat">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">kernel_distance_mat</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d626ddcd0&gt;</em>, <em>name: str</em>, <em>kernel</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.kernel_distance_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>parallel version of get_ky_mat
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters
+:return: covariance matrix</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.obtain_noise_len">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">obtain_noise_len</code><span class="sig-paren">(</span><em>hyps</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.obtain_noise_len" title="Permalink to this definition">¶</a></dt>
+<dd><p>obtain the noise parameter from hyps and mask</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.partition_force_energy_block">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">partition_force_energy_block</code><span class="sig-paren">(</span><em>n_sample: int</em>, <em>size1: int</em>, <em>size2: int</em>, <em>n_cpus: int</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_force_energy_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Special partition method for the force/energy block. Because the number
+of environments in a structure can vary, we only split up the environment
+list, which has length size1.</p>
+<p>Note that two sizes need to be specified: the size of the envionment
+list and the size of the structure list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n_sample</strong> (<em>int</em>) – Number of environments per processor.</li>
+<li><strong>size1</strong> (<em>int</em>) – Size of the environment list.</li>
+<li><strong>size2</strong> (<em>int</em>) – Size of the structure list.</li>
+<li><strong>n_cpus</strong> (<em>int</em>) – Number of cpus.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.partition_matrix">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">partition_matrix</code><span class="sig-paren">(</span><em>n_sample</em>, <em>size</em>, <em>n_cpus</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>partition the training data for matrix calculation
+the number of blocks are close to n_cpus
+since mp.Process does not allow to change the thread number</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.partition_matrix_custom">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">partition_matrix_custom</code><span class="sig-paren">(</span><em>n_sample: int</em>, <em>start1</em>, <em>end1</em>, <em>start2</em>, <em>end2</em>, <em>n_cpus</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_matrix_custom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Partition a specified portion of a matrix.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.partition_vector">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">partition_vector</code><span class="sig-paren">(</span><em>n_sample</em>, <em>size</em>, <em>n_cpus</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>partition the training data for vector calculation
+the number of blocks are the same as n_cpus
+since mp.Process does not allow to change the thread number</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.gp.gp_algebra.queue_wrapper">
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">queue_wrapper</code><span class="sig-paren">(</span><em>result_queue</em>, <em>wid</em>, <em>func</em>, <em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.queue_wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function for multiprocessing queue</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="calculator.html" class="btn btn-neutral float-right" title="FLARE ASE Calculator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="predict.html" class="btn btn-neutral float-left" title="Predict" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

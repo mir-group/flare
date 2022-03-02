@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>FLARE: Fast Learning of Atomistic Rare Events &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation/installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>FLARE: Fast Learning of Atomistic Rare Events</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="flare-fast-learning-of-atomistic-rare-events">
+<h1>FLARE: Fast Learning of Atomistic Rare Events<a class="headerlink" href="#flare-fast-learning-of-atomistic-rare-events" title="Permalink to this headline">¶</a></h1>
+<div class="figure align-center" style="width: 50%">
+<img alt="_images/Flare_logo.png" src="_images/Flare_logo.png" />
+</div>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation/install.html">Installation of FLARE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="installation/install.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/install.html#installation-using-pip">Installation using pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/install.html#developer-s-installation-guide">Developer’s installation guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/install.html#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/install.html#lammps-plugin">LAMMPS Plugin</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="installation/lammps.html">Compile LAMMPS with MGP Pair Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#download">Download</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#mpi">MPI</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#compiling">Compiling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#running">Running</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#mpi-openmp-through-kokkos">MPI+OpenMP through Kokkos</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id1">Compiling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id2">Running</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#mpi-cuda-through-kokkos">MPI+CUDA through Kokkos</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id3">Compiling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id4">Running</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#notes-on-newton-only-relevant-with-kokkos">Notes on Newton (only relevant with Kokkos)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/aps_tutorial.html">Introduction to FLARE: Fast Learning of Atomistic Rare Events</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/aps_tutorial.html#Installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/aps_tutorial.html#Machine-learned-force-fields">Machine learned force fields</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Training-data">Training data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Training-a-GP-model.">Training a GP model.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Task:-Find-hyperparameters-that-give-a-positive-log-marginal-likelihood.">Task: Find hyperparameters that give a positive log marginal likelihood.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Solution">Solution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Optimizing-the-hyperparameters-rigorously">Optimizing the hyperparameters rigorously</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Calculating-the-learning-curve">Calculating the learning curve</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/aps_tutorial.html#Learning-a-force-field-on-the-fly">Learning a force field on the fly</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#The-Lennard-Jones-Potential">The Lennard Jones Potential</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Perform-an-on-the-fly-training-simulation.">Perform an on-the-fly training simulation.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Step-1:-Set-up-the-initial-structure.">Step 1: Set up the initial structure.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Step-2:-Set-up-a-GP-model.">Step 2: Set up a GP model.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Step-3:-Set-up-an-OTF-training-object.">Step 3: Set up an OTF training object.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Step-4:-Perform-the-simulation!">Step 4: Perform the simulation!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Parsing-the-OTF-output-file.">Parsing the OTF output file.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tutorials/aps_tutorial.html#Comparing-the-learned-model-against-ground-truth.">Comparing the learned model against ground truth.</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/prepare_data.html">Prepare your data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/prepare_data.html#vasp-data">VASP data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/prepare_data.html#data-from-quantum-espresso-lammps-etc">Data from Quantum Espresso, LAMMPS, etc.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/prepare_data.html#try-building-gp-from-data">Try building GP from data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/gpfa.html">Training a Gaussian Process from an AIMD Run</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/gpfa.html#roadmap-figure">Roadmap Figure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/gpfa.html#step-1-setting-up-a-gaussian-process-object">Step 1: Setting up a Gaussian Process Object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/gpfa.html#step-2-optional-extracting-the-frames-from-a-previous-aimd-run">Step 2 (Optional): Extracting the Frames from a previous AIMD Run</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/gpfa.html#step-3-training-your-gaussian-process">Step 3: Training your Gaussian Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/gpfa.html#pre-training-arguments">Pre-Training arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/after_training.html">After Training</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/after_training.html#Parse-OTF-log-file">Parse OTF log file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/after_training.html#Construct-GP-model-from-log-file">Construct GP model from log file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/after_training.html#Map-the-GP-force-field-&amp;-Dump-LAMMPS-coefficient-file">Map the GP force field &amp; Dump LAMMPS coefficient file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/after_training.html#Run-LAMMPS-with-MGP-pair-style">Run LAMMPS with MGP pair style</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Code Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="flare/bffs/bffs.html">Bayesian Force Fields</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/bffs/gp/gp.html">Gaussian Process Force Fields</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/predict.html">Predict</a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/gp_algebra.html">Helper functions for GP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/calculator.html">FLARE ASE Calculator</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare/bffs/mgp/mgp.html">Mapped Gaussian Process</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare/bffs/mgp/splines_methods.html">Splines Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare/bffs/mgp/formulas.html">Formulation of Mapped Gaussian Process</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare/bffs/sgp/sgp.html">Sparse Gaussian Process Force Fields</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare/bffs/sgp/calculator.html">ASE Calculator of Sparse GP</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/learners/learners.html">Bayesian Active Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/learners/otf.html">On-the-Fly Training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/learners/gp_from_aimd.html">GP From AIMD</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare/learners/gp_from_aimd.html#seed-frames">Seed frames</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare/learners/utils.html">Conditions to add training data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/md/md.html">ASE MD Engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/md/fake.html">Fake MD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/md/lammps.html">LAMMPS Calculator and MD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/md/nosehoover.html">NoseHoover (NVT Ensemble)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/descriptors/descriptors.html">Descriptors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/descriptors/env.html">Atomic Environments</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/kernels/kernels.html">Kernels</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/kernels/sc.html">Single-element Kernels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/kernels/mc_simple.html">Multi-element Kernels (simple)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/kernels/mc_sephyps.html">Multi-element Kernels (Separate Parameters)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/kernels/cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/kernels/helper.html">Helper Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/io/io.html">File Input and Output</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/io/output.html">Output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/io/otf_parser.html">OTF Parser</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/utils/utils.html">Utility</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/utils/mask_helper.html">Advanced Hyperparameters Set Up</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/utils/env_getarray.html">Construct Atomic Environment</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">Code Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/structure.html">Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/bffs.html">Bayesian force fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/kernels.html">Kernels</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="FAQs/FAQs.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="FAQs/all.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#installation-and-packages">Installation and Packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#gaussian-processes">Gaussian Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#otf-on-the-fly-training">OTF (On-the-fly) Training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#gpfa">GPFA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#mgp">MGP</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute/contribute.html">How To Contribute</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contribute/workflow.html">Git Workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#general-workflow">General workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#master-development-and-topic-branches">Master, development, and topic branches</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#pushing-changes-to-the-mir-repo-directly">Pushing changes to the MIR repo directly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#pushing-changes-from-a-forked-repo">Pushing changes from a forked repo</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="contribute/standards.html">Code Standards</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute/standards.html#pep-8">PEP 8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/standards.html#docstrings">Docstrings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/standards.html#tests">Tests</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">How to Cite</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation/installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

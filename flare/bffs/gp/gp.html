@@ -1,0 +1,663 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Gaussian Process Force Fields &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Predict" href="predict.html" />
+    <link rel="prev" title="Bayesian Force Fields" href="../bffs.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../bffs.html">Bayesian Force Fields</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Gaussian Process Force Fields</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="predict.html">Predict</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gp_algebra.html">Helper functions for GP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="calculator.html">FLARE ASE Calculator</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../mgp/mgp.html">Mapped Gaussian Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sgp/sgp.html">Sparse Gaussian Process Force Fields</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
+        
+      <li>Gaussian Process Force Fields</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/flare/bffs/gp/gp.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="gaussian-process-force-fields">
+<h1>Gaussian Process Force Fields<a class="headerlink" href="#gaussian-process-force-fields" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="predict.html">Predict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gp_algebra.html">Helper functions for GP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calculator.html">FLARE ASE Calculator</a></li>
+</ul>
+</div>
+<span class="target" id="module-flare.bffs.gp.gp"></span><dl class="class">
+<dt id="flare.bffs.gp.gp.GaussianProcess">
+<em class="property">class </em><code class="descclassname">flare.bffs.gp.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernels: List[str] = None</em>, <em>component: str = 'mc'</em>, <em>hyps: ndarray = None</em>, <em>cutoffs: dict = None</em>, <em>hyps_mask: dict = None</em>, <em>hyp_labels: List[T] = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter: int = 10</em>, <em>parallel: bool = False</em>, <em>per_atom_par: bool = True</em>, <em>n_cpus: int = 1</em>, <em>n_sample: int = 100</em>, <em>output: flare.io.output.Output = None</em>, <em>name='default_gp'</em>, <em>energy_noise: float = 0.01</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gaussian process force field. Implementation is based on Algorithm 2.1
+(pg. 19) of “Gaussian Processes for Machine Learning” by Rasmussen and
+Williams.</p>
+<p>Methods within GaussianProcess allow you to make predictions on
+AtomicEnvironment objects (see env.py) generated from
+FLARE FLARE_Atoms (see ase/atoms.py), and after data points are added,
+optimize hyperparameters based on available training data (train method).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>kernels</strong> (<em>list, optional</em>) – Determine the type of kernels. Example:
+[‘twbody’, ‘threebody’], [‘2’, ‘3’, ‘mb’], [‘2’]. Defaults to [
+‘twboody’, ‘threebody’]</li>
+<li><strong>component</strong> (<em>str, optional</em>) – Determine single- (“sc”) or multi-
+component (“mc”) kernel to use. Defaults to “mc”</li>
+<li><strong>hyps</strong> (<em>np.ndarray, optional</em>) – Hyperparameters of the GP.</li>
+<li><strong>cutoffs</strong> (<em>Dict, optional</em>) – Cutoffs of the GP kernel. For simple hyper-
+parameter setups, formatted like {“twobody”:7, “threebody”:4.5},
+etc.</li>
+<li><strong>hyp_labels</strong> (<em>List, optional</em>) – List of hyperparameter labels. Defaults
+to None.</li>
+<li><strong>opt_algorithm</strong> (<em>str, optional</em>) – Hyperparameter optimization algorithm.
+Defaults to ‘L-BFGS-B’.</li>
+<li><strong>maxiter</strong> (<em>int, optional</em>) – Maximum number of iterations of the
+hyperparameter optimization algorithm. Defaults to 10.</li>
+<li><strong>parallel</strong> (<em>bool, optional</em>) – If True, the covariance matrix K of the GP is
+computed in parallel. Defaults to False.</li>
+<li><strong>n_cpus</strong> (<em>int, optional</em>) – Number of cpus used for parallel
+calculations. Defaults to 1 (serial)</li>
+<li><strong>n_sample</strong> (<em>int, optional</em>) – Size of submatrix to use when parallelizing
+predictions.</li>
+<li><strong>output</strong> (<em>Output, optional</em>) – Output object used to dump hyperparameters
+during optimization. Defaults to None.</li>
+<li><strong>hyps_mask</strong> (<em>dict, optional</em>) – hyps_mask can set up which hyper parameter
+is used for what interaction. Details see kernels/mc_sephyps.py</li>
+<li><strong>name</strong> (<em>str, optional</em>) – Name for the GP instance which dictates global
+memory access.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.add_one_env">
+<code class="descname">add_one_env</code><span class="sig-paren">(</span><em>env: flare.descriptors.env.AtomicEnvironment</em>, <em>force: Optional[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d626bd1c0&gt;] = None</em>, <em>train: bool = False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.add_one_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a single local environment to the training set of the GP.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>env</strong> (<em>AtomicEnvironment</em>) – Local environment to be added to the
+training set of the GP.</li>
+<li><strong>force</strong> (<em>np.ndarray</em>) – Force on the central atom of the local
+environment in the form of a 3-component Numpy array
+containing the x, y, and z components.</li>
+<li><strong>train</strong> (<em>bool</em>) – If True, the GP is trained after the local
+environment is added.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.adjust_cutoffs">
+<code class="descname">adjust_cutoffs</code><span class="sig-paren">(</span><em>new_cutoffs: Union[list</em>, <em>tuple</em>, <em>np.ndarray] = None</em>, <em>reset_L_alpha=True</em>, <em>train=True</em>, <em>new_hyps_mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.adjust_cutoffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loop through atomic environment objects stored in the training data,
+and re-compute cutoffs for each. Useful if you want to gauge the
+impact of cutoffs given a certain training set! Unless you know
+<em>exactly</em> what you are doing for some development or test purpose,
+it is <strong>highly</strong> suggested that you call set_L_alpha and
+re-optimize your hyperparameters afterwards as is default here.</p>
+<p>A helpful way to update the cutoffs and kernel for an extant
+GP is to perform the following commands:
+&gt;&gt; hyps_mask = pm.as_dict()
+&gt;&gt; hyps = hyps_mask[‘hyps’]
+&gt;&gt; cutoffs = hyps_mask[‘cutoffs’]
+&gt;&gt; kernels = hyps_mask[‘kernels’]
+&gt;&gt; gp_model.update_kernel(kernels, ‘mc’, hyps, cutoffs, hyps_mask)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>reset_L_alpha</strong> – </li>
+<li><strong>train</strong> – </li>
+<li><strong>new_hyps_mask</strong> – </li>
+<li><strong>new_cutoffs</strong> – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary representation of the GP model.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="flare.bffs.gp.gp.GaussianProcess.backward_arguments">
+<em class="property">static </em><code class="descname">backward_arguments</code><span class="sig-paren">(</span><em>kwargs</em>, <em>new_args={}</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.backward_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the initialize arguments that were renamed</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="flare.bffs.gp.gp.GaussianProcess.backward_attributes">
+<em class="property">static </em><code class="descname">backward_attributes</code><span class="sig-paren">(</span><em>dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.backward_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>add new attributes to old instance
+or update attribute types</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.check_L_alpha">
+<code class="descname">check_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.check_L_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the alpha vector is up to date with the training set. If
+not, update_L_alpha is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.check_instantiation">
+<code class="descname">check_instantiation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.check_instantiation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs a series of checks to ensure that the user has not supplied
+contradictory arguments which will result in undefined behavior
+with multiple hyperparameters.
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.compute_matrices">
+<code class="descname">compute_matrices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.compute_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>When covariance matrix is known, reconstruct other matrices.
+Used in re-loading large GPs.
+:return:</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="flare.bffs.gp.gp.GaussianProcess.from_dict">
+<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create GP object from dictionary representation.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="flare.bffs.gp.gp.GaussianProcess.from_file">
+<em class="property">static </em><code class="descname">from_file</code><span class="sig-paren">(</span><em>filename: str</em>, <em>format: str = ''</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>One-line convenience method to load a GP from a file stored using
+write_file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<em>str</em>) – path to GP model</li>
+<li><strong>format</strong> (<em>str</em>) – json or pickle if format is not in filename</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="flare.bffs.gp.gp.GaussianProcess.par">
+<code class="descname">par</code><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.par" title="Permalink to this definition">¶</a></dt>
+<dd><p>Backwards compability attribute
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>x_t: flare.descriptors.env.AtomicEnvironment</em>, <em>d: int</em><span class="sig-paren">)</span> &#x2192; [&lt;class 'float'&gt;, &lt;class 'float'&gt;]<a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict a force component of the central atom of a local environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Input local environment.</li>
+<li><strong>d</strong> (<em>int</em>) – Force component to be predicted (1 is x, 2 is y, and
+3 is z).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Mean and epistemic variance of the prediction.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float, float)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.predict_efs">
+<code class="descname">predict_efs</code><span class="sig-paren">(</span><em>x_t: flare.descriptors.env.AtomicEnvironment</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_efs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict the local energy, forces, and partial stresses of an
+atomic environment and their predictive variances.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.predict_force_xyz">
+<code class="descname">predict_force_xyz</code><span class="sig-paren">(</span><em>x_t: flare.descriptors.env.AtomicEnvironment) -&gt; ('np.ndarray'</em>, <em>'np.ndarray'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_force_xyz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple wrapper to predict all three components of a force in one go.
+:param x_t:
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.predict_local_energy">
+<code class="descname">predict_local_energy</code><span class="sig-paren">(</span><em>x_t: flare.descriptors.env.AtomicEnvironment</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_local_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict the local energy of a local environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Input local environment.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Local energy predicted by the GP.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.predict_local_energy_and_var">
+<code class="descname">predict_local_energy_and_var</code><span class="sig-paren">(</span><em>x_t: flare.descriptors.env.AtomicEnvironment</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_local_energy_and_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict the local energy of a local environment and its
+uncertainty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Input local environment.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Mean and predictive variance predicted by the GP.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(float, float)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.remove_force_data">
+<code class="descname">remove_force_data</code><span class="sig-paren">(</span><em>indexes: Union[int, List[int]], update_matrices: bool = True</em><span class="sig-paren">)</span> &#x2192; Tuple[List[flare.atoms.FLARE_Atoms], List[ndarray]]<a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.remove_force_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove force components from the model. Convenience function which
+deletes individual data points.</p>
+<p>Matrices should <em>always</em> be updated if you intend to use the GP to make
+predictions afterwards. This might be time consuming for large GPs,
+so, it is provided as an option, but, only do so with extreme caution.
+(Undefined behavior may result if you try to make predictions and/or
+add to the training set afterwards).</p>
+<p>Returns training data which was removed akin to a pop method, in order
+of lowest to highest index passed in.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>indexes</strong> – Indexes of envs in training data to remove.</li>
+<li><strong>update_matrices</strong> – If false, will not update the GP’s matrices
+afterwards (which can be time consuming for large models).
+This should essentially always be true except for niche development
+applications.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.set_L_alpha">
+<code class="descname">set_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.set_L_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invert the covariance matrix, setting L (a lower triangular
+matrix s.t. L L^T = (K + sig_n^2 I)) and alpha, the inverse
+covariance matrix multiplied by the vector of training labels.
+The forces and variances are later obtained using alpha.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>logger_name: str = None</em>, <em>custom_bounds=None</em>, <em>grad_tol: float = 0.0001</em>, <em>x_tol: float = 1e-05</em>, <em>line_steps: int = 20</em>, <em>print_progress: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train Gaussian Process model on training data. Tunes the
+hyperparameters to maximize the likelihood, then computes L and alpha
+(related to the covariance matrix of the training set).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> (<em>logging.logger</em>) – logger object specifying where to write the
+progress of the optimization.</li>
+<li><strong>custom_bounds</strong> (<em>np.ndarray</em>) – Custom bounds on the hyperparameters.</li>
+<li><strong>grad_tol</strong> (<em>float</em>) – Tolerance of the hyperparameter gradient that
+determines when hyperparameter optimization is terminated.</li>
+<li><strong>x_tol</strong> (<em>float</em>) – Tolerance on the x values used to decide when
+Nelder-Mead hyperparameter optimization is terminated.</li>
+<li><strong>line_steps</strong> (<em>int</em>) – Maximum number of line steps for L-BFGS
+hyperparameter optimization.
+:param logger_name:
+:param print_progress:</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="flare.bffs.gp.gp.GaussianProcess.training_statistics">
+<code class="descname">training_statistics</code><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.training_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary with statistics about the current training data.
+Useful for quickly summarizing info about the GP.
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.update_L_alpha">
+<code class="descname">update_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.update_L_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the GP’s L matrix and alpha vector without recalculating
+the entire covariance matrix K.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.update_db">
+<code class="descname">update_db</code><span class="sig-paren">(</span><em>struc: flare.atoms.FLARE_Atoms</em>, <em>forces: ndarray = None</em>, <em>custom_range: List[int] = ()</em>, <em>energy: float = None</em>, <em>stress: ndarray = None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.update_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a structure and forces, add local environments from the
+structure to the training set of the GP. If energy is given, add the
+entire structure to the training set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>struc</strong> (<em>FLARE_Atoms</em>) – Input structure. Local environments of atoms
+in this structure will be added to the training set of the GP.</li>
+<li><strong>forces</strong> (<em>np.ndarray</em>) – Forces on atoms in the structure.</li>
+<li><strong>custom_range</strong> (<em>List[int]</em>) – Indices of atoms whose local
+environments will be added to the training set of the GP.</li>
+<li><strong>energy</strong> (<em>float</em>) – Energy of the structure.</li>
+<li><strong>stress</strong> (<em>np.ndarray</em>) – Stress tensor of the structure. The stress
+tensor components should be given in the following order:
+xx, xy, xz, yy, yz, zz.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.gp.gp.GaussianProcess.write_model">
+<code class="descname">write_model</code><span class="sig-paren">(</span><em>name: str</em>, <em>format: str = None</em>, <em>split_matrix_size_cutoff: int = 5000</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.write_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write model in a variety of formats to a file for later re-use.
+JSON files are open to visual inspection and are easier to use
+across different versions of FLARE or GP implementations. However,
+they are larger and loading them in takes longer (by setting up a
+new GP from the specifications). Pickled files can be faster to
+read &amp; write, and they take up less memory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – Output name.</li>
+<li><strong>format</strong> (<em>str</em>) – Output format.</li>
+<li><strong>split_matrix_size_cutoff</strong> (<em>int</em>) – If there are more than this</li>
+<li><strong>number of training points in the set, save the matrices seperately.</strong></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="predict.html" class="btn btn-neutral float-right" title="Predict" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../bffs.html" class="btn btn-neutral float-left" title="Bayesian Force Fields" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

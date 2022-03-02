@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Construct Atomic Environment &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Code Documentation" href="../../flare_pp/flare_pp.html" />
+    <link rel="prev" title="Advanced Hyperparameters Set Up" href="mask_helper.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="utils.html">Utility</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="mask_helper.html">Advanced Hyperparameters Set Up</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Construct Atomic Environment</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="utils.html">Utility</a> &raquo;</li>
+        
+      <li>Construct Atomic Environment</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/utils/env_getarray.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.utils.env_getarray">
+<span id="construct-atomic-environment"></span><h1>Construct Atomic Environment<a class="headerlink" href="#module-flare.utils.env_getarray" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="flare.utils.env_getarray.get_2_body_arrays">
+<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_2_body_arrays</code><span class="sig-paren">(</span><em>positions</em>, <em>atom: int</em>, <em>cell</em>, <em>r_cut</em>, <em>cutoff_2</em>, <em>species</em>, <em>sweep</em>, <em>nspecie</em>, <em>species_mask</em>, <em>twobody_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_2_body_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns distances, coordinates, species of atoms, and indices of neighbors
+in the 2-body local environment. This method is implemented outside
+the AtomicEnvironment class to allow for njit acceleration with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>positions</strong> (<em>np.ndarray</em>) – Positions of atoms in the structure.</li>
+<li><strong>atom</strong> (<em>int</em>) – Index of the central atom of the local environment.</li>
+<li><strong>cell</strong> (<em>np.ndarray</em>) – 3x3 array whose rows are the Bravais lattice vectors of the
+cell.</li>
+<li><strong>cutoff_2</strong> (<em>np.ndarray</em>) – 2-body cutoff radius.</li>
+<li><strong>species</strong> (<em>np.ndarray</em>) – Numpy array of species represented by their atomic numbers.</li>
+<li><strong>nspecie</strong> – number of atom types to define bonds</li>
+<li><strong>species_mask</strong> – mapping from atomic number to atom types</li>
+<li><strong>twobody_mask</strong> – mapping from the types of end atoms to bond types</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">int</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Tuple of arrays describing pairs of atoms in the 2-body local
+environment.</p>
+<p>bond_array_2: Array containing the distances and relative
+coordinates of atoms in the 2-body local environment. First column
+contains distances, remaining columns contain Cartesian coordinates
+divided by the distance (with the origin defined as the position of the
+central atom). The rows are sorted by distance from the central atom.</p>
+<p>bond_positions_2: Coordinates of atoms in the 2-body local environment.</p>
+<p>etypes: Species of atoms in the 2-body local environment represented by
+their atomic number.</p>
+<p>bond_indices: Structure indices of atoms in the local environment.</p>
+</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray, np.ndarray, np.ndarray, np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.utils.env_getarray.get_3_body_arrays">
+<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_3_body_arrays</code><span class="sig-paren">(</span><em>bond_array_2</em>, <em>bond_positions_2</em>, <em>ctype</em>, <em>etypes</em>, <em>r_cut</em>, <em>cutoff_3</em>, <em>nspecie</em>, <em>species_mask</em>, <em>cut3b_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_3_body_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns distances and coordinates of triplets of atoms in the
+3-body local environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array.</li>
+<li><strong>bond_positions_2</strong> (<em>np.ndarray</em>) – Coordinates of atoms in the 2-body local
+environment.</li>
+<li><strong>ctype</strong> – atomic number of the center atom</li>
+<li><strong>cutoff_3</strong> (<em>np.ndarray</em>) – 3-body cutoff radius.</li>
+<li><strong>nspecie</strong> – number of atom types to define bonds</li>
+<li><strong>species_mask</strong> – mapping from atomic number to atom types</li>
+<li><strong>cut3b_mask</strong> – mapping from the types of end atoms to bond types</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">int</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">int</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Tuple of 4 arrays describing triplets of atoms in the 3-body local
+environment.</p>
+<p>bond_array_3: Array containing the distances and relative
+coordinates of atoms in the 3-body local environment. First column
+contains distances, remaining columns contain Cartesian coordinates
+divided by the distance (with the origin defined as the position of the
+central atom). The rows are sorted by distance from the central atom.</p>
+<p>cross_bond_inds: Two dimensional array whose row m contains the indices
+of atoms n &gt; m that are within a distance cutoff_3 of both atom n and the
+central atom.</p>
+<p>cross_bond_dists: Two dimensional array whose row m contains the
+distances from atom m of atoms n &gt; m that are within a distance cutoff_3
+of both atom n and the central atom.</p>
+<p>triplet_counts: One dimensional array of integers whose entry m is the
+number of atoms that are within a distance cutoff_3 of atom m.</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(np.ndarray, np.ndarray, np.ndarray, np.ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.utils.env_getarray.get_m2_body_arrays">
+<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_m2_body_arrays</code><span class="sig-paren">(</span><em>positions</em>, <em>atom: int</em>, <em>cell</em>, <em>r_cut</em>, <em>manybody_cutoff_list</em>, <em>species</em>, <em>sweep: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d626dd700&gt;</em>, <em>nspec</em>, <em>spec_mask</em>, <em>manybody_mask</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_m2_body_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>positions</strong> (<em>np.ndarray</em>) – Positions of atoms in the structure.</li>
+<li><strong>atom</strong> (<em>int</em>) – Index of the central atom of the local environment.</li>
+<li><strong>cell</strong> (<em>np.ndarray</em>) – 3x3 array whose rows are the Bravais lattice vectors of the
+cell.</li>
+<li><strong>manybody_cutoff_list</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>species</strong> (<em>np.ndarray</em>) – Numpy array of species represented by their atomic numbers.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Tuple of arrays describing pairs of atoms in the 2-body local
+environment.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.utils.env_getarray.get_m3_body_arrays">
+<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_m3_body_arrays</code><span class="sig-paren">(</span><em>positions</em>, <em>atom: int</em>, <em>cell</em>, <em>cutoff: float</em>, <em>species</em>, <em>sweep</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_m3_body_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Note: here we assume the cutoff is not too large,
+i.e., 2 * cutoff &lt; cell_size</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.utils.env_getarray.q3_value_mc">
+<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">q3_value_mc</code><span class="sig-paren">(</span><em>distances</em>, <em>cross_bond_inds</em>, <em>cross_bond_dists</em>, <em>triplets</em>, <em>r_cut</em>, <em>species_list</em>, <em>etypes</em>, <em>cutoff_func</em>, <em>q_func=&lt;function coordination_number&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.q3_value_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute value of many-body many components descriptor based
+on distances of atoms in the local many-body environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</li>
+<li><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</li>
+<li><strong>ref_species</strong> (<em>int</em>) – species to consider to compute the contribution</li>
+<li><strong>etypes</strong> (<em>np.ndarray</em>) – atomic species of neighbours</li>
+<li><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</li>
+<li><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the many-body descriptor</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../flare_pp/flare_pp.html" class="btn btn-neutral float-right" title="Code Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mask_helper.html" class="btn btn-neutral float-left" title="Advanced Hyperparameters Set Up" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

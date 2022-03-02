@@ -1,0 +1,429 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>On-the-Fly Training &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="GP From AIMD" href="gp_from_aimd.html" />
+    <link rel="prev" title="Bayesian Active Learning" href="learners.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="learners.html">Bayesian Active Learning</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">On-the-Fly Training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp_from_aimd.html">GP From AIMD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html">Conditions to add training data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="learners.html">Bayesian Active Learning</a> &raquo;</li>
+        
+      <li>On-the-Fly Training</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/learners/otf.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.learners.otf">
+<span id="on-the-fly-training"></span><h1>On-the-Fly Training<a class="headerlink" href="#module-flare.learners.otf" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference internal" href="#flare.learners.otf.OTF" title="flare.learners.otf.OTF"><code class="xref py py-class docutils literal notranslate"><span class="pre">OTF</span></code></a> is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine.
+It needs to be used adjointly with ASE MD engine.</p>
+<dl class="class">
+<dt id="flare.learners.otf.OTF">
+<em class="property">class </em><code class="descclassname">flare.learners.otf.</code><code class="descname">OTF</code><span class="sig-paren">(</span><em>atoms, dt, number_of_steps, dft_calc, md_engine, md_kwargs, flare_calc=None, trajectory=None, prev_pos_init: ndarray = None, rescale_steps: List[int] = [], rescale_temps: List[int] = [], write_model: int = 0, force_only: bool = True, std_tolerance_factor: float = 1, skip: int = 0, init_atoms: List[int] = None, output_name: str = 'otf_run', max_atoms_added: int = 1, freeze_hyps: int = 10, min_steps_with_model: int = 0, update_style: str = 'add_n', update_threshold: float = None, dft_kwargs=None, store_dft_output: Tuple[Union[str, List[str]], str] = None, build_mode='bayesian', **kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Trains a Gaussian process force field on the fly during</dt>
+<dd>molecular dynamics.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>atoms</strong> (<em>ASE Atoms</em>) – the ASE Atoms object for the on-the-fly MD run.</li>
+<li><strong>flare_calc</strong> – ASE calculator. Must have “get_uncertainties” method
+implemented.</li>
+<li><strong>dt</strong> – the timestep in MD, in the units of pico-second.</li>
+<li><strong>number_of_steps</strong> (<em>int</em>) – the total number of steps for MD.</li>
+<li><strong>dft_calc</strong> (<em>ASE Calculator</em>) – any ASE calculator is supported,
+e.g. Espresso, VASP etc.</li>
+<li><strong>md_engine</strong> (<em>str</em>) – the name of MD thermostat, only <cite>VelocityVerlet</cite>,
+<cite>NVTBerendsen</cite>, <cite>NPTBerendsen</cite>, <cite>NPT</cite> and <cite>Langevin</cite>, <cite>NoseHoover</cite>
+are supported.</li>
+<li><strong>md_kwargs</strong> (<em>dict</em>) – Specify the args for MD as a dictionary, the args are
+as required by the ASE MD modules consistent with the <cite>md_engine</cite>.</li>
+<li><strong>trajectory</strong> (<em>ASE Trajectory</em>) – default <cite>None</cite>, not recommended,
+currently in experiment.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The following arguments are for on-the-fly training, the user can also
+refer to <code class="xref py py-class docutils literal notranslate"><span class="pre">flare.otf.OTF</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>prev_pos_init</strong> (<em>[type], optional</em>) – Previous positions. Defaults
+to None.</li>
+<li><strong>rescale_steps</strong> (<em>List[int], optional</em>) – List of frames for which the
+velocities of the atoms are rescaled. Defaults to [].</li>
+<li><strong>rescale_temps</strong> (<em>List[int], optional</em>) – List of rescaled temperatures.
+Defaults to [].</li>
+<li><strong>write_model</strong> (<em>int, optional</em>) – If 0, write never. If 1, write at
+end of run. If 2, write after each training and end of run.
+If 3, write after each time atoms are added and end of run.
+If 4, write after each training and end of run, and back up
+after each write.</li>
+<li><strong>force_only</strong> (<em>bool, optional</em>) – If True, only use forces for training.
+Default to False, use forces, energy and stress for training.</li>
+<li><strong>std_tolerance_factor</strong> (<em>float, optional</em>) – Threshold that determines
+when DFT is called. Specifies a multiple of the current noise
+hyperparameter. If the epistemic uncertainty on a force
+component exceeds this value, DFT is called. Defaults to 1.</li>
+<li><strong>skip</strong> (<em>int, optional</em>) – Number of frames that are skipped when
+dumping to the output file. Defaults to 0.</li>
+<li><strong>init_atoms</strong> (<em>List[int], optional</em>) – List of atoms from the input
+structure whose local environments and force components are
+used to train the initial GP model. If None is specified, all
+atoms are used to train the initial GP. Defaults to None.</li>
+<li><strong>output_name</strong> (<em>str, optional</em>) – Name of the output file. Defaults to
+‘otf_run’.</li>
+<li><strong>max_atoms_added</strong> (<em>int, optional</em>) – Number of atoms added each time
+DFT is called. Defaults to 1.</li>
+<li><strong>freeze_hyps</strong> (<em>int, optional</em>) – Specifies the number of times the
+hyperparameters of the GP are optimized. After this many
+updates to the GP, the hyperparameters are frozen.
+Defaults to 10.</li>
+<li><strong>min_steps_with_model</strong> (<em>int, optional</em>) – Minimum number of steps the
+model takes in between calls to DFT. Defaults to 0.</li>
+<li><strong>dft_kwargs</strong> (<em>[type], optional</em>) – Additional arguments which are
+passed when DFT is called; keyword arguments vary based on the
+program (e.g. ESPRESSO vs. VASP). Defaults to None.</li>
+<li><strong>store_dft_output</strong> (<em>Tuple[Union[str,List[str]],str], optional</em>) – After DFT calculations are called, copy the file or files
+specified in the first element of the tuple to a directory
+specified as the second element of the tuple.
+Useful when DFT calculations are expensive and want to be kept
+for later use. The first element of the tuple can either be a
+single file name, or a list of several. Copied files will be
+prepended with the date and time with the format
+‘Year.Month.Day:Hour:Minute:Second:’.</li>
+<li><strong>build_mode</strong> (<em>str</em>) – default “bayesian”, run on-the-fly training.
+“direct” mode constructs GP model from a given list of frames, with
+<cite>FakeMD</cite> and <cite>FakeDFT</cite>. Each frame needs to have a global
+property called “target_atoms” specifying a list of atomic
+environments added to the GP model.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="flare.learners.otf.OTF.compute_properties">
+<code class="descname">compute_properties</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.compute_properties" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Compute energies, forces, stresses, and their uncertainties with</dt>
+<dd>the FLARE ASE calcuator, and write the results to the
+OTF structure object.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.md_step">
+<code class="descname">md_step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.md_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get new position in molecular dynamics based on the forces predicted by
+FLARE_Calculator or DFT calculator</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.rescale_temperature">
+<code class="descname">rescale_temperature</code><span class="sig-paren">(</span><em>new_pos: ndarray</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.rescale_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change the previous positions to update the temperature</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>new_pos</strong> (<em>np.ndarray</em>) – Positions of atoms in the next MD frame.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs an on-the-fly training run.</p>
+<p>If OTF has store_dft_output set, then the specified DFT files will
+be copied with the current date and time prepended in the format
+‘Year.Month.Day:Hour:Minute:Second:’.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.run_dft">
+<code class="descname">run_dft</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.run_dft" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates DFT forces on atoms in the current structure.</p>
+<p>If OTF has store_dft_output set, then the specified DFT files will
+be copied with the current date and time prepended in the format
+‘Year.Month.Day:Hour:Minute:Second:’.</p>
+<p>Calculates DFT forces on atoms in the current structure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.train_gp">
+<code class="descname">train_gp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.train_gp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimizes the hyperparameters of the current GP model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.update_gp">
+<code class="descname">update_gp</code><span class="sig-paren">(</span><em>train_atoms: List[int], dft_frcs: ndarray, dft_energy: float = None, dft_stress: ndarray = None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.update_gp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the current GP model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>train_atoms</strong> (<em>List[int]</em>) – List of atoms whose local environments
+will be added to the training set.</li>
+<li><strong>dft_frcs</strong> (<em>np.ndarray</em>) – DFT forces on all atoms in the structure.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.learners.otf.OTF.update_temperature">
+<code class="descname">update_temperature</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF.update_temperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the instantaneous temperatures of the system.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="gp_from_aimd.html" class="btn btn-neutral float-right" title="GP From AIMD" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="learners.html" class="btn btn-neutral float-left" title="Bayesian Active Learning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

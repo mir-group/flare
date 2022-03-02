@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Formulation of Mapped Gaussian Process &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Sparse Gaussian Process Force Fields" href="../sgp/sgp.html" />
+    <link rel="prev" title="Splines Methods" href="splines_methods.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../bffs.html">Bayesian Force Fields</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../gp/gp.html">Gaussian Process Force Fields</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="mgp.html">Mapped Gaussian Process</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="splines_methods.html">Splines Methods</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Formulation of Mapped Gaussian Process</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../sgp/sgp.html">Sparse Gaussian Process Force Fields</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
+        
+          <li><a href="mgp.html">Mapped Gaussian Process</a> &raquo;</li>
+        
+      <li>Formulation of Mapped Gaussian Process</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/flare/bffs/mgp/formulas.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Formulation-of-Mapped-Gaussian-Process">
+<h1>Formulation of Mapped Gaussian Process<a class="headerlink" href="#Formulation-of-Mapped-Gaussian-Process" title="Permalink to this headline">¶</a></h1>
+<p>We take 2-body kernel as an example, for the simplicity of explanation. The local environment to be predicted is denoted as <span class="math">\rho_i</span>, which consists of a center atom <span class="math">i</span> whose force is to be predicted, and all its neighbors within a certain cutoff.</p>
+<div class="section" id="Energy">
+<h2>Energy<a class="headerlink" href="#Energy" title="Permalink to this headline">¶</a></h2>
+<p>The atomic energy of <span class="math">\rho_i</span> from Gaussian Process regression is</p>
+<div class="math">
+<p><span class="math">\begin{aligned}
+E(\rho_i)
+= \sum_{j=1}^N \sum_{p \in \rho_i} \sum_{q\in \rho_j}\tilde{k}(p, q)\alpha_j
+= \sum_{p \in \rho_i}\epsilon(p)
+\end{aligned}</span></p>
+</div><p>where in 2-body, <span class="math">p</span> is a bond in <span class="math">\rho_i</span>, and <span class="math">q</span> is a bond in training data <span class="math">\rho_j</span>, <span class="math">\tilde{k}(p,q)=\sigma_2\exp(-{\|p-q\|^2\over l_2^2})</span> is the kernel function. <span class="math">\boldsymbol{\alpha}=\mathbf{\Sigma}^{-1}\mathbf{y}</span> is the inverse kernel matrix multiplied by the label vector (forces of the training set).</p>
+<p>In the equation above, we can see that the atomic energy can be decomposed into the summation of the bond energies <span class="math">\epsilon(p)</span>, which is a low dimension function, for n-body kernel, its dimensionality of domain is <span class="math">{n(n-1)\over 2}</span>. Therefore, we use a cubic spline to interpolate this function, with a GP model with fixed training data and hyperparameters. The forces can be derived from the derivative of the above function.</p>
+<p>While in GP, the triple summations are needed in prediction, after mapping to the cubic spline, the two summations w.r.t. the training data set <span class="math">\sum_{j=1}^N \sum_{q\in \rho_j}</span> are removed. The computational cost in prediction of GP scales linearly w.r.t. the training set size <span class="math">N</span> due to the two summations, and MGP is independent of <span class="math">N</span>.</p>
+</div>
+<div class="section" id="Uncertainty">
+<h2>Uncertainty<a class="headerlink" href="#Uncertainty" title="Permalink to this headline">¶</a></h2>
+<p>The atomic uncertainty of <span class="math">\rho</span> from Gaussian Process regression is</p>
+<div class="math">
+<p><span class="math">V(\rho) = \sum_{p\in \rho, q \in \rho} V(p, q)</span></p>
+</div><div class="math">
+<p><span class="math">V(p, q) = \tilde{k}(p, q) - \sum_{i,j} \sum_{u\in \rho_i, v\in \rho_j} \tilde{k}(p, u) (\Sigma^{-1})_{ij} \tilde{k}(v, q)</span></p>
+</div><p>Since <span class="math">V(p,q)</span> has twice the dimensionality of domain compared with <span class="math">\epsilon(p)</span>, it will be expensive both in computational cost and memory if we want to interpolate <span class="math">V(p,q)</span> directly with spline function, because a large number of grid points are needed for interpolation. To solve this problem, we observe that the 2nd term expressed in vector form is:</p>
+<div class="math">
+<p><span class="math">\tilde{\mathbf{k}}^\top(p)\Sigma^{-1} \tilde{\mathbf{k}}(q)
+= \left(\tilde{\mathbf{k}}^\top(p)L^{-\top}\right) \left(L^{-1} \tilde{\mathbf{k}}(q)\right)
+:= \boldsymbol{\psi}(p)^\top \boldsymbol{\psi}(q)</span></p>
+</div><p><span class="math">L</span>: Cholesky decomposition of matrix <span class="math">\Sigma</span>, and define <span class="math">\boldsymbol{\psi}(p)^\top := \left(L^{-1} \tilde{\mathbf{k}}(q)\right)</span>. The GP variance</p>
+<div class="math">
+<p><span class="math">V(p,q) = \tilde{k}(p,q) - \boldsymbol{\psi}(p)^\top \boldsymbol{\psi}(q)</span></p>
+</div><p>Then we use splines to map the vector function <span class="math">\boldsymbol{\psi}(p)</span>. Notice <span class="math">\boldsymbol{\psi}(p)</span> has <span class="math">3N_{train}\sim O(10^3)</span> components. Have to build <span class="math">3N_{train}</span> maps <span class="math">\to</span> too many!</p>
+<div class="section" id="Dimension-reduction">
+<h3>Dimension reduction<a class="headerlink" href="#Dimension-reduction" title="Permalink to this headline">¶</a></h3>
+<p>Can we find <span class="math">m</span>-component vector function <span class="math">\boldsymbol{\phi}(p)</span> (<span class="math">m</span> is small), such that</p>
+<div class="math">
+<p><span class="math">\min_{\boldsymbol{\phi}} \|\boldsymbol{\phi}^\top(p)\boldsymbol{\phi}(q) - \boldsymbol{\psi}(p)^\top \boldsymbol{\psi}(q)\|^2,
+\quad \forall p, q</span></p>
+</div><p>Then we can estimate the variance as</p>
+<div class="math">
+<p><span class="math">V(p,q) = \tilde{k}(p,q) - \boldsymbol{\phi}(p)^\top \boldsymbol{\phi}(q)</span></p>
+</div><p>and only build <span class="math">m</span> maps instead of <span class="math">3N_{train}</span></p>
+<ul class="simple">
+<li><strong>Principle component analysis (PCA)</strong> is what we want</li>
+<li>We can pick up any <span class="math">m</span> by picking up the rank in PCA, the higher rank, the better estimation</li>
+</ul>
+</div>
+</div>
+<div class="section" id="References">
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<p>[1] Xie, Yu, et al.&nbsp;“Fast Bayesian Force Fields from Active Learning: Study of Inter-Dimensional Transformation of Stanene.” <em>arXiv preprint arXiv:2008.11796</em> (2020).</p>
+<p>[2] Glielmo, Aldo, Claudio Zeni, and Alessandro De Vita. “Efficient nonparametric n-body force fields from machine learning.” <em>Physical Review B</em> 97.18 (2018): 184307.</p>
+<p>[3] Glielmo, Aldo, et al.&nbsp;“Building nonparametric n-body force fields using gaussian process regression.” <em>Machine Learning Meets Quantum Physics</em>. Springer, Cham, 2020. 67-98.</p>
+<p>[4] Vandermause, Jonathan, et al.&nbsp;“On-the-fly active learning of interpretable Bayesian force fields for atomistic rare events.” <em>npj Computational Materials</em> 6.1 (2020): 1-11.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../sgp/sgp.html" class="btn btn-neutral float-right" title="Sparse Gaussian Process Force Fields" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="splines_methods.html" class="btn btn-neutral float-left" title="Splines Methods" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

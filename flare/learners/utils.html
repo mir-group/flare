@@ -1,0 +1,412 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Conditions to add training data &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ASE MD Engine" href="../md/md.html" />
+    <link rel="prev" title="GP From AIMD" href="gp_from_aimd.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="learners.html">Bayesian Active Learning</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="otf.html">On-the-Fly Training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp_from_aimd.html">GP From AIMD</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Conditions to add training data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="learners.html">Bayesian Active Learning</a> &raquo;</li>
+        
+      <li>Conditions to add training data</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/learners/utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.learners.utils">
+<span id="conditions-to-add-training-data"></span><h1>Conditions to add training data<a class="headerlink" href="#module-flare.learners.utils" title="Permalink to this headline">¶</a></h1>
+<p>Utility functions for various tasks.</p>
+<dl class="function">
+<dt id="flare.learners.utils.get_max_cutoff">
+<code class="descclassname">flare.learners.utils.</code><code class="descname">get_max_cutoff</code><span class="sig-paren">(</span><em>cell: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d626dd2b0&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.learners.utils.get_max_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Compute the maximum cutoff compatible with a 3x3x3 supercell of a</dt>
+<dd>structure. Called in the Structure constructor when
+setting the max_cutoff attribute, which is used to create local
+environments with arbitrarily large cutoff radii.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cell</strong> (<em>np.ndarray</em>) – Bravais lattice vectors of the structure stored as
+rows of a 3x3 Numpy array.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>Maximum cutoff compatible with a 3x3x3 supercell of the</dt>
+<dd>structure.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.learners.utils.is_force_in_bound_per_species">
+<code class="descclassname">flare.learners.utils.</code><code class="descname">is_force_in_bound_per_species</code><span class="sig-paren">(</span><em>abs_force_tolerance: float, predicted_forces: ndarray, label_forces: ndarray, structure, max_atoms_added: int = inf, max_by_species: dict = {}, max_force_error: float = inf) -&gt; (&lt;class 'bool'&gt;, typing.List[int]</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.utils.is_force_in_bound_per_species" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the forces of GP prediction assigned to the structure against a
+DFT calculation, and return a list of atoms which meet an absolute
+threshold abs_force_tolerance.</p>
+<p>Can limit the total number of target atoms via max_atoms_added, and limit
+per species by max_by_species.</p>
+<p>The max_atoms_added argument will ‘overrule’ the
+max by species; e.g. if max_atoms_added is 2 and max_by_species is {“H”:3},
+then at most two atoms total will be added.</p>
+<p>Because adding atoms which are in configurations which are far outside
+of the potential energy surface may not always be
+desirable, a maximum force error can be passed in; atoms with</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>abs_force_tolerance</strong> – If error exceeds this value, then return
+atom index</li>
+<li><strong>predicted_forces</strong> – Force predictions made by GP model</li>
+<li><strong>label_forces</strong> – “True” forces computed by DFT</li>
+<li><strong>structure</strong> – FLARE Structure</li>
+<li><strong>max_atoms_added</strong> – Maximum atoms to return</li>
+<li><strong>max_by_species</strong> – Limit to a maximum number of atoms by species</li>
+<li><strong>max_force_error</strong> – In order to avoid counting in highly unlikely
+configurations, if the error exceeds this, do not add atom</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Bool indicating if any atoms exceeded the error
+threshold, and a list of indices of atoms which did sorted by their
+error.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.learners.utils.is_std_in_bound">
+<code class="descclassname">flare.learners.utils.</code><code class="descname">is_std_in_bound</code><span class="sig-paren">(</span><em>std_tolerance: float, noise: float, structure: FLARE_Atoms, max_atoms_added: int = inf, update_style: str = 'add_n', update_threshold: float = None) -&gt; (&lt;class 'bool'&gt;, typing.List[int]</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.utils.is_std_in_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an uncertainty tolerance and a structure decorated with atoms,
+species, and associated uncertainties, return those which are above a
+given threshold, agnostic to species.</p>
+<p>If std_tolerance is negative, then the threshold used is the absolute
+value of std_tolerance.</p>
+<p>If std_tolerance is positive, then the threshold used is
+std_tolerance * noise.</p>
+<p>If std_tolerance is 0, then do not check.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>std_tolerance</strong> – If positive, multiply by noise to get cutoff. If
+negative, use absolute value of std_tolerance as cutoff.</li>
+<li><strong>noise</strong> – Noise variance parameter</li>
+<li><strong>structure</strong> (<em>FLARE Structure</em>) – Input structure</li>
+<li><strong>max_atoms_added</strong> – Maximum # of atoms to add</li>
+<li><strong>update_style</strong> – A string specifying the desired strategy for
+adding atoms to the training set. Current options are <a href="#id1"><span class="problematic" id="id2">``</span></a>add_n’’, which
+adds the n = max_atoms_added highest-uncertainty atoms, and
+<a href="#id3"><span class="problematic" id="id4">``</span></a>threshold’’, which adds all atoms with uncertainty greater than
+update_threshold.</li>
+<li><strong>update_threshold</strong> – A float specifying the update threshold. Ignored
+if update_style is not set to <a href="#id5"><span class="problematic" id="id6">``</span></a>threshold’’.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(True,[-1]) if no atoms are above cutoff, (False,[…]) if at
+least one atom is above std_tolerance, with the list indicating
+which atoms have been selected for the training set.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.learners.utils.is_std_in_bound_per_species">
+<code class="descclassname">flare.learners.utils.</code><code class="descname">is_std_in_bound_per_species</code><span class="sig-paren">(</span><em>rel_std_tolerance: float, abs_std_tolerance: float, noise: float, structure: FLARE_Atoms, max_atoms_added: int = inf, max_by_species: dict = {}) -&gt; (&lt;class 'bool'&gt;, typing.List[int]</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.utils.is_std_in_bound_per_species" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the stds of GP prediction assigned to the structure, returns a
+list of atoms which either meet an absolute threshold or a relative
+threshold defined by rel_std_tolerance * noise. Can limit the
+total number of target atoms via max_atoms_added, and limit per species
+by max_by_species.</p>
+<p>The max_atoms_added argument will ‘overrule’ the
+max by species; e.g. if max_atoms_added is 2 and max_by_species is {“H”:3},
+then at most two atoms will be added.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rel_std_tolerance</strong> – Multiplied by noise to get a lower
+bound for the uncertainty threshold defined relative to the model.</li>
+<li><strong>abs_std_tolerance</strong> – Used as an absolute lower bound for the
+uncertainty threshold.</li>
+<li><strong>noise</strong> – Noise hyperparameter for model, used to define relative
+uncertainty cutoff.</li>
+<li><strong>structure</strong> – FLARE structure decorated with
+uncertainties in structure.stds.</li>
+<li><strong>max_atoms_added</strong> – Maximum number of atoms to return from structure.</li>
+<li><strong>max_by_species</strong> – Dictionary describing maximum number of atoms to
+return by species (e.g. {‘H’:1,’He’:2} will return at most 1 H and 2 He
+atoms.)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Bool indicating if any atoms exceeded the uncertainty
+threshold, and a list of indices of atoms which did, sorted by their
+uncertainty.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.learners.utils.subset_of_frame_by_element">
+<code class="descclassname">flare.learners.utils.</code><code class="descname">subset_of_frame_by_element</code><span class="sig-paren">(</span><em>frame: FLARE_Atoms</em>, <em>predict_atoms_per_element: dict</em><span class="sig-paren">)</span> &#x2192; List[int]<a class="headerlink" href="#flare.learners.utils.subset_of_frame_by_element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a structure and a dictionary formatted as {“Symbol”:int,
+..} describing a number of atoms per element, return a sorted list of
+indices corresponding to a random subset of atoms by species
+:param frame:
+:param predict_atoms_by_species:
+:return:</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../md/md.html" class="btn btn-neutral float-right" title="ASE MD Engine" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="gp_from_aimd.html" class="btn btn-neutral float-left" title="GP From AIMD" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

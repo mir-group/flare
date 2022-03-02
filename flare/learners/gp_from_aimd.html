@@ -1,0 +1,325 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>GP From AIMD &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Conditions to add training data" href="utils.html" />
+    <link rel="prev" title="On-the-Fly Training" href="otf.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="learners.html">Bayesian Active Learning</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="otf.html">On-the-Fly Training</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">GP From AIMD</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#seed-frames">Seed frames</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html">Conditions to add training data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="learners.html">Bayesian Active Learning</a> &raquo;</li>
+        
+      <li>GP From AIMD</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/learners/gp_from_aimd.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.learners.gp_from_aimd">
+<span id="gp-from-aimd"></span><h1>GP From AIMD<a class="headerlink" href="#module-flare.learners.gp_from_aimd" title="Permalink to this headline">¶</a></h1>
+<p>Tool to enable the development of a GP model based on an AIMD
+trajectory with many customizable options for fine control of training.
+Contains methods to transfer the model to an OTF run or MD engine run.</p>
+<div class="section" id="seed-frames">
+<h2>Seed frames<a class="headerlink" href="#seed-frames" title="Permalink to this headline">¶</a></h2>
+<p>The various parameters in the <code class="xref py py-class docutils literal notranslate"><span class="pre">TrajectoryTrainer</span></code> class related to
+“Seed frames” are to help you  train a model which does not yet have a
+training set. Uncertainty- and force-error driven training will go better with
+a somewhat populated training set, as force and uncertainty estimates
+are better behaveed with more data.</p>
+<p>You may pass in a set of seed frames or atomic environments.
+All seed environments will be added to the GP model; seed frames will
+be iterated through and atoms will be added at random.
+There are a few reasons why you would want to pay special attention to an
+individual species.</p>
+<p>If you are studying a system where the dynamics of one species are
+particularly important and so you want a good representation in the training
+set, then you would want to include as many as possible in the training set
+during the seed part of the training.</p>
+<p>Inversely, if a system has high representation of a species well-described
+by a simple 2+3 body kernel, you may want it to be less well represented
+in the seeded training set.</p>
+<p>By specifying the pre_train_atoms_per_element, you can limit the number of
+atoms of a given species which are added in. You can also limit the number
+of atoms which are added from a given seed frame.</p>
+<dl class="function">
+<dt id="flare.learners.gp_from_aimd.parse_trajectory_trainer_output">
+<code class="descclassname">flare.learners.gp_from_aimd.</code><code class="descname">parse_trajectory_trainer_output</code><span class="sig-paren">(</span><em>file: str</em>, <em>return_gp_data: bool = False</em>, <em>compute_errors: bool = True</em><span class="sig-paren">)</span> &#x2192; Union[List[dict], Tuple[List[dict], dict]]<a class="headerlink" href="#flare.learners.gp_from_aimd.parse_trajectory_trainer_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads output of a TrajectoryTrainer run by frame. return_gp_data returns
+data about GP model growth useful for visualizing progress of model
+training.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>file</strong> – filename of output</li>
+<li><strong>return_gp_data</strong> – flag for returning extra GP data</li>
+<li><strong>compute_errors</strong> – Compute deviation from GP and DFT forces.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of dictionaries with keys ‘species’, ‘positions’,
+‘gp_forces’, ‘dft_forces’, ‘gp_stds’, ‘added_atoms’, and
+‘maes_by_species’, optionally, gp_data dictionary</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.learners.gp_from_aimd.structures_from_gpfa_output">
+<code class="descclassname">flare.learners.gp_from_aimd.</code><code class="descname">structures_from_gpfa_output</code><span class="sig-paren">(</span><em>frame_dictionaries: List[dict]</em><span class="sig-paren">)</span> &#x2192; List[flare.atoms.FLARE_Atoms]<a class="headerlink" href="#flare.learners.gp_from_aimd.structures_from_gpfa_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes as input the first output from the <cite>parse_trajectory_trainer_output</cite>
+function and turns it into a series of FLARE structures, with DFT forces mapped
+onto the structures.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>frame_dictionaries</strong> – The list of dictionaries which describe each GPFA frame.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils.html" class="btn btn-neutral float-right" title="Conditions to add training data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="otf.html" class="btn btn-neutral float-left" title="On-the-Fly Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

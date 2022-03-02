@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Splines Methods &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Formulation of Mapped Gaussian Process" href="formulas.html" />
+    <link rel="prev" title="Mapped Gaussian Process" href="mgp.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../bffs.html">Bayesian Force Fields</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../gp/gp.html">Gaussian Process Force Fields</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="mgp.html">Mapped Gaussian Process</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Splines Methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="formulas.html">Formulation of Mapped Gaussian Process</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../sgp/sgp.html">Sparse Gaussian Process Force Fields</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
+        
+          <li><a href="mgp.html">Mapped Gaussian Process</a> &raquo;</li>
+        
+      <li>Splines Methods</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/flare/bffs/mgp/splines_methods.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.bffs.mgp.splines_methods">
+<span id="splines-methods"></span><h1>Splines Methods<a class="headerlink" href="#module-flare.bffs.mgp.splines_methods" title="Permalink to this headline">¶</a></h1>
+<p>Cubic spline functions used for interpolation.</p>
+<dl class="class">
+<dt id="flare.bffs.mgp.splines_methods.CubicSpline">
+<em class="property">class </em><code class="descclassname">flare.bffs.mgp.splines_methods.</code><code class="descname">CubicSpline</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>orders</em>, <em>values=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.splines_methods.CubicSpline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forked from Github repository: <a class="reference external" href="https://github.com/EconForge/interpolation.py">https://github.com/EconForge/interpolation.py</a>.    High-level API for cubic splines.     Class representing a cubic spline interpolator on a regular cartesian grid.</p>
+<p>Creates a cubic spline interpolator on a regular cartesian grid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>numpy array of size d (float)</em>) – Lower bounds of the cartesian grid.</li>
+<li><strong>b</strong> (<em>numpy array of size d (float)</em>) – Upper bounds of the cartesian grid.</li>
+<li><strong>orders</strong> (<em>numpy array of size d (int)</em>) – Number of nodes along each             dimension (=(n1,…,nd) )</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Other Parameters:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last"><strong>values</strong> (<em>numpy array (float)</em>) – (optional, (n1 x … x nd) array).             Values on the nodes of the function to interpolate.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="flare.bffs.mgp.splines_methods.CubicSpline.grid">
+<code class="descname">grid</code><a class="headerlink" href="#flare.bffs.mgp.splines_methods.CubicSpline.grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cartesian enumeration of all nodes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.mgp.splines_methods.CubicSpline.interpolate">
+<code class="descname">interpolate</code><span class="sig-paren">(</span><em>points</em>, <em>values=None</em>, <em>with_derivatives=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.splines_methods.CubicSpline.interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolate spline at a list of points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>points</strong> – (array-like) list of point where the spline is evaluated.</li>
+<li><strong>values</strong> – (optional) container for inplace computation.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return values:</th><td class="field-body"><p class="first last">(array-like) list of point where the spline is evaluated.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.mgp.splines_methods.CubicSpline.set_values">
+<code class="descname">set_values</code><span class="sig-paren">(</span><em>values</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.splines_methods.CubicSpline.set_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set values on the nodes for the function to interpolate.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="flare.bffs.mgp.splines_methods.PCASplines">
+<em class="property">class </em><code class="descclassname">flare.bffs.mgp.splines_methods.</code><code class="descname">PCASplines</code><span class="sig-paren">(</span><em>l_bounds</em>, <em>u_bounds</em>, <em>orders</em>, <em>svd_rank</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.splines_methods.PCASplines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build splines for PCA decomposition, mainly used for the mapping of the variance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>l_bounds</strong> (<em>numpy array</em>) – lower bound for the interpolation.         E.g. 1-d for two-body, 3-d for three-body.</li>
+<li><strong>u_bounds</strong> (<em>numpy array</em>) – upper bound for the interpolation.</li>
+<li><strong>orders</strong> (<em>numpy array</em>) – grid numbers in each dimension. E.g, 1-d for two-body,         3-d for three-body, should be positive integers.</li>
+<li><strong>svd_rank</strong> (<em>int</em>) – rank for decomposition of variance matrix,        also equal to the number of mappings constructed for mapping variance.        For two-body <cite>svd_rank&lt;=min(grid_num, train_size*3)</cite>,         for three-body <cite>svd_rank&lt;=min(grid_num_in_cube, train_size*3)</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.mgp.splines_methods.vec_eval_cubic_spline">
+<code class="descclassname">flare.bffs.mgp.splines_methods.</code><code class="descname">vec_eval_cubic_spline</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>orders</em>, <em>coefs</em>, <em>points</em>, <em>values=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.splines_methods.vec_eval_cubic_spline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forked from Github repository: <a class="reference external" href="https://github.com/EconForge/interpolation.py">https://github.com/EconForge/interpolation.py</a>.    Evaluates a cubic spline at many points</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>numpy array of size d</em><em> (</em><em>float</em><em>)</em>) – Lower bounds of the cartesian grid.</li>
+<li><strong>b</strong> (<em>numpy array of size d</em><em> (</em><em>float</em><em>)</em>) – Upper bounds of the cartesian grid.</li>
+<li><strong>orders</strong> (<em>numpy array of size d</em><em> (</em><em>int</em><em>)</em>) – Number of nodes along each dimension (=(n1,…,nd) )</li>
+<li><strong>coefs</strong> (<em>array of dimension d</em><em>, </em><em>and size</em><em> (</em><em>n1+2</em><em>, </em><em>..</em><em>, </em><em>nd+2</em><em>)</em>) – Filtered coefficients.</li>
+<li><strong>point</strong> (<em>array of size N x d</em>) – List of points where the splines must be interpolated.</li>
+<li><strong>values</strong> (<em>array of size N</em>) – (optional) If not None, contains the result.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return value:</th><td class="field-body"><p class="first last">Interpolated values. values[i] contains spline evaluated at point points[i,:].</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="formulas.html" class="btn btn-neutral float-right" title="Formulation of Mapped Gaussian Process" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mgp.html" class="btn btn-neutral float-left" title="Mapped Gaussian Process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

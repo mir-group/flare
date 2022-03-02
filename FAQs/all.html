@@ -1,0 +1,412 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Frequently Asked Questions &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Applications" href="../related.html" />
+    <link rel="prev" title="Frequently Asked Questions" href="FAQs.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="FAQs.html">Frequently Asked Questions</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Frequently Asked Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#installation-and-packages">Installation and Packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gaussian-processes">Gaussian Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#otf-on-the-fly-training">OTF (On-the-fly) Training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gpfa">GPFA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mgp">MGP</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="FAQs.html">Frequently Asked Questions</a> &raquo;</li>
+        
+      <li>Frequently Asked Questions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/FAQs/all.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="frequently-asked-questions">
+<h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="installation-and-packages">
+<h2>Installation and Packages<a class="headerlink" href="#installation-and-packages" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><dl class="first docutils">
+<dt>What numba version will I need?</dt>
+<dd>&gt;= 0.50.0
+The latest version is always recommended.</dd>
+</dl>
+</li>
+</ol>
+<p><strong>Note:</strong> If you get errors with <cite>numba</cite> or get <cite>C/C++</cite>-type errors,
+very possibly it’s the problem of the <cite>numba</cite> version.</p>
+<ol class="arabic simple" start="2">
+<li><dl class="first docutils">
+<dt>Can I accelerate my calculation using parallelization?</dt>
+<dd>See the section in the <a class="reference external" href="https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl">Installation</a> section.</dd>
+</dl>
+</li>
+</ol>
+</div>
+<div class="section" id="gaussian-processes">
+<h2>Gaussian Processes<a class="headerlink" href="#gaussian-processes" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>I’m confused about how Gaussian Processes work.</dt>
+<dd><p class="first last">Gaussian Processes enjoy a long history of study and there are many excellent resources out there we can recommend.
+One such resource (that some of the authors consult quite frequently!) is the textbook
+<a class="reference external" href="http://www.gaussianprocess.org/gpml/chapters/RW.pdf">Gaussian Processes for Machine Learning, by Rasmussen and Williams</a>
+, with Chapter 2 in particular being a great help.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>How should I choose my cutoffs?</dt>
+<dd><ul class="first simple">
+<li>The right cutoff depends on the system you’re studying: ionic systems often do better with a larger 2-body cutoff,</li>
+</ul>
+<p>while dense systems like diamond require smaller cutoffs.</p>
+<ul class="simple">
+<li>We recommend you to refer to the radial distribution function of your atomic system first, then try a range of cutoff</li>
+</ul>
+<p>values and examine the model error, optimized noise parameter, and model likelihood as a function of the cutoff.</p>
+<ul class="last simple">
+<li>In the current implementation, the 3-body cutoff needs to be smaller than 2-body cutoff.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>What is a good strategy for hyperparameter optimization?</dt>
+<dd><p class="first">The hyperparameter optimization is important for obtaining a good model.
+However, the optimization of hyperparameters will get slower when more training data are collected.
+There are a few parameters to notice:</p>
+<p>In <cite>GaussianProcess</cite>,</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">maxiter</span></code>: maximal number of iterations, usually set to ~10 to prevent training for too long.</li>
+<li><code class="docutils literal notranslate"><span class="pre">parallel</span></code>: if <cite>True</cite>, then parallelization is used in optimization.
+The serial version could be very slow.</li>
+<li><code class="docutils literal notranslate"><span class="pre">output</span></code> (in <cite>train</cite> function): set up an output file for monitoring optimization iterations.</li>
+<li><code class="docutils literal notranslate"><span class="pre">grad_tol</span></code>, <code class="docutils literal notranslate"><span class="pre">x_tol</span></code>, <code class="docutils literal notranslate"><span class="pre">line_steps</span></code> (in <cite>train</cite> function): can be changed for iterations.</li>
+</ul>
+<p class="last">There are a few tips in the OTF training, see below.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</div>
+<div class="section" id="otf-on-the-fly-training">
+<h2>OTF (On-the-fly) Training<a class="headerlink" href="#otf-on-the-fly-training" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>What is a good strategy for hyperparameter optimization?</dt>
+<dd><ul class="first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">freeze_hyps</span></code> : the hyperparameter will only be optimized for <cite>freeze_hyps</cite> times.
+Can be set to a small number if optimization is too expensive with a large data set.</li>
+<li><code class="docutils literal notranslate"><span class="pre">std_tolerance_factor</span></code> : the DFT will be called when the predicted uncertainty is above the threshold,
+which is defined as <cite>std_tolerance_factor * gp_hyps_noise</cite>. The default value is 1. In general, you
+can set it to O(0.1)-O(1). If more DFT calls are desired, you can set it to a lower value.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>How to set initial temperatures and rescale temperatures?</dt>
+<dd><ul class="first last">
+<li><p class="first">For initial temperature, if you are using NVE ensemble, and starting from a perfect crystal lattice,
+please set the initial temperature to be twice the value you want the system to be in equilibrium. E.g.,
+if you want the system to equilibrate at 1000K, set the initial temperature to 2000K starting from a
+perfect lattice. To do this,</p>
+<blockquote>
+<div><ul class="simple">
+<li>if you are using our OTF trainer without ASE, you can set the <code class="docutils literal notranslate"><span class="pre">prev_positions</span></code> of the initial
+structure to be the perfect lattice shifted by one step with the velocity corresponding to the
+initial temperature.</li>
+<li>if you are using OTF with ASE + VelocityVerlet, you can set the initial velocity as shown in our
+tutorial</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">Similarly, if you want to rescale the system from 300K to 500K at step 1000, you should set the resaling
+temperature to be higher than 500K, e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rescale_temp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">800</span><span class="p">]</span>
+<span class="n">rescale_step</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The reason is that we only rescale the velocity of the atoms at the steps specified in <code class="docutils literal notranslate"><span class="pre">rescale_step</span></code>,
+at those steps not in the list, we will let the system evolve by itself. Thus, after step 1000, the system’s
+temperature will gradually equilibrate at a lower temperature.</p>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Include small perturbation for initial structure</dt>
+<dd><p class="first">If you are starting from a perfect lattice, we recommend adding small random perturbations to the atomic positions,
+such that the symmetry of the crystal lattice is broken. E.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">positions</span> <span class="o">=</span> <span class="n">positions</span> <span class="o">+</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">The reason is that the perfect lattice is highly symmetric, thus usually the force on each atom is zero, and the local
+environments all look the same. Adding these highly similar environments with close-to-zero forces might raise numerical
+stability issue for GP.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</div>
+<div class="section" id="gpfa">
+<h2>GPFA<a class="headerlink" href="#gpfa" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><dl class="first docutils">
+<dt>My models are adding too many atoms from each frame, causing a serious slowdown without much gain in model accuracy.</dt>
+<dd>In order to ‘govern’ the rate at which the model adds atoms, we suggest using the <code class="docutils literal notranslate"><span class="pre">pre_train_atoms_per_element</span></code> and
+<code class="docutils literal notranslate"><span class="pre">train_atoms_per_element</span></code> arguments, which can limit the number of atoms added from each seed frame and training frame respectively.
+You can pass in a dictionary like <code class="docutils literal notranslate"><span class="pre">{'H':1,</span> <span class="pre">'Cu':2}</span></code> to limit the number of H atoms to 1 and Cu atoms to 2 from any given frame.
+You can also use <code class="docutils literal notranslate"><span class="pre">max_atoms_per_frame</span></code> for the same functionality.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>The uncertainty seems low on my force predictions, but the true errors in the forces are high.</dt>
+<dd>This could be happening for a few reasons. One reason could be that your hyperparameters aren’t at an optimum (check that the gradient of
+the likelihood with respect to the hyperparameters is small). Another is that your model, such as 2-body or 2+3 body, may not be of sufficient
+complexity to handle the system (in other words, many-body effects could be important).</dd>
+</dl>
+</li>
+</ol>
+</div>
+<div class="section" id="mgp">
+<h2>MGP<a class="headerlink" href="#mgp" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><dl class="first docutils">
+<dt>How does the grid number affect my mapping?</dt>
+<dd><ul class="first last">
+<li>The lower cutoff is better set to be a bit smaller than the minimal interatomic distance.</li>
+<li>The upper cutoff should be consistent with GP’s cutoff.</li>
+<li>For three-body, the grid is 3-D, with lower cutoffs <cite>[a, a, a]</cite> and upper cutoffs <cite>[b, b, b]</cite>.</li>
+<li>You can try different grid numbers and compare the force prediction of MGP and GP
+on the same testing structure. Choose the grid number of satisfying efficiency and accuracy.
+A reference is <cite>grid_num=64</cite> should be safe for <cite>a=2.5</cite>, <cite>b=5</cite>.</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../related.html" class="btn btn-neutral float-right" title="Applications" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="FAQs.html" class="btn btn-neutral float-left" title="Frequently Asked Questions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

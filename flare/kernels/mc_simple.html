@@ -1,0 +1,1839 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Multi-element Kernels (simple) &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Multi-element Kernels (Separate Parameters)" href="mc_sephyps.html" />
+    <link rel="prev" title="Single-element Kernels" href="sc.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="kernels.html">Kernels</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="sc.html">Single-element Kernels</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Multi-element Kernels (simple)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc_sephyps.html">Multi-element Kernels (Separate Parameters)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="helper.html">Helper Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="kernels.html">Kernels</a> &raquo;</li>
+        
+      <li>Multi-element Kernels (simple)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/kernels/mc_simple.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.kernels.mc_simple">
+<span id="multi-element-kernels-simple"></span><h1>Multi-element Kernels (simple)<a class="headerlink" href="#module-flare.kernels.mc_simple" title="Permalink to this headline">¶</a></h1>
+<p>Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
+variance hyperparameters to a single value.</p>
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>many-body multi-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>many-body multi-element kernel between two local energies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – One-element array containing the 2-body
+cutoff.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_en_jit</code><span class="sig-paren">(</span><em>q_array_1</em>, <em>q_array_2</em>, <em>c1</em>, <em>c2</em>, <em>species1</em>, <em>species2</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>many-body many-element kernel between energy components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – many-body bond array of the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – many-body bond array of the second local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – atomic species of the central atom in env 1</li>
+<li><strong>c2</strong> (<em>int</em>) – atomic species of the central atom in env 2</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 1</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 2</li>
+<li><strong>species1</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 1</li>
+<li><strong>species2</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 2</li>
+<li><strong>sig</strong> (<em>float</em>) – many-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – many-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – many-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_force_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_force_en</code><span class="sig-paren">(</span><em>env1</em>, <em>env2</em>, <em>d1</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_force_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>many-body single-element kernel between two local energies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2-, 3-, and
+many-body cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the many-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_force_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_force_en_jit</code><span class="sig-paren">(</span><em>q_array_1</em>, <em>q_array_2</em>, <em>q_neigh_array_1</em>, <em>q_neigh_grads_1</em>, <em>c1</em>, <em>c2</em>, <em>etypes1</em>, <em>species1</em>, <em>species2</em>, <em>d1</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_force_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>many-body many-element kernel between force and energy components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>c1</strong> (<em>int</em>) – atomic species of the central atom in env 1</li>
+<li><strong>c2</strong> (<em>int</em>) – atomic species of the central atom in env 2</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 1</li>
+<li><strong>species1</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 1</li>
+<li><strong>species2</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 2</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>sig</strong> (<em>float</em>) – many-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – many-body length scale hyperparameter.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_grad">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_grad</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>gradient manybody-body multi-element kernel between two force
+components.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_grad_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_grad_jit</code><span class="sig-paren">(</span><em>q_array_1</em>, <em>q_array_2</em>, <em>q_neigh_array_1</em>, <em>q_neigh_array_2</em>, <em>q_neigh_grads_1</em>, <em>q_neigh_grads_2</em>, <em>c1</em>, <em>c2</em>, <em>etypes1</em>, <em>etypes2</em>, <em>species1</em>, <em>species2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_grad_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>gradient of many-body multi-element kernel between two force components
+w.r.t. the hyperparameters, accelerated with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – many-body bond array of the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – many-body bond array of the second local
+environment.</li>
+<li><strong>neigh_dists_1</strong> (<em>np.ndarray</em>) – matrix padded with zero values of distances
+of neighbours for the atoms in the first local environment.</li>
+<li><strong>neigh_dists_2</strong> (<em>np.ndarray</em>) – matrix padded with zero values of distances
+of neighbours for the atoms in the second local environment.</li>
+<li><strong>num_neigh_1</strong> (<em>np.ndarray</em>) – number of neighbours of each atom in the
+first local environment</li>
+<li><strong>num_neigh_2</strong> (<em>np.ndarray</em>) – number of neighbours of each atom in the
+second local environment</li>
+<li><strong>c1</strong> (<em>int</em>) – atomic species of the central atom in env 1</li>
+<li><strong>c2</strong> (<em>int</em>) – atomic species of the central atom in env 2</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 1</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 2</li>
+<li><strong>etypes_neigh_1</strong> (<em>np.ndarray</em>) – atomic species of atoms in the
+neighbourhoods of atoms in env 1</li>
+<li><strong>etypes_neigh_2</strong> (<em>np.ndarray</em>) – atomic species of atoms in the
+neighbourhoods of atoms in env 2</li>
+<li><strong>species1</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 1</li>
+<li><strong>species2</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 2</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>sig</strong> (<em>float</em>) – many-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – many-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – many-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the many-body kernel and its gradient w.r.t. sig and ls</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.many_body_mc_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">many_body_mc_jit</code><span class="sig-paren">(</span><em>q_array_1</em>, <em>q_array_2</em>, <em>q_neigh_array_1</em>, <em>q_neigh_array_2</em>, <em>q_neigh_grads_1</em>, <em>q_neigh_grads_2</em>, <em>c1</em>, <em>c2</em>, <em>etypes1</em>, <em>etypes2</em>, <em>species1</em>, <em>species2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.many_body_mc_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>many-body multi-element kernel between two force components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – many-body bond array of the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – many-body bond array of the second local
+environment.</li>
+<li><strong>neigh_dists_1</strong> (<em>np.ndarray</em>) – matrix padded with zero values of distances
+of neighbours for the atoms in the first local environment.</li>
+<li><strong>neigh_dists_2</strong> (<em>np.ndarray</em>) – matrix padded with zero values of distances
+of neighbours for the atoms in the second local environment.</li>
+<li><strong>num_neigh_1</strong> (<em>np.ndarray</em>) – number of neighbours of each atom in the
+first local environment</li>
+<li><strong>num_neigh_2</strong> (<em>np.ndarray</em>) – number of neighbours of each atom in the
+second local environment</li>
+<li><strong>c1</strong> (<em>int</em>) – atomic species of the central atom in env 1</li>
+<li><strong>c2</strong> (<em>int</em>) – atomic species of the central atom in env 2</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 1</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – atomic species of atoms in env 2</li>
+<li><strong>etypes_neigh_1</strong> (<em>np.ndarray</em>) – atomic species of atoms in the
+neighbourhoods of atoms in env 1</li>
+<li><strong>etypes_neigh_2</strong> (<em>np.ndarray</em>) – atomic species of atoms in the
+neighbourhoods of atoms in env 2</li>
+<li><strong>species1</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 1</li>
+<li><strong>species2</strong> (<em>np.ndarray</em>) – all the atomic species present in trajectory 2</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>sig</strong> (<em>float</em>) – many-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – many-body length scale hyperparameter.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two local energies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two local energies accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body local energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_force_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_force_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_force_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between a force component and a local
+energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
+force component.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
+local energy.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_force_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_force_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_force_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between a force component and a local
+energy accelerated with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment (1=x, 2=y, 3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_grad">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_grad</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;) -&gt; ('float'</em>, <em>'ndarray'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two force components and its
+gradient with respect to the hyperparameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel and its gradient with respect to the
+hyperparameters.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float, np.ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_grad_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_grad_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_grad_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two force components and its
+gradient with respect to the hyperparameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel and its gradient with respect to the
+hyperparameters.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float, float)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_mc_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_mc_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_mc_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two force components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_se_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_se_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_se_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between a force component and a local
+energy accelerated with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_sf_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_sf_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_sf_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two force components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.three_body_ss_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">three_body_ss_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.three_body_ss_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>3-body multi-element kernel between two force components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 3-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>cross_bond_inds_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the first local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_inds_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the indices of atoms n &gt; m in the second local
+environment that are within a distance r_cut of both atom n and
+the central atom.</li>
+<li><strong>cross_bond_dists_1</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the first
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>cross_bond_dists_2</strong> (<em>np.ndarray</em>) – Two dimensional array whose row m
+contains the distances from atom m of atoms n &gt; m in the second
+local environment that are within a distance r_cut of both atom
+n and the central atom.</li>
+<li><strong>triplets_1</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the first local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>triplets_2</strong> (<em>np.ndarray</em>) – One dimensional array of integers whose entry
+m is the number of atoms in the second local environment that are
+within a distance r_cut of atom m.</li>
+<li><strong>sig</strong> (<em>float</em>) – 3-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 3-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 3-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 3-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – One-element array containing the 2-body
+cutoff.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two local energies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – One-element array containing the 2-body
+cutoff.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two local energies accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body local energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_force_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_force_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_force_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between a force component and a local
+energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
+force component.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
+local energy.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – One-element array containing the 2-body
+cutoff.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_force_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_force_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>d1</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_force_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between a force component and a local
+energy accelerated with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment (1=x, 2=y, 3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_grad">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_grad</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;) -&gt; (&lt;class 'float'&gt;</em>, <em>'ndarray'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two force components and its
+gradient with respect to the hyperparameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig, ls).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – One-element array containing the 2-body
+cutoff.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body kernel and its gradient with respect to the
+hyperparameters.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float, np.ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_grad_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_grad_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_grad_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two force components and its
+gradient with respect to the hyperparameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment (1=x, 2=y, 3=z).</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment (1=x, 2=y, 3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body kernel and its gradient with respect to the
+hyperparameters.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float, float)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two force components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment (1=x, 2=y, 3=z).</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment (1=x, 2=y, 3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_stress_en_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_stress_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_stress_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between a partial stress component and a
+local energy accelerated with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – First stress component of the first environment (1=x, 2=y,
+3=z).</li>
+<li><strong>d2</strong> (<em>int</em>) – Second stress component of the first environment (1=x, 2=y,
+3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body partial-stress/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_stress_force_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_stress_force_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>d1</em>, <em>d2</em>, <em>d3</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_stress_force_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>2-body multi-element kernel between two force components accelerated
+with Numba.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – First stress component of the first environment (1=x, 2=y,
+3=z).</li>
+<li><strong>d2</strong> (<em>int</em>) – Second stress component of the first environment (1=x, 2=y,
+3=z).</li>
+<li><strong>d3</strong> (<em>int</em>) – Force component of the second environment (1=x, 2=y, 3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_body_mc_stress_stress_jit">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_body_mc_stress_stress_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>c1</em>, <em>etypes1</em>, <em>bond_array_2</em>, <em>c2</em>, <em>etypes2</em>, <em>d1</em>, <em>d2</em>, <em>d3</em>, <em>d4</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_body_mc_stress_stress_jit" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>2-body multi-element kernel between two partial stress components</dt>
+<dd>accelerated with Numba.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
+environment.</li>
+<li><strong>c1</strong> (<em>int</em>) – Species of the central atom of the first local environment.</li>
+<li><strong>etypes1</strong> (<em>np.ndarray</em>) – Species of atoms in the first local
+environment.</li>
+<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array of the second local
+environment.</li>
+<li><strong>c2</strong> (<em>int</em>) – Species of the central atom of the second local environment.</li>
+<li><strong>etypes2</strong> (<em>np.ndarray</em>) – Species of atoms in the second local
+environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – First stress component of the first environment (1=x, 2=y,
+3=z).</li>
+<li><strong>d2</strong> (<em>int</em>) – Second stress component of the first environment (1=x, 2=y,
+3=z).</li>
+<li><strong>d3</strong> (<em>int</em>) – First stress component of the second environment (1=x, 2=y,
+3=z).</li>
+<li><strong>d4</strong> (<em>int</em>) – Second stress component of the second environment (1=x, 2=y,
+3=z).</li>
+<li><strong>sig</strong> (<em>float</em>) – 2-body signal variance hyperparameter.</li>
+<li><strong>ls</strong> (<em>float</em>) – 2-body length scale hyperparameter.</li>
+<li><strong>r_cut</strong> (<em>float</em>) – 2-body cutoff radius.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_many_body_mc">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_many_body_mc</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_many_body_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+many body kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig2b, ls2b,
+sigmb, lsmb, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and many-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_many_body_mc_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_many_body_mc_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_many_body_mc_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3+many-body single-element energy kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig2b ls2b,
+sigmb, lsmb, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_many_body_mc_force_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_many_body_mc_force_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_many_body_mc_force_en" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>2+many-body multi-element kernel between two force and energy</dt>
+<dd>components.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig3, ls3, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_many_body_mc_grad">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_many_body_mc_grad</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_many_body_mc_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+many-body single-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig3, ls3, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_body_mc">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_body_mc</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_body_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3-body multi-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_body_mc_grad">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_body_mc_grad</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;) -&gt; ('float'</em>, <em>'ndarray'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_body_mc_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3-body multi-element kernel between two force components and its
+gradient with respect to the hyperparameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3-body kernel and its gradient
+with respect to the hyperparameters.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(float, np.ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_mc_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_mc_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_mc_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3-body multi-element kernel between two local energies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3-body energy/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_mc_force_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_mc_force_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>hyps: ndarray</em>, <em>cutoffs: ndarray</em>, <em>cutoff_func: Callable = &lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_mc_force_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3-body multi-element kernel between a force component and a local
+energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
+force component.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
+local energy.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3-body force/energy kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_plus_many_body_mc">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_plus_many_body_mc</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3-body single-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig3, ls3, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_plus_many_body_mc_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_en" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3+many-body single-element energy kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig3, ls3, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_force_en">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_plus_many_body_mc_force_en</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_force_en" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>2+3+many-body single-element kernel between two force and energy</dt>
+<dd>components.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig3, ls3, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_grad">
+<code class="descclassname">flare.kernels.mc_simple.</code><code class="descname">two_plus_three_plus_many_body_mc_grad</code><span class="sig-paren">(</span><em>env1: flare.descriptors.env.AtomicEnvironment</em>, <em>env2: flare.descriptors.env.AtomicEnvironment</em>, <em>d1: int</em>, <em>d2: int</em>, <em>hyps</em>, <em>cutoffs</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>2+3+many-body single-element kernel between two force components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</li>
+<li><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</li>
+<li><strong>d1</strong> (<em>int</em>) – Force component of the first environment.</li>
+<li><strong>d2</strong> (<em>int</em>) – Force component of the second environment.</li>
+<li><strong>hyps</strong> (<em>np.ndarray</em>) – Hyperparameters of the kernel function (sig1, ls1,
+sig2, ls2, sig3, ls3, sig_n).</li>
+<li><strong>cutoffs</strong> (<em>np.ndarray</em>) – Two-element array containing the 2- and 3-body
+cutoffs.</li>
+<li><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of the 2+3+many-body kernel.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mc_sephyps.html" class="btn btn-neutral float-right" title="Multi-element Kernels (Separate Parameters)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="sc.html" class="btn btn-neutral float-left" title="Single-element Kernels" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

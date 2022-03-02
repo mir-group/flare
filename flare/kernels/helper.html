@@ -1,0 +1,429 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Helper Functions &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="File Input and Output" href="../io/io.html" />
+    <link rel="prev" title="Cutoff Functions" href="cutoffs.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="kernels.html">Kernels</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="sc.html">Single-element Kernels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc_simple.html">Multi-element Kernels (simple)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc_sephyps.html">Multi-element Kernels (Separate Parameters)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cutoffs.html">Cutoff Functions</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Helper Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="kernels.html">Kernels</a> &raquo;</li>
+        
+      <li>Helper Functions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/kernels/helper.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.kernels.kernels">
+<span id="helper-functions"></span><h1>Helper Functions<a class="headerlink" href="#module-flare.kernels.kernels" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="flare.kernels.kernels.coordination_number">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">coordination_number</code><span class="sig-paren">(</span><em>rij</em>, <em>cij</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.coordination_number" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Pairwise contribution to many-body descriptor based on number of</dt>
+<dd>atoms in the environment</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rij</strong> (<em>float</em>) – distance between atoms i and j</li>
+<li><strong>cij</strong> (<em>float</em>) – Component of versor of rij along given direction</li>
+<li><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</li>
+<li><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the pairwise many-body contribution
+float: the value of the derivative of the pairwise many-body
+contribution w.r.t. the central atom displacement</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.force_helper">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">force_helper</code><span class="sig-paren">(</span><em>A</em>, <em>B</em>, <em>C</em>, <em>D</em>, <em>fi</em>, <em>fj</em>, <em>fdi</em>, <em>fdj</em>, <em>ls1</em>, <em>ls2</em>, <em>ls3</em>, <em>sig2</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.force_helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for computing the force/force kernel between two
+pairs or triplets of atoms of the same type.</p>
+<p>See Table IV of the SI of the FLARE paper for definitions of intermediate
+quantities.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>Force/force kernel between two pairs or triplets of atoms of</dt>
+<dd>the same type.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.k_sq_exp_dev">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">k_sq_exp_dev</code><span class="sig-paren">(</span><em>q1</em>, <em>q2</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.k_sq_exp_dev" title="Permalink to this definition">¶</a></dt>
+<dd><p>First Gradient of generic squared exponential kernel on two many body functions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>q1</strong> (<em>float</em>) – the many body descriptor of the first local environment</li>
+<li><strong>q2</strong> (<em>float</em>) – the many body descriptor of the second local environment</li>
+<li><strong>sig</strong> (<em>float</em>) – amplitude hyperparameter</li>
+<li><strong>ls2</strong> (<em>float</em>) – squared lenghtscale hyperparameter</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the derivative of the squared exponential kernel</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.k_sq_exp_double_dev">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">k_sq_exp_double_dev</code><span class="sig-paren">(</span><em>q1</em>, <em>q2</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.k_sq_exp_double_dev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Second Gradient of generic squared exponential kernel on two many body functions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>q1</strong> (<em>float</em>) – the many body descriptor of the first local environment</li>
+<li><strong>q2</strong> (<em>float</em>) – the many body descriptor of the second local environment</li>
+<li><strong>sig</strong> (<em>float</em>) – amplitude hyperparameter</li>
+<li><strong>ls2</strong> (<em>float</em>) – squared lenghtscale hyperparameter</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the double derivative of the squared exponential kernel</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.mb_grad_helper_ls">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">mb_grad_helper_ls</code><span class="sig-paren">(</span><em>q1</em>, <em>q2</em>, <em>qi</em>, <em>qj</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.mb_grad_helper_ls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for many body gradient collecting all the derivatives
+of the force-force many body kernel w.r.t. ls</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.mb_grad_helper_ls_">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">mb_grad_helper_ls_</code><span class="sig-paren">(</span><em>qdiffsq</em>, <em>sig</em>, <em>ls</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.mb_grad_helper_ls_" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derivative of a many body force-force kernel w.r.t. ls</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.q_value">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">q_value</code><span class="sig-paren">(</span><em>distances</em>, <em>r_cut</em>, <em>cutoff_func</em>, <em>q_func=&lt;function coordination_number&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.q_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute value of many-body descriptor based on distances of atoms
+in the local many-body environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</li>
+<li><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</li>
+<li><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</li>
+<li><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the many-body descriptor</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.kernels.q_value_mc">
+<code class="descclassname">flare.kernels.kernels.</code><code class="descname">q_value_mc</code><span class="sig-paren">(</span><em>distances</em>, <em>r_cut</em>, <em>ref_species</em>, <em>species</em>, <em>cutoff_func</em>, <em>q_func=&lt;function coordination_number&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.q_value_mc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute value of many-body many components descriptor based
+on distances of atoms in the local many-body environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</li>
+<li><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</li>
+<li><strong>ref_species</strong> (<em>int</em>) – species to consider to compute the contribution</li>
+<li><strong>species</strong> (<em>np.ndarray</em>) – atomic species of neighbours</li>
+<li><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</li>
+<li><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the many-body descriptor</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../io/io.html" class="btn btn-neutral float-right" title="File Input and Output" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cutoffs.html" class="btn btn-neutral float-left" title="Cutoff Functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

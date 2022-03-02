@@ -1,0 +1,511 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Output &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="OTF Parser" href="otf_parser.html" />
+    <link rel="prev" title="File Input and Output" href="io.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="io.html">File Input and Output</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="otf_parser.html">OTF Parser</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="io.html">File Input and Output</a> &raquo;</li>
+        
+      <li>Output</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/io/output.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.io.output">
+<span id="output"></span><h1>Output<a class="headerlink" href="#module-flare.io.output" title="Permalink to this headline">¶</a></h1>
+<p>Class which contains various methods to print the output of different
+ways of using FLARE, such as training a GP from an AIMD run,
+or running an MD simulation updated on-the-fly.</p>
+<dl class="class">
+<dt id="flare.io.output.Output">
+<em class="property">class </em><code class="descclassname">flare.io.output.</code><code class="descname">Output</code><span class="sig-paren">(</span><em>basename: str = 'otf_run'</em>, <em>verbose: str = 'INFO'</em>, <em>print_as_xyz: bool = False</em>, <em>always_flush: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is an I/O class that hosts the log files for OTF and Trajectories
+class. It is also used in get_neg_like_grad and get_neg_likelihood in
+gp_algebra to print intermediate results.</p>
+<p>It opens and print files with the basename prefix and different
+suffixes corresponding to different kinds of output data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>basename</strong> (<em>str</em><em>, </em><em>optional</em>) – Base output file name, suffixes will be added</li>
+<li><strong>verbose</strong> (<em>str</em><em>, </em><em>optional</em>) – print level. The same as logging level. It can be
+CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET</li>
+<li><strong>always_flush</strong> – Always write to file instantly</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="flare.io.output.Output.conclude_run">
+<code class="descname">conclude_run</code><span class="sig-paren">(</span><em>extra_strings: List[str] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.conclude_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>destruction function that closes all files</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.open_new_log">
+<code class="descname">open_new_log</code><span class="sig-paren">(</span><em>filetype: str</em>, <em>suffix: str</em>, <em>verbose='info'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.open_new_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open files.  If files with the same
+name are exist, they are backed up with a suffix “-bak”.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filetype</strong> – the key name for logging</li>
+<li><strong>suffix</strong> – the suffix of the file to be opened</li>
+<li><strong>verbose</strong> – the verbose level for the logger</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.write_gp_dft_comparison">
+<code class="descname">write_gp_dft_comparison</code><span class="sig-paren">(</span><em>curr_step</em>, <em>frame</em>, <em>start_time</em>, <em>dft_forces</em>, <em>dft_energy</em>, <em>error</em>, <em>local_energies=None</em>, <em>KE=None</em>, <em>mgp=False</em>, <em>cell=None</em>, <em>stress=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_gp_dft_comparison" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the comparison to logfile.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>curr_step</strong> – current timestep</li>
+<li><strong>frame</strong> – FLARE_Atoms object that contains the current GP calculation
+results.</li>
+<li><strong>start_time</strong> – start time for time profiling</li>
+<li><strong>dft_forces</strong> – list of forces computed by DFT</li>
+<li><strong>dft_energy</strong> – total energy computed by DFT</li>
+<li><strong>error</strong> – list of force differences between DFT and GP prediction</li>
+<li><strong>local_energies</strong> – local atomic energy</li>
+<li><strong>KE</strong> – total kinetic energy</li>
+<li><strong>cell</strong> – print the unit cell of the structure</li>
+<li><strong>stress</strong> – print the stress acting on the cell</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.write_header">
+<code class="descname">write_header</code><span class="sig-paren">(</span><em>gp_str: str</em>, <em>dt: float = None</em>, <em>Nsteps: int = None</em>, <em>structure=None</em>, <em>std_tolerance: Union[float</em>, <em>int] = None</em>, <em>optional: dict = None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>TO DO: this should be replace by the string method of GP and OTF, GPFA</p>
+<p>Write header to the log function. Designed for Trajectory Trainer and
+OTF runs and can take flexible input for both.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>gp_str</strong> – string representation of the GP</li>
+<li><strong>dt</strong> – timestep for OTF MD</li>
+<li><strong>Nsteps</strong> – total number of steps for OTF MD</li>
+<li><strong>structure</strong> – initial structure</li>
+<li><strong>std_tolerance</strong> – tolarence for active learning</li>
+<li><strong>optional</strong> – a dictionary of all the other parameters</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.write_hyps">
+<code class="descname">write_hyps</code><span class="sig-paren">(</span><em>hyp_labels</em>, <em>hyps</em>, <em>start_time</em>, <em>like</em>, <em>like_grad</em>, <em>name='log'</em>, <em>hyps_mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_hyps" title="Permalink to this definition">¶</a></dt>
+<dd><p>write hyperparameters to logfile</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> – </li>
+<li><strong>hyp_labels</strong> – labels for hyper-parameters. can be None</li>
+<li><strong>hyps</strong> – list of hyper-parameters</li>
+<li><strong>start_time</strong> – start time for time profiling</li>
+<li><strong>like</strong> – likelihood</li>
+<li><strong>like_grad</strong> – gradient of likelihood</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.write_md_config">
+<code class="descname">write_md_config</code><span class="sig-paren">(</span><em>dt</em>, <em>curr_step</em>, <em>structure</em>, <em>temperature</em>, <em>KE</em>, <em>start_time</em>, <em>dft_step</em>, <em>velocities</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_md_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>write md configuration in log file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dt</strong> – timestemp of OTF MD</li>
+<li><strong>curr_step</strong> – current timestep of OTF MD</li>
+<li><strong>structure</strong> – atomic structure</li>
+<li><strong>temperature</strong> – current temperature</li>
+<li><strong>KE</strong> – current total kinetic energy</li>
+<li><strong>local_energies</strong> – local energy</li>
+<li><strong>start_time</strong> – starting time for time profiling</li>
+<li><strong>dft_step</strong> – # of DFT calls</li>
+<li><strong>velocities</strong> – list of velocities</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.write_to_log">
+<code class="descname">write_to_log</code><span class="sig-paren">(</span><em>logstring: str</em>, <em>name: str = 'log'</em>, <em>flush: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_to_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write any string to logfile</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logstring</strong> – the string to write</li>
+<li><strong>name</strong> – the key name of the file to logger named ‘log’</li>
+<li><strong>flush</strong> – whether it should be flushed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.io.output.Output.write_xyz_config">
+<code class="descname">write_xyz_config</code><span class="sig-paren">(</span><em>curr_step</em>, <em>structure</em>, <em>forces: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624eb8b0&gt; = None</em>, <em>stds: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624eb940&gt; = None</em>, <em>dft_forces: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9d624eb9d0&gt; = None</em>, <em>dft_energy=0</em>, <em>predict_energy=nan</em>, <em>target_atoms=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_xyz_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>write atomic configuration in xyz file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>curr_step</strong> – Int, number of frames to note in the comment line</li>
+<li><strong>structure</strong> – FLARE_Atoms, contain positions and forces</li>
+<li><strong>forces</strong> – Optional list of forces to xyz file</li>
+<li><strong>stds</strong> – Optional list of uncertanties to xyz file</li>
+<li><strong>dft_forces</strong> – Optional second list of forces (e.g. DFT forces)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.output.add_file">
+<code class="descclassname">flare.io.output.</code><code class="descname">add_file</code><span class="sig-paren">(</span><em>logger: logging.Logger</em>, <em>filename: str</em>, <em>verbose: str = 'info'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.add_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>set up file handler to the logger with handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> – the logger</li>
+<li><strong>filename</strong> (<em>str</em>) – name of the logfile</li>
+<li><strong>verbose</strong> (<em>str</em>) – verbose level</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.output.add_stream">
+<code class="descclassname">flare.io.output.</code><code class="descname">add_stream</code><span class="sig-paren">(</span><em>logger: logging.Logger</em>, <em>verbose: str = 'info'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.add_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>set up screen sctream handler to the logger with handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> – the logger</li>
+<li><strong>verbose</strong> (<em>str</em>) – verbose level</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.io.output.set_logger">
+<code class="descclassname">flare.io.output.</code><code class="descname">set_logger</code><span class="sig-paren">(</span><em>name: str</em>, <em>stream: bool</em>, <em>fileout_name: str = None</em>, <em>verbose: str = 'info'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.set_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>set up a logger with handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – unique name of the logger in logging module</li>
+<li><strong>stream</strong> (<em>bool</em>) – if True, set up a screen output</li>
+<li><strong>fileout_name</strong> (<em>str</em>) – name for log file</li>
+<li><strong>verbose</strong> (<em>str</em>) – verbose level</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="otf_parser.html" class="btn btn-neutral float-right" title="OTF Parser" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="io.html" class="btn btn-neutral float-left" title="File Input and Output" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Compile LAMMPS with MGP Pair Style &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorials" href="../tutorials/tutorials.html" />
+    <link rel="prev" title="Installation of FLARE" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html">Installation of FLARE</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Compile LAMMPS with MGP Pair Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#download">Download</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mpi">MPI</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compiling">Compiling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#running">Running</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#mpi-openmp-through-kokkos">MPI+OpenMP through Kokkos</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Compiling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Running</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#mpi-cuda-through-kokkos">MPI+CUDA through Kokkos</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Compiling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">Running</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#notes-on-newton-only-relevant-with-kokkos">Notes on Newton (only relevant with Kokkos)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="installation.html">Installation</a> &raquo;</li>
+        
+      <li>Compile LAMMPS with MGP Pair Style</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/lammps.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="compile-lammps-with-mgp-pair-style">
+<h1>Compile LAMMPS with MGP Pair Style<a class="headerlink" href="#compile-lammps-with-mgp-pair-style" title="Permalink to this headline">¶</a></h1>
+<p>Anders Johansson, Yu Xie</p>
+<div class="section" id="download">
+<h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<p>If you want to use MGP force field in LAMMPS, the first step is to download our MGP pair_style source code from:
+<a class="reference external" href="https://github.com/mir-group/flare/tree/master/lammps_plugins">https://github.com/mir-group/flare/tree/master/lammps_plugins</a></p>
+<p>Then, follow the instruction below to compile the LAMMPS executable.</p>
+</div>
+<div class="section" id="mpi">
+<h2>MPI<a class="headerlink" href="#mpi" title="Permalink to this headline">¶</a></h2>
+<p>For when you can’t get Kokkos+OpenMP to work.</p>
+<div class="section" id="compiling">
+<h3>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp -r lammps_plugin /path/to/lammps/src/USER-MGP
+<span class="nb">cd</span> /path/to/lammps/src
+make yes-user-mgp
+make -j<span class="k">$(</span>nproc<span class="k">)</span> mpi
+</pre></div>
+</div>
+<p>You can replace <code class="docutils literal notranslate"><span class="pre">mpi</span></code> with your favourite Makefile, e.g. <code class="docutils literal notranslate"><span class="pre">intel_cpu_intelmpi</span></code>, or use the CMake build system.</p>
+</div>
+<div class="section" id="running">
+<h3>Running<a class="headerlink" href="#running" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_mpi -in in.lammps
+</pre></div>
+</div>
+<p>as usual, but your LAMMPS script <code class="docutils literal notranslate"><span class="pre">in.lammps</span></code> needs to specify <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code>.</p>
+</div>
+</div>
+<div class="section" id="mpi-openmp-through-kokkos">
+<h2>MPI+OpenMP through Kokkos<a class="headerlink" href="#mpi-openmp-through-kokkos" title="Permalink to this headline">¶</a></h2>
+<p>For OpenMP parallelisation on your laptop or on one node, or for hybrid parallelisation on multiple nodes.</p>
+<div class="section" id="id1">
+<h3>Compiling<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp -r lammps_plugin /path/to/lammps/src/USER-MGP
+<span class="nb">cd</span> /path/to/lammps/src
+make yes-user-mgp
+make yes-kokkos
+make -j<span class="k">$(</span>nproc<span class="k">)</span> kokkos_omp
+</pre></div>
+</div>
+<p>You can change the compiler flags etc. in <code class="docutils literal notranslate"><span class="pre">/path/to/lammps/src/MAKE/OPTIONS/Makefile.kokkos_omp</span></code>.
+As of writing, the pair style is not detected by CMake.</p>
+</div>
+<div class="section" id="id2">
+<h3>Running<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code> in your LAMMPS script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="m">4</span> -sf kk -package kokkos newton on neigh half -in in.lammps
+</pre></div>
+</div>
+<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code> in your LAMMPS script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="m">4</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+</pre></div>
+</div>
+<p>Replace 4 with the desired number of threads <em>per MPI task</em>. Skip <code class="docutils literal notranslate"><span class="pre">mpirun</span></code> when running on one machine.</p>
+<p>If you are running on multiple nodes on a cluster, you would typically launch one MPI task per node,
+and then set the number of threads equal to the number of cores (or hyperthreads) per node.
+A sample SLURM job script for 4 nodes, each with 48 cores, may look something like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --nodes=4</span>
+<span class="c1">#SBATCH --ntasks-per-node=1</span>
+<span class="c1">#SBATCH --cpus-per-task=48</span>
+mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="nv">$SLURM_CPUS_PER_TASK</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+</pre></div>
+</div>
+<p>When running on Knight’s Landing or other heavily hyperthreaded systems, you may want to try using more than one thread per CPU.</p>
+</div>
+</div>
+<div class="section" id="mpi-cuda-through-kokkos">
+<h2>MPI+CUDA through Kokkos<a class="headerlink" href="#mpi-cuda-through-kokkos" title="Permalink to this headline">¶</a></h2>
+<p>For running on the GPU on your laptop, or for multiple GPUs on one or more nodes.</p>
+<div class="section" id="id3">
+<h3>Compiling<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp -r lammps_plugin /path/to/lammps/src/USER-MGP
+<span class="nb">cd</span> /path/to/lammps/src
+make yes-user-mgp
+make yes-kokkos
+make -j<span class="k">$(</span>nproc<span class="k">)</span> <span class="nv">KOKKOS_ARCH</span><span class="o">=</span>Volta70 kokkos_cuda_mpi
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">KOKKOS_ARCH</span></code> must be changed according to your GPU model. <code class="docutils literal notranslate"><span class="pre">Volta70</span></code> is for V100, <code class="docutils literal notranslate"><span class="pre">Pascal60</span></code> is for P100, etc.</p>
+<p>You can change the compiler flags etc. in <code class="docutils literal notranslate"><span class="pre">/path/to/lammps/src/MAKE/OPTIONS/Makefile.kokkos_cuda_mpi</span></code>.
+As of writing, the pair style is not detected by CMake.</p>
+</div>
+<div class="section" id="id4">
+<h3>Running<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code> in your LAMMPS script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="m">4</span> -sf kk -package kokkos newton on neigh half -in in.lammps
+</pre></div>
+</div>
+<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code> in your LAMMPS script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="m">4</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+</pre></div>
+</div>
+<p>Replace 4 with the desired number of GPUs <em>per node</em>, skip <code class="docutils literal notranslate"><span class="pre">mpirun</span></code> if you are using 1 GPU.
+The number of MPI tasks should be set equal to the total number of GPUs.</p>
+<p>If you are running on multiple nodes on a cluster, you would typically launch one MPI task per GPU.
+A sample SLURM job script for 4 nodes, each with 2 GPUs, may look something like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --nodes=4</span>
+<span class="c1">#SBATCH --ntasks-per-node=2</span>
+<span class="c1">#SBATCH --cpus-per-task=1</span>
+<span class="c1">#SBATCH --gpus-per-node=2</span>
+mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="nv">$SLURM_GPUS_PER_NODE</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="notes-on-newton-only-relevant-with-kokkos">
+<h2>Notes on Newton (only relevant with Kokkos)<a class="headerlink" href="#notes-on-newton-only-relevant-with-kokkos" title="Permalink to this headline">¶</a></h2>
+<p>There are defaults which will kick in if you don’t specify anything in the input
+script and/or skip the <code class="docutils literal notranslate"><span class="pre">-package</span> <span class="pre">kokkos</span> <span class="pre">newton</span> <span class="pre">...</span> <span class="pre">neigh</span> <span class="pre">...</span></code> flag.
+You can try these at your own risk, but it is safest to specify everything.
+See also the <a class="reference external" href="https://lammps.sandia.gov/doc/Speed_kokkos.html">documentation</a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code> will probably be faster if you have a 2-body potential,
+otherwise the alternatives should give roughly equal performance.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../tutorials/tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="install.html" class="btn btn-neutral float-left" title="Installation of FLARE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

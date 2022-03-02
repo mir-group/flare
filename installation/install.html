@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Installation of FLARE &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Compile LAMMPS with MGP Pair Style" href="lammps.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Installation of FLARE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-using-pip">Installation using pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#developer-s-installation-guide">Developer’s installation guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lammps-plugin">LAMMPS Plugin</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="lammps.html">Compile LAMMPS with MGP Pair Style</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="installation.html">Installation</a> &raquo;</li>
+        
+      <li>Installation of FLARE</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/installation/install.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="installation-of-flare">
+<h1>Installation of FLARE<a class="headerlink" href="#installation-of-flare" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>If you’re installing on a compute cluster, make sure to load the following modules first:
+.. code-block:: bash</p>
+<blockquote>
+<div>module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01</div></blockquote>
+<ul class="simple">
+<li><a class="reference external" href="https://www.python.org/">Python</a></li>
+<li><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/">NumPy</a></li>
+<li><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/">SciPy</a></li>
+<li><a class="reference external" href="https://pypi.org/project/memory-profiler/">Memory_profiler</a></li>
+<li><a class="reference external" href="http://numba.pydata.org/">Numba</a></li>
+</ul>
+<p>Optional:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a></li>
+<li><a class="reference external" href="https://pymatgen.org/">Pymatgen</a></li>
+</ul>
+</div>
+<div class="section" id="installation-using-pip">
+<h2>Installation using pip<a class="headerlink" href="#installation-using-pip" title="Permalink to this headline">¶</a></h2>
+<p>Pip can automatically fetch the source code from <a class="reference external" href="https://pypi.org/project/mir-flare/">PyPI</a> and install.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip install mir-flare
+</pre></div>
+</div>
+<p>For non-admin users</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip install --upgrade --user mir-flare
+</pre></div>
+</div>
+</div>
+<div class="section" id="developer-s-installation-guide">
+<h2>Developer’s installation guide<a class="headerlink" href="#developer-s-installation-guide" title="Permalink to this headline">¶</a></h2>
+<p>After loading modules as above, we use <code class="docutils literal notranslate"><span class="pre">cmake</span></code> to compile the c++ code</p>
+<p>Then copy the c-library file into the python code folder to make it importable through python</p>
+<p>Finally, add the path of <code class="docutils literal notranslate"><span class="pre">flare</span></code> to <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code>, such that you can <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">flare</span></code> in python.</p>
+<p>An alternative way is setting <code class="docutils literal notranslate"><span class="pre">sys.path.append(&lt;flare</span> <span class="pre">path&gt;)</span></code> in your python script.</p>
+</div>
+<div class="section" id="acceleration-with-multiprocessing-and-mkl">
+<h2>Acceleration with multiprocessing and MKL<a class="headerlink" href="#acceleration-with-multiprocessing-and-mkl" title="Permalink to this headline">¶</a></h2>
+<p>If users have access to high-performance computers, we recommend
+<a class="reference external" href="https://docs.python.org/2/library/multiprocessing.html">Multiprocessing</a> and <a class="reference external" href="https://software.intel.com/en-us/mkl">MKL</a> library set up to accelerate the training and prediction.
+The acceleration can be significant when the GP training data is large.
+This can be done in the following steps.</p>
+<p>First, make sure the <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/">Numpy</a> library is linked with <a class="reference external" href="https://software.intel.com/en-us/mkl">MKL</a> or <a class="reference external" href="https://www.openblas.net/">Openblas</a> and <a class="reference external" href="http://www.netlib.org/lapack/">Lapack</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ python -c <span class="s2">&quot;import numpy as np; print(np.__config__.show())&quot;</span>
+</pre></div>
+</div>
+<p>If no libraries are linked, <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/">Numpy</a> should be reinstalled. Detailed steps can be found in Conda <a class="reference external" href="https://docs.anaconda.com/mkl-optimizations/">manual</a>.</p>
+<p>Second, in the initialization of the GP class and OTF class, turn on the GP parallelizatition and turn off the OTF par.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gp_model</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">per_atom_par</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">n_cpus</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">otf_instance</span> <span class="o">=</span> <span class="n">OTF</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">n_cpus</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Third, set the number of threads for MKL before running your python script.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">2</span>
+python training.py
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The “n_cpus” and OMP_NUM_THREADS should be equal or less than the number of CPUs available in the computer.
+If these numbers are larger than the actual CPUs number, it can lead to an overload of the machine.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If gp_model.per_atom_par=True and OMP_NUM_THREADS&gt;1, it is equivalent to run with OMP_NUM_THREADS * otf.n_cpus threads
+because the MKL calls are nested in the multiprocessing code.</p>
+</div>
+<p>The current version of FLARE can only support parallel calculations within one compute node.
+Interfaces with MPI using multiple nodes are still under development.</p>
+<p>If users encounter unusually slow FLARE training and prediction, please file us a Github Issue.</p>
+</div>
+<div class="section" id="lammps-plugin">
+<h2>LAMMPS Plugin<a class="headerlink" href="#lammps-plugin" title="Permalink to this headline">¶</a></h2>
+<p>See <a class="reference external" href="https://github.com/mir-group/flare_pp/blob/master/lammps_plugins/README.md">lammps_plugins/README.md</a>.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="lammps.html" class="btn btn-neutral float-right" title="Compile LAMMPS with MGP Pair Style" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

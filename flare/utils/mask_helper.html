@@ -1,0 +1,695 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Advanced Hyperparameters Set Up &mdash; flare 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Construct Atomic Environment" href="env_getarray.html" />
+    <link rel="prev" title="Utility" href="utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flare
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="utils.html">Utility</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Advanced Hyperparameters Set Up</a></li>
+<li class="toctree-l3"><a class="reference internal" href="env_getarray.html">Construct Atomic Environment</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flare</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+        
+          <li><a href="utils.html">Utility</a> &raquo;</li>
+        
+      <li>Advanced Hyperparameters Set Up</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/flare/utils/mask_helper.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-flare.utils.parameter_helper">
+<span id="advanced-hyperparameters-set-up"></span><h1>Advanced Hyperparameters Set Up<a class="headerlink" href="#module-flare.utils.parameter_helper" title="Permalink to this headline">¶</a></h1>
+<p>For multi-component systems, the configurational space can be highly complicated.
+One may want to use different hyper-parameters and cutoffs for different interactions,
+or do constraint optimisation for hyper-parameters.</p>
+<p>To use more hyper-parameters, we need special kernel function that can differentiate different
+pairs, triplets and other descriptors and determine which number to use for what interaction.</p>
+<p>This kernel can be enabled by using the <code class="docutils literal notranslate"><span class="pre">hyps_mask</span></code> argument of the GaussianProcess class.
+It contains multiple arrays to describe how to break down the array of hyper-parameters and
+apply them when computing the kernel. Detail descriptions of this argument can be seen in
+kernel/mc_sephyps.py.</p>
+<p>The ParameterHelper class is to generate the hyps_mask with a more human readable interface.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span> <span class="o">=</span> <span class="n">ParameterHelper</span><span class="p">(</span><span class="n">species</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                     <span class="n">kernels</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:[[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]],</span>
+<span class="gp">... </span>                     <span class="s1">&#39;threebody&#39;</span><span class="p">:[[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                         <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">]]},</span>
+<span class="gp">... </span>                     <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;twobody0&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;twobody1&#39;</span><span class="p">:[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>                           <span class="s1">&#39;threebody0&#39;</span><span class="p">:[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="s1">&#39;threebody1&#39;</span><span class="p">:[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
+<span class="gp">... </span>                           <span class="s1">&#39;cutoff_threebody&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span>
+<span class="gp">... </span>                     <span class="n">constraints</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;twobody0&#39;</span><span class="p">:[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">hm</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kernels</span> <span class="o">=</span> <span class="n">hm</span><span class="p">[</span><span class="s1">&#39;kernels&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gp_model</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="p">(</span><span class="n">kernels</span><span class="o">=</span><span class="n">kernels</span><span class="p">,</span>
+<span class="gp">... </span>                           <span class="n">hyps</span><span class="o">=</span><span class="n">hyps</span><span class="p">,</span> <span class="n">hyps_mask</span><span class="o">=</span><span class="n">hm</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this example, four atomic species are involved. There are many kinds
+of twobodys and threebodys. But we only want to use eight different signal variance
+and length-scales.</p>
+<p>In order to do so, we first define all the twobodys to be group “twobody0”, by
+listing “<em>-</em>” as the first element in the twobody argument. The second
+element O-O is then defined to be group “twobody1”. Note that the order
+matters here. The later element overrides the ealier one. If
+twobodys=[[‘O’, ‘O’], [‘*’, ‘*’]], then all twobodys belong to group “twobody1”.</p>
+<p>Similarly, O-O-O is defined as threebody1, while all remaining ones
+are left as threebody0.</p>
+<p>The hyperpameters for each group is listed in the order of
+[sig, ls, cutoff] in the parameters argument.  So in this example,
+O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
+cutoff.</p>
+<p>For threebody, the parameter arrays only come with two elements. So there
+is no cutoff associated with threebody0 or threebody1; instead, a universal
+cutoff is used, which is defined as ‘cutoff_threebody’.</p>
+<p>The constraints argument define which hyper-parameters will be optimized.
+True for optimized and false for being fixed.</p>
+<p>Here are a couple more simple examples.</p>
+<p>Define a 5-parameter 2+3 kernel (1, 0.5, 1, 0.5, 0.05)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span> <span class="o">=</span> <span class="n">ParameterHelper</span><span class="p">(</span><span class="n">kernels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;threebody&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sigma&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="s1">&#39;lengthscale&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="s1">&#39;cutoff_twobody&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="s1">&#39;cutoff_threebody&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="s1">&#39;noise&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Define a 5-parameter 2+3 kernel (1, 1, 1, 1, 0.05)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span> <span class="o">=</span> <span class="n">ParameterHelper</span><span class="p">(</span><span class="n">kernels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;threebody&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                     <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;cutoff_twobody&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span>                                 <span class="s1">&#39;cutoff_threebody&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>                                 <span class="s1">&#39;noise&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">},</span>
+<span class="gp">... </span>                     <span class="n">ones</span><span class="o">=</span><span class="n">ones</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">random</span><span class="o">=</span><span class="ow">not</span> <span class="n">ones</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Define a 9-parameter 2+3 kernel</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span> <span class="o">=</span> <span class="n">ParameterHelper</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;rest&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;OO&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;threebody&#39;</span><span class="p">,</span> <span class="s1">&#39;***&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;threebody&#39;</span><span class="p">,</span> <span class="s1">&#39;Oall&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="s1">&#39;OO&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="s1">&#39;Oall&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="s1">&#39;***&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="s1">&#39;cutoff_twobody&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pm</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="s1">&#39;cutoff_threebody&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See more examples in functions <code class="docutils literal notranslate"><span class="pre">ParameterHelper.define_group</span></code> , <code class="docutils literal notranslate"><span class="pre">ParameterHelper.set_parameters</span></code>,
+and in the tests <code class="docutils literal notranslate"><span class="pre">tests/test_parameters.py</span></code></p>
+<p>If you want to add in a new hyperparameter set to an already-existing GP, you can perform the
+following steps:</p>
+<p>&gt;&gt; hyps_mask = pm.as_dict()
+&gt;&gt; hyps = hyps_mask[‘hyps’]
+&gt;&gt; kernels = hyps_mask[‘kernels’]
+&gt;&gt; gp_model.update_kernel(kernels, ‘mc’, hyps_mask)
+&gt;&gt; gp_model.hyps = hyps</p>
+<dl class="class">
+<dt id="flare.utils.parameter_helper.ParameterHelper">
+<em class="property">class </em><code class="descclassname">flare.utils.parameter_helper.</code><code class="descname">ParameterHelper</code><span class="sig-paren">(</span><em>hyps_mask=None</em>, <em>species=None</em>, <em>kernels={}</em>, <em>cutoff_groups={}</em>, <em>parameters=None</em>, <em>constraints={}</em>, <em>allseparate=False</em>, <em>random=False</em>, <em>ones=False</em>, <em>verbose='WARNING'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper" title="Permalink to this definition">¶</a></dt>
+<dd><p>A helper class to construct the hyps_mask dictionary for AtomicEnvironment
+, GaussianProcess and MappedGaussianProcess</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>hyps_mask</strong> (<em>dict</em>) – Not implemented yet</li>
+<li><strong>species</strong> (<em>dict, list</em>) – Define specie groups</li>
+<li><strong>kernels</strong> (<em>dict, list</em>) – Define kernels and groups for the kernels</li>
+<li><strong>cutoff_groups</strong> (<em>dict</em>) – Define different cutoffs for different species</li>
+<li><strong>parameters</strong> (<em>dict</em>) – Define signal variance, length scales, and cutoffs</li>
+<li><strong>constraints</strong> (<em>dict</em>) – If listed as False, the cooresponding hyperparmeters
+will not be trained</li>
+<li><strong>allseparate</strong> (<em>bool</em>) – If True, define each type pair/triplet into a
+separate group.</li>
+<li><strong>random</strong> (<em>bool</em>) – If True, randomized all signal variances and lengthscales</li>
+<li><strong>one</strong> (<em>bool</em>) – If True, set all signal variances and lengthscales to one</li>
+<li><strong>verbose</strong> (<em>str</em>) – Level to print with “ERROR”, “WARNING”, “INFO”, “DEBUG”</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p class="first">the <code class="docutils literal notranslate"><span class="pre">species</span></code> is an optional input. It can be left as None if the user only wants
+to set up one group of hyper-parameters for each kernel.</p>
+</li>
+<li><p class="first">the <code class="docutils literal notranslate"><span class="pre">kernels</span></code> can be defined along with or without groups. But the later mode
+is not compatible with the <code class="docutils literal notranslate"><span class="pre">allseparate</span></code> flag.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">kernels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;threebody&#39;</span><span class="p">],</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">kernels</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:[[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">]],</span>
+<span class="gp">... </span>         <span class="s1">&#39;threebody&#39;</span><span class="p">:[[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                      <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">]]},</span>
+</pre></div>
+</div>
+<p>Current options for the kernels are twobody, threebody and manybody (based on coordination number).</p>
+</li>
+<li><p class="first">See format of <code class="docutils literal notranslate"><span class="pre">species</span></code>, <code class="docutils literal notranslate"><span class="pre">kernels</span></code> (dict), and <code class="docutils literal notranslate"><span class="pre">cutoff_groups</span></code> in <code class="docutils literal notranslate"><span class="pre">list_groups()</span></code> function.</p>
+</li>
+<li><p class="first">See format of <code class="docutils literal notranslate"><span class="pre">parameters</span></code> and <code class="docutils literal notranslate"><span class="pre">constraints</span></code> in <code class="docutils literal notranslate"><span class="pre">list_parameters()</span></code> function.</p>
+</li>
+</ul>
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.all_separate_groups">
+<code class="descname">all_separate_groups</code><span class="sig-paren">(</span><em>group_type</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.all_separate_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separate all possible types of twobodys, threebodys, manybody.
+One type per group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>group_type</strong> (<em>str</em>) – “specie”, “twobody”, “threebody”, “cut3b”, “manybody”</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary representation of the mask. The output can be used for AtomicEnvironment
+or the GaussianProcess</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.define_group">
+<code class="descname">define_group</code><span class="sig-paren">(</span><em>group_type</em>, <em>name</em>, <em>element_list</em>, <em>parameters=None</em>, <em>atomic_str=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.define_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define specie/twobody/threebody/3b cutoff/manybody group</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>group_type</strong> (<em>str</em>) – “specie”, “twobody”, “threebody”, “cut3b”, “manybody”</li>
+<li><strong>name</strong> (<em>str</em>) – the name use for indexing. can be anything but “*”</li>
+<li><strong>element_list</strong> (<em>list</em>) – list of elements</li>
+<li><strong>parameters</strong> (<em>list</em>) – corresponding parameters for this group</li>
+<li><strong>atomic_str</strong> (<em>bool</em>) – whether the elements in element_list are
+specified by group names or periodic table element names.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The function is helped to define different groups for specie/twobody/threebody
+/3b cutoff/manybody terms. This function can be used for many times.
+The later one always overrides the former one.</p>
+<p>The name of the group has to be unique string (but not “*”), that
+define a group of species or twobodys, etc. If the same name is used,
+in two function calls, the definitions of the group will be merged.
+Both calls will be effective.</p>
+<p>element_list has to be a list of atomic elements, or a list of
+specie group names (which should be defined in previous calls), or “*”.
+“*” will loop the function over all previously defined species.
+It has to be two elements for twobody/3b cutoff/manybody term, or
+three elements for threebody. For specie group definition, it can be
+as many elements as you want.</p>
+<p>If multiple define_group calls have conflict with element, the later one
+has higher priority. For example, twobody 1-2 are defined as group1 in
+the first call, and as group2 in the second call. In the end, the twobody
+will be left as group2.</p>
+<p>Example 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;water&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;salt&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Cl&#39;</span><span class="p">,</span> <span class="s1">&#39;Na&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>They define H and O to be group water, and Na and Cl to be group salt.</p>
+<p>Example 2.1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;in-water&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;in-water&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;in-water&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example 2.2:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;in-water&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;water&#39;</span><span class="p">,</span> <span class="s1">&#39;water&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The 2.1 is equivalent to 2.2.</p>
+<p>Example 3.1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;Hgroup&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;Hgroup&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;OO&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example 3.2:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;Hgroup&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;OO&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span> <span class="n">atomic_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example 3.3:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">list_groups</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;Hgroup&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;OO&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Example 3.4:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">list_groups</span><span class="p">(</span><span class="s1">&#39;specie&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;OO&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">define_group</span><span class="p">(</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;Hgroup&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>3.1 to 3.4 are all equivalent.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.fill_in_parameters">
+<code class="descname">fill_in_parameters</code><span class="sig-paren">(</span><em>group_type</em>, <em>random=False</em>, <em>ones=False</em>, <em>universal=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.fill_in_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separate all possible types of twobodys, threebodys, manybody.
+One type per group. And fill in either universal ls and sigma from
+pre-defined parameters from set_parameters(“sigma”, ..) and set_parameters(“ls”, ..)
+or random parameters if random is True.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>group_type</strong> (<em>str</em>) – “specie”, “twobody”, “threebody”, “cut3b”, “manybody”</li>
+<li><strong>definition_list</strong> (<em>list, dict</em>) – list of elements</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.find_group">
+<code class="descname">find_group</code><span class="sig-paren">(</span><em>group_type</em>, <em>element_list</em>, <em>atomic_str=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.find_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>find the group that contains the input pair</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>group_type</strong> (<em>str</em>) – species, twobody, threebody, cut3b, manybody</li>
+<li><strong>element_list</strong> (<em>list</em>) – list of elements for a pair/triplet/coordination-pair</li>
+<li><strong>atomic_str</strong> (<em>bool</em>) – whether the elements in element_list are
+specified by group names or periodic table element names.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">name (str)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="flare.utils.parameter_helper.ParameterHelper.from_dict">
+<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>hyps_mask</em>, <em>verbose=False</em>, <em>init_spec=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert dictionary mask to HM instance
+This function is not tested yet</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.list_groups">
+<code class="descname">list_groups</code><span class="sig-paren">(</span><em>group_type</em>, <em>definition_list</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.list_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>define groups in batches.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>group_type</strong> (<em>str</em>) – “specie”, “twobody”, “threebody”, “cut3b”, “manybody”</li>
+<li><strong>definition_list</strong> (<em>list, dict</em>) – list of elements</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>This function runs define_group in batch. Please first read
+the manual of define_group.</p>
+<p>If the definition_list is a list, it is equivalent to
+executing define_group through the definition_list.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="nb">all</span> <span class="n">terms</span> <span class="ow">in</span> <span class="n">the</span> <span class="nb">list</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">define_group</span><span class="p">(</span><span class="n">group_type</span><span class="p">,</span> <span class="n">group_type</span><span class="o">+</span><span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="n">the</span> <span class="n">nth</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">the</span> <span class="nb">list</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>So the first twobody defined will be group twobody0, second one will be
+group twobody1. For specie, it will define all the listed elements as
+groups with only one element with their original name.</p>
+<p>If the definition_list is a dictionary, it is equivalent to</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">the</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">define_group</span><span class="p">(</span><span class="n">group_type</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is not recommended to use the dictionary mode, especially when
+the group definitions are conflicting with each other. There is no
+guarantee that the priority order is the same as you want.</p>
+<p>Unlike ParameterHelper.define_group(), it can only be called once for each
+group_type, and not after any ParameterHelper.define_group() calls.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.list_parameters">
+<code class="descname">list_parameters</code><span class="sig-paren">(</span><em>parameter_dict: dict</em>, <em>constraints: dict = {}</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.list_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define many groups of parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parameter_dict</strong> (<em>dict</em>) – dictionary of all parameters</li>
+<li><strong>constraints</strong> (<em>dict</em>) – dictionary of all constraints</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parameter_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;group_name&quot;</span><span class="p">:[</span><span class="n">sig</span><span class="p">,</span> <span class="n">ls</span><span class="p">,</span> <span class="n">cutoffs</span><span class="p">],</span> <span class="o">...</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">constraints</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;group_name&quot;</span><span class="p">:[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="o">...</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The name of parameters can be the group name previously defined in
+define_group or list_groups function. Aside from the group name,
+<code class="docutils literal notranslate"><span class="pre">noise</span></code>, <code class="docutils literal notranslate"><span class="pre">cutoff_twobody</span></code>, <code class="docutils literal notranslate"><span class="pre">cutoff_threebody</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">cutoff_manybody</span></code> are reserved for noise parmater
+and universal cutoffs, while <code class="docutils literal notranslate"><span class="pre">sigma</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code> are
+reserved for universal signal variances and length scales.</p>
+<p>For non-reserved keys, the value should be a list of 2 to 3 elements,
+corresponding to the sigma, lengthscale and cutoff (if the third one
+is defined). For reserved keys, the value should be a float number.</p>
+<p>The parameter_dict and constraints should use the same set of keys.
+If a key in constraints is not used in parameter_dict, it will be ignored.</p>
+<p>The value in the constraints can be either a single bool, which apply
+to all parameters, or list of bools that apply to each parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.set_constraints">
+<code class="descname">set_constraints</code><span class="sig-paren">(</span><em>name</em>, <em>opt</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.set_constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the parameters for certain group</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of the patermeters</li>
+<li><strong>opt</strong> (<em>bool, list</em>) – whether to optimize the parameter or not</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The name of parameters can be the group name previously defined in
+define_group or list_groups function. Aside from the group name,
+<code class="docutils literal notranslate"><span class="pre">noise</span></code>, <code class="docutils literal notranslate"><span class="pre">cutoff_twobody</span></code>, <code class="docutils literal notranslate"><span class="pre">cutoff_threebody</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">cutoff_manybody</span></code> are reserved for noise parmater
+and universal cutoffs, while <code class="docutils literal notranslate"><span class="pre">sigma</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code> are
+reserved for universal signal variances and length scales.</p>
+<p>The optimization flag can be a single bool, which apply to all
+parameters under that name, or list of bools that apply to each
+parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.set_parameters">
+<code class="descname">set_parameters</code><span class="sig-paren">(</span><em>name</em>, <em>parameters</em>, <em>opt=True</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.set_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the parameters for certain group</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name of the patermeters</li>
+<li><strong>parameters</strong> (<em>list</em>) – the sigma, lengthscale, and cutoff of each group.</li>
+<li><strong>opt</strong> (<em>bool, list</em>) – whether to optimize the parameter or not</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The name of parameters can be the group name previously defined in
+define_group or list_groups function. Aside from the group name,
+<code class="docutils literal notranslate"><span class="pre">noise</span></code>, <code class="docutils literal notranslate"><span class="pre">cutoff_twobody</span></code>, <code class="docutils literal notranslate"><span class="pre">cutoff_threebody</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">cutoff_manybody</span></code> are reserved for noise parmater
+and universal cutoffs, while <code class="docutils literal notranslate"><span class="pre">sigma</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscale</span></code> are
+reserved for universal signal variances and length scales.</p>
+<p>The parameter should be a list of 2-3 elements, for sigma,
+lengthscale (and cutoff if the third one is defined).</p>
+<p>The optimization flag can be a single bool, which apply to all
+parameters, or list of bools that apply to each parameter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.utils.parameter_helper.ParameterHelper.summarize_group">
+<code class="descname">summarize_group</code><span class="sig-paren">(</span><em>group_type</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.parameter_helper.ParameterHelper.summarize_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort and combine all the previous definition to internal varialbes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>group_type</strong> (<em>str</em>) – species, twobody, threebody, cut3b, manybody</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-flare.utils.parameters"></span></div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="env_getarray.html" class="btn btn-neutral float-right" title="Construct Atomic Environment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="utils.html" class="btn btn-neutral float-left" title="Utility" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
