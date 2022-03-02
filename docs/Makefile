@@ -5,11 +5,6 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
-# TODO: Add flare_pp docs
-# SPHINXOPTS    ?=
-# SPHINXBUILD   ?= sphinx-build
-# SOURCEDIR     = .
-# BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
