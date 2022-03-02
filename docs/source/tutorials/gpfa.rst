@@ -34,7 +34,7 @@ At the header of a file, include the following imports:
 
 .. code-block:: python
 
-	from flare.gp import GaussianProcess
+	from flare.bffs.gp import GaussianProcess
 
 We will then set up the ``GaussianProcess`` object.
 
@@ -70,21 +70,18 @@ We will then set up the ``GaussianProcess`` object.
 Step 2 (Optional): Extracting the Frames from a previous AIMD Run
 -----------------------------------------------------------------
 
-FLARE offers a variety of modules for converting DFT outputs into 
-FLARE structures, which are then usable for model training and prediction tasks.
-For this example, we highlight the vasp_util module, which has a function 
-called ``md_trajectory_from_vasprun``, which can convert a ``vasprun.xml`` file into 
-a list of FLARE ``Structure`` objects, using internal methods which call 
-``pymatgen``'s IO functionality.
+FLARE uses ASE IO (https://databases.fysik.dtu.dk/ase/ase/io/io.html) to parse the trajectory 
+including format such as xyz, VASP/QE/LAMMPS output. Then a list of ASE Atoms will be returned.
+We then need to convert the list of ASE Atoms into FLARE_Atoms.
 
 You can run it simply by calling the function on a file like so:
 
-
 .. code-block:: python
 
-	from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
-	trajectory = md_trajectory_from_vasprun('path-to-vasprun')
-
+    from ase.io import read
+	from flare.atoms import FLARE_Atoms
+    trajectory = read('path-to-traj-file')
+    trajectory = [FLARE_Atoms.from_ase_atoms(frame) for frame in trajectory]
 
 
 Step 3: Training your Gaussian Process
@@ -96,10 +93,10 @@ You can open it via the command
 .. code-block:: python
 
 	from json import loads
-	from flare.struc import Structure
+	from flare.atoms import FLARE_Atoms
 	with open('path-to-methanol-frames','r') as f:
 		loaded_dicts = [loads(line) for line in f.readlines()]
-	trajectory = [Structure.from_dict(d) for d in loaded_dicts]
+	trajectory = [FLARE_Atoms.from_dict(d) for d in loaded_dicts]
 
 Our trajectory is a list of FLARE structures, each of which is decorated with 
 forces.
@@ -168,7 +165,7 @@ For now, we will only show one argument to seed frames for simplicity.
 
 .. code-block:: python
 
-	from flare.gp_from_aimd import TrajectoryTrainer
+	from flare.learners.gp_from_aimd import TrajectoryTrainer
 	TT = TrajectoryTrainer(frames=trajectory,
 			    gp = gp,
 			    rel_std_tolerance = 3,
