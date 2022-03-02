@@ -52,12 +52,14 @@ jobs:
         make html
 
     - name: Publish the docs
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        # Default Doxyfile build documentation to html directory.
-        # Change the directory if changes in Doxyfile
-        publish_dir: ./docs/build/html
+      if [ "${{ matrix.omp }}" = "ON" && "${{ matrix.lapack }}" = "ON" ]; then
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Default Doxyfile build documentation to html directory.
+          # Change the directory if changes in Doxyfile
+          publish_dir: ./docs/build/html
+      fi
 
     - name: Build
       run: |
