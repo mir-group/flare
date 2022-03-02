@@ -16,23 +16,21 @@ import os
 import sys
 
 sys.path.append("../..")
-# sys.path.append('../../flare')
-# sys.path.append('../../flare/mgp')
-# sys.path.append('../../flare/ase')
 autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen", "ase"]
 
 import sphinx_rtd_theme
+import flare
 
 # -- Project information -----------------------------------------------------
 
 project = "flare"
-copyright = "2019, Jonathan Vandermause"
-author = "Jonathan Vandermause"
+copyright = '2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen'
+author = 'Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen'
 
 # The short X.Y version
 version = ""
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
+release = flare.__version__
 
 
 # -- General configuration ---------------------------------------------------

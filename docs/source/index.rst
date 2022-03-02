@@ -14,6 +14,7 @@ Contents
    installation/installation
    tutorials/tutorials
    flare/flare
+   flare_pp/flare_pp
    FAQs/FAQs
    related
    contribute/contribute
