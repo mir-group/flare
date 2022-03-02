@@ -15,7 +15,7 @@ Contents
    tutorials/tutorials
    flare/flare
    flare_pp/flare_pp
-   FAQs/FAQs
+   faqs 
    related
    contribute/contribute
    citing

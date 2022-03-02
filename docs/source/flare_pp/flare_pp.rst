@@ -1,5 +1,5 @@
-Code Documentation
-==================
+C++ Code Documentation
+======================
 
 .. toctree::
    :maxdepth: 3
