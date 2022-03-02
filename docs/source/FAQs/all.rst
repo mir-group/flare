@@ -3,15 +3,10 @@ Frequently Asked Questions
 
 Installation and Packages
 -------------------------
-1. What numba version will I need?
-        >= 0.50.0
-        The latest version is always recommended.
-
-**Note:** If you get errors with `numba` or get `C/C++`-type errors, 
-very possibly it's the problem of the `numba` version.
-
-2. Can I accelerate my calculation using parallelization?
+1. Can I accelerate my calculation using parallelization?
         See the section in the `Installation <https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl>`_ section.
+
+2. For developers, if your Github Action build fails from an issue related to ``gh-pages`` in the step of "Publish the docs", this may be because you did not pull the latest code before push. Please try pull and push again. If it still does not work, check `this <https://gist.github.com/mandiwise/44d1edce18f2ffb14f63>`_.
 
 Gaussian Processes
 ------------------
