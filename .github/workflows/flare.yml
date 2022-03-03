@@ -79,14 +79,13 @@ jobs:
         make html
 
     - name: Publish the docs
-      if [ "${{ matrix.omp }}" = "ON" && "${{ matrix.lapack }}" = "ON" && "${{ github.event_name }}" = "pull_request" ]; then
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Default Doxyfile build documentation to html directory.
-          # Change the directory if changes in Doxyfile
-          publish_dir: ./docs/build/html
-      fi
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        # Default Doxyfile build documentation to html directory.
+        # Change the directory if changes in Doxyfile
+        publish_dir: ./docs/build/html
+      if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
 
     - name: Install LAMMPS
       run: |
