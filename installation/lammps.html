@@ -85,20 +85,12 @@
 <li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="install.html">Installation of FLARE</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Compile LAMMPS with MGP Pair Style</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#download">Download</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mpi">MPI</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#compiling">Compiling</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#running">Running</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compilation-with-cmake">Compilation with CMake</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#compilation-for-gpu-with-kokkos">Compilation for GPU with Kokkos</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#mpi-openmp-through-kokkos">MPI+OpenMP through Kokkos</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id1">Compiling</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id2">Running</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#mpi-cuda-through-kokkos">MPI+CUDA through Kokkos</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id3">Compiling</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id4">Running</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic usage</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#running-on-a-gpu-with-kokkos">Running on a GPU with Kokkos</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#notes-on-newton-only-relevant-with-kokkos">Notes on Newton (only relevant with Kokkos)</a></li>
@@ -107,10 +99,10 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Python Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
 </ul>
@@ -206,60 +198,66 @@
 <div class="section" id="compile-lammps-with-mgp-pair-style">
 <h1>Compile LAMMPS with MGP Pair Style<a class="headerlink" href="#compile-lammps-with-mgp-pair-style" title="Permalink to this headline">¶</a></h1>
 <p>Anders Johansson, Yu Xie</p>
-<div class="section" id="download">
-<h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
-<p>If you want to use MGP force field in LAMMPS, the first step is to download our MGP pair_style source code from:
-<a class="reference external" href="https://github.com/mir-group/flare/tree/master/lammps_plugins">https://github.com/mir-group/flare/tree/master/lammps_plugins</a></p>
-<p>Then, follow the instruction below to compile the LAMMPS executable.</p>
-</div>
-<div class="section" id="mpi">
-<h2>MPI<a class="headerlink" href="#mpi" title="Permalink to this headline">¶</a></h2>
-<p>For when you can’t get Kokkos+OpenMP to work.</p>
-<div class="section" id="compiling">
-<h3>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp -r lammps_plugin /path/to/lammps/src/USER-MGP
-<span class="nb">cd</span> /path/to/lammps/src
-make yes-user-mgp
-make -j<span class="k">$(</span>nproc<span class="k">)</span> mpi
+<div class="section" id="compilation-with-cmake">
+<h2>Compilation with CMake<a class="headerlink" href="#compilation-with-cmake" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>Download LAMMPS, e.g.</li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --depth<span class="o">=</span><span class="m">1</span> https://github.com/lammps/lammps.git
 </pre></div>
 </div>
-<p>You can replace <code class="docutils literal notranslate"><span class="pre">mpi</span></code> with your favourite Makefile, e.g. <code class="docutils literal notranslate"><span class="pre">intel_cpu_intelmpi</span></code>, or use the CMake build system.</p>
-</div>
-<div class="section" id="running">
-<h3>Running<a class="headerlink" href="#running" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_mpi -in in.lammps
+<ol class="arabic simple" start="2">
+<li>From the directory <code class="docutils literal notranslate"><span class="pre">flare/lammps_plugins</span></code>, run the install script.</li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> path/to/flare/lammps_plugins
+./install.sh /path/to/lammps
 </pre></div>
 </div>
-<p>as usual, but your LAMMPS script <code class="docutils literal notranslate"><span class="pre">in.lammps</span></code> needs to specify <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code>.</p>
-</div>
-</div>
-<div class="section" id="mpi-openmp-through-kokkos">
-<h2>MPI+OpenMP through Kokkos<a class="headerlink" href="#mpi-openmp-through-kokkos" title="Permalink to this headline">¶</a></h2>
-<p>For OpenMP parallelisation on your laptop or on one node, or for hybrid parallelisation on multiple nodes.</p>
-<div class="section" id="id1">
-<h3>Compiling<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp -r lammps_plugin /path/to/lammps/src/USER-MGP
-<span class="nb">cd</span> /path/to/lammps/src
-make yes-user-mgp
-make yes-kokkos
-make -j<span class="k">$(</span>nproc<span class="k">)</span> kokkos_omp
+<p>This copies the necessary files and slightly updates the LAMMPS CMake file.</p>
+<ol class="arabic simple" start="3">
+<li>Compile LAMMPS with CMake as usual. If you’re not using Kokkos, the Makefile system might also work.</li>
+</ol>
+<p>Note: The pair style uses the Eigen (<a class="reference external" href="https://gitlab.com/libeigen/eigen">https://gitlab.com/libeigen/eigen</a>) (header-only) library.
+This needs to be found by the compiler. Specifically, the <code class="docutils literal notranslate"><span class="pre">Eigen</span></code> folder. There are two workarounds.</p>
+<ol class="arabic simple">
+<li>Clone the <code class="docutils literal notranslate"><span class="pre">eigen</span></code> repository, and <code class="docutils literal notranslate"><span class="pre">mv</span> <span class="pre">eigen/Eigen</span> <span class="pre">/path/to/lammps/src/</span></code> if it is not easily available on your system.</li>
+<li>If you are using LAMMPS version &gt; 17Feb22, then you can set <code class="docutils literal notranslate"><span class="pre">-DPKG_MACHDYN=yes</span> <span class="pre">-DDOWNLOAD_EIGEN3=yes</span></code> for cmake, and Eigen3 will be downloaded and compiled automatically.</li>
+</ol>
+<div class="section" id="compilation-for-gpu-with-kokkos">
+<h3>Compilation for GPU with Kokkos<a class="headerlink" href="#compilation-for-gpu-with-kokkos" title="Permalink to this headline">¶</a></h3>
+<p>Run the above steps, follow LAMMPS’s compilation instructions with Kokkos (<a class="reference external" href="https://docs.lammps.org/Build_extras.html#kokkos">https://docs.lammps.org/Build_extras.html#kokkos</a>). Typically</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> lammps
+mkdir build
+<span class="nb">cd</span> build
+cmake ../cmake -DPKG_KOKKOS<span class="o">=</span>ON -DKokkos_ENABLE_CUDA<span class="o">=</span>ON <span class="o">[</span>-DKokkos_ARCH_VOLTA70<span class="o">=</span>on <span class="k">if</span> not auto-detected<span class="o">]</span>
+make -j&lt;n_cpus&gt;
 </pre></div>
 </div>
-<p>You can change the compiler flags etc. in <code class="docutils literal notranslate"><span class="pre">/path/to/lammps/src/MAKE/OPTIONS/Makefile.kokkos_omp</span></code>.
-As of writing, the pair style is not detected by CMake.</p>
+<p>If you really, really, really want to use the old Makefile system, you should be able to copy the files from <code class="docutils literal notranslate"><span class="pre">kokkos/</span></code> into <code class="docutils literal notranslate"><span class="pre">/path/to/lammps/src</span></code>, do <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">yes-kokkos</span></code> and otherwise follow the LAMMPS Kokkos instructions.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">KOKKOS_ARCH</span></code> must be changed according to your GPU model. <code class="docutils literal notranslate"><span class="pre">Volta70</span></code> is for V100, <code class="docutils literal notranslate"><span class="pre">Pascal60</span></code> is for P100, etc.</p>
 </div>
-<div class="section" id="id2">
-<h3>Running<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code> in your LAMMPS script:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="m">4</span> -sf kk -package kokkos newton on neigh half -in in.lammps
+</div>
+<div class="section" id="basic-usage">
+<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>For the model with B2 descriptors and NormalizedDotProduct kernel, the LAMMPS input script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>newton on
+pair_style  flare
+pair_coeff  * * Si.txt
 </pre></div>
 </div>
-<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code> in your LAMMPS script:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="m">4</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+<p>where <code class="docutils literal notranslate"><span class="pre">Si.txt</span></code> should be replaced by the name of your mapped model. Then run <code class="docutils literal notranslate"><span class="pre">lmp</span> <span class="pre">-in</span> <span class="pre">in.script</span></code> as usual.</p>
+<p>For the model with 2+3 body descriptors, the LAMMPS non-Kokkos version uses <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code>, while the Kokkos version uses <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code>.</p>
+<div class="section" id="running-on-a-gpu-with-kokkos">
+<h3>Running on a GPU with Kokkos<a class="headerlink" href="#running-on-a-gpu-with-kokkos" title="Permalink to this headline">¶</a></h3>
+<p>See the LAMMPS documentation (<a class="reference external" href="https://docs.lammps.org/Speed_kokkos.html">https://docs.lammps.org/Speed_kokkos.html</a>). In general, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lmp -k on g <span class="m">1</span> -sf kk -pk kokkos newton on neigh full -in in.script
 </pre></div>
 </div>
-<p>Replace 4 with the desired number of threads <em>per MPI task</em>. Skip <code class="docutils literal notranslate"><span class="pre">mpirun</span></code> when running on one machine.</p>
-<p>If you are running on multiple nodes on a cluster, you would typically launch one MPI task per node,
+<p>When running with MPI, replace <code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">1</span></code> with the number of GPUs <em>per node</em>.</p>
+<p>In order to run large systems, the atoms will be divided into batches to reduce memory usage. The batch size is controlled by the <code class="docutils literal notranslate"><span class="pre">MAXMEM</span></code> environment variable (in GB). If necessary, set this to an estimate of how much memory FLARE++ can use (i.e., total GPU memory minus LAMMPS’s memory for neighbor lists etc.). If you are memory-limited, you can set <code class="docutils literal notranslate"><span class="pre">MAXMEM=1</span></code> or similar, otherwise leave it to a larger number for more parallelism. The default is 12 GB, which should work for most systems while not affecting performance.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MAXMEM</span></code> is printed at the beginning of the simulation <em>from every MPI process</em>, in order to verify that the environment variable has been correctly set <em>on all nodes</em>. Look at <code class="docutils literal notranslate"><span class="pre">mpirun</span> <span class="pre">-x</span></code> if this is not the case.</p>
+<p>For MPI run on CPU nodes, if you are running on multiple nodes on a cluster,
+you would typically launch one MPI task per node,
 and then set the number of threads equal to the number of cores (or hyperthreads) per node.
 A sample SLURM job script for 4 nodes, each with 48 cores, may look something like this:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --nodes=4</span>
@@ -269,37 +267,8 @@ mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_
 </pre></div>
 </div>
 <p>When running on Knight’s Landing or other heavily hyperthreaded systems, you may want to try using more than one thread per CPU.</p>
-</div>
-</div>
-<div class="section" id="mpi-cuda-through-kokkos">
-<h2>MPI+CUDA through Kokkos<a class="headerlink" href="#mpi-cuda-through-kokkos" title="Permalink to this headline">¶</a></h2>
-<p>For running on the GPU on your laptop, or for multiple GPUs on one or more nodes.</p>
-<div class="section" id="id3">
-<h3>Compiling<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp -r lammps_plugin /path/to/lammps/src/USER-MGP
-<span class="nb">cd</span> /path/to/lammps/src
-make yes-user-mgp
-make yes-kokkos
-make -j<span class="k">$(</span>nproc<span class="k">)</span> <span class="nv">KOKKOS_ARCH</span><span class="o">=</span>Volta70 kokkos_cuda_mpi
-</pre></div>
-</div>
-<p>The <code class="docutils literal notranslate"><span class="pre">KOKKOS_ARCH</span></code> must be changed according to your GPU model. <code class="docutils literal notranslate"><span class="pre">Volta70</span></code> is for V100, <code class="docutils literal notranslate"><span class="pre">Pascal60</span></code> is for P100, etc.</p>
-<p>You can change the compiler flags etc. in <code class="docutils literal notranslate"><span class="pre">/path/to/lammps/src/MAKE/OPTIONS/Makefile.kokkos_cuda_mpi</span></code>.
-As of writing, the pair style is not detected by CMake.</p>
-</div>
-<div class="section" id="id4">
-<h3>Running<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
-<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code> in your LAMMPS script:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="m">4</span> -sf kk -package kokkos newton on neigh half -in in.lammps
-</pre></div>
-</div>
-<p>With <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code> in your LAMMPS script:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpirun /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="m">4</span> -sf kk -package kokkos newton off neigh full -in in.lammps
-</pre></div>
-</div>
-<p>Replace 4 with the desired number of GPUs <em>per node</em>, skip <code class="docutils literal notranslate"><span class="pre">mpirun</span></code> if you are using 1 GPU.
-The number of MPI tasks should be set equal to the total number of GPUs.</p>
-<p>If you are running on multiple nodes on a cluster, you would typically launch one MPI task per GPU.
+<p>For MPI run on GPU nodes, if you are running on multiple nodes on a cluster,
+you would typically launch one MPI task per GPU.
 A sample SLURM job script for 4 nodes, each with 2 GPUs, may look something like this:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --nodes=4</span>
 <span class="c1">#SBATCH --ntasks-per-node=2</span>

@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Frequently Asked Questions" href="../FAQs/FAQs.html" />
+    <link rel="next" title="Frequently Asked Questions" href="../faqs.html" />
     <link rel="prev" title="Descriptors" href="descriptors.html" /> 
 </head>
 
@@ -84,16 +84,16 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="flare_pp.html">Code Documentation</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Python Code Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="flare_pp.html">C++ Code Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="structure.html">Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bffs.html">Bayesian force fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="descriptors.html">Descriptors</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Kernels</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
 </ul>
@@ -141,7 +141,7 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="flare_pp.html">Code Documentation</a> &raquo;</li>
+          <li><a href="flare_pp.html">C++ Code Documentation</a> &raquo;</li>
         
       <li>Kernels</li>
     
@@ -188,6 +188,219 @@
 </style>
 <div class="section" id="kernels">
 <h1>Kernels<a class="headerlink" href="#kernels" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="_CPPv46Kernel">
+<span class="target" id="classKernel"></span><em class="property">class </em><code class="descname">Kernel</code><a class="headerlink" href="#_CPPv46Kernel" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Subclassed by <a class="reference internal" href="#classNormalizedDotProduct"><span class="std std-ref">NormalizedDotProduct</span></a>, NormalizedDotProduct_ICM, SquaredExponential</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv4N6Kernel6KernelEv">
+<span class="target" id="classKernel_1a84dba549c0823454ecfc8089c20cf812"></span><code class="descname">Kernel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6Kernel6KernelEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel6KernelEN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1a0fcc0cd49073db7737dea5ee03053b9a"></span><code class="descname">Kernel</code><span class="sig-paren">(</span>Eigen::VectorXd <em>kernel_hyperparameters</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6Kernel6KernelEN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel9envs_envsERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1a5ab895b695ae5910f7768f0d3520874a"></span><em class="property">virtual</em> Eigen::MatrixXd <code class="descname">envs_envs</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs1</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs2</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel9envs_envsERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel14envs_envs_gradERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1a67d6dca3d393de48de041696f7ea7a4c"></span><em class="property">virtual</em> std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">envs_envs_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs1</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs2</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel14envs_envs_gradERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel10envs_strucERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1abdf09c89972e09b359b9bd313f83f830"></span><em class="property">virtual</em> Eigen::MatrixXd <code class="descname">envs_struc</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel10envs_strucERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel15envs_struc_gradERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1aea7355a8ccefd60b6b3bacacddb74def"></span><em class="property">virtual</em> std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">envs_struc_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel15envs_struc_gradERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel17self_kernel_strucERK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1ab68ec76514c87d47de83ef95090e910e"></span><em class="property">virtual</em> Eigen::VectorXd <code class="descname">self_kernel_struc</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel17self_kernel_strucERK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel11struc_strucERK16DescriptorValuesRK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1a899cc10aa98148d67f93447dcfb2c426"></span><em class="property">virtual</em> Eigen::MatrixXd <code class="descname">struc_struc</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc1</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc2</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel11struc_strucERK16DescriptorValuesRK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel28compute_mapping_coefficientsERK8SparseGPi">
+<span class="target" id="classKernel_1ad1da6f98df2aa1164f9511ca86cd8f64"></span><em class="property">virtual</em> Eigen::MatrixXd <code class="descname">compute_mapping_coefficients</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="bffs.html#_CPPv48SparseGP" title="SparseGP">SparseGP</a> &amp;<em>gp_model</em>, int <em>kernel_index</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel28compute_mapping_coefficientsERK8SparseGPi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel27compute_varmap_coefficientsERK8SparseGPi">
+<span class="target" id="classKernel_1a1213ae3d98265757a203a96f90c9421d"></span><em class="property">virtual</em> Eigen::MatrixXd <code class="descname">compute_varmap_coefficients</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="bffs.html#_CPPv48SparseGP" title="SparseGP">SparseGP</a> &amp;<em>gp_model</em>, int <em>kernel_index</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel27compute_varmap_coefficientsERK8SparseGPi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel10write_infoERNSt8ofstreamE">
+<span class="target" id="classKernel_1abf8ddc5d4d5b44a542ec70617d092649"></span><em class="property">virtual</em> void <code class="descname">write_info</code><span class="sig-paren">(</span>std::ofstream &amp;<em>coeff_file</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel10write_infoERNSt8ofstreamE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel8Kuu_gradERK17ClusterDescriptorRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1aca3f43819319ff153ca0e59ffa36ae35"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuu_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> Eigen::MatrixXd &amp;<em>Kuu</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6Kernel8Kuu_gradERK17ClusterDescriptorRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel8Kuf_gradERK17ClusterDescriptorRKNSt6vectorI9StructureEEiRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1a4e1f2761f6be3cdad427092ea0507f34"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuf_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> std::vector&lt;<a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a>&gt; &amp;<em>strucs</em>, int <em>kernel_index</em>, <em class="property">const</em> Eigen::MatrixXd &amp;<em>Kuf</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6Kernel8Kuf_gradERK17ClusterDescriptorRKNSt6vectorI9StructureEEiRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel19set_hyperparametersEN5Eigen8VectorXdE">
+<span class="target" id="classKernel_1ab8a5c29e79e210ca75458a28333dc0a9"></span><em class="property">virtual</em> void <code class="descname">set_hyperparameters</code><span class="sig-paren">(</span>Eigen::VectorXd <em>hyps</em><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel19set_hyperparametersEN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6KernelD0Ev">
+<span class="target" id="classKernel_1a06fdad3fb7a009de6a8b87318693e875"></span><em class="property">virtual</em> <code class="descname">~Kernel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6KernelD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N6Kernel11return_jsonEv">
+<span class="target" id="classKernel_1a40959af8415a10bfec3f970473f604eb"></span><em class="property">virtual</em> nlohmann::json <code class="descname">return_json</code><span class="sig-paren">(</span><span class="sig-paren">)</span> = 0<a class="headerlink" href="#_CPPv4N6Kernel11return_jsonEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="member">
+<dt id="_CPPv4N6Kernel22kernel_hyperparametersE">
+<span class="target" id="classKernel_1acb61bf57737240a130d84bec6efb38d7"></span>Eigen::VectorXd <code class="descname">kernel_hyperparameters</code><a class="headerlink" href="#_CPPv4N6Kernel22kernel_hyperparametersE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N6Kernel11kernel_nameE">
+<span class="target" id="classKernel_1a6420772d4050af6650ccd2759ab93c80"></span>std::string <code class="descname">kernel_name</code><a class="headerlink" href="#_CPPv4N6Kernel11kernel_nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="_CPPv420NormalizedDotProduct">
+<span class="target" id="classNormalizedDotProduct"></span><em class="property">class </em><code class="descname">NormalizedDotProduct</code> : <em class="property">public</em> <a class="reference internal" href="#_CPPv46Kernel" title="Kernel">Kernel</a><a class="headerlink" href="#_CPPv420NormalizedDotProduct" title="Permalink to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct20NormalizedDotProductEv">
+<span class="target" id="classNormalizedDotProduct_1aca819b9ced533c195508ce746b3a85ba"></span><code class="descname">NormalizedDotProduct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct20NormalizedDotProductEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct20NormalizedDotProductEdd">
+<span class="target" id="classNormalizedDotProduct_1ab4834a6677d18173a08962341912c033"></span><code class="descname">NormalizedDotProduct</code><span class="sig-paren">(</span>double <em>sigma</em>, double <em>power</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct20NormalizedDotProductEdd" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct9envs_envsERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1ab29f0d79832f7ff43248594ce7209285"></span>Eigen::MatrixXd <code class="descname">envs_envs</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs1</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs2</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct9envs_envsERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct14envs_envs_gradERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1a88e74ac1f6081ecda34c66d396120b6d"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">envs_envs_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs1</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs2</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct14envs_envs_gradERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct10envs_strucERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1a9eefd822a1e96b4cbb27787bf7cc78f1"></span>Eigen::MatrixXd <code class="descname">envs_struc</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct10envs_strucERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct15envs_struc_gradERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1a071b2c6babfa82a2442e88a808021a32"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">envs_struc_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct15envs_struc_gradERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct17self_kernel_strucERK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1afb07f55b6a020cbb4b00f958d5ebae39"></span>Eigen::VectorXd <code class="descname">self_kernel_struc</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct17self_kernel_strucERK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct11struc_strucERK16DescriptorValuesRK16DescriptorValuesRKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1a76841fa82cb28413ab2813f1f275c232"></span>Eigen::MatrixXd <code class="descname">struc_struc</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc1</em>, <em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv416DescriptorValues" title="DescriptorValues">DescriptorValues</a> &amp;<em>struc2</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct11struc_strucERK16DescriptorValuesRK16DescriptorValuesRKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct8Kuu_gradERK17ClusterDescriptorRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1af0590d8bd1f48a3e8779296787dedb48"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuu_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> Eigen::MatrixXd &amp;<em>Kuu</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>new_hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct8Kuu_gradERK17ClusterDescriptorRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct8Kuf_gradERK17ClusterDescriptorRKNSt6vectorI9StructureEEiRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1a45dbdb66dadad0057a14f8d6048d2166"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuf_grad</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a> &amp;<em>envs</em>, <em class="property">const</em> std::vector&lt;<a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a>&gt; &amp;<em>strucs</em>, int <em>kernel_index</em>, <em class="property">const</em> Eigen::MatrixXd &amp;<em>Kuf</em>, <em class="property">const</em> Eigen::VectorXd &amp;<em>new_hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct8Kuf_gradERK17ClusterDescriptorRKNSt6vectorI9StructureEEiRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct19set_hyperparametersEN5Eigen8VectorXdE">
+<span class="target" id="classNormalizedDotProduct_1ab5d5314eccaa62f8cee44c50c2149628"></span>void <code class="descname">set_hyperparameters</code><span class="sig-paren">(</span>Eigen::VectorXd <em>new_hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct19set_hyperparametersEN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct22compute_map_coeff_pow1ERK8SparseGPi">
+<span class="target" id="classNormalizedDotProduct_1a71200e92ac1655d2c7d238eacddfeedb"></span>Eigen::MatrixXd <code class="descname">compute_map_coeff_pow1</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="bffs.html#_CPPv48SparseGP" title="SparseGP">SparseGP</a> &amp;<em>gp_model</em>, int <em>kernel_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct22compute_map_coeff_pow1ERK8SparseGPi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct22compute_map_coeff_pow2ERK8SparseGPi">
+<span class="target" id="classNormalizedDotProduct_1acc3e4756718e090b6dde819d00db75e5"></span>Eigen::MatrixXd <code class="descname">compute_map_coeff_pow2</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="bffs.html#_CPPv48SparseGP" title="SparseGP">SparseGP</a> &amp;<em>gp_model</em>, int <em>kernel_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct22compute_map_coeff_pow2ERK8SparseGPi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct28compute_mapping_coefficientsERK8SparseGPi">
+<span class="target" id="classNormalizedDotProduct_1aef6c98e26f11f91a56f6ece6a7becace"></span>Eigen::MatrixXd <code class="descname">compute_mapping_coefficients</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="bffs.html#_CPPv48SparseGP" title="SparseGP">SparseGP</a> &amp;<em>gp_model</em>, int <em>kernel_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct28compute_mapping_coefficientsERK8SparseGPi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct27compute_varmap_coefficientsERK8SparseGPi">
+<span class="target" id="classNormalizedDotProduct_1aa061754e12ae7ec036087a6dfa712a46"></span>Eigen::MatrixXd <code class="descname">compute_varmap_coefficients</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="bffs.html#_CPPv48SparseGP" title="SparseGP">SparseGP</a> &amp;<em>gp_model</em>, int <em>kernel_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct27compute_varmap_coefficientsERK8SparseGPi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv4N20NormalizedDotProduct10write_infoERNSt8ofstreamE">
+<span class="target" id="classNormalizedDotProduct_1ab0428739e1d82fc61fbcb741604053cc"></span>void <code class="descname">write_info</code><span class="sig-paren">(</span>std::ofstream &amp;<em>coeff_file</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct10write_infoERNSt8ofstreamE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Members</p>
+<dl class="member">
+<dt id="_CPPv4N20NormalizedDotProduct5sigmaE">
+<span class="target" id="classNormalizedDotProduct_1a4945384cffe08dd16fff4a931a26d05c"></span>double <code class="descname">sigma</code><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct5sigmaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N20NormalizedDotProduct4sig2E">
+<span class="target" id="classNormalizedDotProduct_1a6ae27da96f5cd1600b9a44f4ea8b3974"></span>double <code class="descname">sig2</code><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct4sig2E" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N20NormalizedDotProduct5powerE">
+<span class="target" id="classNormalizedDotProduct_1a85bb92c5c271a2555205503069b820bd"></span>double <code class="descname">power</code><a class="headerlink" href="#_CPPv4N20NormalizedDotProduct5powerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N20NormalizedDotProduct11kernel_nameE">
+<span class="target" id="classNormalizedDotProduct_1a7c79f27d6425de248d1a1ca5bd22031e"></span>std::string <code class="descname">kernel_name</code> = &quot;NormalizedDotProduct&quot;<a class="headerlink" href="#_CPPv4N20NormalizedDotProduct11kernel_nameE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
 </div>
 
 
@@ -198,7 +411,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../FAQs/FAQs.html" class="btn btn-neutral float-right" title="Frequently Asked Questions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../faqs.html" class="btn btn-neutral float-right" title="Frequently Asked Questions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="descriptors.html" class="btn btn-neutral float-left" title="Descriptors" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

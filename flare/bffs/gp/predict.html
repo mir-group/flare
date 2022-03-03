@@ -84,7 +84,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Python Code Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../bffs.html">Bayesian Force Fields</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="gp.html">Gaussian Process Force Fields</a><ul class="current">
 <li class="toctree-l4 current"><a class="current reference internal" href="#">Predict</a></li>
@@ -104,9 +104,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../utils/utils.html">Utility</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
 </ul>
@@ -154,7 +154,7 @@
     
       <li><a href="../../../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="../../flare.html">Code Documentation</a> &raquo;</li>
+          <li><a href="../../flare.html">Python Code Documentation</a> &raquo;</li>
         
           <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
         
@@ -329,7 +329,7 @@ N-length array of energies</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.predict.predict_on_structure_mgp">
-<code class="descclassname">flare.bffs.gp.predict.</code><code class="descname">predict_on_structure_mgp</code><span class="sig-paren">(</span><em>structure: flare.atoms.FLARE_Atoms</em>, <em>mgp: flare.bffs.mgp.mgp.MappedGaussianProcess</em>, <em>output=None</em>, <em>output_name=None</em>, <em>n_cpus: int = None</em>, <em>write_to_structure: bool = True</em>, <em>selective_atoms: List[int] = None</em>, <em>skipped_atom_value: Union[float</em>, <em>int] = 0</em>, <em>energy: bool = False</em><span class="sig-paren">)</span> &#x2192; Union[Tuple[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7ff8b465db80&gt;, &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7ff8b465d7f0&gt;, float], Tuple[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7ff8b465d820&gt;, &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7ff8b465d100&gt;]]<a class="headerlink" href="#flare.bffs.gp.predict.predict_on_structure_mgp" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.predict.</code><code class="descname">predict_on_structure_mgp</code><span class="sig-paren">(</span><em>structure: flare.atoms.FLARE_Atoms</em>, <em>mgp: flare.bffs.mgp.mgp.MappedGaussianProcess</em>, <em>output=None</em>, <em>output_name=None</em>, <em>n_cpus: int = None</em>, <em>write_to_structure: bool = True</em>, <em>selective_atoms: List[int] = None</em>, <em>skipped_atom_value: Union[float</em>, <em>int] = 0</em>, <em>energy: bool = False</em><span class="sig-paren">)</span> &#x2192; Union[Tuple[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f4499c3e790&gt;, &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f4499c3e9d0&gt;, float], Tuple[&lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f4499c3e0d0&gt;, &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f4499c3e670&gt;]]<a class="headerlink" href="#flare.bffs.gp.predict.predict_on_structure_mgp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assign forces to structure based on an mgp</p>
 </dd></dl>
 

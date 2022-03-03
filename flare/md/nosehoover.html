@@ -84,7 +84,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Python Code Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="md.html">ASE MD Engine</a><ul class="current">
@@ -99,9 +99,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
 </ul>
@@ -149,7 +149,7 @@
     
       <li><a href="../../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+          <li><a href="../flare.html">Python Code Documentation</a> &raquo;</li>
         
           <li><a href="md.html">ASE MD Engine</a> &raquo;</li>
         
@@ -222,16 +222,15 @@
 </tr>
 </tbody>
 </table>
-<p>Example Usage:
-&gt;&gt;&gt; nvt_dyn = NoseHoover(</p>
-<blockquote>
-<div><blockquote>
-<div>atoms=atoms,
-timestep=0.5 * units.fs,
-temperature=300. * units.kB,
-nvt_q=334.</div></blockquote>
-<p>)</p>
-</div></blockquote>
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nvt_dyn</span> <span class="o">=</span> <span class="n">NoseHoover</span><span class="p">(</span>
+    <span class="n">atoms</span><span class="o">=</span><span class="n">atoms</span><span class="p">,</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">300.</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span>
+    <span class="n">nvt_q</span><span class="o">=</span><span class="mf">334.</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <dl class="method">
 <dt id="flare.md.nosehoover.NoseHoover.step">
 <code class="descname">step</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.nosehoover.NoseHoover.step" title="Permalink to this definition">¶</a></dt>

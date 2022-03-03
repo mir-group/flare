@@ -84,7 +84,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Python Code Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="md.html">ASE MD Engine</a><ul class="current">
@@ -99,9 +99,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
 </ul>
@@ -149,7 +149,7 @@
     
       <li><a href="../../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="../flare.html">Code Documentation</a> &raquo;</li>
+          <li><a href="../flare.html">Python Code Documentation</a> &raquo;</li>
         
           <li><a href="md.html">ASE MD Engine</a> &raquo;</li>
         
@@ -258,47 +258,51 @@ MD will be interrupted and DFT will be called.</li>
 <em class="property">class </em><code class="descclassname">flare.md.lammps.</code><code class="descname">LAMMPS_MOD</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.lammps.LAMMPS_MOD" title="Permalink to this definition">¶</a></dt>
 <dd><p>A modified ASE LAMMPS calculator based on ase.lammpsrun.LAMMPS,
 to allow for more flexible input parameters, including compute,
-fix/nvt, fix/npt etc.</p>
-<p>Supported customized commands for LAMMPS input:
-<code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">mass</span> <span class="pre">(set</span> <span class="pre">by</span> <span class="pre">arg</span> <span class="pre">`masses`)</span>
-<span class="pre">package</span>
-<span class="pre">atom_style,</span> <span class="pre">bond_style,</span> <span class="pre">angle_style,</span> <span class="pre">dihedral_style,</span> <span class="pre">improper_style,</span> <span class="pre">kspace_style</span>
-<span class="pre">units</span> <span class="pre">(default:</span> <span class="pre">metal)</span>
-<span class="pre">boundary</span>
-<span class="pre">neighbor</span>
-<span class="pre">newton</span>
-<span class="pre">kim_interactions</span>
-<span class="pre">pair_style</span> <span class="pre">(default:</span> <span class="pre">lj/cut</span> <span class="pre">2.5)</span>
-<span class="pre">pair_coeff</span> <span class="pre">(default:</span> <span class="pre">*</span> <span class="pre">*</span> <span class="pre">1</span> <span class="pre">1)</span>
-<span class="pre">*compute</span>
-<span class="pre">*region</span>
-<span class="pre">*dump</span>
-<span class="pre">group</span>
-<span class="pre">fix</span>
-<span class="pre">timestep</span>
-<span class="pre">minimize</span>
-<span class="pre">run</span>
-<span class="pre">`</span></code></p>
-<p>Note:
-* additional commands needed at the beginning can be specified in the arg <cite>model_init</cite>
-* additional commands needed after “pair_coeff” can be specified in the arg <cite>model_post</cite></p>
-<p>Non-customized input commands:
-<code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">atom_modify</span> <span class="pre">sort</span> <span class="pre">0</span> <span class="pre">0.0</span>
-<span class="pre">read_data</span>
-<span class="pre">fix</span> <span class="pre">fix_nve</span> <span class="pre">all</span> <span class="pre">nve</span>
-<span class="pre">dump</span> <span class="pre">dump_all</span> <span class="pre">all</span> <span class="pre">custom</span> <span class="pre">trj_file</span> <span class="pre">(dump_period)</span> <span class="pre">id</span> <span class="pre">type</span> <span class="pre">x</span> <span class="pre">y</span> <span class="pre">z</span> <span class="pre">vx</span> <span class="pre">vy</span> <span class="pre">vz</span> <span class="pre">fx</span> <span class="pre">fy</span> <span class="pre">fz</span>
-<span class="pre">thermo_style</span> <span class="pre">custom</span> <span class="pre">(thermo_args)</span>
-<span class="pre">thermo_modify</span> <span class="pre">flush</span> <span class="pre">yes</span> <span class="pre">format</span> <span class="pre">float</span> <span class="pre">%23.16g</span>
-<span class="pre">thermo</span> <span class="pre">1</span>
-<span class="pre">`</span></code></p>
-<p>Customized parameters:
-<code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">dump_period</span>
-<span class="pre">thermo_args</span>
-<span class="pre">specorder</span>
-<span class="pre">`</span></code></p>
+region, dump, fix/nvt, fix/npt etc.</p>
+<p>The input arguments are the same as
+<a class="reference external" href="https://databases.fysik.dtu.dk/ase/ase/calculators/lammps.html#ase.calculators.lammpsrun.LAMMPS">https://databases.fysik.dtu.dk/ase/ase/calculators/lammps.html#ase.calculators.lammpsrun.LAMMPS</a></p>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atom</span>
+<span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bulk</span>
+<span class="kn">from</span> <span class="nn">flare.md.lammps</span> <span class="kn">import</span> <span class="n">LAMMPS_MOD</span>
+
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Ni&quot;</span><span class="p">,</span> <span class="n">cubic</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">Ni</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">diagonal</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">NiH</span> <span class="o">=</span> <span class="n">Ni</span> <span class="o">+</span> <span class="n">H</span>
+
+<span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;pair_style&quot;</span><span class="p">:</span> <span class="s2">&quot;lj/cut 2.5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pair_coeff&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;* * 1 1&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;compute&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 all pair/local dist&quot;</span><span class="p">,</span> <span class="s2">&quot;2 all reduce max c_1&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;velocity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;all create 300 12345 dist gaussian rot yes mom yes&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;fix&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 all nvt temp 300 300 $(100.0*dt)&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;dump_period&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;timestep&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+    <span class="s2">&quot;keep_alive&quot;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">lmp_calc</span> <span class="o">=</span> <span class="n">LAMMPS_MOD</span><span class="p">(</span>
+    <span class="n">command</span><span class="o">=&lt;</span><span class="n">lammps_executable</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;my_lammps&quot;</span><span class="p">,</span>
+    <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span>
+    <span class="n">keep_tmp_files</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">tmp_dir</span><span class="o">=</span><span class="s2">&quot;tmp&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">lmp_calc</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
+<span class="n">NiH</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">lmp_calc</span>
+<span class="n">NiH</span><span class="o">.</span><span class="n">calc</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="n">NiH</span><span class="p">,</span> <span class="n">set_atoms</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">forces</span> <span class="o">=</span> <span class="n">NiH</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Supported customized commands for LAMMPS input:</p>
+<p>Note:</p>
+<ul class="simple">
+<li>additional commands needed at the beginning can be specified in the arg <cite>model_init</cite></li>
+<li>additional commands needed after “pair_coeff” can be specified in the arg <cite>model_post</cite></li>
+</ul>
+<p>Non-customized input commands:</p>
+<p>Customized parameters:</p>
 <dl class="method">
 <dt id="flare.md.lammps.LAMMPS_MOD.calculate">
 <code class="descname">calculate</code><span class="sig-paren">(</span><em>atoms=None</em>, <em>properties=None</em>, <em>system_changes=None</em>, <em>set_atoms=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.lammps.LAMMPS_MOD.calculate" title="Permalink to this definition">¶</a></dt>

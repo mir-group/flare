@@ -88,10 +88,10 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Python Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
 </ul>
@@ -190,25 +190,20 @@
 <li class="toctree-l2"><a class="reference internal" href="install.html#requirements">Requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install.html#installation-using-pip">Installation using pip</a></li>
 <li class="toctree-l2"><a class="reference internal" href="install.html#developer-s-installation-guide">Developer’s installation guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#lammps-plugin">LAMMPS Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="install.html#sparse-gaussian-process-model">Sparse Gaussian Process model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#full-gaussian-process-model">Full Gaussian Process model</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="lammps.html">Compile LAMMPS with MGP Pair Style</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="lammps.html#download">Download</a></li>
-<li class="toctree-l2"><a class="reference internal" href="lammps.html#mpi">MPI</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="lammps.html#compiling">Compiling</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lammps.html#running">Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lammps.html#compilation-with-cmake">Compilation with CMake</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lammps.html#compilation-for-gpu-with-kokkos">Compilation for GPU with Kokkos</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="lammps.html#mpi-openmp-through-kokkos">MPI+OpenMP through Kokkos</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="lammps.html#id1">Compiling</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lammps.html#id2">Running</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="lammps.html#mpi-cuda-through-kokkos">MPI+CUDA through Kokkos</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="lammps.html#id3">Compiling</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lammps.html#id4">Running</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lammps.html#basic-usage">Basic usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lammps.html#running-on-a-gpu-with-kokkos">Running on a GPU with Kokkos</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="lammps.html#notes-on-newton-only-relevant-with-kokkos">Notes on Newton (only relevant with Kokkos)</a></li>

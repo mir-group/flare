@@ -83,10 +83,10 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Python Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">How to Cite</a></li>
 </ul>
@@ -191,25 +191,20 @@
 <li class="toctree-l3"><a class="reference internal" href="installation/install.html#requirements">Requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installation/install.html#installation-using-pip">Installation using pip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="installation/install.html#developer-s-installation-guide">Developer’s installation guide</a></li>
-<li class="toctree-l3"><a class="reference internal" href="installation/install.html#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a></li>
-<li class="toctree-l3"><a class="reference internal" href="installation/install.html#lammps-plugin">LAMMPS Plugin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/install.html#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installation/install.html#sparse-gaussian-process-model">Sparse Gaussian Process model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="installation/install.html#full-gaussian-process-model">Full Gaussian Process model</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="installation/lammps.html">Compile LAMMPS with MGP Pair Style</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#download">Download</a></li>
-<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#mpi">MPI</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#compiling">Compiling</a></li>
-<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#running">Running</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#compilation-with-cmake">Compilation with CMake</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#compilation-for-gpu-with-kokkos">Compilation for GPU with Kokkos</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#mpi-openmp-through-kokkos">MPI+OpenMP through Kokkos</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id1">Compiling</a></li>
-<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id2">Running</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#mpi-cuda-through-kokkos">MPI+CUDA through Kokkos</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id3">Compiling</a></li>
-<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#id4">Running</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#basic-usage">Basic usage</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="installation/lammps.html#running-on-a-gpu-with-kokkos">Running on a GPU with Kokkos</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="installation/lammps.html#notes-on-newton-only-relevant-with-kokkos">Notes on Newton (only relevant with Kokkos)</a></li>
@@ -265,7 +260,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Code Documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Python Code Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="flare/bffs/bffs.html">Bayesian Force Fields</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="flare/bffs/gp/gp.html">Gaussian Process Force Fields</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/predict.html">Predict</a></li>
@@ -323,25 +318,22 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">Code Documentation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">C++ Code Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="flare_pp/structure.html">Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flare_pp/bffs.html">Bayesian force fields</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flare_pp/descriptors.html">Descriptors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flare_pp/kernels.html">Kernels</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="FAQs/FAQs.html">Frequently Asked Questions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="FAQs/all.html">Frequently Asked Questions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#installation-and-packages">Installation and Packages</a></li>
-<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#gaussian-processes">Gaussian Processes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#otf-on-the-fly-training">OTF (On-the-fly) Training</a></li>
-<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#gpfa">GPFA</a></li>
-<li class="toctree-l3"><a class="reference internal" href="FAQs/all.html#mgp">MGP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faqs.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="faqs.html#installation-and-packages">Installation and Packages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faqs.html#gaussian-processes">Gaussian Processes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faqs.html#otf-on-the-fly-training">OTF (On-the-fly) Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faqs.html#gpfa">GPFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faqs.html#mgp">MGP</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contribute/contribute.html">How To Contribute</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="contribute/workflow.html">Git Workflow</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#general-workflow">General workflow</a></li>

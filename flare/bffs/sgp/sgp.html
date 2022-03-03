@@ -84,7 +84,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Code Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../flare.html">Python Code Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../bffs.html">Bayesian Force Fields</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="../gp/gp.html">Gaussian Process Force Fields</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../mgp/mgp.html">Mapped Gaussian Process</a></li>
@@ -102,9 +102,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../utils/utils.html">Utility</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../FAQs/FAQs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flare_pp/flare_pp.html">C++ Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../related.html">Applications/Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contribute/contribute.html">How To Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
 </ul>
@@ -152,7 +152,7 @@
     
       <li><a href="../../../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="../../flare.html">Code Documentation</a> &raquo;</li>
+          <li><a href="../../flare.html">Python Code Documentation</a> &raquo;</li>
         
           <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
         
@@ -206,6 +206,52 @@
 <li class="toctree-l1"><a class="reference internal" href="calculator.html">ASE Calculator of Sparse GP</a></li>
 </ul>
 </div>
+<span class="target" id="module-flare.bffs.sgp.sparse_gp"></span><dl class="class">
+<dt id="flare.bffs.sgp.sparse_gp.SGP_Wrapper">
+<em class="property">class </em><code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">SGP_Wrapper</code><span class="sig-paren">(</span><em>kernels: List[T], descriptor_calculators: List[T], cutoff: float, sigma_e: float, sigma_f: float, sigma_s: float, species_map: dict, variance_type: str = 'SOR', single_atom_energies: dict = None, energy_training=True, force_training=True, stress_training=True, max_iterations=10, opt_method='BFGS', bounds=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper class used to make the C++ sparse GP object compatible with
+OTF. Methods and properties are designed to mirror the GP class.</p>
+<dl class="staticmethod">
+<dt id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict">
+<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>in_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Need an initialized GP</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model">
+<code class="descname">write_model</code><span class="sig-paren">(</span><em>name: str</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write to .json file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood">
+<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">compute_negative_likelihood</code><span class="sig-paren">(</span><em>hyperparameters</em>, <em>sparse_gp</em>, <em>print_vals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the negative log likelihood and gradient with respect to the
+hyperparameters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad">
+<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">compute_negative_likelihood_grad</code><span class="sig-paren">(</span><em>hyperparameters</em>, <em>sparse_gp</em>, <em>print_vals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the negative log likelihood and gradient with respect to the
+hyperparameters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable">
+<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">compute_negative_likelihood_grad_stable</code><span class="sig-paren">(</span><em>hyperparameters</em>, <em>sparse_gp</em>, <em>precomputed=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the negative log likelihood and gradient with respect to the
+hyperparameters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.bffs.sgp.sparse_gp.optimize_hyperparameters">
+<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">optimize_hyperparameters</code><span class="sig-paren">(</span><em>sparse_gp</em>, <em>display_results=False</em>, <em>gradient_tolerance=0.0001</em>, <em>max_iterations=10</em>, <em>bounds=None</em>, <em>method='BFGS'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.optimize_hyperparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimize the hyperparameters of a sparse GP model.</p>
+</dd></dl>
+
 </div>
 
 
