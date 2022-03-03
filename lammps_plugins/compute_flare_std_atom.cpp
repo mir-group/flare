@@ -14,6 +14,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <omp.h>
 
 // flare++ modules
 #include "cutoffs.h"
@@ -104,10 +105,6 @@ void ComputeFlareStdAtom::compute_peratom() {
     vector_atom = stds;
   }
 
-  int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
-  double delx, dely, delz, xtmp, ytmp, ztmp, rsq;
-  int *ilist, *jlist, *numneigh, **firstneigh;
-
   double **x = atom->x;
   int *type = atom->type;
   int nlocal = atom->nlocal;
@@ -120,7 +117,16 @@ void ComputeFlareStdAtom::compute_peratom() {
 
   neighbor->build_one(list);
 
-  inum = list->inum;
+  for (int ii = 0; ii < ntotal; ii++) {
+    stds[ii] = 0.0;
+  }
+
+#pragma omp parallel
+{
+  double delx, dely, delz, xtmp, ytmp, ztmp, rsq;
+  int *ilist, *jlist, *numneigh, **firstneigh;
+
+  int inum = list->inum;
   ilist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
@@ -132,23 +138,20 @@ void ComputeFlareStdAtom::compute_peratom() {
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
   double empty_thresh = 1e-8;
 
-  for (ii = 0; ii < ntotal; ii++) {
-    stds[ii] = 0.0;
-  }
-
-  for (ii = 0; ii < inum; ii++) {
-    i = ilist[ii];
-    itype = type[i];
-    jnum = numneigh[i];
+  #pragma omp for
+  for (int ii = 0; ii < inum; ii++) {
+    int i = ilist[ii];
+    int itype = type[i];
+    int jnum = numneigh[i];
     xtmp = x[i][0];
     ytmp = x[i][1];
     ztmp = x[i][2];
     jlist = firstneigh[i];
 
     // Count the atoms inside the cutoff.
-    n_inner = 0;
+    int n_inner = 0;
     for (int jj = 0; jj < jnum; jj++) {
-      j = jlist[jj];
+      int j = jlist[jj];
       int s = type[j] - 1;
       double cutoff_val = cutoff_matrix(itype-1, s);
 
@@ -213,6 +216,7 @@ void ComputeFlareStdAtom::compute_peratom() {
     }
 
   }
+} // #pragma
 }
 
 /* ---------------------------------------------------------------------- */
