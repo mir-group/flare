@@ -26,7 +26,10 @@ class NoseHoover(MolecularDynamics):
         nvt_q (float): Q in the Nose-Hoover equations.
 
     Example Usage:
-    >>> nvt_dyn = NoseHoover(
+
+    .. code-block:: python
+
+        nvt_dyn = NoseHoover(
             atoms=atoms,
             timestep=0.5 * units.fs,
             temperature=300. * units.kB,

@@ -114,7 +114,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
 import os
 import numpy as np
 from copy import deepcopy
-from ase import Atom, Atoms
+from ase import Atom
 from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
 from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
