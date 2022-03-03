@@ -1,6 +1,11 @@
 from ase.calculators.calculator import Calculator, all_changes
 from flare.utils import NumpyEncoder
-from ._C_flare import Structure
+import warnings
+try:
+    from ._C_flare import Structure
+except Exception as e:
+    warnings.warn(f"Cannot import _C_flare: {e.__class__.__name__}: {e}")
+
 from .sparse_gp import SGP_Wrapper
 import numpy as np
 import time, json

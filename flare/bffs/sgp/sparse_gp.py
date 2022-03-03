@@ -1,12 +1,15 @@
 import json
 from time import time
 import numpy as np
-from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
 from scipy.optimize import minimize
 from typing import List
 import warnings
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
+try:
+    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
+except Exception as e:
+    warnings.warn(f"Cannot import _C_flare: {e.__class__.__name__}: {e}")
 
 
 class SGP_Wrapper:
@@ -294,7 +297,7 @@ class SGP_Wrapper:
         energy: float = None,
         stress: "ndarray" = None,
         mode: str = "specific",
-        sgp: SparseGP = None,  # for creating sgp_var
+        sgp = None,  # for creating sgp_var
         update_qr=True,
         atom_indices=[-1],
     ):
