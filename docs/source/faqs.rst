@@ -3,10 +3,12 @@ Frequently Asked Questions
 
 Installation and Packages
 -------------------------
+
 1. Can I accelerate my calculation using parallelization?
         See the section in the `Installation <https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl>`_ section.
 
-2. For developers, if your Github Action build fails from an issue related to ``gh-pages`` in the step of "Publish the docs", this may be because you did not pull the latest code before push. Please try pull and push again. If it still does not work, check `this <https://gist.github.com/mandiwise/44d1edce18f2ffb14f63>`_.
+2. Github Action fails due to Github Pages?
+        For developers, if your Github Action build fails from an issue related to ``gh-pages`` in the step of "Publish the docs", this may be because you did not pull the latest code before push. Please try pull and push again. If it still does not work, check `this <https://gist.github.com/mandiwise/44d1edce18f2ffb14f63>`_.
 
 Gaussian Processes
 ------------------
