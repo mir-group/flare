@@ -64,7 +64,7 @@ This will take a few minutes on a normal desktop computer or laptop.
 For developers, please check the [installation guide](https://mir-group.github.io/flare_pp/installation.html).
 
 ### Compiling LAMMPS
-See [lammps_plugins/README.md](https://github.com/mir-group/flare_pp/blob/master/lammps_plugins/README.md).
+See [documentation on compiling LAMMPS with FLARE](https://mir-group.github.io/flare/installation/lammps.html)
 
 ### Trouble shooting
 If you have problem compiling and installing the code, please check the [FAQs](https://mir-group.github.io/flare_pp/faqs.html) to see if your problem is covered. Otherwise, please open an issue or contact us.

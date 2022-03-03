@@ -1,6 +1,6 @@
-Compile LAMMPS with MGP Pair Style
-==================================
-Anders Johansson, Yu Xie
+Compile LAMMPS with FLARE
+=========================
+Anders Johansson
 
 Compilation with CMake
 ----------------------
