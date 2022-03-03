@@ -11,11 +11,22 @@ FLARE is an open-source Python package for creating fast and accurate interatomi
 ## Major Features
 
 <p align="center">
-  <img src="https://github.com/mir-group/flare/blob/subtree/docs/images/Flare_features.jpg?raw=true">
+  <img src="https://github.com/mir-group/flare/blob/development/docs/images/Flare_features.jpg?raw=true">
 </p>
 
+Note:
+
+We implement Sparse GP, all the kernels and descriptors in C++ with Python interface.
+
+We implement Full GP, Mapped GP, RBCM, Squared Exponential kernel and 2+3-body descriptors in Python. 
+
+Please do NOT mix them.
+
 ## Documentations and Tutorials
+
 Documentation of the code can be accessed here: https://mir-group.github.io/flare
+
+[Applications using FLARE and gallery](https://mir-group.github.io/flare/related.html)
 
 [Google Colab Tutorial of FLARE++](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). 
 The tutorial shows how to run flare++ on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
@@ -24,8 +35,9 @@ The tutorial shows how to run flare++ on energy and force data, demoing "offline
 The tutorial shows how to compile LAMMPS with FLARE pair style and uncertainty compute code, and use LAMMPS for Bayesian active learning and uncertainty-aware molecular dynamics.
 
 [Google Colab Tutorial of FLARE (2+3-body)](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
+The tutorial shows how to use flare 2+3 body descriptors and squared exponential kernel to train a Gaussian Process force field on-the-fly.
 
-The tutorials take a few minutes to run on a normal desktop computer or laptop (excluding installation time).
+All the tutorials take a few minutes to run on a normal desktop computer or laptop (excluding installation time).
 
 ## Installation
 ### Pip installation
