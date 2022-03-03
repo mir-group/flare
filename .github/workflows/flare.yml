@@ -31,6 +31,33 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    - name: Build
+      run: |
+        sudo apt install liblapacke liblapacke-dev
+        mkdir ${BUILD_DIR}
+        cd ${BUILD_DIR}
+
+        if [ "${{ matrix.omp }}" = "ON" ]; then
+          unset NO_OMP
+        else
+          export NO_OMP=1
+        fi
+
+        if [ "${{ matrix.lapack }}" = "ON" ]; then
+          unset NO_LAPACK
+        else
+          export NO_LAPACK=1
+        fi
+
+        echo "OpenMP ${{ matrix.omp }}"
+        echo "Lapack ${{ matrix.lapack }}"
+
+        cmake ..
+        cmake --build . -j
+        cp _C_flare* ../flare/bffs/sgp
+        cd ctests
+        ./tests
+
     - name: Install Sphinx and Breathe
       run: |
         sudo apt-get update
@@ -60,33 +87,6 @@ jobs:
           # Change the directory if changes in Doxyfile
           publish_dir: ./docs/build/html
       fi
-
-    - name: Build
-      run: |
-        sudo apt install liblapacke liblapacke-dev
-        mkdir ${BUILD_DIR}
-        cd ${BUILD_DIR}
-
-        if [ "${{ matrix.omp }}" = "ON" ]; then
-          unset NO_OMP
-        else
-          export NO_OMP=1
-        fi
-
-        if [ "${{ matrix.lapack }}" = "ON" ]; then
-          unset NO_LAPACK
-        else
-          export NO_LAPACK=1
-        fi
-
-        echo "OpenMP ${{ matrix.omp }}"
-        echo "Lapack ${{ matrix.lapack }}"
-
-        cmake ..
-        cmake --build . -j
-        cp _C_flare* ../flare/bffs/sgp
-        cd ctests
-        ./tests
 
     - name: Install LAMMPS
       run: |
