@@ -3,7 +3,7 @@
 # FLARE: Fast Learning of Atomistic Rare Events
 
 <p align="center">
-  <img width="659" height="303" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
+  <img width="527" height="242" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
 </p>
 
 FLARE is an open-source Python package for creating fast and accurate interatomic potentials. 
@@ -15,7 +15,7 @@ FLARE is an open-source Python package for creating fast and accurate interatomi
 </p>
 
 ## Documentations and Tutorials
-Documentation of the code can be accessed here: https://flare.readthedocs.io/
+Documentation of the code can be accessed here: https://mir-group.github.io/flare
 
 We have an introductory tutorial of FLARE in Google Colab available [here](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
 
