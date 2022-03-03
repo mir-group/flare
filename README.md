@@ -6,7 +6,7 @@
   <img width="659" height="303" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
 </p>
 
-FLARE is an open-source Python package for creating fast and accurate interatomic potentials. Documentation of the code can be accessed here: https://flare.readthedocs.io/
+FLARE is an open-source Python package for creating fast and accurate interatomic potentials. Documentation of the code can be accessed here: https://mir-group.github.io/flare/
 
 We have an introductory tutorial in Google Colab available [here](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
 
