@@ -17,11 +17,15 @@ FLARE is an open-source Python package for creating fast and accurate interatomi
 ## Documentations and Tutorials
 Documentation of the code can be accessed here: https://mir-group.github.io/flare
 
-We have an introductory tutorial of FLARE in Google Colab available [here](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
+[Google Colab Tutorial of FLARE++](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). 
+The tutorial shows how to run flare++ on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
 
-An introductory tutorial of FLARE++ in Google Colab is available [here](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). The tutorial shows how to run flare++ on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
+[Google Colab Tutorial of FLARE++ with LAMMPS](https://colab.research.google.com/drive/1qgGlfu1BlXQgSrnolS4c4AYeZ-2TaX5Y).
+The tutorial shows how to compile LAMMPS with FLARE pair style and uncertainty compute code, and use LAMMPS for Bayesian active learning and uncertainty-aware molecular dynamics.
 
-The tutorial takes a few minutes to run on a normal desktop computer or laptop (excluding installation time).
+[Google Colab Tutorial of FLARE (2+3-body)](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
+
+The tutorials take a few minutes to run on a normal desktop computer or laptop (excluding installation time).
 
 ## Installation
 ### Pip installation
