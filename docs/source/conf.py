@@ -48,8 +48,15 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinx.ext.napoleon',
     'nbsphinx',
+    'breathe',
 ]
+
+# Breathe configuration
+breathe_projects = {"flare_pp": "xml"}
+breathe_default_project = "flare_pp"
+breathe_default_members = ("members", "undoc-members")
 napoleon_use_param = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["ntemplates"]
 
