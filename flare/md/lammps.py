@@ -5,6 +5,7 @@ import glob, os
 import warnings
 from datetime import datetime
 from copy import deepcopy
+from ase import units
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.calculators.lammpsrun import LAMMPS
@@ -190,6 +191,7 @@ class LAMMPS_MD(MolecularDynamics):
 
         # Set up ASE calculator parameters
         self.params = kwargs
+        self.params["timestep"] = timestep / 1e3 / units.fs
         self.initial_params = deepcopy(kwargs)
         if "specorder" not in self.params:  # user must provide the unique species
             raise ValueError("Please set 'specorder' to a list of unique species")
