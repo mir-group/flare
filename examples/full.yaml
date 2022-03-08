@@ -1,0 +1,93 @@
+# Super cell is read from a file such as POSCAR, xyz, lammps-data
+# or any format that ASE supports
+supercell: 
+    file: test_files/4H_SiC_jittered.xyz                # File of the super cell structure 
+    format: extxyz                                      # Any format that ASE supports: https://wiki.fysik.dtu.dk/ase/ase/io/io.html
+    replicate: [1, 1, 1]                                # Replicate the super cell in the x, y, z direction
+    jitter: 0.0                                         # Amplitude of random perturbation of the atomic positions
+
+# Set up FLARE calculator with (sparse) Gaussian process
+flare_calc:
+    gp: SGP_Wrapper                                     # "SGP_Wrapper": use sparse GP. "GaussianProcess": use full GP
+    kernels:
+        - name: NormalizedDotProduct                    # Use "NormalizedDotProduct" kernel: k(p1, p2) = sigma * (p1.dot(p2)) ** power
+          sigma: 2.0                                    # Hyperparameter to be trained, sigma variance (prefactor) of the kernel
+          power: 2                                      # Hyperparameter not to be trained, power of the dot product kernel
+#        - name: SquaredExponential                     # You can use multiple kernels, the number of kernels should be the same as the number of descriptors
+#          sigma: 2.0                                   # Hyperparameter to be trained, sigma variance
+#          ls: 1.0                                      # Hyperparameter to be trained, length scale
+    descriptors:
+        - name: B2                                      # "B2" descriptor from ACE formalism. 
+          nmax: 8                                       # Number of radial basis to use
+          lmax: 4                                       # Angular momentum of spherical harmonics, indicating the resolution of angle information
+          cutoff_function: quadratic                    # Use "quadratic" cutoff function
+          radial_basis: chebyshev                       # Use "chebyshev" polynomial for radial basis
+          cutoff_matrix: [[5.0, 4.0], [4.0, 5.0]]       # (Optional) You can define different cutoffs between different species-pairs
+    energy_noise: 0.01                                  # Hyperparameter to be trained, noise of energy labels
+    forces_noise: 0.05                                  # Hyperparameter to be trained, noise of force labels
+    stress_noise: 0.005                                 # Hyperparameter to be trained, noise of stress labels
+    species:
+        - 14                                            # List all atomic numbers in the structure
+        - 6
+    single_atom_energies:                               # List the single atom energies of the corresponding species. In training, the SGP will take energy label subtracted by the single atom energies.
+        - 0
+        - 0
+    cutoff: 5.0                                         # If the "cutoff_matrix" is not set, then the "cutoff" value will be applied to all bonds. Otherwise, set the cutoff to the maximal of the cutoff_matrix
+    variance_type: local                                # Use the local energy variance for uncertainty prediction. Other options: DTC, SOR
+    max_iterations: 1                                   # Number of iterations of each hyperparameter optimization
+    use_mapping: True                                   # If True, the lammps coefficient files will be dumped, and in on-the-fly training with PyLAMMPS, it has to be True such that LAMMPS MD can be used.
+
+# Set up DFT calculator, it can be any calculator supported by ASE
+# For VASP, please set the environment variable VASP_PP_PATH to be
+# the directory of pseudo-potentials, and VASP_COMMAND to be the
+# location of the VASP executable
+# point the user to the ASE documentation
+dft_calc:
+    name: LAMMPS
+    kwargs:                                             # The "kwargs" should be the init arguments specified by ASE Calculator
+        command: "mpirun -n <n_cpus> <lammps_executable>"
+        label: sic
+        keep_tmp_files: True
+        tmp_dir: tmp
+        files: [test_files/SiC.tersoff]
+        specorder: [Si, C]
+    params:                                             # The "params" should be the parameters needed by ASE Calculator that uses calc.set(**params)
+        keep_alive: False
+        newton: "on"
+        pair_style: tersoff
+        pair_coeff: ["* * tmp/SiC.tersoff Si C"]
+        masses: ["1 28", "2 12"]
+
+# Set up On-the-fly training and MD
+otf: 
+    mode: fresh                                         # "fresh" means starting on-the-fly training from an empty GP. Other modes include "restart"
+    md_engine: PyLAMMPS                                 # ASE MD engines including VelocityVerlet, NVTBerendsen, NPTBerendsen, NPT, Langevin are supported. 
+                                                        # The "NoseHoover" is also supported, check https://mir-group.github.io/flare/flare/md/nosehoover.html.
+                                                        # "PyLAMMPS" uses LAMMPS for MD in the OTF training. Check our tutorial for using FLARE + LAMMPS, and https://mir-group.github.io/flare/flare/md/lammps.html.
+                                                        # "FakeMD" uses a given AIMD trajectory for an offline training. Check our tutorial for offline training, and https://mir-group.github.io/flare/flare/md/fake.html
+    md_kwargs:                                          # For ASE MD engines, "md_kwargs" are the init arguments. For other engines, check the tutorial and the links above. 
+        command: "mpirun -n <n_cpus> <lammps_executable>"
+        specorder: [Si, C]
+        dump_period: 1
+        pair_style: flare
+        fix: ["1 all nve"]
+        keep_alive: False
+    initial_velocity: file                              # "file" means reading initial velocities from the supercell file. You can also set a float number like 1000, then OTF will generate random velocities based on the Boltzmann distribution at 1000 K.
+    dt: 0.001                                           # Unit: ps. "0.001" means the timestep is 1 fs
+    number_of_steps: 5                                  # The total number of on-the-fly training MD steps
+    output_name: myotf                                  # The prefix of the output files of OTF. The log file will be <output_name>.out, and the DFT frames will be saved in <output_name>_dft.xyz
+    init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # The atomic environments added to GP from the initial frame
+    std_tolerance_factor: -0.02                         # The uncertainty threshold above which the DFT will be called. 
+                                                        # The negative sign means the absolute value is used, i.e. the threshold is 0.02. 
+                                                        # The positive sign means the relative value is used, i.e. the threshold is std_tolerance_factor * force_noise
+    max_atoms_added: -1                                 # Maximal number of atoms added to the GP model after each DFT call. If "-1", then there is no upper limit.
+    freeze_hyps: 1                                      # The hyperparameters are optimized up to the "freeze_hyps"th DFT call. After that, the hyperparameters are fixed.
+    write_model: 4                                      # Verbose level. "0": not write GP model to file or back up. 
+                                                        # "1": write GP model at the end of the OTF training. "2": write GP after each hyperparameter optimization.
+                                                        # "3": write GP model after each DFT call. "4": write GP model and back up all the log and json files into the <#step>_ckpt folder after each DFT call. 
+                                                        # We recommend using "4" so that you can start with any checkpoint if the training is interrupted.
+    update_style: threshold                             # "threshold": adding all the atoms above the "update_threshold" in a DFT frame. 
+                                                        # Can also be "add_n": then the "max_atoms_added" atoms with highest uncertainties will be added.
+    update_threshold: 0.01                              # Threshold for adding atoms if "update_style = threshold"
+    force_only: False                                   # If False, then train on energy, force and stress labels. If True (default), then train only on force labels.
+    store_dft_output: [[tmp/SiC.tersoff, test_files/HHe.json], ./] # Back up DFT output files
