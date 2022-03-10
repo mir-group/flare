@@ -197,12 +197,12 @@ def get_sgp_calc(flare_config):
 
     # Load sparse GP from file
     if sgp_file is not None:
-        sgp, _ = SGP_Wrapper.from_file(sgp_file)
+        sgp, kernels = SGP_Wrapper.from_file(sgp_file)
 
         # TODO: allow changing some of the parameters
 
         flare_calc = SGP_Calculator(sgp)
-        return flare_calc
+        return flare_calc, kernels
 
     kernels = flare_config.get("kernels")
     opt_algorithm = flare_config.get("opt_algorithm", "BFGS")
