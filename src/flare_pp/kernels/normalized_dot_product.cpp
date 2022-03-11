@@ -504,6 +504,10 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
         double c1 = (power - 1) * power * pow(norm_dot, power - 2);
+        if (abs(norm_dot) < empty_thresh && power < 2) {
+            throw std::invalid_argument( "Dot product of descriptors is 0, \
+                and the negative power function in force-force kernel diverges." );
+        }
         double c2 = power * pow(norm_dot, power - 1);
         par_mat(i, 0) += sig_sq * mult_fac * pow(norm_dot, power);
 
