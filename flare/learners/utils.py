@@ -418,4 +418,9 @@ def get_env_indices(
     assert (
         "target_atoms" in structure.info
     ), "The current frame does not have target_atoms"
-    return False, structure.info.get("target_atoms")
+    target_atoms = structure.info.get("target_atoms")
+    if isinstance(target_atoms, int): # length 1
+        target_atoms = [target_atoms]
+    elif target_atoms is None:
+        target_atoms = []
+    return False, target_atoms
