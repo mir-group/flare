@@ -787,7 +787,7 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   Kokkos::deep_copy(beta, beta_h);
   beta_matrices.clear();
 
-  if(0 > 1 && n_species==1){
+  if(n_species==1){
     single_species_beta = beta;
   }
   else{
