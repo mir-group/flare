@@ -146,6 +146,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   // Goal: First batch needs to be biggest to avoid extra allocs.
   {
     double beta_mem = n_species * n_descriptors * n_descriptors * 8;
+    if(n_species > 1) beta_mem += n_species*n_descriptors_single_species*n_descriptors_single_species*8;
     double neigh_mem = 1.0*n_atoms * max_neighs * 4;
     double lmp_atom_mem = ignum * (18 * 8 + 4 * 4); // 2xf, v, x, virial, tag, type, mask, image
     double mem_per_atom = 8 * (
@@ -153,6 +154,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         + 3*n_descriptors // B2, betaB2, w
         + 2 // evdwls, B2_norm2s
         + 0.5 // numneigh_short
+        + 0.5 // is_single_species
         + max_neighs * (
             n_max*4 // g
             + n_harmonics*4 // Y
@@ -203,6 +205,10 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
       d_numneigh_short = decltype(d_numneigh_short)();
       d_numneigh_short = Kokkos::View<int*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::numneighs_short") ,batch_size);
+
+      is_single_species = decltype(is_single_species)();
+      is_single_species = IntView1D(Kokkos::ViewAllocateWithoutInitializing("FLARE:is_single_species"), batch_size);
+      if(n_species == 1) Kokkos::deep_copy(is_single_species, 1);
     }
 
     // reallocate per-neighbor views
@@ -233,10 +239,28 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     // compute short neighbor list
       Kokkos::parallel_for("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size), *this);
 
+    // compute maximium number of short neighbors for this batch
+    int batch_max_neighs;
+    {
+      auto d_numneigh_short = this->d_numneigh_short;
+      Kokkos::parallel_reduce("FLARE: find batch_max_neighs", batch_size,
+          KOKKOS_LAMBDA (const int ii, int &curr_max){
+            const int nshort = d_numneigh_short(ii);
+            if(nshort > curr_max) curr_max = nshort;
+          },
+          Kokkos::Max<int>(batch_max_neighs));
+    }
+
+    // determine which atoms are only surrounded by the same species
+      Kokkos::parallel_for("FLARE: determine single species",
+          Kokkos::TeamPolicy<DeviceType, TagDetermineSingleSpecies>(batch_size, TEAM_SIZE, vector_length),
+          *this
+      );
+
     // compute basis functions Rn and Ylm
       Kokkos::parallel_for("FLARE: R and Y",
           Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-                          {0,0}, {batch_size, max_neighs}, {1,max_neighs}),
+                          {0,0}, {batch_size, batch_max_neighs}, {1,batch_max_neighs}),
           *this
       );
 
@@ -374,11 +398,13 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
   ScratchView2D gscratch(team_member.thread_scratch(0), 4, n_max);
   ScratchView2D Yscratch(team_member.thread_scratch(0), 4, n_harmonics);
 
+  const int i_is_single_species = is_single_species(ii);
+
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int jj){
 
       int j = d_neighbors_short(ii,jj);
       j &= NEIGHMASK;
-      int s = type[j] - 1;
+      int s = i_is_single_species ? 0 : type[j] - 1;
 
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
@@ -435,13 +461,23 @@ void PairFLAREKokkos<DeviceType>::operator()(TagB2, const int ii, const int nnl)
   double np12 = n_radial + 0.5;
   int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
   int n2 = x - n1*(np12 - 1 - 0.5*n1);
+  int realnnl = nnl;
+
+  if(n_species > 1 && is_single_species(ii)){
+    int s1 = n1 / n_max;
+    n1 = n1 - s1*n_max;
+    int s2 = n2 / n_max;
+    n2 = n2 - s2*n_max;
+    int n1n2 = n2 + n1*(n_max-(n1+1)*0.5);
+    realnnl = n1n2*(l_max+1) + l;
+  }
 
   double tmp = 0.0;
   for(int m = 0; m < 2*l+1; m++){
     int lm = l*l + m;
     tmp += single_bond(ii, n1, lm) * single_bond(ii, n2, lm);
   }
-  B2(ii, nnl) = tmp;
+  B2(ii, realnnl) = tmp;
 }
 
 template <class DeviceType>
@@ -458,11 +494,14 @@ void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_me
       beta_B2(ii,nnl) = 0.0;
   });
 
+  int desc_size = is_single_species(ii) ? n_descriptors_single_species : n_descriptors;
+  View3D thisbeta = is_single_species(ii) ? single_species_beta : beta;
+
   // do mat-vec product in chunks to enable level 0 scratch
   // even when descriptors are too big
-  for(int starti = 0; starti < n_descriptors; starti += B2_chunk_size){
+  for(int starti = 0; starti < desc_size; starti += B2_chunk_size){
     int stopi = starti + B2_chunk_size;
-    stopi = n_descriptors < stopi ? n_descriptors : stopi;
+    stopi = desc_size < stopi ? desc_size : stopi;
 //        Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
 //            if(ii==0) printf("%d %d %d\n", n_descriptors, starti, stopi);
 //        });
@@ -472,10 +511,10 @@ void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_me
     team_member.team_barrier();
 
     // TODO: team-wise GEMV?
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int x){
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, desc_size), [&] (int x){
         F_FLOAT tmp = 0.0;
         Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, stopi - starti), [&](int y, F_FLOAT &tmp){
-            tmp += beta(itype, x, y+starti)*B2scratch(y);
+            tmp += thisbeta(itype, x, y+starti)*B2scratch(y);
         }, tmp);
         Kokkos::single(Kokkos::PerThread(team_member), [&] () {
             beta_B2(ii, x) += tmp;
@@ -489,27 +528,27 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_member) const{
   int ii = team_member.league_rank();
-  double empty_thresh = 1e-8;
+  int desc_size = is_single_species(ii) ? n_descriptors_single_species : n_descriptors;
 
   F_FLOAT tmp = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, desc_size), [&] (int x, F_FLOAT &tmp){
       tmp += B2(ii, x) * B2(ii, x);
   }, tmp);
   B2_norm2s(ii) = tmp;
 
   tmp = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, desc_size), [&] (int x, F_FLOAT &tmp){
       tmp += B2(ii, x) * beta_B2(ii, x);
   }, tmp);
   evdwls(ii) = tmp/B2_norm2s(ii);
 
   if (d_numneigh_short(ii) == 0) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x){
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, desc_size), [&] (int x){
         w(ii, x) = 0;
     });
     evdwls(ii) = 0;
   } else {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x){
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, desc_size), [&] (int x){
         w(ii, x) = 2*(evdwls(ii) * B2(ii,x) - beta_B2(ii,x))/B2_norm2s(ii);
     });
   }
@@ -517,20 +556,22 @@ void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_mem
     const int i = d_ilist[ii+startatom];
     d_eatom[i] = evdwls(ii);
   }
-
 }
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::operator()(Tagu, const int ii, const int n1, const int lm) const{
+void PairFLAREKokkos<DeviceType>::operator()(Tagu, const int ii, int n1, const int lm) const{
   int l = sqrt(1.0*lm);
   //int l = Kokkos::Experimental::sqrt(lm);
 
+  n1 = is_single_species(ii) ? n1 % n_max : n1;
+  const int n2_max = is_single_species(ii) ? n_max : n_radial;
+
   F_FLOAT un1lm = 0.0;
-  for(int n2 = 0; n2 < n_radial; n2++){
+  for(int n2 = 0; n2 < n2_max; n2++){
     int i = n2 > n1 ? n1 : n2;
     int j = n2 > n1 ? n2 : n1;
-    int n1n2 = j + i*(n_radial - 0.5*(i+1));
+    int n1n2 = j + i*(n2_max - 0.5*(i+1));
     int n1n2l = n1n2*(l_max+1)+l;
 
     un1lm += single_bond(ii, n2, lm) * w(ii, n1n2l) * (1 + (n1 == n2 ? 1 : 0));
@@ -545,13 +586,16 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
   const int i = d_ilist[ii+startatom];
   const int jnum = d_numneigh_short(ii);
 
-  ScratchView2D uscratch(team_member.team_scratch(0), n_radial, n_harmonics);
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_bond), [&] (int nlm){
+  const int u_size = is_single_species(ii) ? n_max*n_harmonics : n_bond;
+
+  ScratchView2D uscratch(team_member.team_scratch(0), u_size/n_harmonics, n_harmonics);
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, u_size), [&] (int nlm){
       int n = nlm / n_harmonics;
       int lm = nlm - n*n_harmonics;
       uscratch(n, lm) = u(ii, n, lm);
   });
   team_member.team_barrier();
+
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
       int jj = k/3;
@@ -560,12 +604,13 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
       int j = d_neighbors_short(ii,jj);
       j &= NEIGHMASK;
       int s = type[j] - 1;
+      const int n_start = is_single_species(ii) ? 0 : s*n_max;
 
       F_FLOAT tmp = 0.0;
       Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &tmp){
           int n = nlm / n_harmonics;
           int lm = nlm - n*n_harmonics;
-          int radial_index = s*n_max + n;
+          int radial_index = n_start + n;
           tmp += single_bond_grad(ii, jj, c, n, lm)*uscratch(radial_index, lm);
       }, tmp);
       partial_forces(ii,jj,c) = tmp;
@@ -627,6 +672,54 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
   });
 }
 
+template <class DeviceType>
+KOKKOS_INLINE_FUNCTION
+void PairFLAREKokkos<DeviceType>::operator()(TagSingleSpeciesBeta, const int s, const int innl, const int jnnl) const{
+  int x = innl/(l_max+1);
+  int l = innl-x*(l_max+1);
+  double np12 = n_max + 0.5;
+  int n1 = -std::sqrt(np12*np12 - 2*x) + np12;
+  int n2 = x - n1*(np12 - 1 - 0.5*n1);
+
+  int sn1 = s*n_max+n1;
+  int sn2 = s*n_max+n2;
+  int sn1sn2 = sn2 + sn1*(n_radial-(sn1+1)*0.5);
+  int isnsnl = sn1sn2*(l_max+1) + l;
+
+  x = jnnl/(l_max+1);
+  l = jnnl-x*(l_max+1);
+  np12 = n_max + 0.5;
+  n1 = -std::sqrt(np12*np12 - 2*x) + np12;
+  n2 = x - n1*(np12 - 1 - 0.5*n1);
+
+  sn1 = s*n_max+n1;
+  sn2 = s*n_max+n2;
+  sn1sn2 = sn2 + sn1*(n_radial-(sn1+1)*0.5);
+  int jsnsnl = sn1sn2*(l_max+1) + l;
+
+  single_species_beta(s, innl, jnnl) = beta(s, isnsnl, jsnsnl);
+}
+
+template <class DeviceType>
+KOKKOS_INLINE_FUNCTION
+void PairFLAREKokkos<DeviceType>::operator()(TagDetermineSingleSpecies, const MemberType team_member) const{
+  const int ii = team_member.league_rank();
+  const int jnum = d_numneigh_short(ii);
+  const int i = d_ilist[ii+startatom];
+  const int itype = type[i];
+
+  int has_multi_species = 0;
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (int jj, int &has_multi_species){
+      int j = d_neighbors_short(ii,jj);
+      j &= NEIGHMASK;
+      const int jtype = type[j];
+
+      has_multi_species += jtype!=itype;
+  }, has_multi_species);
+  is_single_species(ii) = !has_multi_species;
+}
+
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -680,8 +773,9 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   n_radial = n_species * n_max;
   n_bond = n_radial * n_harmonics;
   n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  n_descriptors_single_species = (n_max * (n_max + 1) / 2) * (l_max + 1);
 
-  beta = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, typename DeviceType::memory_space>("beta", n_species, n_descriptors, n_descriptors);
+  beta = View3D("beta", n_species, n_descriptors, n_descriptors);
   auto beta_h = Kokkos::create_mirror_view(beta);
   for(int s = 0; s < n_species; s++){
     for(int i = 0; i < n_descriptors; i++){
@@ -692,6 +786,18 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   }
   Kokkos::deep_copy(beta, beta_h);
   beta_matrices.clear();
+
+  if(0 > 1 && n_species==1){
+    single_species_beta = beta;
+  }
+  else{
+    single_species_beta = View3D("single_species_beta", n_species, n_descriptors_single_species, n_descriptors_single_species);
+    Kokkos::parallel_for("FLARE: extract single-species betas",
+        Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagSingleSpeciesBeta>(
+                        {0,0,0}, {n_species, n_descriptors_single_species, n_descriptors_single_species}),
+        *this
+    );
+  }
 
   cutoff_matrix_k = View2D("cutoff_matrix", n_species, n_species);
   auto cutoff_matrix_h = Kokkos::create_mirror_view(cutoff_matrix_k);

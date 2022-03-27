@@ -33,6 +33,8 @@ struct Tagw{};
 struct Tagu{};
 struct TagF{};
 struct TagStoreF{};
+struct TagDetermineSingleSpecies{};
+struct TagSingleSpeciesBeta{};
 
 namespace LAMMPS_NS {
 
@@ -65,13 +67,19 @@ class PairFLAREKokkos : public PairFLARE {
   void operator()(TagNorm2, const MemberType) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(Tagu, const int, const int, const int) const;
+  void operator()(Tagu, const int, int, const int) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagF, const MemberType) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagStoreF, const MemberType, EV_FLOAT&) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagSingleSpeciesBeta, const int, const int, const int) const;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagDetermineSingleSpecies, const MemberType) const;
 
   // short neigh list
   KOKKOS_INLINE_FUNCTION
@@ -105,6 +113,7 @@ class PairFLAREKokkos : public PairFLARE {
   int batch_size = 0, startatom, n_batches, approx_batch_size;
 
 
+  using IntView1D = Kokkos::View<int*, Kokkos::LayoutRight, DeviceType>;
   using View1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, DeviceType>;
   using View2D = Kokkos::View<F_FLOAT**, Kokkos::LayoutRight, DeviceType>;
   using View3D = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, DeviceType>;
@@ -125,9 +134,10 @@ class PairFLAREKokkos : public PairFLARE {
 
   int need_dup;
 
+  IntView1D is_single_species;
   View1D B2_norm2s, evdwls;
   View2D B2, beta_B2, w, cutoff_matrix_k;
-  View3D beta, single_bond, u, partial_forces;
+  View3D beta, single_bond, u, partial_forces, single_species_beta;
   gYView4D g, Y;
   gYView4DRA g_ra, Y_ra;
   View5D single_bond_grad;
@@ -147,6 +157,7 @@ class PairFLAREKokkos : public PairFLARE {
   int nlocal,nall,eflag,vflag;
 
   int inum, max_neighs, n_harmonics, n_radial, n_bond;
+  int n_descriptors_single_species;
   Kokkos::View<int**,DeviceType> d_neighbors_short;
   Kokkos::View<int*,DeviceType> d_numneigh_short;
 
