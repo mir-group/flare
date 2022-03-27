@@ -792,11 +792,13 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   }
   else{
     single_species_beta = View3D("single_species_beta", n_species, n_descriptors_single_species, n_descriptors_single_species);
+    copymode=1;
     Kokkos::parallel_for("FLARE: extract single-species betas",
         Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagSingleSpeciesBeta>(
                         {0,0,0}, {n_species, n_descriptors_single_species, n_descriptors_single_species}),
         *this
     );
+    copymode=0;
   }
 
   cutoff_matrix_k = View2D("cutoff_matrix", n_species, n_species);
