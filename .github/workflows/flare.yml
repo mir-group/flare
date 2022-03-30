@@ -89,7 +89,7 @@ jobs:
 
     - name: Install LAMMPS
       run: |
-        git clone --depth 1 https://github.com/lammps/lammps.git lammps
+        git clone -b stable_29Sep2021_update2 --depth 1 https://github.com/lammps/lammps.git lammps
         cd lammps_plugins
         ./install.sh $(pwd)/../lammps
         cd ..
