@@ -90,10 +90,10 @@ class OTF:
             'otf_run'.
         max_atoms_added (int, optional): Number of atoms added each time
             DFT is called. Defaults to 1.
-        freeze_hyps (int, optional): Specifies the number of times the
-            hyperparameters of the GP are optimized. After this many
-            updates to the GP, the hyperparameters are frozen.
-            Defaults to 10.
+        train_hyps (tuple, optional): Specifies the range of steps the
+            hyperparameters of the GP are optimized. If the number of DFT
+            calls is in this range, the hyperparameters are frozen.
+            Defaults to (None, None) which means always training.
         min_steps_with_model (int, optional): Minimum number of steps the
             model takes in between calls to DFT. Defaults to 0.
         dft_kwargs ([type], optional): Additional arguments which are
@@ -139,7 +139,7 @@ class OTF:
         init_atoms: List[int] = None,
         output_name: str = "otf_run",
         max_atoms_added: int = 1,
-        freeze_hyps: int = 10,
+        train_hyps: tuple = (0, 1),
         min_steps_with_model: int = 0,
         update_style: str = "add_n",
         update_threshold: float = None,
@@ -210,7 +210,11 @@ class OTF:
             self.max_atoms_added = self.noa
         else:
             self.max_atoms_added = max_atoms_added
-        self.freeze_hyps = freeze_hyps
+
+        if train_hyps[1] == "inf":
+            train_hyps[1] = np.inf
+        self.train_hyps = train_hyps
+
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
@@ -603,7 +607,7 @@ class OTF:
         self.gp.set_L_alpha()
 
         # train model
-        if (self.dft_count - 1) < self.freeze_hyps:
+        if self.train_hyps[0] <= self.dft_count <= self.train_hyps[1]:
             self.train_gp()
 
         # update mgp model
@@ -611,7 +615,7 @@ class OTF:
             self.flare_calc.build_map()
 
         # write model
-        if (self.dft_count - 1) < self.freeze_hyps:
+        if self.train_hyps[0] <= self.dft_count <= self.train_hyps[1]:
             if self.write_model == 2:
                 self.write_gp()
         if self.write_model == 3:

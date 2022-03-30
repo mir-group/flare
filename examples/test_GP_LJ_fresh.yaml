@@ -50,5 +50,5 @@ otf: # On-the-fly training and MD
     init_atoms: [0, 1, 2, 3]
     std_tolerance_factor: 1.0
     max_atoms_added: -1
-    freeze_hyps: 10
+    train_hyps: (3, 5)
     write_model: 4
