@@ -60,7 +60,7 @@ otf:
     init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     std_tolerance_factor: -0.02
     max_atoms_added: -1
-    train_hyps: (None, 1)
+    train_hyps: [2, inf]
     write_model: 4
     update_style: threshold
     update_threshold: 0.01
