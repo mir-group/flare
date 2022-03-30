@@ -202,7 +202,7 @@
 It needs to be used adjointly with ASE MD engine.</p>
 <dl class="class">
 <dt id="flare.learners.otf.OTF">
-<em class="property">class </em><code class="descclassname">flare.learners.otf.</code><code class="descname">OTF</code><span class="sig-paren">(</span><em>atoms, dt, number_of_steps, dft_calc, md_engine, md_kwargs, flare_calc=None, trajectory=None, prev_pos_init: ndarray = None, rescale_steps: List[int] = [], rescale_temps: List[int] = [], write_model: int = 0, force_only: bool = True, std_tolerance_factor: float = 1, skip: int = 0, init_atoms: List[int] = None, output_name: str = 'otf_run', max_atoms_added: int = 1, freeze_hyps: int = 10, min_steps_with_model: int = 0, update_style: str = 'add_n', update_threshold: float = None, dft_kwargs=None, store_dft_output: Tuple[Union[str, List[str]], str] = None, build_mode='bayesian', **kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">flare.learners.otf.</code><code class="descname">OTF</code><span class="sig-paren">(</span><em>atoms, dt, number_of_steps, dft_calc, md_engine, md_kwargs, flare_calc=None, trajectory=None, prev_pos_init: ndarray = None, rescale_steps: List[int] = [], rescale_temps: List[int] = [], write_model: int = 0, force_only: bool = True, std_tolerance_factor: float = 1, skip: int = 0, init_atoms: List[int] = None, output_name: str = 'otf_run', max_atoms_added: int = 1, train_hyps: tuple = (0, 1), min_steps_with_model: int = 0, update_style: str = 'add_n', update_threshold: float = None, dft_kwargs=None, store_dft_output: Tuple[Union[str, List[str]], str] = None, build_mode='bayesian', **kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.otf.OTF" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Trains a Gaussian process force field on the fly during</dt>
 <dd>molecular dynamics.</dd>
@@ -265,10 +265,10 @@ atoms are used to train the initial GP. Defaults to None.</li>
 ‘otf_run’.</li>
 <li><strong>max_atoms_added</strong> (<em>int, optional</em>) – Number of atoms added each time
 DFT is called. Defaults to 1.</li>
-<li><strong>freeze_hyps</strong> (<em>int, optional</em>) – Specifies the number of times the
-hyperparameters of the GP are optimized. After this many
-updates to the GP, the hyperparameters are frozen.
-Defaults to 10.</li>
+<li><strong>train_hyps</strong> (<em>tuple, optional</em>) – Specifies the range of steps the
+hyperparameters of the GP are optimized. If the number of DFT
+calls is in this range, the hyperparameters are frozen.
+Defaults to (None, None) which means always training.</li>
 <li><strong>min_steps_with_model</strong> (<em>int, optional</em>) – Minimum number of steps the
 model takes in between calls to DFT. Defaults to 0.</li>
 <li><strong>dft_kwargs</strong> (<em>[type], optional</em>) – Additional arguments which are
