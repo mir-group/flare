@@ -468,6 +468,11 @@ void PairFLAREKokkos<DeviceType>::operator()(TagB2, const int ii, const int nnl)
     n1 = n1 - s1*n_max;
     int s2 = n2 / n_max;
     n2 = n2 - s2*n_max;
+
+    const int i = d_ilist[ii+startatom];
+    const int itype = type[i];
+    if( (s1+1) != itype || (s2+1) != itype ) return;
+
     int n1n2 = n2 + n1*(n_max-(n1+1)*0.5);
     realnnl = n1n2*(l_max+1) + l;
   }
@@ -848,7 +853,7 @@ void PairFLAREKokkos<DeviceType>::init_style()
   if (memstr != NULL) {
     maxmem = std::atof(memstr) * 1.0e9;
   }
-  printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
+  if(comm->me==0 || comm->me==comm->nprocs-1) printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
 }
 
 
