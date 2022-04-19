@@ -483,7 +483,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         assert np.allclose(lmp_energy, gp_energy, atol=1e-3)
         assert np.allclose(lmp_forces, gp_forces, atol=1e-3)
         assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
-        assert np.allclose(lmp_stds, gp_stds[0], atol=1e-4)
+        assert np.allclose(lmp_stds[:, 0], gp_stds[:, 0], atol=1e-4), (lmp_stds[:, 0], gp_stds[:, 0])
     except:
         # if the trajectory does not match sgp, this is probably because
         # 1. the dumped atomic positions in LAMMPS lose precision, or
