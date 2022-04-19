@@ -260,6 +260,10 @@ class OTF:
 
         self.write_model = write_model
 
+        # backward compatibility
+        if "freeze_hyps" in kwargs:
+            raise Exception("freeze_hyps no long supported, please use train_hyps")
+
     def run(self):
         """
         Performs an on-the-fly training run.
