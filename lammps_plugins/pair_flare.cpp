@@ -128,7 +128,7 @@ void PairFLARE::compute(int eflag, int vflag) {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power, 
+    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
            n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
 
     // Continue if the environment is empty.
@@ -195,7 +195,8 @@ void PairFLARE::allocate() {
 
   // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
   for (int i = 1; i <= n; i++)
-    setflag[i][i] = 1;
+    for (int j = 1; j <= n; j++)
+      setflag[i][j] = 1;
 
   // Create cutsq array (used in pair.cpp)
   memory->create(cutsq, n + 1, n + 1, "pair:cutsq");
