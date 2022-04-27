@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Helper functions for GP &mdash; flare 1.0.0 documentation</title>
+  <title>Helper functions for GP &mdash; flare 1.1.0 documentation</title>
   
 
   
@@ -275,7 +275,7 @@ and the force labels in the training set.</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_distance_mat_pack">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_distance_mat_pack</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c42d580&gt;</em>, <em>name: str</em>, <em>s1: int</em>, <em>e1: int</em>, <em>s2: int</em>, <em>e2: int</em>, <em>same: bool</em>, <em>kernel</em>, <em>cutoffs</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_distance_mat_pack" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_distance_mat_pack</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf04e5b0&gt;</em>, <em>name: str</em>, <em>s1: int</em>, <em>e1: int</em>, <em>s2: int</em>, <em>e2: int</em>, <em>same: bool</em>, <em>kernel</em>, <em>cutoffs</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_distance_mat_pack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute covariance matrix element between set1 and set2
 :param hyps: list of hyper-parameters
 :param name: name of the gp instance.
@@ -289,7 +289,7 @@ and the force labels in the training set.</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_force_block">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_force_block</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c2156d0&gt;</em>, <em>name: str</em>, <em>kernel</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_force_block</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf071850&gt;</em>, <em>name: str</em>, <em>kernel</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block" title="Permalink to this definition">¶</a></dt>
 <dd><p>parallel version of get_ky_mat
 :param hyps: list of hyper-parameters
 :param name: name of the gp instance.
@@ -309,7 +309,7 @@ and the force labels in the training set.</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_force_block_pack">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_force_block_pack</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c42d850&gt;</em>, <em>name: str</em>, <em>s1: int</em>, <em>e1: int</em>, <em>s2: int</em>, <em>e2: int</em>, <em>same: bool</em>, <em>kernel</em>, <em>cutoffs</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block_pack" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_force_block_pack</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf04e880&gt;</em>, <em>name: str</em>, <em>s1: int</em>, <em>e1: int</em>, <em>s2: int</em>, <em>e2: int</em>, <em>same: bool</em>, <em>kernel</em>, <em>cutoffs</em>, <em>hyps_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block_pack" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute covariance matrix element between set1 and set2
 :param hyps: list of hyper-parameters
 :param name: name of the gp instance.
@@ -330,7 +330,7 @@ and the force labels in the training set.</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_ky_and_hyp">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_ky_and_hyp</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c215c70&gt;</em>, <em>name</em>, <em>kernel_grad</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_ky_and_hyp</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf071ee0&gt;</em>, <em>name</em>, <em>kernel_grad</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp" title="Permalink to this definition">¶</a></dt>
 <dd><p>parallel version of get_ky_and_hyp</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -356,7 +356,7 @@ and the force labels in the training set.</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_ky_and_hyp_pack</code><span class="sig-paren">(</span><em>name</em>, <em>s1</em>, <em>e1</em>, <em>s2</em>, <em>e2</em>, <em>same: bool</em>, <em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c215d00&gt;</em>, <em>kernel_grad</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_ky_and_hyp_pack</code><span class="sig-paren">(</span><em>name</em>, <em>s1</em>, <em>e1</em>, <em>s2</em>, <em>e2</em>, <em>same: bool</em>, <em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf071d00&gt;</em>, <em>kernel_grad</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack" title="Permalink to this definition">¶</a></dt>
 <dd><p>computes a block of ky matrix and its derivative to hyper-parameter
 If the cpu set up is None, it uses as much as posible cpus</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -420,7 +420,7 @@ from covariance matrix and its gradient</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_neg_like">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_neg_like</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c215e20&gt;</em>, <em>name: str</em>, <em>force_kernel</em>, <em>logger_name=None</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_neg_like</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf071550&gt;</em>, <em>name: str</em>, <em>force_kernel</em>, <em>logger_name=None</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute the log likelihood and its gradients
 :param hyps: list of hyper-parameters
 :type hyps: np.ndarray
@@ -450,7 +450,7 @@ from covariance matrix and its gradient</p>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.get_neg_like_grad">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_neg_like_grad</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c215b80&gt;</em>, <em>name: str</em>, <em>kernel_grad</em>, <em>logger_name: str = None</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like_grad" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">get_neg_like_grad</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf071f10&gt;</em>, <em>name: str</em>, <em>kernel_grad</em>, <em>logger_name: str = None</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like_grad" title="Permalink to this definition">¶</a></dt>
 <dd><p>compute the log likelihood and its gradients</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -478,7 +478,7 @@ sets computed</li>
 
 <dl class="function">
 <dt id="flare.bffs.gp.gp_algebra.kernel_distance_mat">
-<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">kernel_distance_mat</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f795c42d8b0&gt;</em>, <em>name: str</em>, <em>kernel</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.kernel_distance_mat" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flare.bffs.gp.gp_algebra.</code><code class="descname">kernel_distance_mat</code><span class="sig-paren">(</span><em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7f9ccf04e8e0&gt;</em>, <em>name: str</em>, <em>kernel</em>, <em>cutoffs=None</em>, <em>hyps_mask=None</em>, <em>n_cpus=1</em>, <em>n_sample=100</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.kernel_distance_mat" title="Permalink to this definition">¶</a></dt>
 <dd><p>parallel version of get_ky_mat
 :param hyps: list of hyper-parameters
 :param name: name of the gp instance.

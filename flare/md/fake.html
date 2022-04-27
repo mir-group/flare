@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Fake MD &mdash; flare 1.0.0 documentation</title>
+  <title>Fake MD &mdash; flare 1.1.0 documentation</title>
   
 
   
@@ -207,7 +207,7 @@ real DFT for ground truth calculation, fake DFT reads the forces from the given
 trajectory as ground truth.</p>
 <span class="target" id="module-flare.md.fake"></span><dl class="class">
 <dt id="flare.md.fake.FakeDFT">
-<em class="property">class </em><code class="descclassname">flare.md.fake.</code><code class="descname">FakeDFT</code><span class="sig-paren">(</span><em>filename=None</em>, <em>format=None</em>, <em>index=':'</em>, <em>io_kwargs={}</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.fake.FakeDFT" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">flare.md.fake.</code><code class="descname">FakeDFT</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.fake.FakeDFT" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fake DFT to read energy/forces/stress from a trajectory file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -227,7 +227,7 @@ trajectory. Default is “:”, which reads the whole trajectory.</li>
 
 <dl class="class">
 <dt id="flare.md.fake.FakeMD">
-<em class="property">class </em><code class="descclassname">flare.md.fake.</code><code class="descname">FakeMD</code><span class="sig-paren">(</span><em>atoms</em>, <em>timestep</em>, <em>trajectory=None</em>, <em>filename=None</em>, <em>format=None</em>, <em>index=':'</em>, <em>io_kwargs={}</em>, <em>logfile=None</em>, <em>loginterval=1</em>, <em>append_trajectory=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.fake.FakeMD" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">flare.md.fake.</code><code class="descname">FakeMD</code><span class="sig-paren">(</span><em>atoms</em>, <em>timestep</em>, <em>trajectory=None</em>, <em>filenames=None</em>, <em>format=None</em>, <em>index=':'</em>, <em>io_kwargs={}</em>, <em>logfile=None</em>, <em>loginterval=1</em>, <em>append_trajectory=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.fake.FakeMD" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fake MD for offline training with OTF module and AIMD trajectories</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -236,7 +236,7 @@ trajectory. Default is “:”, which reads the whole trajectory.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>atoms</strong> (<em>ASE Atoms</em>) – The list of atoms.</li>
 <li><strong>timestep</strong> (<em>float</em>) – The time step.</li>
-<li><strong>filename</strong> (<em>str</em>) – The name of the trajectory file to read in.</li>
+<li><strong>filenames</strong> (<em>list</em>) – The name of the trajectory file to read in.</li>
 <li><strong>format</strong> (<em>str</em>) – The format supported by ASE IO.</li>
 <li><strong>index</strong> (<em>float or str</em>) – The indices of frames to read from the
 trajectory. Default is “:”, which reads the whole trajectory.</li>
