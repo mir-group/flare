@@ -37,11 +37,7 @@ flare_calc:
 # Set up DFT calculator, it can be any calculator supported by ASE
 dft_calc:
     name: FakeDFT
-    kwargs: 
-        filename: fake_dft.xyz
-        format: extxyz
-        index: ":"
-        io_kwargs: {}
+    kwargs: {} 
     params: {}
 
 # Set up On-the-fly training and MD
@@ -49,7 +45,7 @@ otf:
     mode: fresh
     md_engine: Fake
     md_kwargs: 
-        filename: fake_dft.xyz
+        filenames: [fake_dft.xyz]
         format: extxyz
         index: ":"
         io_kwargs: {}

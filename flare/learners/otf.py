@@ -189,6 +189,7 @@ class OTF:
         self.dft_calc = dft_calc
         self.dft_step = True
         self.dft_count = 0
+        self.dft_frames = []
 
         # set md
         self.dt = dt
@@ -395,7 +396,11 @@ class OTF:
             if self.write_model == 3:
                 self.checkpoint()
 
-        self.output.conclude_run()
+        if self.md_engine == "Fake":
+            extra_strings = self.md.data_distribution(self.dft_frames)
+        else:
+            extra_strings = None
+        self.output.conclude_run(extra_strings)
 
         if self.write_model >= 1:
             self.write_gp()
@@ -538,6 +543,7 @@ class OTF:
                 # if the file is in a subdirectory like dft/OUTCAR, then copy it out
                 filename = ofile.split("/")[-1]
                 copyfile(ofile, dest + "/" + dt_string + filename)
+        self.dft_frames.append(self.curr_step)
 
     def update_gp(
         self,
