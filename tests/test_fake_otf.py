@@ -187,18 +187,18 @@ def test_otf_parser(md_engine):
     comp2 = otf_traj.force_list[-1][1, 0]
     assert comp1 != comp2
 
-    for tmpdir in [md_engine + "*ckpt_*", "myotf*ckpt_*", "direct*ckpt_*", "tmp*"]:
-        for f in glob.glob(tmpdir):
-            shutil.rmtree(f)
-
-    for tmpfile in [
-        "*.flare",
-        "log.*",
-        md_engine + "*",
-        "myotf*",
-        "direct*",
-        "*.json",
-        "*.tersoff",
-    ]:
-        for f in glob.glob(tmpfile):
-            os.remove(f)
+#    for tmpdir in [md_engine + "*ckpt_*", "myotf*ckpt_*", "direct*ckpt_*", "tmp*"]:
+#        for f in glob.glob(tmpdir):
+#            shutil.rmtree(f)
+#
+#    for tmpfile in [
+#        "*.flare",
+#        "log.*",
+#        md_engine + "*",
+#        "myotf*",
+#        "direct*",
+#        "*.json",
+#        "*.tersoff",
+#    ]:
+#        for f in glob.glob(tmpfile):
+#            os.remove(f)

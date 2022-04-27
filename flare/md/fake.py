@@ -4,6 +4,7 @@ from copy import deepcopy
 from ase.md.md import MolecularDynamics
 from ase.io import iread, read
 from ase.calculators.calculator import Calculator, all_changes
+from flare.io.output import compute_mae
 
 
 class FakeMD(MolecularDynamics):
@@ -46,6 +47,9 @@ class FakeMD(MolecularDynamics):
 
         # skip the first frame
         next(self.fake_trajectory)
+        self.dft_energy = 0
+        self.dft_forces = np.zeros((len(atoms), 3))
+        self.dft_stress = np.zeros(6)
 
     def step(self):
         # read the next frame
@@ -60,11 +64,16 @@ class FakeMD(MolecularDynamics):
         new_array_keys = list(new_atoms.arrays.keys())
         for key in array_keys:  # first remove the original positions, numbers, etc.
             self.atoms.set_array(key, None)
+
         for key in new_array_keys:  # then set new positions, numbers, etc.
             self.atoms.set_array(key, new_atoms.get_array(key))
 
         for key in self.atoms.info:
             self.atoms.info[key] = new_atoms.info.get(key, None)
+
+        self.atoms.arrays.pop("forces")
+        self.atoms.info.pop("free_energy", None)
+        self.atoms.info.pop("stress", None)
 
         self.atoms.set_cell(new_atoms.cell)
 
@@ -75,7 +84,12 @@ class FakeMD(MolecularDynamics):
         ]
 
         self.atoms.calc.reset()
-        self.atoms.get_forces()
+        gp_energy = self.atoms.get_potential_energy()
+        gp_forces = self.atoms.get_forces()
+        gp_stress = self.atoms.get_stress()
+        self.dft_energy = new_atoms.get_potential_energy()
+        self.dft_forces = new_atoms.get_forces()
+        self.dft_stress = new_atoms.get_stress()
 
         self.curr_step += 1
         self.atoms.info["step"] = self.curr_step
