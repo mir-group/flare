@@ -51,6 +51,9 @@ class SGP_Calculator(Calculator):
             self.gp_model.descriptor_calculators,
         )
 
+        self.predict_on_structure(structure_descriptor)
+
+    def predict_on_structure(self, structure_descriptor):
         # Predict on structure.
         if self.gp_model.variance_type == "SOR":
             self.gp_model.sparse_gp.predict_SOR(structure_descriptor)
@@ -67,7 +70,7 @@ class SGP_Calculator(Calculator):
 
         # Add back single atom energies
         if self.gp_model.single_atom_energies is not None:
-            for spec in coded_species:
+            for spec in structure_descriptor.species:
                 self.results["energy"] += self.gp_model.single_atom_energies[spec]
 
         # Convert stress to ASE format.
