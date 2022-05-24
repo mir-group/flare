@@ -741,6 +741,14 @@ void PairFLAREKokkos<DeviceType>::init_style()
     maxmem = std::atof(memstr) * 1.0e9;
   }
   printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
+
+  char *fluxstr = std::getenv("FLUX");
+  if (fluxstr != NULL) {
+    flux_mode=1;
+    if(comm->me==0 || comm->me==comm->nprocs-1){
+      printf("flare/kk is in flux mode, per-atom virial will be wonky\n");
+    }
+  }
 }
 
 
@@ -754,9 +762,9 @@ void PairFLAREKokkos<DeviceType>::v_tally(E_FLOAT (&v)[6], const int &i, const i
 {
   const int VFLAG = vflag_either;
 
-  // The eatom and vatom arrays are duplicated for OpenMP, atomic for CUDA, and neither for Serial
-
   auto a_vatom = vscatter.access();
+
+  // fx is dUi/dxij etc.
 
   if (VFLAG) {
     const E_FLOAT v0 = delx*fx;
@@ -776,19 +784,35 @@ void PairFLAREKokkos<DeviceType>::v_tally(E_FLOAT (&v)[6], const int &i, const i
     }
 
     if (vflag_atom) {
-      a_vatom(i,0) += 0.5*v0;
-      a_vatom(i,1) += 0.5*v1;
-      a_vatom(i,2) += 0.5*v2;
-      a_vatom(i,3) += 0.5*v3;
-      a_vatom(i,4) += 0.5*v4;
-      a_vatom(i,5) += 0.5*v5;
+      if(flux_mode){
+        // following 10.1103/PhysRevB.92.094301,
+        // Ji = sum_j rij dUj/drij vi
+        // or Jj = sum_i rij dUi/drij vj (implemented here)
+        // this per-atom virial will be multiplied by the velocity
+        // to calculate the flux, and it gets reverse-commed
+        // to where vj is available
+        a_vatom(j,0) += v0;
+        a_vatom(j,1) += v1;
+        a_vatom(j,2) += v2;
+        a_vatom(j,3) += v3;
+        a_vatom(j,4) += v4;
+        a_vatom(j,5) += v5;
+      }
+      else{
+        a_vatom(i,0) += 0.5*v0;
+        a_vatom(i,1) += 0.5*v1;
+        a_vatom(i,2) += 0.5*v2;
+        a_vatom(i,3) += 0.5*v3;
+        a_vatom(i,4) += 0.5*v4;
+        a_vatom(i,5) += 0.5*v5;
 
-      a_vatom(j,0) += 0.5*v0;
-      a_vatom(j,1) += 0.5*v1;
-      a_vatom(j,2) += 0.5*v2;
-      a_vatom(j,3) += 0.5*v3;
-      a_vatom(j,4) += 0.5*v4;
-      a_vatom(j,5) += 0.5*v5;
+        a_vatom(j,0) += 0.5*v0;
+        a_vatom(j,1) += 0.5*v1;
+        a_vatom(j,2) += 0.5*v2;
+        a_vatom(j,3) += 0.5*v3;
+        a_vatom(j,4) += 0.5*v4;
+        a_vatom(j,5) += 0.5*v5;
+      }
     }
   }
 }

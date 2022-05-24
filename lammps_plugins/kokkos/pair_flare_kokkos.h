@@ -101,6 +101,8 @@ class PairFLAREKokkos : public PairFLARE {
   DAT::tdual_efloat_1d k_eatom;
   DAT::tdual_virial_array k_vatom;
 
+  int flux_mode = 0;
+
   double maxmem = 12.0e9;
   int batch_size = 0, startatom, n_batches, approx_batch_size;
 
