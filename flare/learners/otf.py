@@ -520,9 +520,20 @@ class OTF:
 
         # Calculate DFT energy, forces, and stress.
         # Note that ASE and QE stresses differ by a minus sign.
-        forces = self.atoms.get_forces()
-        stress = self.atoms.get_stress()
-        energy = self.atoms.get_potential_energy()
+        if "forces" in self.dft_calc.implemented_properties:
+            forces = self.atoms.get_forces()
+        else:
+            forces = None
+
+        if "stress" in self.dft_calc.implemented_properties:
+            stress = self.atoms.get_stress()
+        else:
+            stress = None
+
+        if "energy" in self.dft_calc.implemented_properties:
+            energy = self.atoms.get_potential_energy()
+        else:
+            energy = None
 
         # write wall time of DFT calculation
         self.dft_count += 1
