@@ -19,7 +19,7 @@ public:
 
 };
 
-using KernelTypes = ::testing::Types<SquaredExponential, NormalizedDotProduct>;
+using KernelTypes = ::testing::Types<SquaredExponential, NormalizedDotProduct, DotProduct>;
 TYPED_TEST_SUITE(KernelTest, KernelTypes);
 
 TYPED_TEST(KernelTest, TimeSelfKernel) {
@@ -140,6 +140,11 @@ TYPED_TEST(KernelTest, SqExpGrad) {
 TYPED_TEST(KernelTest, EnergyForceKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
 
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
+
   // TODO: Systematically test all implemented descriptors and kernels.
 
   //   ThreeBody three_body_desc =
@@ -212,6 +217,11 @@ TYPED_TEST(KernelTest, EnergyForceKernel) {
 TYPED_TEST(KernelTest, ForceEnergyKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
 
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
+
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
   Eigen::MatrixXd positions = this->positions;
@@ -265,6 +275,11 @@ TYPED_TEST(KernelTest, ForceEnergyKernel) {
 
 TYPED_TEST(KernelTest, EnergyStressKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
+
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
 
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
@@ -337,6 +352,11 @@ TYPED_TEST(KernelTest, EnergyStressKernel) {
 TYPED_TEST(KernelTest, StressEnergyKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
 
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
+
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
   Eigen::MatrixXd positions = this->positions;
@@ -407,6 +427,11 @@ TYPED_TEST(KernelTest, StressEnergyKernel) {
 
 TYPED_TEST(KernelTest, ForceForceKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
+
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
 
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
@@ -485,6 +510,11 @@ TYPED_TEST(KernelTest, ForceForceKernel) {
 
 TYPED_TEST(KernelTest, ForceStressKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
+
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
 
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
@@ -580,6 +610,11 @@ TYPED_TEST(KernelTest, ForceStressKernel) {
 
 TYPED_TEST(KernelTest, StressForceKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
+
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
 
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
@@ -677,6 +712,11 @@ TYPED_TEST(KernelTest, StressForceKernel) {
 
 TYPED_TEST(KernelTest, StressStressKernel) {
   TypeParam kernel(this->hyp0, this->hyp1);
+
+  std::string kernel_name(typeid(kernel).name());
+  if (kernel_name.find(std::string("DotProduct")) == std::string::npos) {
+    GTEST_SKIP();
+  }
 
   Eigen::MatrixXd cell = this->cell;
   std::vector<int> species = this->species;
