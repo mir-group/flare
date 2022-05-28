@@ -79,10 +79,7 @@ class FLARE_Atoms(Atoms):
 
     @property
     def potential_energy(self):
-        if "energy" in self.calc.implemented_properties:
-            return self.get_potential_energy()
-        else:
-            return None
+        return self.get_potential_energy()
 
     @potential_energy.setter
     def potential_energy(self, energy_label):
@@ -101,17 +98,12 @@ class FLARE_Atoms(Atoms):
 
     @property
     def stress(self):
-        if "stress" in self.calc.implemented_properties:
-            return self.get_stress()
-        else:
-            return None
+        return self.get_stress()
 
     @stress.setter
     def stress(self, stress_array):
         if (stress_array is None) or (len(stress_array) == 6):
             self.label_setter("stress", stress_array)
-        elif len(stress_array) == 0:
-            self.label_setter("stress", None)
         else:
             raise ValueError("stress_array should be None or array of length 6")
 
