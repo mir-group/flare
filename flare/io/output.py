@@ -645,15 +645,17 @@ def compute_mae(
 
     # compute energy/forces/stress mean absolute error and value
     if not force_only:
-        e_mae = np.mean(np.abs(dft_energy - gp_energy))
-        e_mav = np.mean(np.abs(dft_energy))
-        f.info(f"energy mae: {e_mae:.4f} eV")
-        f.info(f"energy mav: {e_mav:.4f} eV")
+        if dft_energy is not None and gp_energy is not None:
+            e_mae = np.mean(np.abs(dft_energy - gp_energy))
+            e_mav = np.mean(np.abs(dft_energy))
+            f.info(f"energy mae: {e_mae:.4f} eV")
+            f.info(f"energy mav: {e_mav:.4f} eV")
 
-        s_mae = np.mean(np.abs(dft_stress - gp_stress))
-        s_mav = np.mean(np.abs(dft_stress))
-        f.info(f"stress mae: {s_mae:.4f} eV/A^3")
-        f.info(f"stress mav: {s_mav:.4f} eV/A^3")
+        if dft_stress is not None and gp_stress is not None:
+            s_mae = np.mean(np.abs(dft_stress - gp_stress))
+            s_mav = np.mean(np.abs(dft_stress))
+            f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+            f.info(f"stress mav: {s_mav:.4f} eV/A^3")
 
     f_mae = np.mean(np.abs(dft_forces - gp_forces))
     f_mav = np.mean(np.abs(dft_forces))
