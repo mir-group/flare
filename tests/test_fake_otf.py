@@ -46,8 +46,8 @@ def test_traj_with_varying_sizes(md_engine):
         config = yaml.safe_load(f)
 
     config["supercell"]["file"] = "test_files/sic_dft.xyz"
-    config["dft_calc"]["kwargs"]["filename"] = "test_files/sic_dft.xyz"
-    config["otf"]["md_kwargs"]["filename"] = "test_files/sic_dft.xyz"
+    #config["dft_calc"]["kwargs"]["filename"] = "test_files/sic_dft.xyz"
+    config["otf"]["md_kwargs"]["filenames"] = ["test_files/sic_dft.xyz"]
     config["otf"]["output_name"] = md_engine
 
     # Run fake OTF
@@ -141,8 +141,8 @@ def test_otf_md(md_engine):
         config = yaml.safe_load(f)
 
     config["supercell"]["file"] = "myotf_dft.xyz"
-    config["dft_calc"]["kwargs"]["filename"] = "myotf_dft.xyz"
-    config["otf"]["md_kwargs"]["filename"] = "myotf_dft.xyz"
+    #config["dft_calc"]["kwargs"]["filename"] = "myotf_dft.xyz"
+    config["otf"]["md_kwargs"]["filenames"] = ["myotf_dft.xyz"]
     config["otf"]["output_name"] = "direct"
     config["otf"]["build_mode"] = "direct"
     fresh_start_otf(config)
@@ -199,6 +199,7 @@ def test_otf_parser(md_engine):
         "direct*",
         "*.json",
         "*.tersoff",
+        "*.xyz",
     ]:
         for f in glob.glob(tmpfile):
             os.remove(f)

@@ -266,6 +266,7 @@ class LAMMPS_MD(MolecularDynamics):
             order=False,
             colnames=self.dump_cols.split(),
             index=":",
+            prismobj=lmp_calc.prism,
         )
 
         # Update the time steps that have been run

@@ -2,8 +2,9 @@ import warnings
 import numpy as np
 from copy import deepcopy
 from ase.md.md import MolecularDynamics
-from ase.io import iread, read
+from ase.io import iread, read, write
 from ase.calculators.calculator import Calculator, all_changes
+from flare.io.output import compute_mae
 
 
 class FakeMD(MolecularDynamics):
@@ -13,7 +14,7 @@ class FakeMD(MolecularDynamics):
     Args:
         atoms (ASE Atoms): The list of atoms.
         timestep (float): The time step.
-        filename (str): The name of the trajectory file to read in.
+        filenames (list): The name of the trajectory file to read in.
         format (str): The format supported by ASE IO.
         index (float or str): The indices of frames to read from the 
             trajectory. Default is ":", which reads the whole trajectory.
@@ -24,7 +25,7 @@ class FakeMD(MolecularDynamics):
         atoms,
         timestep,
         trajectory=None,
-        filename=None,
+        filenames=None,
         format=None,
         index=":",
         io_kwargs={},
@@ -32,7 +33,18 @@ class FakeMD(MolecularDynamics):
         loginterval=1,
         append_trajectory=False,
     ):
-        self.fake_trajectory = iread(filename, index=index, format=format, **io_kwargs)
+
+        self.stat_trj = filenames
+        self.stat_num = []
+        all_data = []
+        for fn in filenames:
+            trj = read(fn, format=format, index=":", **io_kwargs)
+            self.stat_num.append(len(trj))
+            all_data += trj
+        write("All_Data.xyz", all_data)
+        del all_data
+
+        self.fake_trajectory = iread("All_Data.xyz", index=index, format="extxyz")
         self.curr_step = 0  # TODO: This might be wrong if `index` does not start from 0
 
         super().__init__(
@@ -46,6 +58,9 @@ class FakeMD(MolecularDynamics):
 
         # skip the first frame
         next(self.fake_trajectory)
+        self.dft_energy = 0
+        self.dft_forces = np.zeros((len(atoms), 3))
+        self.dft_stress = np.zeros(6)
 
     def step(self):
         # read the next frame
@@ -60,11 +75,16 @@ class FakeMD(MolecularDynamics):
         new_array_keys = list(new_atoms.arrays.keys())
         for key in array_keys:  # first remove the original positions, numbers, etc.
             self.atoms.set_array(key, None)
+
         for key in new_array_keys:  # then set new positions, numbers, etc.
             self.atoms.set_array(key, new_atoms.get_array(key))
 
         for key in self.atoms.info:
             self.atoms.info[key] = new_atoms.info.get(key, None)
+
+        self.atoms.arrays.pop("forces")
+        self.atoms.info.pop("free_energy", None)
+        self.atoms.info.pop("stress", None)
 
         self.atoms.set_cell(new_atoms.cell)
 
@@ -75,10 +95,26 @@ class FakeMD(MolecularDynamics):
         ]
 
         self.atoms.calc.reset()
-        self.atoms.get_forces()
+        gp_energy = self.atoms.get_potential_energy()
+        gp_forces = self.atoms.get_forces()
+        gp_stress = self.atoms.get_stress()
+        self.dft_energy = new_atoms.get_potential_energy()
+        self.dft_forces = new_atoms.get_forces()
+        self.dft_stress = new_atoms.get_stress()
 
         self.curr_step += 1
         self.atoms.info["step"] = self.curr_step
+
+    def data_distribution(self, dft_frames):
+        N = len(self.stat_trj)
+        cum_sum = np.zeros(N + 1)
+        cum_sum[1:] = np.cumsum(self.stat_num)
+        dft_frames = np.array(dft_frames)
+        stat_strings = ["Data distribution:"]
+        for i in range(N):
+            dft_num = np.sum((dft_frames < cum_sum[i+1]) * (dft_frames >= cum_sum[i]))
+            stat_strings.append(f"{self.stat_trj[i]}: {dft_num}")
+        return stat_strings
 
 
 class FakeDFT(Calculator):
@@ -94,12 +130,8 @@ class FakeDFT(Calculator):
 
     implemented_properties = ["energy", "forces", "stress"]
 
-    def __init__(self, filename=None, format=None, index=":", io_kwargs={}, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.filename = filename
-        self.index = index
-        self.format = format
-        self.io_kwargs = io_kwargs
 
     def calculate(
         self,
@@ -117,9 +149,7 @@ class FakeDFT(Calculator):
 
         step = atoms.info.get("step", 0)
 
-        fake_trajectory = read(
-            self.filename, index=self.index, format=self.format, **self.io_kwargs
-        )
+        fake_trajectory = read("All_Data.xyz", index=":", format="extxyz")
         fake_frame = fake_trajectory[step]
         assert np.allclose(atoms.positions, fake_frame.positions), (
             atoms.positions[0],

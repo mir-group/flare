@@ -45,8 +45,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("mean_efs", &Structure::mean_efs)
       .def_readwrite("variance_efs", &Structure::variance_efs)
       .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
-      .def_readonly("descriptors", &Structure::descriptors)
-      .def_readonly("descriptor_calculators",
+      .def_readwrite("descriptors", &Structure::descriptors)
+      .def_readwrite("descriptor_calculators",
                     &Structure::descriptor_calculators)
       .def("compute_descriptors", &Structure::compute_descriptors)
       .def("wrap_positions", &Structure::wrap_positions)
@@ -73,6 +73,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("neighbor_counts", &DescriptorValues::neighbor_counts)
       .def_readwrite("cumulative_neighbor_counts",
                      &DescriptorValues::cumulative_neighbor_counts)
+      .def_readwrite("cumulative_type_count",
+                     &DescriptorValues::cumulative_type_count)
       .def_readwrite("atom_indices", &DescriptorValues::atom_indices)
       .def_readwrite("neighbor_indices", &DescriptorValues::neighbor_indices)
       .def_readwrite("n_clusters_by_type",
