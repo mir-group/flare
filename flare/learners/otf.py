@@ -758,8 +758,13 @@ class OTF:
         dct["flare_calc"] = self.flare_name
 
         # dump dft calculator as pickle
-        with open(self.dft_name, "wb") as f:
-            pickle.dump(self.dft_calc, f)
+        try:
+            with open(self.dft_name, "wb") as f:
+                pickle.dump(self.dft_calc, f)
+        except AttributeError:
+            with open(self.dft_name + ".json", "w") as f:
+                json.dump(self.dft_calc.todict(), f, cls=NumpyEncoder)
+
         dct["dft_calc"] = self.dft_name
 
         for key in ["output", "md"]:
@@ -795,8 +800,12 @@ class OTF:
         dct["atoms"] = read(dct["atoms"])
         dct["flare_calc"] = flare_calc
 
-        with open(dct["dft_calc"], "rb") as f:
-            dct["dft_calc"] = pickle.load(f)
+        try:
+            with open(dct["dft_calc"], "rb") as f:
+                dct["dft_calc"] = pickle.load(f)
+        except:
+            with open(dct["dft_calc"] + ".json", "r") as f:
+                dct["dft_calc"] = json.loads(f.readline())
 
         new_otf = OTF(**dct)
         new_otf._kernels = _kernels
