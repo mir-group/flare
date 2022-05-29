@@ -3,6 +3,7 @@
 #include "y_grad.h"
 #include "sparse_gp.h"
 #include "b2.h"
+#include "b2_embed.h"
 #include "b2_simple.h"
 #include "b2_norm.h"
 #include "b3.h"
@@ -44,8 +45,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("mean_efs", &Structure::mean_efs)
       .def_readwrite("variance_efs", &Structure::variance_efs)
       .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
-      .def_readonly("descriptors", &Structure::descriptors)
-      .def_readonly("descriptor_calculators",
+      .def_readwrite("descriptors", &Structure::descriptors)
+      .def_readwrite("descriptor_calculators",
                     &Structure::descriptor_calculators)
       .def("compute_descriptors", &Structure::compute_descriptors)
       .def("wrap_positions", &Structure::wrap_positions)
@@ -59,6 +60,7 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("n_types", &DescriptorValues::n_types)
       .def_readwrite("n_atoms", &DescriptorValues::n_atoms)
       .def_readwrite("volume", &DescriptorValues::volume)
+      .def_readwrite("single_bond_vals", &DescriptorValues::single_bond_vals)
       .def_readwrite("descriptors", &DescriptorValues::descriptors)
       .def_readwrite("descriptor_force_dervs",
                      &DescriptorValues::descriptor_force_dervs)
@@ -72,6 +74,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("neighbor_counts", &DescriptorValues::neighbor_counts)
       .def_readwrite("cumulative_neighbor_counts",
                      &DescriptorValues::cumulative_neighbor_counts)
+      .def_readwrite("cumulative_type_count",
+                     &DescriptorValues::cumulative_type_count)
       .def_readwrite("atom_indices", &DescriptorValues::atom_indices)
       .def_readwrite("neighbor_indices", &DescriptorValues::neighbor_indices)
       .def_readwrite("n_clusters_by_type",
@@ -117,6 +121,22 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("cutoff_hyps", &B2::cutoff_hyps)
       .def_readonly("cutoffs", &B2::cutoffs)
       .def_readonly("descriptor_settings", &B2::descriptor_settings);
+
+  py::class_<B2_Embed, Descriptor>(m, "B2_Embed")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &, const Eigen::MatrixXd &>())
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &,
+                    const Eigen::MatrixXd &, const Eigen::MatrixXd &>())
+      .def_readonly("radial_basis", &B2_Embed::radial_basis)
+      .def_readonly("cutoff_function", &B2_Embed::cutoff_function)
+      .def_readonly("radial_hyps", &B2_Embed::radial_hyps)
+      .def_readonly("cutoff_hyps", &B2_Embed::cutoff_hyps)
+      .def_readonly("cutoffs", &B2_Embed::cutoffs)
+      .def_readonly("descriptor_settings", &B2_Embed::descriptor_settings)
+      .def_readonly("embed_coeffs", &B2_Embed::embed_coeffs);
 
   py::class_<B2_Simple, Descriptor>(m, "B2_Simple")
       .def(py::init<const std::string &, const std::string &,
