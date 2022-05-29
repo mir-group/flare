@@ -174,6 +174,7 @@ DescriptorValues B2 ::compute_struc(Structure &structure) {
     species_counter(s)++;
     neighbor_counter(s) += n_neigh;
   }
+  desc.single_bond_vals = single_bond_vals;
 
   return desc;
 }
