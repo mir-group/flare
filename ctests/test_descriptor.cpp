@@ -1,3 +1,4 @@
+#include "b2_embed.h"
 #include "b3.h"
 #include "descriptor.h"
 #include "test_structure.h"
@@ -52,8 +53,9 @@ TYPED_TEST(DescTest, RotationTest) {
   std::vector<int> descriptor_settings{this->n_species, this->N, this->L};
   std::vector<Descriptor *> descriptors;
 
-  TypeParam desc(this->radial_string, this->cutoff_string, this->radial_hyps, 
-                  this->cutoff_hyps, descriptor_settings);
+  TypeParam desc;
+  desc = TypeParam(this->radial_string, this->cutoff_string, this->radial_hyps, 
+                   this->cutoff_hyps, descriptor_settings);
   descriptors.push_back(&desc);
 
   Structure struc1 = Structure(this->cell, this->species, this->positions, this->cutoff, descriptors);
@@ -71,6 +73,64 @@ TYPED_TEST(DescTest, RotationTest) {
   }
 }
 
+template <typename T>
+class DescEmbedTest : public StructureTest {
+public:
+  using List = std::list<T>;
+
+  // Choose arbitrary rotation angles.
+  double xrot = 1.28;
+  double yrot = -3.21;
+  double zrot = 0.42;
+
+  Eigen::MatrixXd rotated_pos;
+  Eigen::MatrixXd rotated_cell;
+
+  // Define rotation matrices.
+  Eigen::MatrixXd Rx{3, 3}, Ry{3, 3}, Rz{3, 3}, R{3, 3};
+  DescEmbedTest() {
+    Rx << 1, 0, 0, 0, cos(xrot), -sin(xrot), 0, sin(xrot), cos(xrot);
+    Ry << cos(yrot), 0, sin(yrot), 0, 1, 0, -sin(yrot), 0, cos(yrot);
+    Rz << cos(zrot), -sin(zrot), 0, sin(zrot), cos(zrot), 0, 0, 0, 1;
+    R = Rx * Ry * Rz;
+    rotated_pos = positions * R.transpose();
+    rotated_cell = cell * R.transpose();
+  }
+};
+
+
+using DescEmbedTypes = ::testing::Types<B2_Embed>;
+TYPED_TEST_SUITE(DescEmbedTest, DescEmbedTypes);
+
+//TEST_P(DescRotTest, RotationTest) {
+TYPED_TEST(DescEmbedTest, RotationEmbedTest) {
+  // Set up B1/2/3 descriptors
+  std::vector<int> descriptor_settings{this->n_species, this->N, this->L};
+  std::vector<Descriptor *> descriptors;
+
+  TypeParam desc;
+  Eigen::MatrixXd embed_coeffs = Eigen::MatrixXd::Random(3, this->n_species * this->N * (this->L + 1));
+  desc = TypeParam(this->radial_string, this->cutoff_string, this->radial_hyps, 
+                   this->cutoff_hyps, descriptor_settings, embed_coeffs);
+
+  descriptors.push_back(&desc);
+
+  Structure struc1 = Structure(this->cell, this->species, this->positions, this->cutoff, descriptors);
+  Structure struc2 =
+      Structure(this->rotated_cell, this->species, this->rotated_pos, this->cutoff, descriptors);
+
+  // Check that the descriptors are rotationally invariant.
+  double d1, d2;
+
+  std::cout << "n_descriptors=" << struc1.descriptors[0].n_descriptors << std::endl;
+  for (int i = 0; i < struc1.descriptors.size(); i++) {
+    for (int n = 0; n < struc1.descriptors[i].n_descriptors; n++) {
+      d1 = struc1.descriptors[i].descriptors[0](0, n);
+      d2 = struc2.descriptors[i].descriptors[0](0, n);
+      EXPECT_NEAR(d1, d2, 1e-10);
+    }
+  }
+}
 //INSTANTIATE_TEST_SUITE_P(DescBodies, DescRotTest, testing::Values(1, 2, 3));
 
   // TEST_F(DescriptorTest, SingleBond) {
