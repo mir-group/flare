@@ -69,6 +69,41 @@ def test_otf_md(md_engine):
 
 
 @pytest.mark.parametrize("md_engine", md_list)
+def test_otf_warm(md_engine):
+    # Modify the config for different MD engines
+    with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
+        config = yaml.safe_load(f)
+
+    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp")
+
+    if md_engine == "PyLAMMPS":
+        config["flare_calc"]["use_mapping"] = True
+        config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
+    else:
+        config["flare_calc"]["use_mapping"] = False
+        config["otf"]["md_engine"] = md_engine
+        config["otf"]["md_kwargs"] = {}
+
+    config["otf"]["output_name"] = md_engine
+
+    config["flare_calc"] = {"gp": "SGP_Wrapper", "file": md_engine + "_flare.json"}
+
+    print("warm start")
+
+    # Run OTF
+    fresh_start_otf(config)
+
+    print("done warm start")
+
+    # Check that the GP forces change.
+    output_name = f"{md_engine}.out"
+    otf_traj = OtfAnalysis(output_name)
+    # comp1 = otf_traj.force_list[0][1, 0]
+    # comp2 = otf_traj.force_list[-1][1, 0]
+    # assert (comp1 != comp2)
+
+
+@pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):
     with open("../examples/test_restart.yaml", "r") as f:
         config = yaml.safe_load(f)

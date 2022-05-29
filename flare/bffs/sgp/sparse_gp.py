@@ -7,7 +7,7 @@ import warnings
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 try:
-    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
+    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2, DotProduct
 except Exception as e:
     warnings.warn(f"Cannot import _C_flare: {e.__class__.__name__}: {e}")
 
@@ -57,7 +57,7 @@ class SGP_Wrapper:
         # prepare a new sGP for variance mapping
         self.sgp_var = None
         if isinstance(
-            kernels[0], NormalizedDotProduct
+            kernels[0], (NormalizedDotProduct, DotProduct)
         ):  # TODO: adapt this to multiple kernels
             if kernels[0].power == 1:
                 self.sgp_var_flag = "self"
@@ -159,6 +159,8 @@ class SGP_Wrapper:
         for kern in self.sparse_gp.kernels:
             if isinstance(kern, NormalizedDotProduct):
                 kernel_list.append(("NormalizedDotProduct", kern.sigma, kern.power))
+            elif isinstance(kern, DotProduct):
+                kernel_list.append(("DotProduct", kern.sigma, kern.power))
             else:
                 raise NotImplementedError
         out_dict["kernels"] = kernel_list
@@ -168,6 +170,8 @@ class SGP_Wrapper:
             for kern in self.sgp_var_kernels:
                 if isinstance(kern, NormalizedDotProduct):
                     kernel_list.append(("NormalizedDotProduct", kern.sigma, kern.power))
+                elif isinstance(kern, DotProduct):
+                    kernel_list.append(("DotProduct", kern.sigma, kern.power))
                 else:
                     raise NotImplementedError
             out_dict["sgp_var_kernels"] = kernel_list
@@ -212,10 +216,13 @@ class SGP_Wrapper:
         kernel_list = in_dict["kernels"]
         assert len(kernel_list) == 1
         kernel_hyps = kernel_list[0]
-        assert kernel_hyps[0] == "NormalizedDotProduct"
+        assert kernel_hyps[0] in ["NormalizedDotProduct", "DotProduct"]
         sigma = float(kernel_hyps[1])
         power = int(kernel_hyps[2])
-        kernel = NormalizedDotProduct(sigma, power)
+        if kernel_hyps[0] == "NormalizedDotProduct":
+            kernel = NormalizedDotProduct(sigma, power)
+        elif kernel_hyps[0] == "DotProduct":
+            kernel = DotProduct(sigma, power)
         kernels = [kernel]
 
         # Recover descriptor from checkpoint.
@@ -398,10 +405,10 @@ class SGP_Wrapper:
         assert (len(old_kernels) == 1) and (
             kernel_idx == 0
         ), "Not support multiple kernels"
-        assert isinstance(old_kernels[0], NormalizedDotProduct)
+        assert isinstance(old_kernels[0], (NormalizedDotProduct, DotProduct))
 
         power = 1
-        new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
+        new_kernels = [old_kernels[0].__class__(old_kernels[0].sigma, power)]
 
         # Build a power=1 SGP from scratch
         if self.sgp_var is None:
@@ -471,12 +478,12 @@ class SGP_Wrapper:
             assert len(hyps) == len(self.sparse_gp.kernels) + 3
             kernels = []
             for k, kern in enumerate(self.sparse_gp.kernels):
-                assert isinstance(kern, NormalizedDotProduct)
+                assert isinstance(kern, (NormalizedDotProduct, DotProduct))
                 if new_powers is not None:
                     power = new_powers[k]
                 else:
                     power = kern.power
-                kernels.append(NormalizedDotProduct(hyps[k], power))
+                kernels.append(kern.__class__(hyps[k], power))
         else:
             kernels = new_kernels
 
@@ -599,7 +606,7 @@ def optimize_hyperparameters(
     initial_guess = sparse_gp.hyperparameters
     precompute = True
     for kern in sparse_gp.kernels:
-        if not isinstance(kern, NormalizedDotProduct):
+        if not isinstance(kern, (NormalizedDotProduct, DotProduct)):
             precompute = False
             break
     if precompute:

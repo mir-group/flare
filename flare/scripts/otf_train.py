@@ -1,4 +1,4 @@
-import time, os, shutil, glob, subprocess, sys
+import time, os, shutil, glob, subprocess, sys, json
 from copy import deepcopy
 import pytest
 import pkgutil, pyclbr
@@ -114,11 +114,13 @@ def get_gp_calc(flare_config):
 
     # Load GP from file
     if gp_file is not None:
-        gp, _ = GaussianProcess.from_file(gp_file)
-
-        # TODO: allow changing some of the parameters
-
-        flare_calc = FLARE_Calculator(gp)
+        with open(gp_file, "r") as f:
+            gp_dct = json.loads(f.readline())
+            if gp_dct.get("class", None) == "FLARE_Calculator":
+                flare_calc = FLARE_Calculator.from_file(gp_file)
+            else:
+                gp, _ = GaussianProcess.from_file(gp_file)
+                flare_calc = FLARE_Calculator(gp)
         return flare_calc
 
     # Create gaussian process model
@@ -197,11 +199,13 @@ def get_sgp_calc(flare_config):
 
     # Load sparse GP from file
     if sgp_file is not None:
-        sgp, kernels = SGP_Wrapper.from_file(sgp_file)
-
-        # TODO: allow changing some of the parameters
-
-        flare_calc = SGP_Calculator(sgp)
+        with open(sgp_file, "r") as f:
+            gp_dct = json.loads(f.readline())
+            if gp_dct.get("class", None) == "SGP_Calculator":
+                flare_calc, kernels = SGP_Calculator.from_file(sgp_file)
+            else:
+                sgp, kernels = SGP_Wrapper.from_file(sgp_file)
+                flare_calc = SGP_Calculator(sgp)
         return flare_calc, kernels
 
     kernels = flare_config.get("kernels")

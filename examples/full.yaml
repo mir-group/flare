@@ -43,6 +43,32 @@ flare_calc:
 # location of the VASP executable
 # point the user to the ASE documentation
 dft_calc:
+    name: Vasp
+    kwargs: 
+        command: "mpirun -n <n_cpus> <vasp_executable>"
+        directory: ./
+        xc: PBE
+        kpts: [1, 1, 1]
+        # below are all the parameters in INCAR
+        prec: Accurate
+        kpar: 2
+        npar: 4
+        istart: 0
+        lreal: auto
+        encut: 450
+        ediff: 1.0e-5
+        nelm: 100
+        nelmin: 6
+        nelmdl: -9
+        algo: Very_Fast
+        ismear: 2
+        sigma: 0.2
+        ispin: 1
+    params: {}
+
+# Another example is to use ASE's LAMMPS calculator for as the "DFT"
+# Mostly for the purpose of debugging and unit tests
+dft_calc:
     name: LAMMPS
     kwargs:                                             # The "kwargs" should be the init arguments specified by ASE Calculator
         command: "mpirun -n <n_cpus> <lammps_executable>"
@@ -57,6 +83,7 @@ dft_calc:
         pair_style: tersoff
         pair_coeff: ["* * tmp/SiC.tersoff Si C"]
         masses: ["1 28", "2 12"]
+
 
 # Set up On-the-fly training and MD
 otf: 
@@ -81,7 +108,7 @@ otf:
                                                         # The negative sign means the absolute value is used, i.e. the threshold is 0.02. 
                                                         # The positive sign means the relative value is used, i.e. the threshold is std_tolerance_factor * force_noise
     max_atoms_added: -1                                 # Maximal number of atoms added to the GP model after each DFT call. If "-1", then there is no upper limit.
-    train_hyps: (None, None)                            # The hyperparameters are optimized between the train_hyps[0] and the train_hyps[1] DFT call. At other times, the hyperparameters are fixed.
+    train_hyps: [0, inf]                                # The hyperparameters are optimized between the train_hyps[0] and the train_hyps[1] DFT call. At other times, the hyperparameters are fixed.
     write_model: 4                                      # Verbose level. "0": not write GP model to file or back up. 
                                                         # "1": write GP model at the end of the OTF training. "2": write GP after each hyperparameter optimization.
                                                         # "3": write GP model after each DFT call. "4": write GP model and back up all the log and json files into the <#step>_ckpt folder after each DFT call. 

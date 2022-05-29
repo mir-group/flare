@@ -37,11 +37,7 @@ flare_calc:
 # Set up DFT calculator, it can be any calculator supported by ASE
 dft_calc:
     name: FakeDFT
-    kwargs: 
-        filename: fake_dft.xyz
-        format: extxyz
-        index: ":"
-        io_kwargs: {}
+    kwargs: {} 
     params: {}
 
 # Set up On-the-fly training and MD
@@ -49,7 +45,7 @@ otf:
     mode: fresh
     md_engine: Fake
     md_kwargs: 
-        filename: fake_dft.xyz
+        filenames: [fake_dft.xyz]
         format: extxyz
         index: ":"
         io_kwargs: {}
@@ -60,7 +56,7 @@ otf:
     init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     std_tolerance_factor: -0.02
     max_atoms_added: -1
-    train_hyps: (None, 1)
+    train_hyps: [2, inf]
     write_model: 4
     update_style: threshold
     update_threshold: 0.01
