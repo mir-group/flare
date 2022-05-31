@@ -93,6 +93,12 @@ DescriptorValues B2 ::compute_struc(Structure &structure) {
     cutoff_pointer, nos, N, lmax, radial_hyps, cutoff_hyps, structure,
     cutoffs);
 
+  desc.single_bond_vals = single_bond_vals;
+  desc.single_bond_force_dervs = force_dervs;
+  desc.unique_neighbor_count = unique_neighbor_count;
+  desc.cumulative_neighbor_count = cumulative_neighbor_count;
+  desc.descriptor_indices = descriptor_indices;
+
   // Compute descriptor values.
   Eigen::MatrixXd B2_vals, B2_force_dervs;
   Eigen::VectorXd B2_norms, B2_force_dots;

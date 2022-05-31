@@ -42,7 +42,8 @@ public:
       cutoff_values, cutoff_dervs;
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
       atom_indices, neighbor_indices;
-  Eigen::MatrixXd single_bond_vals;
+  Eigen::MatrixXd single_bond_vals, single_bond_force_dervs;
+  Eigen::VectorXi unique_neighbor_count, cumulative_neighbor_count, descriptor_indices;
 
   int n_clusters = 0;
   std::vector<int> n_clusters_by_type, cumulative_type_count,

@@ -62,6 +62,10 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("n_atoms", &DescriptorValues::n_atoms)
       .def_readwrite("volume", &DescriptorValues::volume)
       .def_readwrite("single_bond_vals", &DescriptorValues::single_bond_vals)
+      .def_readwrite("single_bond_force_dervs", &DescriptorValues::single_bond_force_dervs)
+      .def_readwrite("unique_neighbor_count", &DescriptorValues::unique_neighbor_count)
+      .def_readwrite("cumulative_neighbor_count", &DescriptorValues::cumulative_neighbor_count)
+      .def_readwrite("descriptor_indices", &DescriptorValues::descriptor_indices)
       .def_readwrite("descriptors", &DescriptorValues::descriptors)
       .def_readwrite("descriptor_force_dervs",
                      &DescriptorValues::descriptor_force_dervs)
@@ -85,8 +89,10 @@ PYBIND11_MODULE(_C_flare, m) {
                      &DescriptorValues::n_neighbors_by_type);
 
   py::class_<ClusterDescriptor>(m, "ClusterDescriptor")
+      .def(py::init<>())
       .def_readonly("descriptors", &ClusterDescriptor::descriptors)
-      .def_readonly("descriptor_norms", &ClusterDescriptor::descriptor_norms);
+      .def_readonly("descriptor_norms", &ClusterDescriptor::descriptor_norms)
+      .def("add_clusters_by_type", &ClusterDescriptor::add_clusters_by_type);
 
   // Descriptor calculators
   py::class_<Descriptor>(m, "Descriptor")
