@@ -25,8 +25,8 @@ DotProduct ::DotProduct(double sigma, double power) {
 }
 
 Eigen::MatrixXd DotProduct ::envs_envs(const ClusterDescriptor &envs1,
-                                                 const ClusterDescriptor &envs2,
-                                                 const Eigen::VectorXd &hyps) {
+                                       const ClusterDescriptor &envs2,
+                                       const Eigen::VectorXd &hyps) {
 
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
