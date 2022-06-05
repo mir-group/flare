@@ -218,12 +218,8 @@ void compute_b2_embed(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
       for (int n2 = n1; n2 < n_radial; n2++) { // can be simplified
         for (int l = 0; l < (lmax + 1); l++) {
           for (int m = 0; m < (2 * l + 1); m++) {
-            int n1_single = n1 / nos;
-            int n2_single = n2 / nos;
-            int n1_embed = n1 % nos;
-            int n2_embed = n2 % nos;
-            n1_l = (n1_single * n_harmonics + (l * l + m)) * nos + n1_embed;
-            n2_l = (n2_single * n_harmonics + (l * l + m)) * nos + n2_embed;
+            n1_l = n1 * n_harmonics + (l * l + m);
+            n2_l = n2 * n_harmonics + (l * l + m);
             B2_vals(atom, counter) +=
                 single_bond_vals(atom, n1_l) * single_bond_vals(atom, n2_l);
 
@@ -374,40 +370,40 @@ void single_bond_multiple_cutoffs_embed(
       get_Y(h, hx, hy, hz, x, y, z, lmax);
 
       descriptor_counter = 0;
-      // Store the products and their derivatives.
-      for (int radial_counter = 0; radial_counter < N; radial_counter++) {
-        // Retrieve radial values.
-        g_val = g[radial_counter];
-        gx_val = gx[radial_counter];
-        gy_val = gy[radial_counter];
-        gz_val = gz[radial_counter];
+      for (int embed_counter = 0; embed_counter < embed_coeffs.rows(); embed_counter++) {
+        // Store the products and their derivatives.
+        for (int radial_counter = 0; radial_counter < N; radial_counter++) {
+          // Retrieve radial values.
+          g_val = g[radial_counter];
+          gx_val = gx[radial_counter];
+          gy_val = gy[radial_counter];
+          gz_val = gz[radial_counter];
 
-        for (int angular_counter = 0; angular_counter < number_of_harmonics;
-             angular_counter++) {
+          for (int angular_counter = 0; angular_counter < number_of_harmonics;
+               angular_counter++) {
 
-          // Compute single bond value.
-          h_val = h[angular_counter];
-          bond = g_val * h_val;
+            // Compute single bond value.
+            h_val = h[angular_counter];
+            bond = g_val * h_val;
 
-          // Calculate derivatives with the product rule.
-          bond_x = gx_val * h_val + g_val * hx[angular_counter];
-          bond_y = gy_val * h_val + g_val * hy[angular_counter];
-          bond_z = gz_val * h_val + g_val * hz[angular_counter];
+            // Calculate derivatives with the product rule.
+            bond_x = gx_val * h_val + g_val * hx[angular_counter];
+            bond_y = gy_val * h_val + g_val * hy[angular_counter];
+            bond_z = gz_val * h_val + g_val * hz[angular_counter];
 
-          // Update single bond arrays.
-          int ind;
-          if (embed_coeffs.cols() == nos) {
-            ind = s;
-          } else if (embed_coeffs.cols() == nos * N) {
-            ind = s * N + radial_counter;
-          } else if (embed_coeffs.cols() == nos * N * (lmax + 1)) {
-            int l_ind = floor(sqrt(angular_counter));
-            ind = (s * N + radial_counter) * (lmax + 1) + l_ind;
-          } else {
-            throw;
-          }
+            // Update single bond arrays.
+            int ind;
+            if (embed_coeffs.cols() == nos) {
+              ind = s;
+            } else if (embed_coeffs.cols() == nos * N) {
+              ind = s * N + radial_counter;
+            } else if (embed_coeffs.cols() == nos * N * (lmax + 1)) {
+              int l_ind = floor(sqrt(angular_counter));
+              ind = (s * N + radial_counter) * (lmax + 1) + l_ind;
+            } else {
+              throw;
+            }
 
-          for (int embed_counter = 0; embed_counter < embed_coeffs.rows(); embed_counter++) {
             single_bond_vals(i, descriptor_counter) += bond * embed_coeffs(embed_counter, ind);
 
             force_dervs(neighbor_index * 3, descriptor_counter) += bond_x * embed_coeffs(embed_counter, ind);
