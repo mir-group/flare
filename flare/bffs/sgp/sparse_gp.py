@@ -48,6 +48,7 @@ class SGP_Wrapper:
         self.max_iterations = max_iterations
         self.opt_method = opt_method
         self.bounds = bounds
+        self.atom_indices = []
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -263,6 +264,7 @@ class SGP_Wrapper:
         for s in range(len(training_data)):
             custom_range = in_dict["sparse_indice"][0][s]
             train_struc = FLARE_Atoms.from_dict(training_data[s])
+            atom_indices = in_dict["atom_indices"][s]
 
             if len(train_struc.energy) > 0:
                 energy = train_struc.energy[0]
@@ -278,6 +280,7 @@ class SGP_Wrapper:
                 mode="specific",
                 sgp=None,
                 update_qr=False,
+                atom_indices=atom_indices,
             )
 
         gp.sparse_gp.update_matrices_QR()
@@ -342,6 +345,7 @@ class SGP_Wrapper:
         # Update the sparse GP.
         if sgp is None:
             sgp = self.sparse_gp
+            self.atom_indices.append(atom_indices)
 
         sgp.add_training_structure(structure_descriptor, atom_indices)
         if mode == "all":
