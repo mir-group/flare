@@ -418,7 +418,8 @@ class Output:
     def add_atom_info(self, train_atoms, stds):
         f = logging.getLogger(self.basename + "log")
         f.info(f"Adding atom {train_atoms} to the training set.")
-        f.info(f"Uncertainty: {stds[train_atoms[0]]}")
+        if len(train_atoms) > 0:
+            f.info(f"Uncertainty: {stds[train_atoms[0]]}")
 
     def write_gp_dft_comparison(
         self,
