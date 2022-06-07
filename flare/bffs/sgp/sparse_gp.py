@@ -264,7 +264,10 @@ class SGP_Wrapper:
         for s in range(len(training_data)):
             custom_range = in_dict["sparse_indice"][0][s]
             train_struc = FLARE_Atoms.from_dict(training_data[s])
-            atom_indices = in_dict["atom_indices"][s]
+            if "atom_indices" in in_dict:
+                atom_indices = in_dict["atom_indices"][s]
+            else:
+                atom_indices = [-1]
 
             if len(train_struc.energy) > 0:
                 energy = train_struc.energy[0]
