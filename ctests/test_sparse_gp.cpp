@@ -104,7 +104,7 @@ TEST_F(StructureTest, SparseTest) {
 
   EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
                 sparse_gp.constant_term,
-            sparse_gp.log_marginal_likelihood);
+            sparse_gp.log_marginal_likelihood * sparse_gp.n_labels);
   double like1 = sparse_gp.log_marginal_likelihood;
 
   sparse_gp.compute_likelihood_stable();

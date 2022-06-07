@@ -170,7 +170,7 @@ Eigen::MatrixXd DotProduct ::envs_struc(const ClusterDescriptor &envs,
         // Energy kernel.
         double norm_dot = dot_vals(i, j); // / norm_ij;
         double dval = power * pow(norm_dot, power - 1);
-        kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power);
+        kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power) / struc.n_atoms;
 
         // Force kernel.
         int n_neigh = struc.neighbor_counts[s](j);
@@ -439,6 +439,8 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
       }
     }
   }
+  kernel_matrix.row(0) /= struc1.n_atoms;
+  kernel_matrix.col(0) /= struc2.n_atoms;
 
   return kernel_matrix;
 }
@@ -509,7 +511,7 @@ DotProduct ::self_kernel_struc(const DescriptorValues &struc,
                 and the negative power function in force-force kernel diverges." );
         }
         double c2 = power * pow(norm_dot, power - 1);
-        par_mat(i, 0) += sig_sq * mult_fac * pow(norm_dot, power);
+        par_mat(i, 0) += sig_sq * mult_fac * pow(norm_dot, power) / struc.n_atoms;
 
         // Force kernel.
         int n_neigh_1 = struc.neighbor_counts[s](i);

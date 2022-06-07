@@ -49,18 +49,21 @@ TYPED_TEST(KernelTest, TestEnvsEnvs) {
     }
   }
 
-  EXPECT_NEAR(kern_sum, kernel_matrix(0, 0), 1e-8);
+  EXPECT_NEAR(kern_sum / this->struc_desc.n_atoms / this->struc_desc.n_atoms, kernel_matrix(0, 0), 1e-8);
 }
 
 TYPED_TEST(KernelTest, TestEnvsStruc) {
   TypeParam kernel(this->hyp0, this->hyp1);
   Eigen::MatrixXd kernel_matrix =
       kernel.struc_struc(this->struc_desc, this->struc_desc, kernel.kernel_hyperparameters);
+  kernel_matrix.row(0) *= this->struc_desc.n_atoms;
+  kernel_matrix.col(0) *= this->struc_desc.n_atoms;
 
   ClusterDescriptor envs;
   envs.add_all_clusters(this->struc_desc);
   Eigen::MatrixXd kern_mat =
       kernel.envs_struc(envs, this->struc_desc, kernel.kernel_hyperparameters);
+  kern_mat.col(0) *= this->struc_desc.n_atoms;
 
   Eigen::VectorXd kern_sum = Eigen::VectorXd::Zero(kern_mat.cols());
   for (int i = 0; i < kern_mat.cols(); i++) {
@@ -181,6 +184,7 @@ TYPED_TEST(KernelTest, EnergyForceKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix.row(0) /= struc_desc.n_atoms;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -240,6 +244,7 @@ TYPED_TEST(KernelTest, ForceEnergyKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix.col(0) /= test_struc_2.noa;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -299,6 +304,7 @@ TYPED_TEST(KernelTest, EnergyStressKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix.row(0) /= struc_desc.n_atoms;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -375,6 +381,7 @@ TYPED_TEST(KernelTest, StressEnergyKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix.col(0) /= test_struc_2.noa;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -451,6 +458,7 @@ TYPED_TEST(KernelTest, ForceForceKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix /= struc_desc.n_atoms * test_struc_2.noa;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -534,6 +542,7 @@ TYPED_TEST(KernelTest, ForceStressKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix /= struc_desc.n_atoms * test_struc_2.noa;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -634,6 +643,7 @@ TYPED_TEST(KernelTest, StressForceKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
+  kernel_matrix /= struc_desc.n_atoms * test_struc_2.noa;
 
   double delta = 1e-4;
   double thresh = 1e-4;
@@ -736,7 +746,8 @@ TYPED_TEST(KernelTest, StressStressKernel) {
   // Compute full kernel matrix.
   Eigen::MatrixXd kernel_matrix = kernel.struc_struc(
       struc_desc, test_struc_2.descriptors[0], kernel.kernel_hyperparameters);
-
+  kernel_matrix /= struc_desc.n_atoms * test_struc_2.noa;
+  
   double delta = 1e-4;
   double thresh = 1e-4;
 

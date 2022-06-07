@@ -487,7 +487,7 @@ void SparseGP ::add_training_structure(const Structure &structure,
   label_count.conservativeResize(training_structures.size() + 2);
   label_count(training_structures.size() + 1) = n_labels + n_struc_labels;
   y.conservativeResize(n_labels + n_struc_labels);
-  y.segment(n_labels, n_energy) = structure.energy;
+  y.segment(n_labels, n_energy) = structure.energy / n_atoms;
   y.segment(n_labels + n_energy + n_force, n_stress) = structure.stresses;
   for (int a = 0; a < atoms.size(); a++) {
     y.segment(n_labels + n_energy + a * 3, 3) = structure.forces.segment(atoms[a] * 3, 3);
@@ -728,7 +728,7 @@ void SparseGP ::compute_likelihood_stable() {
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
   std::cout << "like comp data " << complexity_penalty << " " << data_fit << std::endl;
   std::cout << "noise_det Kuu_inv_det sigma_inv_det " << noise_det << " " << Kuu_inv_det << " " << sigma_inv_det << std::endl;
-  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+  log_marginal_likelihood = (complexity_penalty + data_fit + constant_term) / n_labels;
 }
 
 double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
@@ -755,7 +755,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   }
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
-  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+  log_marginal_likelihood = (complexity_penalty + data_fit + constant_term) / n_labels;
 
   // Compute Kuu and Kuf matrices and gradients.
   int n_hyps_total = hyperparameters.size();
@@ -856,6 +856,7 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   likelihood_gradient(hyp_index + 0) += complexity_grad(hyp_index + 0) + datafit_grad(hyp_index + 0);
   likelihood_gradient(hyp_index + 1) += complexity_grad(hyp_index + 1) + datafit_grad(hyp_index + 1);
   likelihood_gradient(hyp_index + 2) += complexity_grad(hyp_index + 2) + datafit_grad(hyp_index + 2);
+  likelihood_gradient /= n_labels;
 
   return log_marginal_likelihood;
 
@@ -986,7 +987,7 @@ void SparseGP ::compute_likelihood() {
   double half = 1.0 / 2.0;
   data_fit = -half * y.transpose() * Q_inv_y;
   constant_term = -half * n_labels * log(2 * M_PI);
-  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+  log_marginal_likelihood = (complexity_penalty + data_fit + constant_term) / n_labels;
 }
 
 double
@@ -1087,7 +1088,7 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
   Eigen::VectorXd Q_inv_y = Qff_inverse * y;
   data_fit = -(1. / 2.) * y.transpose() * Q_inv_y;
   constant_term = -n_labels * log(2 * M_PI) / 2;
-  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+  log_marginal_likelihood = (complexity_penalty + data_fit + constant_term) / n_labels;
 
   // Compute likelihood gradient.
   likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
@@ -1098,6 +1099,7 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
     double datafit_grad = y.transpose() * Qff_inv_grad * Q_inv_y;
     likelihood_gradient(i) = (complexity_grad + datafit_grad) / 2.;
   }
+  likelihood_gradient /= n_labels;
 
   return log_marginal_likelihood;
 }

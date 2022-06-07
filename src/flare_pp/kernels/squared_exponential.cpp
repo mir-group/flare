@@ -238,6 +238,7 @@ Eigen::MatrixXd SquaredExponential ::envs_struc(const ClusterDescriptor &envs,
       }
     }
   }
+  kern_mat.col(0) /= struc.n_atoms;
 
   return kern_mat;
 }
@@ -360,6 +361,10 @@ SquaredExponential ::envs_struc_grad(const ClusterDescriptor &envs,
       }
     }
   }
+
+  kern_mat.col(0) /= struc.n_atoms;
+  sig_mat.col(0) /= struc.n_atoms;
+  ls_mat.col(0) /= struc.n_atoms;
 
   std::vector<Eigen::MatrixXd> kernel_gradients;
   kernel_gradients.push_back(kern_mat);
@@ -595,6 +600,8 @@ Eigen::MatrixXd SquaredExponential ::struc_struc(const DescriptorValues &struc1,
       }
     }
   }
+  kernel_matrix.row(0) /= struc1.n_atoms;
+  kernel_matrix.col(0) /= struc2.n_atoms;
 
   return kernel_matrix;
 }
