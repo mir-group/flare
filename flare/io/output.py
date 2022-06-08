@@ -242,7 +242,6 @@ class Output:
 
         :return:
         """
-
         string = self.write_md_header(dt, curr_step, dft_step)
 
         # Construct Header line
@@ -404,10 +403,13 @@ class Output:
         if self.always_flush:
             f.handlers[0].flush()
 
-    def write_wall_time(self, start_time):
+    def write_wall_time(self, start_time, task=None):
         time_curr = time.time() - start_time
         f = logging.getLogger(self.basename + "log")
-        f.info(f"Wall time from start: {time_curr:.2f} s")
+        if task is None:
+            f.info(f"Wall time from start: {time_curr:.2f} s")
+        else:
+            f.info(f"Time of {task}: {time_curr:.2f} s")
 
     def conclude_dft(self, dft_count, start_time):
         f = logging.getLogger(self.basename + "log")
