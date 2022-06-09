@@ -631,6 +631,7 @@ def set_logger(
         add_file(logger, fileout_name, verbose)
     return logger
 
+
 def compute_mae(
     atoms,
     output_name,
@@ -672,9 +673,7 @@ def compute_mae(
     per_species_num = np.zeros(len(unique_species))
     for a in range(atoms.nat):
         species_ind = unique_species.index(atoms.numbers[a])
-        per_species_mae[species_ind] += np.mean(
-            np.abs(dft_forces[a] - gp_forces[a])
-        )
+        per_species_mae[species_ind] += np.mean(np.abs(dft_forces[a] - gp_forces[a]))
         per_species_mav[species_ind] += np.mean(np.abs(dft_forces[a]))
         per_species_num[species_ind] += 1
     per_species_mae /= per_species_num

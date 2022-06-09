@@ -6,6 +6,7 @@ from typing import List
 import warnings
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
+
 try:
     from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
 except Exception as e:
@@ -303,7 +304,7 @@ class SGP_Wrapper:
         energy: float = None,
         stress: "ndarray" = None,
         mode: str = "specific",
-        sgp = None,  # for creating sgp_var
+        sgp=None,  # for creating sgp_var
         update_qr=True,
         atom_indices=[-1],
     ):

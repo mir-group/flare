@@ -666,7 +666,7 @@ class OTF:
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
         tic = time.time()
-        
+
         self.gp.train(logger_name=self.output.basename + "hyps")
 
         self.output.write_wall_time(tic, task="Train Hyps")
