@@ -16,10 +16,11 @@ class FakeMD(MolecularDynamics):
         timestep (float): The time step.
         filenames (list): The name of the trajectory file to read in.
         format (str): The format supported by ASE IO.
-        index (float or str): The indices of frames to read from the 
+        index (float or str): The indices of frames to read from the
             trajectory. Default is ":", which reads the whole trajectory.
         io_kwargs (dict): The arguments needed for reading specific format.
     """
+
     def __init__(
         self,
         atoms,
@@ -112,7 +113,7 @@ class FakeMD(MolecularDynamics):
         dft_frames = np.array(dft_frames)
         stat_strings = ["Data distribution:"]
         for i in range(N):
-            dft_num = np.sum((dft_frames < cum_sum[i+1]) * (dft_frames >= cum_sum[i]))
+            dft_num = np.sum((dft_frames < cum_sum[i + 1]) * (dft_frames >= cum_sum[i]))
             stat_strings.append(f"{self.stat_trj[i]}: {dft_num}")
         return stat_strings
 
@@ -124,7 +125,7 @@ class FakeDFT(Calculator):
     Args:
         filename (str): The name of the trajectory file to read in.
         format (str): The format supported by ASE IO.
-        index (float or str): The indices of frames to read from the 
+        index (float or str): The indices of frames to read from the
             trajectory. Default is ":", which reads the whole trajectory.
     """
 
