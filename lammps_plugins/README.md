@@ -27,6 +27,8 @@ cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_CUDA=ON [-DKokkos_ARCH_VOLTA70=on
 
 If you really, really, really want to use the old Makefile system, you should be able to copy the files from `kokkos/` into `/path/to/lammps/src`, do `make yes-kokkos` and otherwise follow the LAMMPS Kokkos instructions.
 
+*Note: FLARE relies on the [KokkosKernels](https://github.com/kokkos/kokkos-kernels) for a performance-portable matrix-matrix product. This will take advantage of MKL/CUBLAS etc. if found. By default, CMake will download KokkosKernels from GitHub and compile it together with LAMMPS. This can be very slow, so if you need multiple LAMMPS installations, you may wish to install Kokkos and KokkosKernels manually and then use the `-DEXTERNAL_KOKKOS=ON` option (with `-DCMAKE_PREFIX_PATH=/path/to/install` as needed).*
+
 ## Basic usage
 Input script:
 

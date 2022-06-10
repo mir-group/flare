@@ -39,4 +39,19 @@ target_sources(lammps PRIVATE
     ${LAMMPS_SOURCE_DIR}/radial.cpp
     ${LAMMPS_SOURCE_DIR}/y_grad.cpp
 )
+
+if(PKG_KOKKOS)
+    option(KokkosKernels_INST_LAYOUTRIGHT "Required" ON)
+    if(EXTERNAL_KOKKOS)
+        find_package(KokkosKernels REQUIRED)
+    else()
+        include(FetchContent)
+        FetchContent_Declare(
+            kokkoskernels
+            GIT_REPOSITORY https://github.com/kokkos/kokkos-kernels.git
+        )
+        FetchContent_MakeAvailable(kokkoskernels)
+    endif()
+    target_link_libraries(lammps PUBLIC Kokkos::kokkoskernels)
+endif()
 ' >> $lammps/cmake/CMakeLists.txt

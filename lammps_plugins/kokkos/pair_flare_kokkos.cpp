@@ -756,24 +756,16 @@ void PairFLAREKokkos<DeviceType>::init_style()
 {
   PairFLARE::init_style();
 
-  // irequest = neigh request made by parent class
+  auto request = neighbor->find_request(this);
+  request->set_kokkos_host(std::is_same<DeviceType,LMPHostType>::value &&
+                           !std::is_same<DeviceType,LMPDeviceType>::value);
+  request->set_kokkos_device(std::is_same<DeviceType,LMPDeviceType>::value);
 
   neighflag = lmp->kokkos->neighflag;
-  int irequest = neighbor->nrequest - 1;
-
-  neighbor->requests[irequest]->
-    kokkos_host = std::is_same<DeviceType,LMPHostType>::value &&
-    !std::is_same<DeviceType,LMPDeviceType>::value;
-  neighbor->requests[irequest]->
-    kokkos_device = std::is_same<DeviceType,LMPDeviceType>::value;
 
   // always request a full neighbor list
 
-  if (neighflag == FULL) { // TODO: figure this out
-    neighbor->requests[irequest]->full = 1;
-    neighbor->requests[irequest]->half = 0;
-    neighbor->requests[irequest]->ghost = 0;
-  } else {
+  if (neighflag != FULL) { // TODO: figure this out
     error->all(FLERR,"Cannot use chosen neighbor list style with pair flare/kk");
   }
 
