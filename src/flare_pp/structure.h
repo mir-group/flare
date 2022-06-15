@@ -96,6 +96,11 @@ public:
             const Eigen::MatrixXd &positions, double cutoff,
             std::vector<Descriptor *> descriptor_calculators);
 
+  Structure(const Eigen::MatrixXd &cell, const std::vector<int> &species,
+            const Eigen::MatrixXd &positions, double cutoff,
+            std::vector<Descriptor *> descriptor_calculators, 
+            bool single_bond_only);
+
   Eigen::MatrixXd wrap_positions();
   double get_single_sweep_cutoff();
   void compute_neighbors();

@@ -42,6 +42,30 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
   compute_descriptors();
 }
 
+Structure ::Structure(const Eigen::MatrixXd &cell,
+                      const std::vector<int> &species,
+                      const Eigen::MatrixXd &positions, double cutoff,
+                      std::vector<Descriptor *> descriptor_calculators,
+                      bool single_bond_only)
+    : Structure(cell, species, positions) {
+
+  this->cutoff = cutoff;
+  this->descriptor_calculators = descriptor_calculators;
+  sweep = ceil(cutoff / single_sweep_cutoff);
+
+  // Initialize neighbor count.
+  neighbor_count = Eigen::VectorXi::Zero(noa);
+  cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
+
+  compute_neighbors();
+  if (single_bond_only) {
+    descriptors.clear();
+    for (int i = 0; i < descriptor_calculators.size(); i++){
+      descriptors.push_back(descriptor_calculators[i]->compute_single_bonds(*this));
+    }
+  }
+}
+
 void Structure ::compute_descriptors(){
   descriptors.clear();
   for (int i = 0; i < descriptor_calculators.size(); i++){

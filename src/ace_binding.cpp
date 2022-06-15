@@ -33,6 +33,9 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                     const Eigen::MatrixXd &, double,
                     std::vector<Descriptor *>>())
+      .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
+                    const Eigen::MatrixXd &, double,
+                    std::vector<Descriptor *>, bool>())
       .def_readwrite("noa", &Structure::noa)
       .def_readwrite("cell", &Structure::cell)
       .def_readwrite("species", &Structure::species)
