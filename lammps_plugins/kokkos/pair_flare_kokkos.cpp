@@ -215,8 +215,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     }
     int remainder = n_atoms_curr_type - n_batches*approx_batch_size;
 
-    vscatter = ScatterVType(d_vatom);
-    fscatter = ScatterFType(f);
 
 
     startatom = 0;
@@ -339,12 +337,16 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         );
 
       // sum and store total forces, ev_tally
+        vscatter = ScatterVType(d_vatom);
+        fscatter = ScatterFType(f);
         EV_FLOAT ev;
         Kokkos::parallel_reduce("FLARE: total forces, ev_tally",
             Kokkos::TeamPolicy<DeviceType, TagStoreF>(batch_size, TEAM_SIZE, vector_length),
             *this,
             ev
         );
+        Kokkos::Experimental::contribute(d_vatom, vscatter);
+        Kokkos::Experimental::contribute(f, fscatter);
         if (evflag)
           ev_all += ev;
 
