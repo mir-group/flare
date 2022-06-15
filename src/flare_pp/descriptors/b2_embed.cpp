@@ -81,6 +81,11 @@ void B2_Embed ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   coeff_file << "\n";
 }
 
+DescriptorValues B2_Embed ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues B2_Embed ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.
@@ -100,6 +105,12 @@ DescriptorValues B2_Embed ::compute_struc(Structure &structure) {
     cumulative_neighbor_count, descriptor_indices, radial_pointer,
     cutoff_pointer, nos, N, lmax, radial_hyps, cutoff_hyps, structure,
     cutoffs, embed_coeffs);
+
+  desc.single_bond_vals = single_bond_vals;
+  desc.single_bond_force_dervs = force_dervs;
+  desc.unique_neighbor_count = unique_neighbor_count;
+  desc.cumulative_neighbor_count = cumulative_neighbor_count;
+  desc.descriptor_indices = descriptor_indices;
 
   // Compute descriptor values.
   Eigen::MatrixXd B2_vals, B2_force_dervs;
@@ -427,7 +438,8 @@ void to_json(nlohmann::json& j, const B2_Embed & p){
     {"cutoff_hyps", p.cutoff_hyps},
     {"descriptor_settings", p.descriptor_settings},
     {"cutoffs", p.cutoffs},
-    {"descriptor_name", p.descriptor_name}
+    {"descriptor_name", p.descriptor_name},
+    {"embed_coefficients", p.embed_coeffs}
   };
 }
 
@@ -438,7 +450,8 @@ void from_json(const nlohmann::json& j, B2_Embed & p){
     j.at("radial_hyps"),
     j.at("radial_hyps"),
     j.at("descriptor_settings"),
-    j.at("cutoffs")
+    j.at("cutoffs"),
+    j.at("embed_coefficients")
   );
 }
 

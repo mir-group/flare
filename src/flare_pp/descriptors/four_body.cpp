@@ -17,6 +17,11 @@ FourBody ::FourBody(double cutoff, int n_species,
   set_cutoff(cutoff_name, this->cutoff_function);
 }
 
+DescriptorValues FourBody ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues FourBody ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

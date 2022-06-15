@@ -16,6 +16,11 @@ TwoBody ::TwoBody(double cutoff, int n_species, const std::string &cutoff_name,
   set_cutoff(cutoff_name, this->cutoff_function);
 }
 
+DescriptorValues TwoBody ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues TwoBody ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

@@ -23,6 +23,7 @@ public:
   ThreeBody(double cutoff, int n_species, const std::string &cutoff_name,
             const std::vector<double> &cutoff_hyps);
 
+  DescriptorValues compute_single_bonds(Structure &structure);
   DescriptorValues compute_struc(Structure &structure);
 
   nlohmann::json return_json();

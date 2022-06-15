@@ -46,6 +46,11 @@ void B2_Simple ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   coeff_file << cutoff << "\n";
 }
 
+DescriptorValues B2_Simple ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues B2_Simple ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

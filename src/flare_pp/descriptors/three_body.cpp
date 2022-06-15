@@ -17,6 +17,11 @@ ThreeBody ::ThreeBody(double cutoff, int n_species,
   set_cutoff(cutoff_name, this->cutoff_function);
 }
 
+DescriptorValues ThreeBody ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues ThreeBody ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

@@ -45,6 +45,7 @@ public:
      const std::vector<int> &descriptor_settings,
      const Eigen::MatrixXd &cutoffs);
 
+  DescriptorValues compute_single_bonds(Structure &structure);
   DescriptorValues compute_struc(Structure &structure);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);

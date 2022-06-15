@@ -50,6 +50,7 @@ public:
      const Eigen::MatrixXd &embed_coefficients);
 
   DescriptorValues compute_struc(Structure &structure);
+  DescriptorValues compute_single_bonds(Structure &structure);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);
 

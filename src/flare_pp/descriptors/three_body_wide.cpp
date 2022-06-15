@@ -17,6 +17,11 @@ ThreeBodyWide ::ThreeBodyWide(double cutoff, int n_species,
   set_cutoff(cutoff_name, this->cutoff_function);
 }
 
+DescriptorValues ThreeBodyWide ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues ThreeBodyWide ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

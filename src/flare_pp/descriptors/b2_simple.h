@@ -27,6 +27,7 @@ public:
      const std::vector<double> &cutoff_hyps,
      const std::vector<int> &descriptor_settings);
 
+  DescriptorValues compute_single_bonds(Structure &structure);
   DescriptorValues compute_struc(Structure &structure);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);

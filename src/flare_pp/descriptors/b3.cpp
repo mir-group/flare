@@ -26,6 +26,11 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
   set_cutoff(cutoff_function, this->cutoff_pointer);
 }
 
+DescriptorValues B3 ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues B3 ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

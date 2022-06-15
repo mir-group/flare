@@ -73,6 +73,94 @@ void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   coeff_file << "\n";
 }
 
+DescriptorValues B2 ::compute_single_bonds(Structure &structure) {
+  // Initialize descriptor values.
+  DescriptorValues desc = DescriptorValues();
+
+  // Compute single bond values.
+  Eigen::MatrixXd single_bond_vals, force_dervs, neighbor_coords;
+  Eigen::VectorXi unique_neighbor_count, cumulative_neighbor_count,
+      descriptor_indices;
+
+  int nos = descriptor_settings[0];
+  int N = descriptor_settings[1];
+  int lmax = descriptor_settings[2];
+
+  single_bond_multiple_cutoffs(
+    single_bond_vals, force_dervs, neighbor_coords, unique_neighbor_count,
+    cumulative_neighbor_count, descriptor_indices, radial_pointer,
+    cutoff_pointer, nos, N, lmax, radial_hyps, cutoff_hyps, structure,
+    cutoffs);
+
+  desc.single_bond_vals = single_bond_vals;
+  desc.single_bond_force_dervs = force_dervs;
+  desc.unique_neighbor_count = unique_neighbor_count;
+  desc.cumulative_neighbor_count = cumulative_neighbor_count;
+  desc.descriptor_indices = descriptor_indices;
+
+  // Gather species information.
+  int noa = structure.noa;
+  Eigen::VectorXi species_count = Eigen::VectorXi::Zero(nos);
+  Eigen::VectorXi neighbor_count = Eigen::VectorXi::Zero(nos);
+  for (int i = 0; i < noa; i++) {
+    int s = structure.species[i];
+    int n_neigh = unique_neighbor_count(i);
+    species_count(s)++;
+    neighbor_count(s) += n_neigh;
+  }
+
+  // Initialize arrays.
+  desc.n_types = nos;
+  desc.n_atoms = noa;
+  desc.volume = structure.volume;
+  desc.cumulative_type_count.push_back(0);
+  for (int s = 0; s < nos; s++) {
+    int n_s = species_count(s);
+    int n_neigh = neighbor_count(s);
+
+    // Record species and neighbor count.
+    desc.n_clusters_by_type.push_back(n_s);
+    desc.cumulative_type_count.push_back(desc.cumulative_type_count[s] + n_s);
+    desc.n_clusters += n_s;
+    desc.n_neighbors_by_type.push_back(n_neigh);
+
+    desc.neighbor_coordinates.push_back(Eigen::MatrixXd::Zero(n_neigh, 3));
+
+    desc.cutoff_values.push_back(Eigen::VectorXd::Ones(n_s));
+    desc.cutoff_dervs.push_back(Eigen::VectorXd::Zero(n_neigh * 3));
+
+    desc.neighbor_counts.push_back(Eigen::VectorXi::Zero(n_s));
+    desc.cumulative_neighbor_counts.push_back(Eigen::VectorXi::Zero(n_s));
+    desc.atom_indices.push_back(Eigen::VectorXi::Zero(n_s));
+    desc.neighbor_indices.push_back(Eigen::VectorXi::Zero(n_neigh));
+  }
+
+  // Assign to structure.
+  Eigen::VectorXi species_counter = Eigen::VectorXi::Zero(nos);
+  Eigen::VectorXi neighbor_counter = Eigen::VectorXi::Zero(nos);
+  for (int i = 0; i < noa; i++) {
+    int s = structure.species[i];
+    int s_count = species_counter(s);
+    int n_neigh = unique_neighbor_count(i);
+    int n_count = neighbor_counter(s);
+    int cum_neigh = cumulative_neighbor_count(i);
+
+    desc.neighbor_coordinates[s].block(n_count, 0, n_neigh, 3) =
+        neighbor_coords.block(cum_neigh, 0, n_neigh, 3);
+    desc.neighbor_counts[s](s_count) = n_neigh;
+    desc.cumulative_neighbor_counts[s](s_count) = n_count;
+    desc.atom_indices[s](s_count) = i;
+    desc.neighbor_indices[s].segment(n_count, n_neigh) =
+        descriptor_indices.segment(cum_neigh, n_neigh);
+
+    species_counter(s)++;
+    neighbor_counter(s) += n_neigh;
+  }
+
+  return desc;
+
+}
+
 DescriptorValues B2 ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.
@@ -180,7 +268,6 @@ DescriptorValues B2 ::compute_struc(Structure &structure) {
     species_counter(s)++;
     neighbor_counter(s) += n_neigh;
   }
-  desc.single_bond_vals = single_bond_vals;
 
   return desc;
 }

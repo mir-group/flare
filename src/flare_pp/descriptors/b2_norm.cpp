@@ -18,6 +18,11 @@ B2_Norm ::B2_Norm(const std::string &radial_basis,
     : B2(radial_basis, cutoff_function, radial_hyps, cutoff_hyps,
          descriptor_settings) {}
 
+DescriptorValues B2_Norm ::compute_single_bonds(Structure &structure) {
+  DescriptorValues desc = DescriptorValues();
+  return desc;
+}
+
 DescriptorValues B2_Norm ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

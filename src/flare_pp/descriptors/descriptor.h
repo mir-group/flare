@@ -16,6 +16,7 @@ public:
   std::string descriptor_name;
 
   virtual DescriptorValues compute_struc(Structure &structure) = 0;
+  virtual DescriptorValues compute_single_bonds(Structure &structure) = 0;
 
   virtual ~Descriptor() = default;
 
