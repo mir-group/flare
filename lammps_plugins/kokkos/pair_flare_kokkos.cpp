@@ -160,6 +160,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
           }, n_atoms_curr_type);
       //printf("curr type = %d, N = %d\n", curr_type, n_atoms_curr_type);
 
+      if(n_atoms_curr_type==0) continue;
+
       if(ilist_curr_type.extent(0) < n_atoms_curr_type){
         ilist_curr_type = IntView1D();
         ilist_curr_type = IntView1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: ilist_curr_type"), n_atoms_curr_type);
