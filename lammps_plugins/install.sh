@@ -41,7 +41,9 @@ target_sources(lammps PRIVATE
 )
 
 if(PKG_KOKKOS)
-    option(KokkosKernels_INST_LAYOUTRIGHT "Required" ON)
+    set(KokkosKernels_ADD_DEFAULT_ETI OFF CACHE BOOL "faster build")
+    set(KokkosKernels_ENABLED_COMPONENTS BLAS CACHE STRING "faster build")
+
     if(EXTERNAL_KOKKOS)
         find_package(KokkosKernels REQUIRED)
     else()
