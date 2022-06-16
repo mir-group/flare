@@ -41,7 +41,9 @@ def test_otf_md(md_engine):
     with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
-    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp")
+    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp").replace(
+        "full", "half"
+    )
 
     if md_engine == "PyLAMMPS":
         config["flare_calc"]["use_mapping"] = True
@@ -74,7 +76,9 @@ def test_otf_warm(md_engine):
     with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
-    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp")
+    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp").replace(
+        "full", "half"
+    )
 
     if md_engine == "PyLAMMPS":
         config["flare_calc"]["use_mapping"] = True

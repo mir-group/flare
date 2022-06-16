@@ -242,7 +242,6 @@ class Output:
 
         :return:
         """
-
         string = self.write_md_header(dt, curr_step, dft_step)
 
         # Construct Header line
@@ -404,10 +403,13 @@ class Output:
         if self.always_flush:
             f.handlers[0].flush()
 
-    def write_wall_time(self, start_time):
+    def write_wall_time(self, start_time, task=None):
         time_curr = time.time() - start_time
         f = logging.getLogger(self.basename + "log")
-        f.info(f"Wall time from start: {time_curr:.2f} s")
+        if task is None:
+            f.info(f"Wall time from start: {time_curr:.2f} s")
+        else:
+            f.info(f"Time of {task}: {time_curr:.2f} s")
 
     def conclude_dft(self, dft_count, start_time):
         f = logging.getLogger(self.basename + "log")
@@ -418,7 +420,8 @@ class Output:
     def add_atom_info(self, train_atoms, stds):
         f = logging.getLogger(self.basename + "log")
         f.info(f"Adding atom {train_atoms} to the training set.")
-        f.info(f"Uncertainty: {stds[train_atoms[0]]}")
+        if len(train_atoms) > 0:
+            f.info(f"Uncertainty: {stds[train_atoms[0]]}")
 
     def write_gp_dft_comparison(
         self,
@@ -628,6 +631,7 @@ def set_logger(
         add_file(logger, fileout_name, verbose)
     return logger
 
+
 def compute_mae(
     atoms,
     output_name,
@@ -645,15 +649,17 @@ def compute_mae(
 
     # compute energy/forces/stress mean absolute error and value
     if not force_only:
-        e_mae = np.mean(np.abs(dft_energy - gp_energy))
-        e_mav = np.mean(np.abs(dft_energy))
-        f.info(f"energy mae: {e_mae:.4f} eV")
-        f.info(f"energy mav: {e_mav:.4f} eV")
+        if dft_energy is not None and gp_energy is not None:
+            e_mae = np.mean(np.abs(dft_energy - gp_energy))
+            e_mav = np.mean(np.abs(dft_energy))
+            f.info(f"energy mae: {e_mae:.4f} eV")
+            f.info(f"energy mav: {e_mav:.4f} eV")
 
-        s_mae = np.mean(np.abs(dft_stress - gp_stress))
-        s_mav = np.mean(np.abs(dft_stress))
-        f.info(f"stress mae: {s_mae:.4f} eV/A^3")
-        f.info(f"stress mav: {s_mav:.4f} eV/A^3")
+        if dft_stress is not None and gp_stress is not None:
+            s_mae = np.mean(np.abs(dft_stress - gp_stress))
+            s_mav = np.mean(np.abs(dft_stress))
+            f.info(f"stress mae: {s_mae:.4f} eV/A^3")
+            f.info(f"stress mav: {s_mav:.4f} eV/A^3")
 
     f_mae = np.mean(np.abs(dft_forces - gp_forces))
     f_mav = np.mean(np.abs(dft_forces))
@@ -667,9 +673,7 @@ def compute_mae(
     per_species_num = np.zeros(len(unique_species))
     for a in range(atoms.nat):
         species_ind = unique_species.index(atoms.numbers[a])
-        per_species_mae[species_ind] += np.mean(
-            np.abs(dft_forces[a] - gp_forces[a])
-        )
+        per_species_mae[species_ind] += np.mean(np.abs(dft_forces[a] - gp_forces[a]))
         per_species_mav[species_ind] += np.mean(np.abs(dft_forces[a]))
         per_species_num[species_ind] += 1
     per_species_mae /= per_species_num
