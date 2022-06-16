@@ -6,7 +6,7 @@
 ```
 git clone --depth=1 https://github.com/lammps/lammps.git
 ```
-2. From this directory, run the install script.
+2. From this directory (`flare/lammps_plugins`), run the install script.
 ```
 ./install.sh /path/to/lammps
 ```
@@ -25,9 +25,7 @@ cd build
 cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_CUDA=ON [-DKokkos_ARCH_VOLTA70=on if not auto-detected]
 ```
 
-If you really, really, really want to use the old Makefile system, you should be able to copy the files from `kokkos/` into `/path/to/lammps/src`, do `make yes-kokkos` and otherwise follow the LAMMPS Kokkos instructions.
-
-*Note: FLARE relies on [KokkosKernels](https://github.com/kokkos/kokkos-kernels) for a performance-portable matrix-matrix product. This will take advantage of MKL/cuBLAS etc. if found. By default, CMake will download KokkosKernels from GitHub and compile it together with LAMMPS. This can be very slow, so if you need multiple LAMMPS installations, you may wish to install Kokkos and KokkosKernels manually and then use the `-DEXTERNAL_KOKKOS=ON` option (with `-DCMAKE_PREFIX_PATH=/path/to/install` as needed).*
+*Note: FLARE relies on [KokkosKernels](https://github.com/kokkos/kokkos-kernels) for a performance-portable matrix-matrix product. This will take advantage of MKL/cuBLAS etc. if found. By default, CMake will download KokkosKernels from GitHub and compile it together with LAMMPS. If you need multiple LAMMPS installations with the same Kokkos configuration, you can install Kokkos and KokkosKernels manually and then use the `-DEXTERNAL_KOKKOS=ON` option (with `-DCMAKE_PREFIX_PATH=/path/to/install` as needed).*
 
 ## Basic usage
 Input script:
