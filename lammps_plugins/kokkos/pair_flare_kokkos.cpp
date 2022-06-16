@@ -362,8 +362,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     virial[4] += ev_all.v[4];
     virial[5] += ev_all.v[5];
   }
-  Kokkos::Experimental::contribute(d_vatom, vscatter);
-  Kokkos::Experimental::contribute(f, fscatter);
 
 
   if (eflag_atom) {
