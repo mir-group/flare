@@ -317,6 +317,7 @@ class OTF:
                 elif self.build_mode == "direct":
                     env_selection = get_env_indices
 
+                tic = time.time()
                 std_in_bound, target_atoms = env_selection(
                     self.std_tolerance,
                     self.gp.force_noise,
@@ -325,6 +326,8 @@ class OTF:
                     update_style=self.update_style,
                     update_threshold=self.update_threshold,
                 )
+
+                self.output.write_wall_time(tic, task="Env Selection")
 
                 steps_since_dft = self.curr_step - self.last_dft_step
                 if (not std_in_bound) and (steps_since_dft > self.min_steps_with_model):
@@ -452,6 +455,7 @@ class OTF:
             the FLARE ASE calcuator, and write the results to the
             OTF structure object.
         """
+        tic = time.time()
 
         # Change to FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
@@ -461,11 +465,15 @@ class OTF:
         if not self.flare_calc.results:
             self.atoms.calc.calculate(self.atoms)
 
+        self.output.write_wall_time(tic, task="Compute Properties")
+
     def md_step(self):
         """
         Get new position in molecular dynamics based on the forces predicted by
         FLARE_Calculator or DFT calculator
         """
+        tic = time.time()
+
         # Update previous positions.
         self.atoms.prev_positions = np.copy(self.atoms.positions)
 
@@ -500,6 +508,8 @@ class OTF:
             self.md.step()
             self.curr_step += 1
 
+        self.output.write_wall_time(tic, task="MD Step")
+
     def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
 
@@ -511,6 +521,8 @@ class OTF:
         'Year.Month.Day:Hour:Minute:Second:'.
 
         Calculates DFT forces on atoms in the current structure."""
+
+        tic = time.time()
 
         f = logging.getLogger(self.output.basename + "log")
         f.info("\nCalling DFT...\n")
@@ -555,6 +567,7 @@ class OTF:
                 filename = ofile.split("/")[-1]
                 copyfile(ofile, dest + "/" + dt_string + filename)
         self.dft_frames.append(self.curr_step)
+        self.output.write_wall_time(tic, task="Run DFT")
 
     def update_gp(
         self,
@@ -572,6 +585,8 @@ class OTF:
                 will be added to the training set.
             dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
         """
+        tic = time.time()
+
         stds = self.flare_calc.results.get("stds", np.zeros_like(dft_frcs))
         self.output.add_atom_info(train_atoms, stds)
 
@@ -629,6 +644,7 @@ class OTF:
         )
 
         self.gp.set_L_alpha()
+        self.output.write_wall_time(tic, task="Update GP")
 
         # train model
         if self.train_hyps[0] <= self.dft_count <= self.train_hyps[1]:
@@ -636,7 +652,9 @@ class OTF:
 
         # update mgp model
         if self.flare_calc.use_mapping:
+            tic = time.time()
             self.flare_calc.build_map()
+            self.output.write_wall_time(tic, task="Build Map")
 
         # write model
         if self.train_hyps[0] <= self.dft_count <= self.train_hyps[1]:
@@ -647,8 +665,11 @@ class OTF:
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
+        tic = time.time()
 
         self.gp.train(logger_name=self.output.basename + "hyps")
+
+        self.output.write_wall_time(tic, task="Train Hyps")
 
         hyps, labels = self.gp.hyps_and_labels
         if labels is None:
@@ -698,6 +719,7 @@ class OTF:
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
     def record_state(self):
+        tic = time.time()
         self.output.write_md_config(
             self.dt,
             self.curr_step,
@@ -708,8 +730,10 @@ class OTF:
             self.dft_step,
             self.velocities,
         )
+        self.output.write_wall_time(tic, task="Write Config")
 
         if self.md_engine == "Fake" and not self.dft_step:
+            tic = time.time()
             compute_mae(
                 self.atoms,
                 self.output.basename,
@@ -721,6 +745,7 @@ class OTF:
                 self.md.dft_stress,
                 self.force_only,
             )
+            self.output.write_wall_time(tic, task="Compute MAE")
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)

@@ -15,7 +15,7 @@
 
 PairStyle(flare/kk,PairFLAREKokkos<LMPDeviceType>)
 PairStyle(flare/kk/device,PairFLAREKokkos<LMPDeviceType>)
-PairStyle(flare/kk/host,PairFLAREKokkos<LMPHostType>)
+//PairStyle(flare/kk/host,PairFLAREKokkos<LMPHostType>)
 
 #else
 
@@ -25,6 +25,8 @@ PairStyle(flare/kk/host,PairFLAREKokkos<LMPHostType>)
 #include "pair_flare.h"
 #include <pair_kokkos.h>
 
+struct TagCountCurrType{};
+struct TagFindCurrType{};
 struct TagSingleBond{};
 struct TagB2{};
 struct TagBetaB2{};
@@ -51,6 +53,9 @@ class PairFLAREKokkos : public PairFLARE {
   virtual void compute(int, int);
   virtual void coeff(int, char **);
   virtual void init_style();
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagFindCurrType, const int) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagSingleBond, const MemberType) const;
@@ -105,6 +110,7 @@ class PairFLAREKokkos : public PairFLARE {
   int batch_size = 0, startatom, n_batches, approx_batch_size;
 
 
+  using IntView1D = Kokkos::View<int*, Kokkos::LayoutRight, DeviceType>;
   using View1D = Kokkos::View<F_FLOAT*, Kokkos::LayoutRight, DeviceType>;
   using View2D = Kokkos::View<F_FLOAT**, Kokkos::LayoutRight, DeviceType>;
   using View3D = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, DeviceType>;
@@ -133,6 +139,9 @@ class PairFLAREKokkos : public PairFLARE {
   View5D single_bond_grad;
 
   int B2_chunk_size;
+
+  int n_atoms_curr_type, curr_type;
+  IntView1D ilist_curr_type, ilist_curr_type_idx;
 
   typename AT::t_int_1d_randomread d_type2frho;
   typename AT::t_int_2d_randomread d_type2rhor;

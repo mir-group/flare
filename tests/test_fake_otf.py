@@ -46,7 +46,7 @@ def test_traj_with_varying_sizes(md_engine):
         config = yaml.safe_load(f)
 
     config["supercell"]["file"] = "test_files/sic_dft.xyz"
-    #config["dft_calc"]["kwargs"]["filename"] = "test_files/sic_dft.xyz"
+    # config["dft_calc"]["kwargs"]["filename"] = "test_files/sic_dft.xyz"
     config["otf"]["md_kwargs"]["filenames"] = ["test_files/sic_dft.xyz"]
     config["otf"]["output_name"] = md_engine
 
@@ -85,7 +85,9 @@ def test_otf_md(md_engine):
     with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
         config = yaml.safe_load(f)
 
-    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp")
+    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp").replace(
+        "full", "half"
+    )
     config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
     config["otf"]["output_name"] = "myotf"
     fresh_start_otf(config)
@@ -141,7 +143,7 @@ def test_otf_md(md_engine):
         config = yaml.safe_load(f)
 
     config["supercell"]["file"] = "myotf_dft.xyz"
-    #config["dft_calc"]["kwargs"]["filename"] = "myotf_dft.xyz"
+    # config["dft_calc"]["kwargs"]["filename"] = "myotf_dft.xyz"
     config["otf"]["md_kwargs"]["filenames"] = ["myotf_dft.xyz"]
     config["otf"]["output_name"] = "direct"
     config["otf"]["build_mode"] = "direct"
