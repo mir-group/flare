@@ -28,7 +28,7 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) : 
+ComputeFlareStdAtom::ComputeFlareStdAtom(LAMMPS *lmp, int narg, char **arg) :
   Compute(lmp, narg, arg),
   stds(nullptr)
 {
@@ -72,7 +72,7 @@ ComputeFlareStdAtom::~ComputeFlareStdAtom() {
 }
 
 /* ----------------------------------------------------------------------
-   init specific to this compute command 
+   init specific to this compute command
 ------------------------------------------------------------------------- */
 
 void ComputeFlareStdAtom::init() {
@@ -81,12 +81,7 @@ void ComputeFlareStdAtom::init() {
 //    error->all(FLERR, "Compute command requires newton pair on");
 
   // Request a full neighbor list.
-  int irequest = neighbor->request(this, instance_me);
-  neighbor->requests[irequest]->pair = 0;
-  neighbor->requests[irequest]->compute = 1;
-  neighbor->requests[irequest]->half = 0;
-  neighbor->requests[irequest]->full = 1;
-  neighbor->requests[irequest]->occasional = 1;
+  neighbor->add_request(this, NeighConst::REQ_FULL | NeighConst::REQ_OCCASIONAL);
 }
 
 void ComputeFlareStdAtom::init_list(int /*id*/, NeighList *ptr)
@@ -166,9 +161,9 @@ void ComputeFlareStdAtom::compute_peratom() {
     }
 
     // Compute covariant descriptors.
-    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, 
-                                 jlist, basis_function, cutoff_function, 
-                                 n_species, n_max, l_max, radial_hyps, 
+    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
+                                 jlist, basis_function, cutoff_function,
+                                 n_species, n_max, l_max, radial_hyps,
                                  cutoff_hyps, single_bond_vals,
                                  single_bond_env_dervs, cutoff_matrix);
 
@@ -200,19 +195,19 @@ void ComputeFlareStdAtom::compute_peratom() {
         }
         cum_types += n_clusters_by_type[s];
       }
-      Eigen::VectorXd L_inv_kv = L_inv_blocks[0] * kernel_vec; 
+      Eigen::VectorXd L_inv_kv = L_inv_blocks[0] * kernel_vec;
 
       double K_self = 1.0;
       double Q_self = sig2 * L_inv_kv.transpose() * L_inv_kv;
- 
+
       variance = K_self - Q_self;
     }
 
     // Compute the normalized variance, it could be negative
     if (variance >= 0.0) {
-      stds[i] = pow(variance, 0.5); 
+      stds[i] = pow(variance, 0.5);
     } else {
-      stds[i] = - pow(abs(variance), 0.5); 
+      stds[i] = - pow(abs(variance), 0.5);
     }
 
   }
@@ -390,7 +385,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     cutoff_string_length = strlen(cutoff_string);
   }
 
-  MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
+  MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world);
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
@@ -477,7 +472,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   if (me == 0) {
     fgets(line, MAXLINE, fptr); // skip the first line
 
-    fgets(line, MAXLINE, fptr); // power 
+    fgets(line, MAXLINE, fptr); // power
     sscanf(line, "%i", &power);
 
     fgets(line, MAXLINE, fptr); // hyperparameters
@@ -508,7 +503,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     cutoff_string_length = strlen(cutoff_string);
   }
 
-  MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world); 
+  MPI_Bcast(hyperparameters.data(), n_hyps, MPI_DOUBLE, 0, world);
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
@@ -525,7 +520,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   // Parse number of sparse envs
   if (me == 0) {
     fgets(line, MAXLINE, fptr);
-    sscanf(line, "%i", &n_clusters); 
+    sscanf(line, "%i", &n_clusters);
   }
   MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
 
@@ -622,14 +617,14 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
       n_clusters_by_type[s] = n_clst_by_type;
 
       // Check the relationship between the power spectrum and beta.
-      int sparse_desc_size = n_clst_by_type * n_descriptors; 
-  
+      int sparse_desc_size = n_clst_by_type * n_descriptors;
+
       // Parse the beta vectors.
       memory->create(beta, sparse_desc_size, "compute:sparse_desc");
       if (me == 0)
         grab(fptr, sparse_desc_size, beta);
       MPI_Bcast(beta, sparse_desc_size, MPI_DOUBLE, 0, world);
-  
+
       // Fill in the beta matrix.
       int count = 0;
       Eigen::MatrixXd sparse_desc = Eigen::MatrixXd::Zero(n_clst_by_type, n_descriptors);

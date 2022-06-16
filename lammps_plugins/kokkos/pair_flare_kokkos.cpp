@@ -29,6 +29,7 @@
 #include "error.h"
 #include "atom_masks.h"
 #include "math_const.h"
+#include <KokkosBlas3_gemm.hpp>
 
 #include <radial_kokkos.h>
 #include <y_grad_kokkos.h>
@@ -142,169 +143,215 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 #define SINGLE_BOND_TEAM_SIZE Kokkos::AUTO()
 #endif
 
-  // Divide the atoms into batches.
-  // Goal: First batch needs to be biggest to avoid extra allocs.
-  {
-    double beta_mem = n_species * n_descriptors * n_descriptors * 8;
-    double neigh_mem = 1.0*n_atoms * max_neighs * 4;
-    double lmp_atom_mem = ignum * (18 * 8 + 4 * 4); // 2xf, v, x, virial, tag, type, mask, image
-    double mem_per_atom = 8 * (
-        2*n_bond // single_bond, u
-        + 3*n_descriptors // B2, betaB2, w
-        + 2 // evdwls, B2_norm2s
-        + 0.5 // numneigh_short
-        + max_neighs * (
-            n_max*4 // g
-            + n_harmonics*4 // Y
-            + n_max*n_harmonics*3 // single_bond_grad
-            + 3 // partial_forces
-            + 0.5 // neighs_short
-          )
+  for(curr_type = 0; curr_type<n_species; curr_type++){
+    // count atoms of this type
+    n_atoms_curr_type = 0;
+    {
+      auto type = this->type;
+      auto d_ilist = this->d_ilist;
+      auto curr_type = this->curr_type;
+
+      Kokkos::parallel_reduce("FLARE: count current type", n_atoms,
+          KOKKOS_LAMBDA (const int ii, int &count){
+            const int i = d_ilist[ii];
+
+            const int itype = type[i] - 1;
+            if(itype==curr_type) count++;
+          }, n_atoms_curr_type);
+      //printf("curr type = %d, N = %d\n", curr_type, n_atoms_curr_type);
+
+      if(n_atoms_curr_type==0) continue;
+
+      if(ilist_curr_type.extent(0) < n_atoms_curr_type){
+        ilist_curr_type = IntView1D();
+        ilist_curr_type = IntView1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: ilist_curr_type"), n_atoms_curr_type);
+      }
+      Kokkos::realloc(ilist_curr_type_idx, 1);
+
+      Kokkos::parallel_for("FLARE: find curr type atoms",
+          Kokkos::RangePolicy<DeviceType, TagFindCurrType>(0, n_atoms), *this
+      );
+
+      auto ilist_curr_type_idx = this->ilist_curr_type_idx;
+      //Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int ii){
+      //      printf("curr_type_idx = %d\n", ilist_curr_type_idx(0));
+      //    });
+
+      //printf("\n%d %d\n\n", ilist_curr_type_idx, n_atoms_curr_type);
+    }
+
+
+    // Divide the atoms into batches.
+    // Goal: First batch needs to be biggest to avoid extra allocs.
+    {
+      double beta_mem = n_species * n_descriptors * n_descriptors * 8;
+      double neigh_mem = 1.0*n_atoms * max_neighs * 4;
+      double lmp_atom_mem = ignum * (18 * 8 + 4 * 4); // 2xf, v, x, virial, tag, type, mask, image
+      double mem_per_atom = 8 * (
+          2*n_bond // single_bond, u
+          + 3*n_descriptors // B2, betaB2, w
+          + 2 // evdwls, B2_norm2s
+          + 0.5 // numneigh_short
+          + max_neighs * (
+              n_max*4 // g
+              + n_harmonics*4 // Y
+              + n_max*n_harmonics*3 // single_bond_grad
+              + 3 // partial_forces
+              + 0.5 // neighs_short
+            )
+          );
+      size_t availmem, totalmem;
+      double avail_double = maxmem - beta_mem;
+      availmem = avail_double;
+      approx_batch_size = std::min<int>(availmem/ mem_per_atom, n_atoms_curr_type);
+
+      if(approx_batch_size < 1) error->all(FLERR,"Not enough memory for even a single atom!");
+
+      n_batches = std::ceil(1.0*n_atoms_curr_type / approx_batch_size);
+      approx_batch_size = n_atoms_curr_type / n_batches;
+
+      //printf("maxmem = %g | betamem = %g | neighmem = %g | lmp_atom_mem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, lmp_atom_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
+
+    }
+    int remainder = n_atoms_curr_type - n_batches*approx_batch_size;
+
+
+
+    startatom = 0;
+    for(int batch_idx = 0; batch_idx < n_batches; batch_idx++){
+      batch_size = approx_batch_size + (remainder-- > 0 ? 1 : 0);
+      int stopatom = startatom + batch_size;
+      //printf("BATCH: %d from %d to %d\n", batch_idx, startatom, stopatom);
+
+      // reallocate per-atom views
+      if (single_bond.extent(0) < batch_size){
+        single_bond = View3D();
+        single_bond = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond"), batch_size, n_radial, n_harmonics);
+        B2 = View2D();
+        B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2"), batch_size, n_descriptors);
+        beta_B2 = View2D();
+        beta_B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: beta*B2"), batch_size, n_descriptors);
+        B2_norm2s = View1D(); evdwls = View1D(); w = View2D();
+        B2_norm2s = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2_norm2s"), batch_size);
+        evdwls = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: evdwls"), batch_size);
+        w = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: w"), batch_size, n_descriptors);
+        u = View3D();
+        u = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: u"), batch_size, n_radial, n_harmonics);
+
+        d_numneigh_short = decltype(d_numneigh_short)();
+        d_numneigh_short = Kokkos::View<int*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::numneighs_short") ,batch_size);
+      }
+
+      // reallocate per-neighbor views
+      if(g.extent(0) < batch_size || g.extent(1) < max_neighs){
+        Kokkos::LayoutStride glayout(batch_size, max_neighs*n_max*4,
+                                     max_neighs, 1,
+                                     n_max, 4*max_neighs,
+                                     4, max_neighs);
+        Kokkos::LayoutStride Ylayout(batch_size, max_neighs*n_harmonics*4,
+                                     max_neighs, 1,
+                                     n_harmonics, 4*max_neighs,
+                                     4, max_neighs);
+        g = gYView4D(); Y = gYView4D();
+        g = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), glayout);
+        Y = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), Ylayout);
+        g_ra = g;
+        Y_ra = Y;
+
+        single_bond_grad = View5D();
+        single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), batch_size, max_neighs, 3, n_max, n_harmonics);
+        partial_forces = View3D();
+        partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_neighs, 3);
+
+        d_neighbors_short = decltype(d_neighbors_short)();
+        d_neighbors_short = Kokkos::View<int**,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::neighbors_short") ,batch_size,max_neighs);
+      }
+
+      // compute short neighbor list
+        Kokkos::parallel_for("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size), *this);
+
+      // compute basis functions Rn and Ylm
+        Kokkos::parallel_for("FLARE: R and Y",
+            Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
+                            {0,0}, {batch_size, max_neighs}, {1,max_neighs}),
+            *this
         );
-    size_t availmem, totalmem;
-    double avail_double = maxmem - beta_mem;
-    availmem = avail_double;
-    approx_batch_size = std::min<int>(availmem/ mem_per_atom, n_atoms);
 
-    if(approx_batch_size < 1) error->all(FLERR,"Not enough memory for even a single atom!");
+      // compute single bond and its gradient
+      // dnlm, dnlmj
+        int g_size = ScratchView2D::shmem_size(n_max, 4);
+        int Y_size = ScratchView2D::shmem_size(n_harmonics, 4);
+        auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(batch_size, SINGLE_BOND_TEAM_SIZE, vector_length).set_scratch_size(
+            0, Kokkos::PerThread(g_size + Y_size));
+        Kokkos::deep_copy(single_bond, 0.0);
+        //Kokkos::deep_copy(single_bond_grad, 0.0);
+        Kokkos::parallel_for("FLARE: single bond",
+            policy,
+            *this
+        );
 
-    n_batches = std::ceil(1.0*n_atoms / approx_batch_size);
-    approx_batch_size = n_atoms / n_batches;
+      // compute B2
+      // pn1n2l = dn1lm dn2lm
+        Kokkos::parallel_for("FLARE: B2",
+            Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagB2>(
+                            {0,0}, {batch_size, n_descriptors}),
+            *this
+        );
 
-    //printf("maxmem = %g | betamem = %g | neighmem = %g | lmp_atom_mem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, lmp_atom_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
+        // compute beta*B2
+        if(n_species>0){
+          KokkosBlas::gemm("N", "T", 1.0, B2, Kokkos::subview(beta, curr_type, Kokkos::ALL(), Kokkos::ALL()), 0.0, beta_B2);
+        }
+        else{
+          B2_chunk_size = std::min(1000, n_descriptors);
+          int B2_size = ScratchView1D::shmem_size(B2_chunk_size);
+          Kokkos::parallel_for("FLARE: beta*B2",
+              Kokkos::TeamPolicy<DeviceType, TagBetaB2>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
+                0, Kokkos::PerTeam(B2_size)
+                ),
+              *this
+              );
+        }
 
-  }
-  int remainder = n_atoms - n_batches*approx_batch_size;
+      // compute B2 squared norms and evdwls and w
+        Kokkos::parallel_for("FLARE: B2 norm2 evdwl w",
+            Kokkos::TeamPolicy<DeviceType, TagNorm2>(batch_size, TEAM_SIZE, vector_length),
+            *this
+        );
 
-  vscatter = ScatterVType(d_vatom);
-  fscatter = ScatterFType(f);
+      // compute u
+      // un1lm = dn2lm(wn1n2l + wn2n1l) ~ 2*dn2lm*wn1n2l
+        Kokkos::parallel_for("FLARE: u",
+            Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, Tagu>(
+                            {0,0,0}, {batch_size, n_radial, n_harmonics}),
+            *this
+        );
 
+      // compute partial forces
+        int u_size = ScratchView2D::shmem_size(n_radial, n_harmonics);
+        Kokkos::parallel_for("FLARE: partial forces",
+            Kokkos::TeamPolicy<DeviceType, TagF>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
+              0, Kokkos::PerTeam(u_size)
+            ),
+            *this
+        );
 
-  startatom = 0;
-  for(int batch_idx = 0; batch_idx < n_batches; batch_idx++){
-    batch_size = approx_batch_size + (remainder-- > 0 ? 1 : 0);
-    int stopatom = startatom + batch_size;
-    //printf("BATCH: %d from %d to %d\n", batch_idx, startatom, stopatom);
+      // sum and store total forces, ev_tally
+        vscatter = ScatterVType(d_vatom);
+        fscatter = ScatterFType(f);
+        EV_FLOAT ev;
+        Kokkos::parallel_reduce("FLARE: total forces, ev_tally",
+            Kokkos::TeamPolicy<DeviceType, TagStoreF>(batch_size, TEAM_SIZE, vector_length),
+            *this,
+            ev
+        );
+        Kokkos::Experimental::contribute(d_vatom, vscatter);
+        Kokkos::Experimental::contribute(f, fscatter);
+        if (evflag)
+          ev_all += ev;
 
-    // reallocate per-atom views
-    if (single_bond.extent(0) < batch_size){
-      single_bond = View3D();
-      single_bond = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond"), batch_size, n_radial, n_harmonics);
-      B2 = View2D();
-      B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2"), batch_size, n_descriptors);
-      beta_B2 = View2D();
-      beta_B2 = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: beta*B2"), batch_size, n_descriptors);
-      B2_norm2s = View1D(); evdwls = View1D(); w = View2D();
-      B2_norm2s = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: B2_norm2s"), batch_size);
-      evdwls = View1D(Kokkos::ViewAllocateWithoutInitializing("FLARE: evdwls"), batch_size);
-      w = View2D(Kokkos::ViewAllocateWithoutInitializing("FLARE: w"), batch_size, n_descriptors);
-      u = View3D();
-      u = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: u"), batch_size, n_radial, n_harmonics);
-
-      d_numneigh_short = decltype(d_numneigh_short)();
-      d_numneigh_short = Kokkos::View<int*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::numneighs_short") ,batch_size);
+      startatom = stopatom;
     }
-
-    // reallocate per-neighbor views
-    if(g.extent(0) < batch_size || g.extent(1) < max_neighs){
-      Kokkos::LayoutStride glayout(batch_size, max_neighs*n_max*4,
-                                   max_neighs, 1,
-                                   n_max, 4*max_neighs,
-                                   4, max_neighs);
-      Kokkos::LayoutStride Ylayout(batch_size, max_neighs*n_harmonics*4,
-                                   max_neighs, 1,
-                                   n_harmonics, 4*max_neighs,
-                                   4, max_neighs);
-      g = gYView4D(); Y = gYView4D();
-      g = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), glayout);
-      Y = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), Ylayout);
-      g_ra = g;
-      Y_ra = Y;
-
-      single_bond_grad = View5D();
-      single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), batch_size, max_neighs, 3, n_max, n_harmonics);
-      partial_forces = View3D();
-      partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_neighs, 3);
-
-      d_neighbors_short = decltype(d_neighbors_short)();
-      d_neighbors_short = Kokkos::View<int**,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::neighbors_short") ,batch_size,max_neighs);
-    }
-
-    // compute short neighbor list
-      Kokkos::parallel_for("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size), *this);
-
-    // compute basis functions Rn and Ylm
-      Kokkos::parallel_for("FLARE: R and Y",
-          Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-                          {0,0}, {batch_size, max_neighs}, {1,max_neighs}),
-          *this
-      );
-
-    // compute single bond and its gradient
-    // dnlm, dnlmj
-      int g_size = ScratchView2D::shmem_size(n_max, 4);
-      int Y_size = ScratchView2D::shmem_size(n_harmonics, 4);
-      auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(batch_size, SINGLE_BOND_TEAM_SIZE, vector_length).set_scratch_size(
-          0, Kokkos::PerThread(g_size + Y_size));
-      Kokkos::deep_copy(single_bond, 0.0);
-      //Kokkos::deep_copy(single_bond_grad, 0.0);
-      Kokkos::parallel_for("FLARE: single bond",
-          policy,
-          *this
-      );
-
-    // compute B2
-    // pn1n2l = dn1lm dn2lm
-      Kokkos::parallel_for("FLARE: B2",
-          Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, TagB2>(
-                          {0,0}, {batch_size, n_descriptors}),
-          *this
-      );
-
-    // compute beta*B2
-      B2_chunk_size = std::min(1000, n_descriptors);
-      int B2_size = ScratchView1D::shmem_size(B2_chunk_size);
-      Kokkos::parallel_for("FLARE: beta*B2",
-          Kokkos::TeamPolicy<DeviceType, TagBetaB2>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
-            0, Kokkos::PerTeam(B2_size)
-          ),
-          *this
-      );
-
-    // compute B2 squared norms and evdwls and w
-      Kokkos::parallel_for("FLARE: B2 norm2 evdwl w",
-          Kokkos::TeamPolicy<DeviceType, TagNorm2>(batch_size, TEAM_SIZE, vector_length),
-          *this
-      );
-
-    // compute u
-    // un1lm = dn2lm(wn1n2l + wn2n1l) ~ 2*dn2lm*wn1n2l
-      Kokkos::parallel_for("FLARE: u",
-          Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>, Tagu>(
-                          {0,0,0}, {batch_size, n_radial, n_harmonics}),
-          *this
-      );
-
-    // compute partial forces
-      int u_size = ScratchView2D::shmem_size(n_radial, n_harmonics);
-      Kokkos::parallel_for("FLARE: partial forces",
-          Kokkos::TeamPolicy<DeviceType, TagF>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
-            0, Kokkos::PerTeam(u_size)
-          ),
-          *this
-      );
-
-    // sum and store total forces, ev_tally
-      EV_FLOAT ev;
-      Kokkos::parallel_reduce("FLARE: total forces, ev_tally",
-          Kokkos::TeamPolicy<DeviceType, TagStoreF>(batch_size, TEAM_SIZE, vector_length),
-          *this,
-          ev
-      );
-      if (evflag)
-        ev_all += ev;
-
-    startatom = stopatom;
   }
   if (eflag_global) eng_vdwl += ev_all.evdwl;
   if (vflag_global) {
@@ -315,8 +362,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
     virial[4] += ev_all.v[4];
     virial[5] += ev_all.v[5];
   }
-  Kokkos::Experimental::contribute(d_vatom, vscatter);
-  Kokkos::Experimental::contribute(f, fscatter);
 
 
   if (eflag_atom) {
@@ -343,7 +388,7 @@ template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
 
-  const int i = d_ilist[ii+startatom];
+  const int i = ilist_curr_type[ii+startatom];
   const int j = d_neighbors_short(ii,jj);
   const int jnum = d_numneigh_short(ii);
   if(jj >= jnum) return;
@@ -448,7 +493,7 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_member) const{
   int ii = team_member.league_rank();
-  const int i = d_ilist[ii+startatom];
+  const int i = ilist_curr_type[ii+startatom];
 
   const int itype = type[i] - 1;
 
@@ -514,7 +559,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_mem
     });
   }
   if (eflag_atom){
-    const int i = d_ilist[ii+startatom];
+    const int i = ilist_curr_type[ii+startatom];
     d_eatom[i] = evdwls(ii);
   }
 
@@ -542,7 +587,7 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member) const{
   int ii = team_member.league_rank();
-  const int i = d_ilist[ii+startatom];
+  const int i = ilist_curr_type[ii+startatom];
   const int jnum = d_numneigh_short(ii);
 
   ScratchView2D uscratch(team_member.team_scratch(0), n_radial, n_harmonics);
@@ -576,7 +621,7 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_member, EV_FLOAT &ev) const{
   int ii = team_member.league_rank();
-  const int i = d_ilist[ii+startatom];
+  const int i = ilist_curr_type[ii+startatom];
   const int jnum = d_numneigh_short(ii);
   const X_FLOAT xtmp = x(i,0);
   const X_FLOAT ytmp = x(i,1);
@@ -633,7 +678,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
-    const int i = d_ilist[ii+startatom];
+    const int i = ilist_curr_type[ii+startatom];
     const X_FLOAT xtmp = x(i,0);
     const X_FLOAT ytmp = x(i,1);
     const X_FLOAT ztmp = x(i,2);
@@ -713,24 +758,16 @@ void PairFLAREKokkos<DeviceType>::init_style()
 {
   PairFLARE::init_style();
 
-  // irequest = neigh request made by parent class
+  auto request = neighbor->find_request(this);
+  request->set_kokkos_host(std::is_same<DeviceType,LMPHostType>::value &&
+                           !std::is_same<DeviceType,LMPDeviceType>::value);
+  request->set_kokkos_device(std::is_same<DeviceType,LMPDeviceType>::value);
 
   neighflag = lmp->kokkos->neighflag;
-  int irequest = neighbor->nrequest - 1;
-
-  neighbor->requests[irequest]->
-    kokkos_host = std::is_same<DeviceType,LMPHostType>::value &&
-    !std::is_same<DeviceType,LMPDeviceType>::value;
-  neighbor->requests[irequest]->
-    kokkos_device = std::is_same<DeviceType,LMPDeviceType>::value;
 
   // always request a full neighbor list
 
-  if (neighflag == FULL) { // TODO: figure this out
-    neighbor->requests[irequest]->full = 1;
-    neighbor->requests[irequest]->half = 0;
-    neighbor->requests[irequest]->ghost = 0;
-  } else {
+  if (neighflag != FULL) { // TODO: figure this out
     error->all(FLERR,"Cannot use chosen neighbor list style with pair flare/kk");
   }
 
@@ -793,12 +830,25 @@ void PairFLAREKokkos<DeviceType>::v_tally(E_FLOAT (&v)[6], const int &i, const i
   }
 }
 
+template<class DeviceType>
+KOKKOS_INLINE_FUNCTION
+void PairFLAREKokkos<DeviceType>::operator()(TagFindCurrType, const int ii) const{
+  const int i = d_ilist[ii];
+
+  const int itype = type[i] - 1;
+
+  if(itype==curr_type){
+    int index = Kokkos::atomic_fetch_add(&ilist_curr_type_idx(0), 1);
+    ilist_curr_type(index) = i;
+  }
+}
+
 
 
 namespace LAMMPS_NS {
 template class PairFLAREKokkos<LMPDeviceType>;
 #ifdef LMP_KOKKOS_GPU
-template class PairFLAREKokkos<LMPHostType>;
+//template class PairFLAREKokkos<LMPHostType>;
 #endif
 }
 
