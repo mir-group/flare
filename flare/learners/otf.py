@@ -242,6 +242,18 @@ class OTF:
         if self.build_mode not in ["bayesian", "direct"]:
             raise Exception("build_mode needs to be 'bayesian' or 'direct'")
 
+        # Sanity check
+        if self.build_mode == "direct":
+            assert (self.update_style is None) and (
+                self.update_threshold is None
+            ), "In 'direct' mode, please set update_style=None, and update_threshold=None"
+
+        if self.update_style == "add_n":
+            assert self.update_threshold is None, (
+                "When update_style='add_n', the update_threshold does not take any effect,"
+                "please set update_threshold=None"
+            )
+
         # set logger
         self.output = Output(output_name, always_flush=True, print_as_xyz=True)
         self.output_name = output_name

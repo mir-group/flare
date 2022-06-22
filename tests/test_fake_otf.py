@@ -147,6 +147,8 @@ def test_otf_md(md_engine):
     config["otf"]["md_kwargs"]["filenames"] = ["myotf_dft.xyz"]
     config["otf"]["output_name"] = "direct"
     config["otf"]["build_mode"] = "direct"
+    config["otf"]["update_style"] = None
+    config["otf"]["update_threshold"] = None
     fresh_start_otf(config)
 
     fake_sgp_calc, _ = SGP_Calculator.from_file(f"direct_flare.json")
