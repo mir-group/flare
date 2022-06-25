@@ -66,6 +66,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("volume", &DescriptorValues::volume)
       .def_readwrite("single_bond_vals", &DescriptorValues::single_bond_vals)
       .def_readwrite("single_bond_force_dervs", &DescriptorValues::single_bond_force_dervs)
+      .def_readwrite("complex_single_bond_vals", &DescriptorValues::complex_single_bond_vals)
+      .def_readwrite("complex_single_bond_force_dervs", &DescriptorValues::complex_single_bond_force_dervs)
       .def_readwrite("unique_neighbor_count", &DescriptorValues::unique_neighbor_count)
       .def_readwrite("cumulative_neighbor_count", &DescriptorValues::cumulative_neighbor_count)
       .def_readwrite("descriptor_indices", &DescriptorValues::descriptor_indices)
@@ -99,6 +101,7 @@ PYBIND11_MODULE(_C_flare, m) {
 
   // Descriptor calculators
   py::class_<Descriptor>(m, "Descriptor")
+      .def_readwrite("descriptor_name", &Descriptor::descriptor_name)
       .def("compute_struc", &Descriptor::compute_struc);
 
   py::class_<TwoBody, Descriptor>(m, "TwoBody")
@@ -125,6 +128,7 @@ PYBIND11_MODULE(_C_flare, m) {
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &,
                     const Eigen::MatrixXd &>())
+      .def_readonly("descriptor_name", &B2::descriptor_name)
       .def_readonly("radial_basis", &B2::radial_basis)
       .def_readonly("cutoff_function", &B2::cutoff_function)
       .def_readonly("radial_hyps", &B2::radial_hyps)
@@ -161,7 +165,13 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B3, Descriptor>(m, "B3")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-                    const std::vector<int> &>());
+                    const std::vector<int> &>())
+      .def_readonly("descriptor_name", &B3::descriptor_name)
+      .def_readonly("radial_basis", &B3::radial_basis)
+      .def_readonly("cutoff_function", &B3::cutoff_function)
+      .def_readonly("radial_hyps", &B3::radial_hyps)
+      .def_readonly("cutoff_hyps", &B3::cutoff_hyps)
+      .def_readonly("descriptor_settings", &B3::descriptor_settings);
 
   // Kernel functions
   py::class_<Kernel>(m, "Kernel");

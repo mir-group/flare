@@ -44,6 +44,7 @@ public:
   std::vector<Eigen::VectorXi> neighbor_counts, cumulative_neighbor_counts,
       atom_indices, neighbor_indices;
   Eigen::MatrixXd single_bond_vals, single_bond_force_dervs;
+  Eigen::MatrixXcd complex_single_bond_vals, complex_single_bond_force_dervs;
   Eigen::VectorXi unique_neighbor_count, cumulative_neighbor_count, descriptor_indices;
 
   int n_clusters = 0;
