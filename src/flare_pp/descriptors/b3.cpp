@@ -59,8 +59,8 @@ DescriptorValues B3 ::compute_struc(Structure &structure) {
              force_dervs, unique_neighbor_count, cumulative_neighbor_count,
              descriptor_indices, nos, N, lmax, wigner3j_coeffs);
 
-  desc.single_bond_vals = single_bond_vals;
-  desc.single_bond_force_dervs = force_dervs;
+  desc.complex_single_bond_vals = single_bond_vals;
+  desc.complex_single_bond_force_dervs = force_dervs;
   desc.unique_neighbor_count = unique_neighbor_count;
   desc.cumulative_neighbor_count = cumulative_neighbor_count;
   desc.descriptor_indices = descriptor_indices;
