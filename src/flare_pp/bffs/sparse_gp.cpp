@@ -129,22 +129,7 @@ SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
     // set to zero.
   }
 
-  // Sort variances to atomic indices
-  std::vector<Eigen::VectorXd> sorted_variances;
-  int v_count = 0;
-  for (int i = 0; i < n_kernels; i++) {
-    Eigen::VectorXd sorted_var = Eigen::VectorXd::Zero(variances[i].size());
-    DescriptorValues desc = structure.descriptors[i];
-    for (int s = 0; s < desc.n_types; s++) {
-      for (int n = 0; n < desc.atom_indices[s].size(); n++) {
-         sorted_var[desc.atom_indices[s][n]] = variances[i][v_count];
-         v_count++;
-      }
-    }
-    sorted_variances.push_back(sorted_var);
-  }
-
-  return sorted_variances;
+  return variances;
 }
 
 void SparseGP ::add_specific_environments(const Structure &structure,
