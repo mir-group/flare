@@ -24,7 +24,7 @@ do
     ln -s $(pwd)/$f $src/$f
 done
 
-for f in cutoffs radial y_grad
+for f in cutoffs radial y_grad wigner3j
 do
     for ex in cpp h
     do
