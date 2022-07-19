@@ -218,6 +218,8 @@ class OTF:
 
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
+        elif isinstance(init_atoms, int):
+            self.init_atoms = np.random.choice(len(self.atoms), size=init_atoms, replace=False)
         else:
             # detect if there are duplicated atoms
             assert len(set(init_atoms)) == len(
