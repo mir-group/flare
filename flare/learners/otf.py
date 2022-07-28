@@ -35,6 +35,7 @@ from flare.learners.utils import is_std_in_bound, get_env_indices
 from flare.utils import NumpyEncoder
 from flare.atoms import FLARE_Atoms
 from flare.bffs.gp.calculator import FLARE_Calculator
+from flare.bffs.sgp.calculator import SGP_Calculator
 
 
 class OTF:
@@ -181,6 +182,10 @@ class OTF:
         timestep = dt * units.fs * 1e3  # convert pico-second to ASE timestep units
         if self.md_engine == "PyLAMMPS":
             md_kwargs["output_name"] = output_name
+            if isinstance(self.flare_calc, SGP_Calculator):
+                assert SGP_Calculator.gp_model.variance_type == "local", \
+                        "LAMMPS training only supports variance_type='local'"
+            
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )
@@ -404,7 +409,7 @@ class OTF:
 
                     # wandb log mae
                     wandb.log({
-                        "step": self.curr_step,
+                        "Step": self.curr_step,
                         "e_mae": e_mae,
                         "e_mav": e_mav,
                         "f_mae": f_mae,
@@ -767,14 +772,14 @@ class OTF:
         # wandb log mae
         if self.wandb_log is not None:
             wandb.log({
-                "step": self.curr_step,
+                "Step": self.curr_step,
                 "temperature": self.temperature,
                 "ke": self.KE,
                 "pe": self.atoms.get_potential_energy(),
             })
             if "stds" in self.atoms.calc.results:
                 wandb.log({
-                    "step": self.curr_step,
+                    "Step": self.curr_step,
                     "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
                 })
 
@@ -796,7 +801,7 @@ class OTF:
             # wandb log mae
             if self.wandb_log is not None:
                 wandb.log({
-                    "step": self.curr_step,
+                    "Step": self.curr_step,
                     "e_mae": e_mae,
                     "e_mav": e_mav,
                     "f_mae": f_mae,
