@@ -182,8 +182,8 @@ class OTF:
         timestep = dt * units.fs * 1e3  # convert pico-second to ASE timestep units
         if self.md_engine == "PyLAMMPS":
             md_kwargs["output_name"] = output_name
-            if isinstance(self.flare_calc, SGP_Calculator):
-                assert SGP_Calculator.gp_model.variance_type == "local", \
+            if isinstance(self.atoms.calc, SGP_Calculator):
+                assert self.atoms.calc.gp_model.variance_type == "local", \
                         "LAMMPS training only supports variance_type='local'"
             
         self.md = MD(
@@ -408,15 +408,16 @@ class OTF:
                         self.backup_checkpoint()
 
                     # wandb log mae
-                    wandb.log({
-                        "Step": self.curr_step,
-                        "e_mae": e_mae,
-                        "e_mav": e_mav,
-                        "f_mae": f_mae,
-                        "f_mav": f_mav,
-                        "s_mae": s_mae,
-                        "s_mav": s_mav,
-                    })
+                    if self.wandb_log is not None:
+                        wandb.log({
+                            "Step": self.curr_step,
+                            "e_mae": e_mae,
+                            "e_mav": e_mav,
+                            "f_mae": f_mae,
+                            "f_mav": f_mav,
+                            "s_mae": s_mae,
+                            "s_mav": s_mav,
+                        })
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
