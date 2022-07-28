@@ -17,6 +17,7 @@ from shutil import copyfile
 from typing import List, Tuple, Union
 
 import numpy as np
+import wandb
 
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
@@ -148,6 +149,7 @@ class OTF:
         store_dft_output: Tuple[Union[str, List[str]], str] = None,
         # other args
         build_mode="bayesian",
+        wandb_log=None,
         **kwargs,
     ):
 
@@ -279,6 +281,11 @@ class OTF:
         if "freeze_hyps" in kwargs:
             raise Exception("freeze_hyps no long supported, please use train_hyps")
 
+        # wandb
+        self.wandb_log = wandb_log
+        if wandb_log is not None:
+            wandb.init(project=wandb_log)
+
     def run(self):
         """
         Performs an on-the-fly training run.
@@ -371,7 +378,7 @@ class OTF:
                     self.record_dft_data(self.atoms, target_atoms)
 
                     # compute mae and write to output
-                    compute_mae(
+                    e_mae, e_mav, f_mae, f_mav, s_mae, s_mav = compute_mae(
                         self.atoms,
                         self.output.basename,
                         gp_energy,
@@ -394,6 +401,17 @@ class OTF:
                     if self.write_model == 4:
                         self.checkpoint()
                         self.backup_checkpoint()
+
+                    # wandb log mae
+                    wandb.log({
+                        "step": self.curr_step,
+                        "e_mae": e_mae,
+                        "e_mav": e_mav,
+                        "f_mae": f_mae,
+                        "f_mav": f_mav,
+                        "s_mae": s_mae,
+                        "s_mav": s_mav,
+                    })
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -746,9 +764,23 @@ class OTF:
         )
         self.output.write_wall_time(tic, task="Write Config")
 
+        # wandb log mae
+        if self.wandb_log is not None:
+            wandb.log({
+                "step": self.curr_step,
+                "temperature": self.temperature,
+                "ke": self.KE,
+                "pe": self.atoms.get_potential_energy(),
+            })
+            if "stds" in self.atoms.calc.results:
+                wandb.log({
+                    "step": self.curr_step,
+                    "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
+                })
+
         if self.md_engine == "Fake" and not self.dft_step:
             tic = time.time()
-            compute_mae(
+            e_mae, e_mav, f_mae, f_mav, s_mae, s_mav = compute_mae(
                 self.atoms,
                 self.output.basename,
                 self.atoms.get_potential_energy(),
@@ -760,6 +792,19 @@ class OTF:
                 self.force_only,
             )
             self.output.write_wall_time(tic, task="Compute MAE")
+
+            # wandb log mae
+            if self.wandb_log is not None:
+                wandb.log({
+                    "step": self.curr_step,
+                    "e_mae": e_mae,
+                    "e_mav": e_mav,
+                    "f_mae": f_mae,
+                    "f_mav": f_mav,
+                    "s_mae": s_mae,
+                    "s_mav": s_mav,
+                })
+
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)
