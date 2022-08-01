@@ -409,15 +409,17 @@ class OTF:
 
                     # wandb log mae
                     if self.wandb_log is not None:
-                        wandb.log({
-                            "Step": self.curr_step,
-                            "e_mae": e_mae,
-                            "e_mav": e_mav,
-                            "f_mae": f_mae,
-                            "f_mav": f_mav,
-                            "s_mae": s_mae,
-                            "s_mav": s_mav,
-                        })
+                        wandb.log(
+                            {
+                                "dft_e_mae": e_mae,
+                                "dft_e_mav": e_mav,
+                                "dft_f_mae": f_mae,
+                                "dft_f_mav": f_mav,
+                                "dft_s_mae": s_mae,
+                                "dft_s_mav": s_mav,
+                            },
+                            step = self.curr_step,
+                        )
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -772,17 +774,21 @@ class OTF:
 
         # wandb log mae
         if self.wandb_log is not None:
-            wandb.log({
-                "Step": self.curr_step,
-                "temperature": self.temperature,
-                "ke": self.KE,
-                "pe": self.atoms.get_potential_energy(),
-            })
+            wandb.log(
+                {
+                    "temperature": self.temperature,
+                    "ke": self.KE,
+                    "pe": self.atoms.get_potential_energy(),
+                },
+                step = self.curr_step,
+            )
             if "stds" in self.atoms.calc.results:
-                wandb.log({
-                    "Step": self.curr_step,
-                    "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
-                })
+                wandb.log(
+                    {
+                        "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
+                    },
+                    step = self.curr_step,
+                )
 
         if self.md_engine == "Fake" and not self.dft_step:
             tic = time.time()
@@ -801,15 +807,17 @@ class OTF:
 
             # wandb log mae
             if self.wandb_log is not None:
-                wandb.log({
-                    "Step": self.curr_step,
-                    "e_mae": e_mae,
-                    "e_mav": e_mav,
-                    "f_mae": f_mae,
-                    "f_mav": f_mav,
-                    "s_mae": s_mae,
-                    "s_mav": s_mav,
-                })
+                wandb.log(
+                    {
+                        "e_mae": e_mae,
+                        "e_mav": e_mav,
+                        "f_mae": f_mae,
+                        "f_mav": f_mav,
+                        "s_mae": s_mae,
+                        "s_mav": s_mav,
+                    },
+                    step = self.curr_step,
+                )
 
 
     def record_dft_data(self, structure, target_atoms):
