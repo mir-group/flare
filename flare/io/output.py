@@ -648,6 +648,7 @@ def compute_mae(
     f.info("Mean absolute errors & Mean absolute values")
 
     # compute energy/forces/stress mean absolute error and value
+    e_mae = e_mav = s_mae = s_mav = 0
     if not force_only:
         if dft_energy is not None and gp_energy is not None:
             e_mae = np.mean(np.abs(dft_energy - gp_energy))
@@ -683,3 +684,5 @@ def compute_mae(
         curr_species = unique_species[s]
         f.info(f"type {curr_species} forces mae: {per_species_mae[s]:.4f} eV/A")
         f.info(f"type {curr_species} forces mav: {per_species_mav[s]:.4f} eV/A")
+
+    return e_mae, e_mav, f_mae, f_mav, s_mae, s_mav

@@ -17,6 +17,7 @@ from shutil import copyfile
 from typing import List, Tuple, Union
 
 import numpy as np
+import wandb
 
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
@@ -34,6 +35,7 @@ from flare.learners.utils import is_std_in_bound, get_env_indices
 from flare.utils import NumpyEncoder
 from flare.atoms import FLARE_Atoms
 from flare.bffs.gp.calculator import FLARE_Calculator
+from flare.bffs.sgp.calculator import SGP_Calculator
 
 
 class OTF:
@@ -148,6 +150,7 @@ class OTF:
         store_dft_output: Tuple[Union[str, List[str]], str] = None,
         # other args
         build_mode="bayesian",
+        wandb_log=None,
         **kwargs,
     ):
 
@@ -179,6 +182,10 @@ class OTF:
         timestep = dt * units.fs * 1e3  # convert pico-second to ASE timestep units
         if self.md_engine == "PyLAMMPS":
             md_kwargs["output_name"] = output_name
+            if isinstance(self.atoms.calc, SGP_Calculator):
+                assert self.atoms.calc.gp_model.variance_type == "local", \
+                        "LAMMPS training only supports variance_type='local'"
+            
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )
@@ -218,6 +225,8 @@ class OTF:
 
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
+        elif isinstance(init_atoms, int):
+            self.init_atoms = np.random.choice(len(self.atoms), size=init_atoms, replace=False)
         else:
             # detect if there are duplicated atoms
             assert len(set(init_atoms)) == len(
@@ -276,6 +285,11 @@ class OTF:
         # backward compatibility
         if "freeze_hyps" in kwargs:
             raise Exception("freeze_hyps no long supported, please use train_hyps")
+
+        # wandb
+        self.wandb_log = wandb_log
+        if wandb_log is not None:
+            wandb.init(project=wandb_log)
 
     def run(self):
         """
@@ -369,7 +383,7 @@ class OTF:
                     self.record_dft_data(self.atoms, target_atoms)
 
                     # compute mae and write to output
-                    compute_mae(
+                    e_mae, e_mav, f_mae, f_mav, s_mae, s_mav = compute_mae(
                         self.atoms,
                         self.output.basename,
                         gp_energy,
@@ -392,6 +406,20 @@ class OTF:
                     if self.write_model == 4:
                         self.checkpoint()
                         self.backup_checkpoint()
+
+                    # wandb log mae
+                    if self.wandb_log is not None:
+                        wandb.log(
+                            {
+                                "dft_e_mae": e_mae,
+                                "dft_e_mav": e_mav,
+                                "dft_f_mae": f_mae,
+                                "dft_f_mav": f_mav,
+                                "dft_s_mae": s_mae,
+                                "dft_s_mav": s_mav,
+                            },
+                            step = self.curr_step,
+                        )
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -744,9 +772,27 @@ class OTF:
         )
         self.output.write_wall_time(tic, task="Write Config")
 
+        # wandb log mae
+        if self.wandb_log is not None:
+            wandb.log(
+                {
+                    "temperature": self.temperature,
+                    "ke": self.KE,
+                    "pe": self.atoms.get_potential_energy(),
+                },
+                step = self.curr_step,
+            )
+            if "stds" in self.atoms.calc.results:
+                wandb.log(
+                    {
+                        "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
+                    },
+                    step = self.curr_step,
+                )
+
         if self.md_engine == "Fake" and not self.dft_step:
             tic = time.time()
-            compute_mae(
+            e_mae, e_mav, f_mae, f_mav, s_mae, s_mav = compute_mae(
                 self.atoms,
                 self.output.basename,
                 self.atoms.get_potential_energy(),
@@ -758,6 +804,21 @@ class OTF:
                 self.force_only,
             )
             self.output.write_wall_time(tic, task="Compute MAE")
+
+            # wandb log mae
+            if self.wandb_log is not None:
+                wandb.log(
+                    {
+                        "e_mae": e_mae,
+                        "e_mav": e_mav,
+                        "f_mae": f_mae,
+                        "f_mav": f_mav,
+                        "s_mae": s_mae,
+                        "s_mav": s_mav,
+                    },
+                    step = self.curr_step,
+                )
+
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)

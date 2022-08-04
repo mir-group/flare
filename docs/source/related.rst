@@ -60,3 +60,10 @@ We will list the applications of FLARE here.
 
     Chemical reaction
 
+- Harry H. Halim and Yoshitada Morikawa. **Elucidation of Cu–Zn Surface Alloying on Cu(997) by Machine-Learning Molecular Dynamics.** ACS Phys. Chem Au (2022). (`published version <https://pubs.acs.org/doi/10.1021/acsphyschemau.2c00017>`_)
+
+.. figure:: https://pubs.acs.org/cms/10.1021/acsphyschemau.2c00017/asset/images/large/pg2c00017_0020.jpeg
+    :figwidth 80 %
+    :align: center
+
+    Cu-Zn surface alloying
