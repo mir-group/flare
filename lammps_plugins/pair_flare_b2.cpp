@@ -260,7 +260,7 @@ double PairFLAREB2::init_one(int i, int j) {
 
 void PairFLAREB2::read_file(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], body_order_string[MAXLINE];
   int radial_string_length, cutoff_string_length;
   FILE *fptr;
 
@@ -280,6 +280,12 @@ void PairFLAREB2::read_file(char *filename) {
 
     fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
     sscanf(line, "%i", &power);
+
+    fgets(line, MAXLINE, fptr); // Body order, B1/2/3
+    sscanf(line, "%s", body_order_string);
+    if (strcmp(body_order_string, "B2")) {
+      error->all(FLERR, "Potential has to be B2");
+    }
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set

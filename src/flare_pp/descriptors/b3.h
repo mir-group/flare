@@ -19,6 +19,7 @@ public:
   std::vector<double> radial_hyps, cutoff_hyps;
   std::vector<int> descriptor_settings;
   Eigen::VectorXd wigner3j_coeffs;
+  Eigen::MatrixXd cutoffs;
 
   std::string descriptor_name = "B3";
 
@@ -31,6 +32,7 @@ public:
 
   DescriptorValues compute_struc(Structure &structure);
 
+  void write_to_file(std::ofstream &coeff_file, int coeff_size);
   nlohmann::json return_json();
 };
 

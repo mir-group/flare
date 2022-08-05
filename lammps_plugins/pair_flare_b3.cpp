@@ -139,11 +139,16 @@ void PairFLAREB3::compute(int eflag, int vflag) {
 
     // Compute local energy and partial forces.
     // TODO: not needed if using "u"
-    beta_p = beta_matrices[itype - 1] * vals;
-    evdwl = vals.dot(beta_p) / norm_squared;
-   
-    partial_forces =
+    if (power == 1) {
+      double B3_norm = pow(norm_squared, 0.5);
+      evdwl = beta_matrices[itype - 1].col(0).dot(vals) / B3_norm;
+      partial_forces = - env_dervs * beta_matrices[itype - 1].col(0) / B3_norm + evdwl * env_dot / norm_squared;
+    } else if (power == 2) {
+      beta_p = beta_matrices[itype - 1] * vals;
+      evdwl = vals.dot(beta_p) / norm_squared;
+      partial_forces =
         2 * (- env_dervs * beta_p + evdwl * env_dot) / norm_squared;
+    }
 
     // Update energy, force and stress arrays.
     n_count = 0;
@@ -270,7 +275,7 @@ double PairFLAREB3::init_one(int i, int j) {
 
 void PairFLAREB3::read_file(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], body_order_string[MAXLINE];
   int radial_string_length, cutoff_string_length;
   FILE *fptr;
 
@@ -284,12 +289,19 @@ void PairFLAREB3::read_file(char *filename) {
     }
   }
 
+  printf("Reading header\n");
   int tmp, nwords;
   if (me == 0) {
     fgets(line, MAXLINE, fptr); // Date and contributor
 
     fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
     sscanf(line, "%i", &power);
+
+    fgets(line, MAXLINE, fptr); // Body order, B1/2/3
+    sscanf(line, "%s", body_order_string);
+    if (strcmp(body_order_string, "B3")) {
+      error->all(FLERR, "Potential has to be B3");
+    }
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
@@ -321,6 +333,7 @@ void PairFLAREB3::read_file(char *filename) {
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
+  printf("Reading cutoffs\n");
   // Fill in the cutoff matrix.
   cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
@@ -381,6 +394,7 @@ void PairFLAREB3::read_file(char *filename) {
   int beta_count = 0;
   double beta_val;
 
+  printf("Reading beta\n");
   if (power == 1) {
     for (int k = 0; k < n_species; k++) {
       beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, 1);
@@ -408,6 +422,7 @@ void PairFLAREB3::read_file(char *filename) {
       beta_matrices.push_back(beta_matrix);
     }
   }
+  printf("Finish reading potential\n");
 }
 
 /* ----------------------------------------------------------------------
