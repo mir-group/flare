@@ -63,18 +63,21 @@ void compute_Bk(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
                 const Eigen::MatrixXd &beta_matrix, Eigen::VectorXcd &u, 
                 double *evdwl);
 
-void complex_single_bond(
-    Eigen::MatrixXcd &single_bond_vals, Eigen::MatrixXcd &force_dervs,
-    Eigen::MatrixXd &neighbor_coordinates, Eigen::VectorXi &neighbor_count,
-    Eigen::VectorXi &cumulative_neighbor_count,
-    Eigen::VectorXi &neighbor_indices,
+void complex_single_bond_multiple_cutoffs(
+    double **x, int *type, int jnum, int n_inner, int i, double xtmp,
+    double ytmp, double ztmp, int *jlist,
     std::function<void(std::vector<double> &, std::vector<double> &, double,
                        int, std::vector<double>)>
-        radial_function,
+        basis_function,
     std::function<void(std::vector<double> &, double, double,
                        std::vector<double>)>
         cutoff_function,
-    int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const Structure &structure);
+    int n_species, int N, int lmax,
+    const std::vector<double> &radial_hyps,
+    const std::vector<double> &cutoff_hyps, Eigen::VectorXcd &single_bond_vals,
+    Eigen::MatrixXcd &single_bond_env_dervs,
+    const Eigen::MatrixXd &cutoff_matrix);
+
+std::vector<std::vector<int>> B3_indices(int n_radial, int lmax);
 
 #endif

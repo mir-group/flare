@@ -88,8 +88,8 @@ void PairFLAREB1::compute(int eflag, int vflag) {
 
   int beta_init, beta_counter;
   double norm_squared;
-  Eigen::VectorXd single_bond_vals, B1_vals, B1_env_dot, u;
-  Eigen::MatrixXd single_bond_env_dervs, B1_env_dervs;
+  Eigen::VectorXd single_bond_vals, vals, env_dot, u, beta_p, partial_forces;
+  Eigen::MatrixXd single_bond_env_dervs, env_dervs;
   double empty_thresh = 1e-8;
 
   for (ii = 0; ii < inum; ii++) {
@@ -125,8 +125,9 @@ void PairFLAREB1::compute(int eflag, int vflag) {
                                  single_bond_env_dervs, cutoff_matrix);
 
     // Compute invariant descriptors.
-    B1_descriptor(B1_vals, norm_squared,
-                  single_bond_vals, n_species, n_max, l_max);
+    B1_descriptor(vals, env_dervs, norm_squared, env_dot,
+                  single_bond_vals, single_bond_env_dervs, 
+                  n_species, n_max, l_max);
 
     // Continue if the environment is empty.
     if (norm_squared < empty_thresh)

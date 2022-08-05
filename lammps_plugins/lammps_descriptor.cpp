@@ -332,8 +332,8 @@ void complex_single_bond_multiple_cutoffs(
         cutoff_function,
     int n_species, int N, int lmax,
     const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, Eigen::VectorXd &single_bond_vals,
-    Eigen::MatrixXd &single_bond_env_dervs,
+    const std::vector<double> &cutoff_hyps, Eigen::VectorXcd &single_bond_vals,
+    Eigen::MatrixXcd &single_bond_env_dervs,
     const Eigen::MatrixXd &cutoff_matrix) {
 
   // Initialize basis vectors and spherical harmonics.
@@ -347,8 +347,8 @@ void complex_single_bond_multiple_cutoffs(
 
   // Prepare LAMMPS variables.
   int central_species = type[i] - 1;
-  double delx, dely, delz, rsq, r, bond, bond_x, bond_y, bond_z, g_val, gx_val,
-      gy_val, gz_val, h_val;
+  double delx, dely, delz, rsq, r, g_val, gx_val, gy_val, gz_val;
+  std::complex<double> bond, bond_x, bond_y, bond_z, h_val;
   int j, s, descriptor_counter;
 
   // Initialize vectors.

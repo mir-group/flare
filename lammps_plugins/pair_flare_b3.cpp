@@ -89,8 +89,10 @@ void PairFLAREB3::compute(int eflag, int vflag) {
 
   int beta_init, beta_counter;
   double norm_squared;
-  Eigen::VectorXcd single_bond_vals, vals, env_dot, u;
-  Eigen::MatrixXcd single_bond_env_dervs, env_dervs;
+  Eigen::VectorXcd single_bond_vals, u;
+  Eigen::VectorXd vals, env_dot, beta_p, partial_forces;
+  Eigen::MatrixXcd single_bond_env_dervs;
+  Eigen::MatrixXd env_dervs;
   double empty_thresh = 1e-8;
 
   for (ii = 0; ii < inum; ii++) {
@@ -119,7 +121,7 @@ void PairFLAREB3::compute(int eflag, int vflag) {
 
     // Compute covariant descriptors.
     // TODO: this function call is duplicated for multiple kernels
-    complex_single_bond(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
+    complex_single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
                         basis_function, cutoff_function, 
                         n_species, n_max, l_max, 
                         radial_hyps, cutoff_hyps, 
@@ -137,7 +139,7 @@ void PairFLAREB3::compute(int eflag, int vflag) {
 
     // Compute local energy and partial forces.
     // TODO: not needed if using "u"
-    beta_p = beta_matrices[kern][itype - 1] * vals;
+    beta_p = beta_matrices[itype - 1] * vals;
     evdwl = vals.dot(beta_p) / norm_squared;
    
     partial_forces =
@@ -334,7 +336,7 @@ void PairFLAREB3::read_file(char *filename) {
 
   // Set indices of n, l, m.
   int n_radial = n_species * n_max;
-  nu = compute_B3_indices(n_radial, l_max);
+  nu = B3_indices(n_radial, l_max);
 
   // Set number of descriptors.
   std::vector<int> last_index = nu[nu.size()-1];

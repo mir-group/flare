@@ -24,12 +24,17 @@ do
     ln -s $(pwd)/$f $src/$f
 done
 
-for f in cutoffs radial y_grad wigner3j
+for f in cutoffs radial y_grad
 do
     for ex in cpp h
     do
         ln -s $(pwd)/../src/flare_pp/$f.$ex $src/$f.$ex
     done
+done
+
+for ex in cpp h
+do
+    ln -s $(pwd)/../src/flare_pp/descriptors/wigner3j.$ex $src/wigner3j.$ex
 done
 
 echo '
@@ -38,6 +43,7 @@ target_sources(lammps PRIVATE
     ${LAMMPS_SOURCE_DIR}/lammps_descriptor.cpp
     ${LAMMPS_SOURCE_DIR}/radial.cpp
     ${LAMMPS_SOURCE_DIR}/y_grad.cpp
+    ${LAMMPS_SOURCE_DIR}/wigner3j.cpp
 )
 
 if(PKG_KOKKOS)
