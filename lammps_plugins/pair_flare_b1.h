@@ -3,12 +3,12 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(flare/b3, PairFLAREB3)
+PairStyle(flare/b1, PairFLAREB1)
 
 #else
 
-#ifndef LMP_PAIR_FLARE_B3_H
-#define LMP_PAIR_FLARE_B3_H
+#ifndef LMP_PAIR_FLARE_B1_H
+#define LMP_PAIR_FLARE_B1_H
 
 #include "pair.h"
 #include <Eigen/Dense>
@@ -17,10 +17,10 @@ PairStyle(flare/b3, PairFLAREB3)
 
 namespace LAMMPS_NS {
 
-class PairFLAREB3 : public Pair {
+class PairFLAREB1 : public Pair {
 public:
-  PairFLAREB3(class LAMMPS *);
-  virtual ~PairFLAREB3();
+  PairFLAREB1(class LAMMPS *);
+  virtual ~PairFLAREB1();
   virtual void compute(int, int);
   void settings(int, char **);
   virtual void coeff(int, char **);
@@ -43,8 +43,6 @@ protected:
   double *beta, *cutoffs;
   Eigen::MatrixXd beta_matrix, cutoff_matrix;
   std::vector<Eigen::MatrixXd> beta_matrices;
-  std::vector<std::vector<int>> nu;
-  Eigen::VectorXd wigner3j_coeffs;
 
   virtual void allocate();
   virtual void read_file(char *);

@@ -106,6 +106,40 @@ void single_bond_multiple_cutoffs(
   }
 }
 
+void B1_descriptor(Eigen::VectorXd &B1_vals, Eigen::MatrixXd &B1_env_dervs,
+                   double &norm_squared, Eigen::VectorXd &B1_env_dot,
+                   const Eigen::VectorXd &single_bond_vals,
+                   const Eigen::MatrixXd &single_bond_env_dervs, int n_species,
+                   int N, int lmax) {
+
+  assert(lmax == 0);
+  int env_derv_size = single_bond_env_dervs.rows();
+  int neigh_size = env_derv_size / 3;
+  int n_radial = n_species * N;
+  int n_descriptors = n_radial; //(n_radial * (n_radial + 1) / 2) * (lmax + 1);
+
+  // Zero the B1 vectors and matrices.
+  B1_vals = Eigen::VectorXd::Zero(n_descriptors);
+  B1_env_dervs = Eigen::MatrixXd::Zero(env_derv_size, n_descriptors);
+  B1_env_dot = Eigen::VectorXd::Zero(env_derv_size);
+
+  // Compute the descriptor.
+  for (int n1 = 0; n1 < n_radial; n1++) {
+    // Store B1 value.
+    B1_vals(n1) += single_bond_vals(n1);
+
+    // Store environment force derivatives.
+    for (int atom_index = 0; atom_index < neigh_size; atom_index++) {
+      for (int comp = 0; comp < 3; comp++) {
+        B1_env_dervs(atom_index * 3 + comp, n1) +=
+            single_bond_env_dervs(atom_index * 3 + comp, n1);
+      }
+    }
+  }
+  // Compute descriptor norm and dot products.
+  norm_squared = B1_vals.dot(B1_vals);
+  B1_env_dot = B1_env_dervs * B1_vals;
+}
 
 void B2_descriptor(Eigen::VectorXd &B2_vals, 
                    double &norm_squared,
