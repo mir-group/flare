@@ -2,6 +2,7 @@
 #include "structure.h"
 #include "y_grad.h"
 #include "sparse_gp.h"
+#include "b1.h"
 #include "b2.h"
 #include "b2_simple.h"
 #include "b2_norm.h"
@@ -104,6 +105,11 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<FourBody, Descriptor>(m, "FourBody")
       .def(py::init<double, int, const std::string &,
                     const std::vector<double> &>());
+
+  py::class_<B1, Descriptor>(m, "B1")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &>());
 
   py::class_<B2, Descriptor>(m, "B2")
       .def(py::init<const std::string &, const std::string &,
