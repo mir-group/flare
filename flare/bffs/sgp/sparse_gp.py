@@ -8,7 +8,7 @@ from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 
 try:
-    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
+    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B1, B2, B3
 except Exception as e:
     warnings.warn(f"Cannot import _C_flare: {e.__class__.__name__}: {e}")
 
@@ -139,7 +139,7 @@ class SGP_Wrapper:
 
         # save descriptor_settings
         desc_calc = self.descriptor_calculators
-        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], B2))
+        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], (B1, B2, B3)))
         b2_calc = desc_calc[0]
         b2_dict = {
             "type": "B2",
@@ -223,16 +223,35 @@ class SGP_Wrapper:
         # Recover descriptor from checkpoint.
         desc_calc = in_dict["descriptor_calculators"]
         assert len(desc_calc) == 1
-        b2_dict = desc_calc[0]
-        assert b2_dict["type"] == "B2"
-        calc = B2(
-            b2_dict["radial_basis"],
-            b2_dict["cutoff_function"],
-            b2_dict["radial_hyps"],
-            b2_dict["cutoff_hyps"],
-            b2_dict["descriptor_settings"],
-            b2_dict["cutoffs"],
-        )
+        bk_dict = desc_calc[0]
+        assert bk_dict["type"] in ["B1", "B2", "B3"]
+        if bk_dict["type"] == "B1":
+            calc = B1(
+                bk_dict["radial_basis"],
+                bk_dict["cutoff_function"],
+                bk_dict["radial_hyps"],
+                bk_dict["cutoff_hyps"],
+                bk_dict["descriptor_settings"],
+                #bk_dict["cutoffs"],
+            )
+        elif bk_dict["type"] == "B2":
+            calc = B2(
+                bk_dict["radial_basis"],
+                bk_dict["cutoff_function"],
+                bk_dict["radial_hyps"],
+                bk_dict["cutoff_hyps"],
+                bk_dict["descriptor_settings"],
+                bk_dict["cutoffs"],
+            )
+        elif bk_dict["type"] == "B3":
+            calc = B3(
+                bk_dict["radial_basis"],
+                bk_dict["cutoff_function"],
+                bk_dict["radial_hyps"],
+                bk_dict["cutoff_hyps"],
+                bk_dict["descriptor_settings"],
+                #bk_dict["cutoffs"],
+            )
 
         # change the keys of single_atom_energies and species_map to int
         if in_dict["single_atom_energies"] is not None:
@@ -275,6 +294,7 @@ class SGP_Wrapper:
             else:
                 energy = None
 
+            print("add train", s)
             gp.update_db(
                 train_struc,
                 train_struc.forces,
