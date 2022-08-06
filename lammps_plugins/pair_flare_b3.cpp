@@ -89,9 +89,9 @@ void PairFLAREB3::compute(int eflag, int vflag) {
 
   int beta_init, beta_counter;
   double norm_squared;
-  Eigen::VectorXcd single_bond_vals, u;
+  Eigen::VectorXcd single_bond_vals;
   Eigen::VectorXd vals, env_dot, beta_p, partial_forces;
-  Eigen::MatrixXcd single_bond_env_dervs;
+  Eigen::MatrixXcd single_bond_env_dervs, u;
   Eigen::MatrixXd env_dervs;
   double empty_thresh = 1e-8;
 
@@ -131,24 +131,24 @@ void PairFLAREB3::compute(int eflag, int vflag) {
     compute_Bk(vals, env_dervs, norm_squared, env_dot,
                single_bond_vals, single_bond_env_dervs, nu,
                n_species, 3, n_max, l_max, wigner3j_coeffs,
-               beta_matrices[itype - 1], u, &evdwl);
+               beta_matrices[itype - 1].col(0), u, &evdwl);
  
     // Continue if the environment is empty.
     if (norm_squared < empty_thresh)
       continue;
 
     // Compute local energy and partial forces.
-    // TODO: not needed if using "u"
-    if (power == 1) {
-      double B3_norm = pow(norm_squared, 0.5);
-      evdwl = beta_matrices[itype - 1].col(0).dot(vals) / B3_norm;
-      partial_forces = - env_dervs * beta_matrices[itype - 1].col(0) / B3_norm + evdwl * env_dot / norm_squared;
-    } else if (power == 2) {
-      beta_p = beta_matrices[itype - 1] * vals;
-      evdwl = vals.dot(beta_p) / norm_squared;
-      partial_forces =
-        2 * (- env_dervs * beta_p + evdwl * env_dot) / norm_squared;
-    }
+    //// TODO: not needed if using "u"
+    //if (power == 1) {
+    //  double B3_norm = pow(norm_squared, 0.5);
+    //  evdwl = beta_matrices[itype - 1].col(0).dot(vals) / B3_norm;
+    //  partial_forces = - env_dervs * beta_matrices[itype - 1].col(0) / B3_norm + evdwl * env_dot / norm_squared;
+    //} else if (power == 2) {
+    //  beta_p = beta_matrices[itype - 1] * vals;
+    //  evdwl = vals.dot(beta_p) / norm_squared;
+    //  partial_forces =
+    //    2 * (- env_dervs * beta_p + evdwl * env_dot) / norm_squared;
+    //}
 
     // Update energy, force and stress arrays.
     n_count = 0;
@@ -164,11 +164,17 @@ void PairFLAREB3::compute(int eflag, int vflag) {
 
       if (rsq < (cutoff_val * cutoff_val)) {
         // Compute partial force f_ij = u * dA/dr_ij
-        double fx = -partial_forces(n_count * 3);
-        double fy = -partial_forces(n_count * 3 + 1);
-        double fz = -partial_forces(n_count * 3 + 2);
-        // Compute local energy and partial forces.
+        //double fx = -partial_forces(n_count * 3);
+        //double fy = -partial_forces(n_count * 3 + 1);
+        //double fz = -partial_forces(n_count * 3 + 2);
+        double fx = 0, fy = 0, fz = 0;
+        for (int t = 0; t < u.rows(); t++) {
+          fx += single_bond_env_dervs.row(n_count * 3).dot(u.row(t));
+          fy += single_bond_env_dervs.row(n_count * 3 + 1).dot(u.row(t));
+          fz += single_bond_env_dervs.row(n_count * 3 + 2).dot(u.row(t));
+        }
 
+        // Compute local energy and partial forces.
         f[i][0] += fx;
         f[i][1] += fy;
         f[i][2] += fz;
@@ -296,11 +302,14 @@ void PairFLAREB3::read_file(char *filename) {
 
     fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
     sscanf(line, "%i", &power);
+    if (power != 1) {
+      error->all(FLERR, "B3 power has to be 1");
+    }
 
     fgets(line, MAXLINE, fptr); // Body order, B1/2/3
     sscanf(line, "%s", body_order_string);
     if (strcmp(body_order_string, "B3")) {
-      error->all(FLERR, "Potential has to be B3");
+      error->all(FLERR, "Potential has to be B3.");
     }
 
     fgets(line, MAXLINE, fptr);
