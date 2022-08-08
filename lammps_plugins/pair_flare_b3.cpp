@@ -128,7 +128,7 @@ void PairFLAREB3::compute(int eflag, int vflag) {
                         single_bond_vals, single_bond_env_dervs, cutoff_matrix);
   
     // Compute invariant descriptors.
-    compute_Bk(vals, env_dervs, norm_squared, env_dot,
+    compute_Bk_and_u(vals, env_dervs, norm_squared, env_dot,
                single_bond_vals, single_bond_env_dervs, nu,
                n_species, 3, n_max, l_max, wigner3j_coeffs,
                beta_matrices[itype - 1].col(0), u, &evdwl);
@@ -169,9 +169,9 @@ void PairFLAREB3::compute(int eflag, int vflag) {
         //double fz = -partial_forces(n_count * 3 + 2);
         double fx = 0, fy = 0, fz = 0;
         for (int t = 0; t < u.rows(); t++) {
-          fx += single_bond_env_dervs.row(n_count * 3).dot(u.row(t));
-          fy += single_bond_env_dervs.row(n_count * 3 + 1).dot(u.row(t));
-          fz += single_bond_env_dervs.row(n_count * 3 + 2).dot(u.row(t));
+          fx += real(single_bond_env_dervs.row(n_count * 3 + 0).conjugate().dot(u.row(t)));
+          fy += real(single_bond_env_dervs.row(n_count * 3 + 1).conjugate().dot(u.row(t)));
+          fz += real(single_bond_env_dervs.row(n_count * 3 + 2).conjugate().dot(u.row(t)));
         }
 
         // Compute local energy and partial forces.

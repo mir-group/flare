@@ -243,13 +243,13 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
                                 B3
 
 ************************************************************************/
-void compute_Bk(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
+void compute_Bk_and_u(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
                 double &norm_squared, Eigen::VectorXd &Bk_force_dots,
                 const Eigen::VectorXcd &single_bond_vals,
                 const Eigen::MatrixXcd &single_bond_force_dervs,
                 std::vector<std::vector<int>> nu, int nos, int K, int N,
                 int lmax, const Eigen::VectorXd &coeffs,
-                const Eigen::VectorXd &beta_vector, Eigen::VectorXcd &u, 
+                const Eigen::VectorXd &beta_vector, Eigen::MatrixXcd &u, 
                 double *evdwl) {
 
   int env_derv_cols = single_bond_force_dervs.cols();
@@ -266,21 +266,21 @@ void compute_Bk(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
   //Bk_force_dots = Eigen::VectorXd::Zero(env_derv_size);
   norm_squared = 0.0;
 
+  Eigen::MatrixXcd dA = Eigen::MatrixXcd::Ones(K, nu.size());
   for (int i = 0; i < nu.size(); i++) {
     std::vector<int> nu_list = nu[i];
     std::vector<int> single_bond_index = std::vector<int>(nu_list.end() - 2 - K, nu_list.end() - 2); // Get n1_l, n2_l, n3_l, etc.
     // Forward
     std::complex<double> A_fwd = 1;
-    Eigen::VectorXcd dA = Eigen::VectorXcd::Ones(K);
     for (int t = 0; t < K - 1; t++) {
       A_fwd *= single_bond_vals(single_bond_index[t]);
-      dA(t + 1) *= A_fwd;
+      dA(t + 1, i) *= A_fwd;
     }
     // Backward
     std::complex<double> A_bwd = 1;
     for (int t = K - 1; t > 0; t--) {
       A_bwd *= single_bond_vals(single_bond_index[t]);
-      dA(t - 1) *= A_bwd;
+      dA(t - 1, i) *= A_bwd;
     }
     std::complex<double> A = A_fwd * single_bond_vals(single_bond_index[K - 1]);
 
@@ -297,10 +297,11 @@ void compute_Bk(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
     std::vector<int> nu_list = nu[i];
     int counter = nu_list[nu_list.size() - 1];
     int m_index = nu_list[nu_list.size() - 2];
+    std::vector<int> single_bond_index = std::vector<int>(nu_list.end() - 2 - K, nu_list.end() - 2); // Get n1_l, n2_l, n3_l, etc.
 
-    std::complex<double> w = (beta_vector(counter) / Bk_norm - evdwl * Bk_vals(counter) / norm_squared) * coeffs(m_index);
+    std::complex<double> w = (beta_vector(counter) / Bk_norm - *evdwl * Bk_vals(counter) / norm_squared) * coeffs(m_index);
     for (int t = 0; t < K; t++) {
-      u(t, single_bond_index[t]) += w * dA(t);
+      u(t, single_bond_index[t]) += w * dA(t, i);
     }
   }
 }

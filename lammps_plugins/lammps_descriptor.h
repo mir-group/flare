@@ -54,13 +54,13 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
                    int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
                    Eigen::VectorXd &u, double *evdwl);
 
-void compute_Bk(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
+void compute_Bk_and_u(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
                 double &norm_squared, Eigen::VectorXd &Bk_force_dots,
                 const Eigen::VectorXcd &single_bond_vals,
                 const Eigen::MatrixXcd &single_bond_force_dervs,
                 std::vector<std::vector<int>> nu, int nos, int K, int N,
                 int lmax, const Eigen::VectorXd &coeffs,
-                const Eigen::MatrixXd &beta_matrix, Eigen::VectorXcd &u, 
+                const Eigen::VectorXd &beta_vector, Eigen::MatrixXcd &u, 
                 double *evdwl);
 
 void complex_single_bond_multiple_cutoffs(
