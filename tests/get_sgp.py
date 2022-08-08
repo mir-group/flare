@@ -1,5 +1,5 @@
 import numpy as np
-from flare.bffs.sgp._C_flare import NormalizedDotProduct, B2
+from flare.bffs.sgp._C_flare import NormalizedDotProduct, B1, B2, B3
 from flare.bffs.sgp import SGP_Wrapper
 from flare.bffs.sgp.calculator import SGP_Calculator
 from flare.atoms import FLARE_Atoms
@@ -60,7 +60,7 @@ def get_isolated_atoms(numbers=[6, 8]):
     return flare_atoms
 
 
-def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
+def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, bk=2):
     kernel.power = power
 
     # Define B2 calculator.
@@ -74,18 +74,37 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
         cutoff_matrix += np.eye(n_types) - 1
 
     descriptor_settings = [n_types, 3, 2]
-    b2_calc = B2(
-        radial_basis,
-        cutoff_function,
-        radial_hyps,
-        cutoff_hyps,
-        descriptor_settings,
-        cutoff_matrix,
-    )
+    if bk == 1:
+        calc = B1(
+            radial_basis,
+            cutoff_function,
+            radial_hyps,
+            cutoff_hyps,
+            descriptor_settings,
+            #cutoff_matrix,
+        )
+    elif bk == 2:
+        calc = B2(
+            radial_basis,
+            cutoff_function,
+            radial_hyps,
+            cutoff_hyps,
+            descriptor_settings,
+            cutoff_matrix,
+        )
+    elif bk == 3:
+        calc = B3(
+            radial_basis,
+            cutoff_function,
+            radial_hyps,
+            cutoff_hyps,
+            descriptor_settings,
+            #cutoff_matrix,
+        )
 
     empty_sgp = SGP_Wrapper(
         [kernel],
-        [b2_calc],
+        [calc],
         cutoff,
         sigma_e,
         sigma_f,
@@ -101,16 +120,16 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
     return empty_sgp
 
 
-def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
+def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, bk=2):
     if n_types == 1:
         numbers = [6, 6]
     elif n_types == 2:
         numbers = [6, 8]
 
-    sgp = get_empty_sgp(n_types, power, multiple_cutoff)
+    sgp = get_empty_sgp(n_types, power, multiple_cutoff, bk)
 
     # add a random structure to the training set
-    training_structure = get_random_atoms(numbers=numbers)
+    training_structure = get_random_atoms(numbers=numbers, sc_size=2)
     training_structure.calc = LennardJones()
 
     forces = training_structure.get_forces()
@@ -148,8 +167,8 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
     return sgp
 
 
-def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False):
-    sgp = get_updated_sgp(n_types, power, multiple_cutoff)
+def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False, bk=2):
+    sgp = get_updated_sgp(n_types, power, multiple_cutoff, bk)
     sgp_calc = SGP_Calculator(sgp)
 
     return sgp_calc

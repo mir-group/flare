@@ -343,7 +343,7 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
 
 void ComputeFlareStdAtom::read_file(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], bodyorder_string[MAXLINE];
   int radial_string_length, cutoff_string_length;
   FILE *fptr;
 
@@ -374,6 +374,9 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     hyperparameters(1) = en;
     hyperparameters(2) = fn;
     hyperparameters(3) = sn;
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%s", bodyorder_string); // Body order B1/2/3
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
@@ -454,7 +457,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
 void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], bodyorder_string[MAXLINE];
   int radial_string_length, cutoff_string_length;
   FILE *fptr;
 
@@ -490,6 +493,9 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     hyperparameters(1) = en;
     hyperparameters(2) = fn;
     hyperparameters(3) = sn;
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%s", bodyorder_string); // Body order B1/2/3
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
@@ -590,7 +596,7 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
     int n_kern = 0;
     sscanf(line, "%i", &n_kern);
     if (n_kern != n_kernels) {
-      error->all(FLERR, "n_kernals in sparse_descriptors and L_inv not match");
+      error->all(FLERR, "n_kernels in sparse_descriptors and L_inv not match");
     }
   }
 
