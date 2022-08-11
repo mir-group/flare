@@ -96,7 +96,7 @@ Offline-Learning
 
 
 Production MD Simulations using a FLARE ML-FF
----
+----
 
 1. Which MD engines is FLARE compatible?
         We commonly employ our trained FLARE models in LAMMPs and the ASE md engines.
