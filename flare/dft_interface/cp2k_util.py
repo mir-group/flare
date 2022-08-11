@@ -24,19 +24,19 @@ def run_dft_par(
     dft_input,
     structure,
     dft_loc,
-    ncpus=1,
+    n_cpus=1,
     dft_out="dft.out",
     npool=None,
     mpi="mpi",
     **dft_kwargs,
 ):
     """run DFT calculation with given input template
-    and atomic configurations. if ncpus == 1, it executes serial run.
+    and atomic configurations. if n_cpus == 1, it executes serial run.
 
     :param dft_input: input template file name
     :param structure: atomic configuration
     :param dft_loc:   relative/absolute executable of the DFT code
-    :param ncpus:   # of CPU for mpi
+    :param n_cpus:   # of CPU for mpi
     :param dft_out:   output file name
     :param npool:     not used
     :param mpi:       not used
@@ -46,11 +46,11 @@ def run_dft_par(
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = f"{dft_loc} -i {newfilename}"
-    if ncpus > 1:
+    if n_cpus > 1:
         if mpi == "mpi":
-            dft_command = f"mpirun -np {ncpus} {dft_command}"
+            dft_command = f"mpirun -np {n_cpus} {dft_command}"
         else:
-            dft_command = f"srun -n {ncpus} {dft_command}"
+            dft_command = f"srun -n {n_cpus} {dft_command}"
 
     # output.write_to_output(dft_command+'\n')
     with open(dft_out, "w+") as fout:
@@ -65,7 +65,7 @@ def run_dft_en_par(
     dft_input: str,
     structure,
     dft_loc: str,
-    ncpus: int,
+    n_cpus: int,
     dft_out: str = "dft.out",
     npool: int = None,
     mpi: str = "mpi",
@@ -77,7 +77,7 @@ def run_dft_en_par(
     :param dft_input: input template file name
     :param structure: atomic configuration
     :param dft_loc:   relative/absolute executable of the DFT code
-    :param ncpus:   # of CPU for mpi
+    :param n_cpus:   # of CPU for mpi
     :param dft_out:   output file name
     :param npool:     not used
     :param mpi:       not used
@@ -87,8 +87,8 @@ def run_dft_en_par(
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = f"{dft_loc} -i {newfilename} > {dft_out}"
-    if ncpus > 1:
-        dft_command = f"mpirun -np {ncpus} {dft_command}"
+    if n_cpus > 1:
+        dft_command = f"mpirun -np {n_cpus} {dft_command}"
     # output.write_to_output(dft_command+'\n')
     call(dft_command, shell=True)
     os.remove(newfilename)
