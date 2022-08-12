@@ -157,6 +157,12 @@ add_dependencies(flare eigen_project)
 # Link to json.
 target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
 
+# Add conda include directories
+if (DEFINED ENV{CONDA_PREFIX})
+  message(STATUS "Adding conda include directories.")
+  include_directories($ENV{CONDA_PREFIX}/include)
+endif()
+
 # Link to OpenMP.
 if (DEFINED ENV{OMP_LOC})
     target_link_libraries(flare PUBLIC $ENV{OMP_LOC})
