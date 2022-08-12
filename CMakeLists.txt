@@ -94,7 +94,7 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 if (NOT FLARE_PYTHON_VERSION)
-    set(Python_ADDITIONAL_VERSIONS 3.7 3.6 3.5)
+    set(Python_ADDITIONAL_VERSIONS 3.8 3.7 3.6 3.5)
 endif()
 find_package(PythonLibsNew ${FLARE_PYTHON_VERSION} REQUIRED)
 
