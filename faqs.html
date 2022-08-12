@@ -89,9 +89,9 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Frequently Asked Questions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation-and-packages">Installation and Packages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gaussian-processes">Gaussian Processes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#otf-on-the-fly-active-learning">OTF (On-the-fly) Active-Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#offline-learning">Offline-Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#production-md-simulations-using-a-flare-ml-ff">Production MD Simulations using a FLARE ML-FF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#otf-on-the-fly-training">OTF (On-the-fly) Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gpfa">GPFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mgp">MGP</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="related.html">Applications/Gallery</a></li>
@@ -187,13 +187,17 @@
 </style>
 <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
-<p>This page is designed to help users troubleshoot commonly encountered questions when performing tasks in the FLARE framework.</p>
 <div class="section" id="installation-and-packages">
 <h2>Installation and Packages<a class="headerlink" href="#installation-and-packages" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><dl class="first docutils">
-<dt>What do I do if I encounter an mkl error following installation?</dt>
-<dd>Verify the version of numpy that is installed. Reverting to version 1.18 fixes this error.</dd>
+<dt>Can I accelerate my calculation using parallelization?</dt>
+<dd>See the section in the <a class="reference external" href="https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl">Installation</a> section.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Github Action fails due to Github Pages?</dt>
+<dd>For developers, if your Github Action build fails from an issue related to <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> in the step of “Publish the docs”, this may be because you did not pull the latest code before push. Please try pull and push again. If it still does not work, check <a class="reference external" href="https://gist.github.com/mandiwise/44d1edce18f2ffb14f63">this</a>.</dd>
 </dl>
 </li>
 </ol>
@@ -202,7 +206,7 @@
 <h2>Gaussian Processes<a class="headerlink" href="#gaussian-processes" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
 <li><dl class="first docutils">
-<dt>How do Gaussian Processes work?</dt>
+<dt>I’m confused about how Gaussian Processes work.</dt>
 <dd><p class="first last">Gaussian Processes enjoy a long history of study and there are many excellent resources out there we can recommend.
 One such resource (that some of the authors consult quite frequently!) is the textbook
 <a class="reference external" href="http://www.gaussianprocess.org/gpml/chapters/RW.pdf">Gaussian Processes for Machine Learning, by Rasmussen and Williams</a>
@@ -211,147 +215,133 @@ One such resource (that some of the authors consult quite frequently!) is the te
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>How should I choose my cutoff(s)?</dt>
+<dt>How should I choose my cutoffs?</dt>
 <dd><ul class="first simple">
-<li>The right cutoff depends on the system you’re studying: ionic systems often do better with a larger cutoff,</li>
+<li>The right cutoff depends on the system you’re studying: ionic systems often do better with a larger 2-body cutoff,</li>
 </ul>
-<p>while dense systems like diamond can employ smaller cutoffs.</p>
+<p>while dense systems like diamond require smaller cutoffs.</p>
 <ul class="simple">
-<li>We recommend that you refer to the radial distribution function of your atomic system first, then try a range of cutoff</li>
+<li>We recommend you to refer to the radial distribution function of your atomic system first, then try a range of cutoff</li>
 </ul>
-<p>values and examine the model error, optimized hyperparameters, and model likelihood as a function of the cutoff(s).</p>
+<p>values and examine the model error, optimized noise parameter, and model likelihood as a function of the cutoff.</p>
+<ul class="last simple">
+<li>In the current implementation, the 3-body cutoff needs to be smaller than 2-body cutoff.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>What is a good strategy for hyperparameter optimization?</dt>
+<dd><p class="first">The hyperparameter optimization is important for obtaining a good model.
+However, the optimization of hyperparameters will get slower when more training data are collected.
+There are a few parameters to notice:</p>
+<p>In <cite>GaussianProcess</cite>,</p>
 <ul class="simple">
-<li>Keep in mind that the model cutoff is intimately coupled with the radial and angular bases of the model. So, we recommend that</li>
+<li><code class="docutils literal notranslate"><span class="pre">maxiter</span></code>: maximal number of iterations, usually set to ~10 to prevent training for too long.</li>
+<li><code class="docutils literal notranslate"><span class="pre">parallel</span></code>: if <cite>True</cite>, then parallelization is used in optimization.
+The serial version could be very slow.</li>
+<li><code class="docutils literal notranslate"><span class="pre">output</span></code> (in <cite>train</cite> function): set up an output file for monitoring optimization iterations.</li>
+<li><code class="docutils literal notranslate"><span class="pre">grad_tol</span></code>, <code class="docutils literal notranslate"><span class="pre">x_tol</span></code>, <code class="docutils literal notranslate"><span class="pre">line_steps</span></code> (in <cite>train</cite> function): can be changed for iterations.</li>
 </ul>
-<p>model cutoff(s) be tested with varying n_max and l_max.</p>
-<ul class="simple">
-<li>For multi-component systems, a cutoff_matrix is required with explicit cutoffs for each inter-species interaction (e.g.,</li>
-</ul>
-<p class="last">[[1-1, 1-2],[2-1,2-2]] for species 1 and 2), otherwise the matrix will populate with the values of the maximum cutoff listed in the input file.</p>
+<p class="last">There are a few tips in the OTF training, see below.</p>
 </dd>
 </dl>
 </li>
 </ol>
 </div>
-<div class="section" id="otf-on-the-fly-active-learning">
-<h2>OTF (On-the-fly) Active-Learning<a class="headerlink" href="#otf-on-the-fly-active-learning" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="otf-on-the-fly-training">
+<h2>OTF (On-the-fly) Training<a class="headerlink" href="#otf-on-the-fly-training" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
 <li><dl class="first docutils">
 <dt>What is a good strategy for hyperparameter optimization?</dt>
-<dd><p class="first">Hyperparameter optimization is important for obtaining a good model and is an important step in the case of a bad choice of priors.
-However, the optimization will get slower when more training data are collected, so some tricks may be needed to provide a good model while minimizing training time.
-There are a few parameters to notice:</p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">maxiter</span></code> : maximal number of iterations, usually set to ~20 to prevent training for too long. However, if hyperparameter training is unstable,</li>
+<dd><ul class="first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">freeze_hyps</span></code> : the hyperparameter will only be optimized for <cite>freeze_hyps</cite> times.
+Can be set to a small number if optimization is too expensive with a large data set.</li>
+<li><code class="docutils literal notranslate"><span class="pre">std_tolerance_factor</span></code> : the DFT will be called when the predicted uncertainty is above the threshold,
+which is defined as <cite>std_tolerance_factor * gp_hyps_noise</cite>. The default value is 1. In general, you
+can set it to O(0.1)-O(1). If more DFT calls are desired, you can set it to a lower value.</li>
 </ul>
-<p>raising this number can help if the model is not converged within a smaller number of iterations.</p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">train_hyps</span></code> : range of DFT calls whererin the hyperparameters will be optimized. We recommend setting the initial value to 10 (i.e., 10th DFT call),</li>
-</ul>
-<p>since we have observed more stable training, as opposed to training from the initial DFT call.</p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">std_tolerance_factor</span></code> : DFT will be called when the predicted uncertainty is above this threshold,</li>
-</ul>
-<p>which is defined relative to the mean uncertainty in the system. The default value is 1. In general, we recommend that this value be set relative to the number
-of species in the system (e.g., -0.01 for 1 species, -0.05 for 2, -0.1 for 3, etc.). If more DFT calls are desired, you can set it to a lower value.</p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">update_threshold</span></code> : atoms will only be added to the sparse set of the Gaussian Process when their uncertainty surpasses this threshold. We have found that this</li>
-</ul>
-<p class="last">value provides a decent number of sparse environment <cite>additions</cite> when set to be 0.1*std_tolerance_factor. This ensures that several atoms are added to the sparse-set of the
-Gaussian Process for every DFT call. If this value is set to be closer to the std_tolerance_factor, it may be the case where only 1 atomic environment is added for each DFT call,
-which is inefficient depending on the DFT complexity.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>How (why) should a small perturbation be included for the initial structure?</dt>
-<dd><p class="first last">If you are starting from a perfect lattice, we recommend adding small random perturbations to the atomic positions,
-such that the symmetry of the crystal lattice is broken. This is accomplished using the <cite>jitter</cite> flag in the <cite>yaml</cite> script, in the units of angstrom.
-The reason is that the perfect lattice is highly symmetric, thus usually the force on each atom is zero, and the local
+<dt>How to set initial temperatures and rescale temperatures?</dt>
+<dd><ul class="first last">
+<li><p class="first">For initial temperature, if you are using NVE ensemble, and starting from a perfect crystal lattice,
+please set the initial temperature to be twice the value you want the system to be in equilibrium. E.g.,
+if you want the system to equilibrate at 1000K, set the initial temperature to 2000K starting from a
+perfect lattice. To do this,</p>
+<blockquote>
+<div><ul class="simple">
+<li>if you are using our OTF trainer without ASE, you can set the <code class="docutils literal notranslate"><span class="pre">prev_positions</span></code> of the initial
+structure to be the perfect lattice shifted by one step with the velocity corresponding to the
+initial temperature.</li>
+<li>if you are using OTF with ASE + VelocityVerlet, you can set the initial velocity as shown in our
+tutorial</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">Similarly, if you want to rescale the system from 300K to 500K at step 1000, you should set the resaling
+temperature to be higher than 500K, e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">rescale_temp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">800</span><span class="p">]</span>
+<span class="n">rescale_step</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1000</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The reason is that we only rescale the velocity of the atoms at the steps specified in <code class="docutils literal notranslate"><span class="pre">rescale_step</span></code>,
+at those steps not in the list, we will let the system evolve by itself. Thus, after step 1000, the system’s
+temperature will gradually equilibrate at a lower temperature.</p>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Include small perturbation for initial structure</dt>
+<dd><p class="first">If you are starting from a perfect lattice, we recommend adding small random perturbations to the atomic positions,
+such that the symmetry of the crystal lattice is broken. E.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">positions</span> <span class="o">=</span> <span class="n">positions</span> <span class="o">+</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="last">The reason is that the perfect lattice is highly symmetric, thus usually the force on each atom is zero, and the local
 environments all look the same. Adding these highly similar environments with close-to-zero forces might raise numerical
-stability issues for GP.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Why is the temperature of the simulation unreasonably high?</dt>
-<dd><p class="first last">This is the signal of a high-energy configuration being used to start active-learning. Try relaxing the structure before initializing the active-learning trajectory so that your
-initial structure has atoms in local energy minima. High energy initial structures can yield high forces, leading to instability in the temperature and velocities of the atoms.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>How do I know that my active-learning trajectory is “good”?</dt>
-<dd><p class="first last">It is important to do some analysis of your active-learning trajectories both while they are running and once they are completed. We recommend that you keep an eye on the system parameters,
-e.g. temperature, pressure, or the radial distribution function. In addition to these system specific markers, we also recommend keeping an eye on the hyperparameters, and making sure that they
-make sense numerically.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>When should I stop my active-learning trajectory?</dt>
-<dd><p class="first last">Active-learning can be ceased when the number of DFT calls becomes sparse as a function of timestep. The MAE values for energy, forces, and stresses can also indicate when a model has approached a given
-threshold in accuracy. If the number of DFT calls remains low throughout the entire trajectory, try altering the conditions under which the system performs MD (e.g., temperature or pressure) or decrease
-the <cite>std_tolerance_factor</cite> so that more DFT calls will be made.</p>
+stability issue for GP.</p>
 </dd>
 </dl>
 </li>
 </ol>
 </div>
-<div class="section" id="offline-learning">
-<h2>Offline-Learning<a class="headerlink" href="#offline-learning" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="gpfa">
+<h2>GPFA<a class="headerlink" href="#gpfa" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><dl class="first docutils">
-<dt>Why is my offline training selecting so few sparse environments?</dt>
-<dd>We have found that it is helpful to reduce the <cite>std_tolerance_factor</cite> below that of what is typically used for active-learning when training a final model with offline learning.
-This is fine, since all of the sparse environments being selected are from DFT calculated frames. It is also helpful to track the likelihood and hyperparameters when reducing this value
-in order to select an appropriate model.</dd>
+<dt>My models are adding too many atoms from each frame, causing a serious slowdown without much gain in model accuracy.</dt>
+<dd>In order to ‘govern’ the rate at which the model adds atoms, we suggest using the <code class="docutils literal notranslate"><span class="pre">pre_train_atoms_per_element</span></code> and
+<code class="docutils literal notranslate"><span class="pre">train_atoms_per_element</span></code> arguments, which can limit the number of atoms added from each seed frame and training frame respectively.
+You can pass in a dictionary like <code class="docutils literal notranslate"><span class="pre">{'H':1,</span> <span class="pre">'Cu':2}</span></code> to limit the number of H atoms to 1 and Cu atoms to 2 from any given frame.
+You can also use <code class="docutils literal notranslate"><span class="pre">max_atoms_per_frame</span></code> for the same functionality.</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>How do I know that my offline-trained model is “good”?</dt>
-<dd>Several markers can be used to evaluate the success of your offline training. Most immediate is the evaluation of errors as assessed throughout training on the DFT frames being used. Also immediately available
-are the hyperparameters, which are based in physical units and should make sense numerically (energy, force, and stress noises relative to the the actual energy, force, and stress lables). The user can also
-generate more in-depth analyses, e.g., parity plots of energies, forces, and stresses.</dd>
+<dt>The uncertainty seems low on my force predictions, but the true errors in the forces are high.</dt>
+<dd>This could be happening for a few reasons. One reason could be that your hyperparameters aren’t at an optimum (check that the gradient of
+the likelihood with respect to the hyperparameters is small). Another is that your model, such as 2-body or 2+3 body, may not be of sufficient
+complexity to handle the system (in other words, many-body effects could be important).</dd>
 </dl>
 </li>
 </ol>
 </div>
-<div class="section" id="production-md-simulations-using-a-flare-ml-ff">
-<h2>Production MD Simulations using a FLARE ML-FF<a class="headerlink" href="#production-md-simulations-using-a-flare-ml-ff" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
+<div class="section" id="mgp">
+<h2>MGP<a class="headerlink" href="#mgp" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
 <li><dl class="first docutils">
-<dt>Which MD engines is FLARE compatible?</dt>
-<dd><p class="first last">We commonly employ our trained FLARE models in LAMMPs and the ASE md engines.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>How do I know that my model is performing well?</dt>
-<dd><p class="first last">Without diving into system-specific benchmarks that can be done, we recommend using the uncertainty quantification capabilities of FLARE to determine whether your MD simulation is operating within the domains of the
-training set. Example scripts for the quantification of uncertianty can be found elsewhere in this repository.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Why is my simulation misbehaving?</dt>
-<dd><p class="first">Several parameters can influence the success of the MD simulations that are run after building your FLARE model. It is important to first check that the species match the order that is present in the
-lammps coefficient file, and that their masses are assigned appropriately.
-- If non-physical environments appear in your simulation (either by visual inspection or via uncertainty analysis), several tricks can be implemented to fix this.</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li>try reducing the timestep. An aggressive timestep can lead to errors in integration and prompt unphysical environments to appear.</li>
-<li>toggle the thermostat damping factor (specific to the MD engine being used).</li>
-<li>make sure that the initial structure is reasonable and not unreasonably high in energy or does not have high forces. (related to next point)</li>
-</ol>
-</div></blockquote>
-<ul class="last simple">
-<li><dl class="first docutils">
-<dt>If the temperature of the simulation is unreasonably high upon initialization:</dt>
-<dd>(1) try relaxing the structure using built-in methods (e.g., conjugate gradient descent in LAMMPS) so that your initial structure has atoms in local energy minima. High energy initial structures
-can yield high forces, leading to temperature increasing drastically.</dd>
-</dl>
-</li>
+<dt>How does the grid number affect my mapping?</dt>
+<dd><ul class="first last">
+<li>The lower cutoff is better set to be a bit smaller than the minimal interatomic distance.</li>
+<li>The upper cutoff should be consistent with GP’s cutoff.</li>
+<li>For three-body, the grid is 3-D, with lower cutoffs <cite>[a, a, a]</cite> and upper cutoffs <cite>[b, b, b]</cite>.</li>
+<li>You can try different grid numbers and compare the force prediction of MGP and GP
+on the same testing structure. Choose the grid number of satisfying efficiency and accuracy.
+A reference is <cite>grid_num=64</cite> should be safe for <cite>a=2.5</cite>, <cite>b=5</cite>.</li>
 </ul>
 </dd>
 </dl>
