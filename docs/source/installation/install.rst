@@ -18,7 +18,7 @@ Requirements
     
 .. code-block:: bash
 
-    conda install -y gcc gxx cmake mkl-devel mkl-service openmp -c conda-forge
+    conda install -y gcc gxx cmake mkl-devel mkl-service mkl_fft openmp -c conda-forge
     
 * Option 2: If you want to install flare with openblas + lapacke
     
