@@ -85,8 +85,9 @@
 <li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Installation of FLARE</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#installation-using-pip">Installation using pip</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#developer-s-installation-guide">Developer’s installation guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#test-flare-installation">Test FLARE installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trouble-shooting">Trouble shooting</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#acceleration-with-multiprocessing-and-mkl">Acceleration with multiprocessing and MKL</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#sparse-gaussian-process-model">Sparse Gaussian Process model</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#full-gaussian-process-model">Full Gaussian Process model</a></li>
@@ -198,19 +199,40 @@
 <h1>Installation of FLARE<a class="headerlink" href="#installation-of-flare" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
-<p>If you’re installing on a compute cluster, make sure to load the following modules first:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01
+<ol class="arabic simple">
+<li>Create a new conda environment to install flare</li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create --name flare <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
+conda activate flare
 </pre></div>
 </div>
-</div>
-<div class="section" id="installation-using-pip">
-<h2>Installation using pip<a class="headerlink" href="#installation-using-pip" title="Permalink to this headline">¶</a></h2>
-<p>Pip can automatically fetch the source code from <a class="reference external" href="https://pypi.org/project/mir-flare/">PyPI</a> and install.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip install mir-flare
+<ol class="arabic simple" start="2">
+<li>Use conda to install compilers and dependencies for flare</li>
+</ol>
+<ul class="simple">
+<li>Option 1: If you want to install flare with mkl</li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -y gcc gxx cmake mkl-devel mkl-service openmp -c conda-forge
 </pre></div>
 </div>
-<p>For non-admin users</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip install --upgrade --user mir-flare
+<ul class="simple">
+<li>Option 2: If you want to install flare with openblas + lapacke</li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -y gcc gxx cmake openmp liblapacke openblas -c conda-forge
+</pre></div>
+</div>
+<ul class="simple">
+<li>Option 3: You can load modules if your machine have already installed them</li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Download flare code from github repo and pip install</li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone -b development https://github.com/mir-group/flare.git
+<span class="nb">cd</span> flare
+pip install .
 </pre></div>
 </div>
 </div>
@@ -235,6 +257,38 @@ make -j
 </pre></div>
 </div>
 <p>An alternative way is setting <code class="docutils literal notranslate"><span class="pre">sys.path.append(&lt;flare</span> <span class="pre">path&gt;)</span></code> in your python script.</p>
+</div>
+<div class="section" id="test-flare-installation">
+<h2>Test FLARE installation<a class="headerlink" href="#test-flare-installation" title="Permalink to this headline">¶</a></h2>
+<p>After the installation is done, you can leave the current folder and in the python console, try</p>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">flare</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flare</span><span class="o">.</span><span class="vm">__file__</span>
+<span class="s1">&#39;/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">flare.bffs.sgp</span>
+</pre></div>
+</div>
+<p>You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ldd /xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/bffs/sgp/_C_flare.*.so
+</pre></div>
+</div>
+<p>where it is expected to show libmkl (or libopenblas), libgomp etc.</p>
+</div>
+<div class="section" id="trouble-shooting">
+<h2>Trouble shooting<a class="headerlink" href="#trouble-shooting" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">If it fails to build mir-flare during pip install, check whether you have done <cite>conda install cxx-compiler</cite>, then it sometimes does not find the correct g++, i.e. <cite>which gcc</cite> gives the conda’s gcc, while <cite>which g++</cite> still gives the local one. In such case, try <cite>conda uninstall cxx-compiler gxx</cite>, and then redo <cite>conda install gxx -c conda-forge</cite></p>
+</li>
+<li><p class="first">If you get the error that <cite>mkl.h</cite> is not found during pip install, first check <cite>conda list</cite> that <cite>mkl-include</cite> is installed in the current environment. You can also use your own mkl headers by setting environment variable <cite>MKL_INCLUDE</cite> to the directory</p>
+</li>
+<li><p class="first">If you manage to install flare, but get warning when <cite>import flare.bffs.sgp</cite>, then please check</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>which pip</cite> should show that <cite>pip</cite> is in the <cite>.conda/envs/flare/bin/</cite> directory, instead of others</li>
+<li>the <cite>ldd</cite> command above should show the linked libraries in the <cite>.conda/envs/flare</cite> directory</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
 </div>
 <div class="section" id="acceleration-with-multiprocessing-and-mkl">
 <h2>Acceleration with multiprocessing and MKL<a class="headerlink" href="#acceleration-with-multiprocessing-and-mkl" title="Permalink to this headline">¶</a></h2>
