@@ -574,10 +574,11 @@ def extract_gp_info(block, mae_list, maf_list, atoms_list, hyps_list, noh):
             line_split = line.split()
             atom_strings = line_split[2:-4]
             for n, atom_string in enumerate(atom_strings):
-                if n == 0:
-                    atoms_added.append(int(atom_string[1:-1]))
-                else:
-                    atoms_added.append(int(atom_string[0:-1]))
+                atom_string = atom_string.strip()
+                atom_string = atom_string.replace("[", "")
+                atom_string = atom_string.replace("]", "")
+                atom_string = atom_string.replace(",", "")
+                atoms_added.append(int(atom_string))
             atoms_list.append(atoms_added)
 
         # keep track of hyperparameters
