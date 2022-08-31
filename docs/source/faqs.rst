@@ -8,7 +8,8 @@ Installation and Packages
 -------------------------
 
 1. What do I do if I encounter an mkl error following installation?
-        Verify the version of numpy that is installed. Reverting to version 1.18 fixes this error.
+	* Make sure you load the mkl module, or do ``conda install -y mkl_fft``. Then please check ``pip list`` and ``conda list`` to see if you have two versions of numpy installed by ``pip`` and ``conda``. If so, try uninstalling the ``pip`` numpy.
+        * Otherwise, reverting to version 1.18 might also fix this error.
 
 
 Gaussian Processes
@@ -28,10 +29,10 @@ Gaussian Processes
         values and examine the model error, optimized hyperparameters, and model likelihood as a function of the cutoff(s).
 
         * Keep in mind that the model cutoff is intimately coupled with the radial and angular bases of the model. So, we recommend that 
-        model cutoff(s) be tested with varying n_max and l_max.
+        model cutoff(s) be tested with varying n_max and l_max for the ACE descriptors. Generally larger cutoff requires larger n_max.
 
-        * For multi-component systems, a cutoff_matrix is required with explicit cutoffs for each inter-species interaction (e.g., 
-        [[1-1, 1-2],[2-1,2-2]] for species 1 and 2), otherwise the matrix will populate with the values of the maximum cutoff listed in the input file.
+        * For multi-component systems, a cutoff_matrix can be set with explicit cutoffs for each inter-species interaction (e.g., 
+        ``cutoff_matrix: [[cutoff_11, cutoff_12],[cutoff_21, cutoff_22]]`` for species 1 and 2), otherwise the matrix will populate with the values of the maximum cutoff listed in the input file.
 
 
 OTF (On-the-fly) Active-Learning
@@ -65,8 +66,9 @@ OTF (On-the-fly) Active-Learning
         stability issues for GP.
 
 3. Why is the temperature of the simulation unreasonably high?
-        This is the signal of a high-energy configuration being used to start active-learning. Try relaxing the structure before initializing the active-learning trajectory so that your 
+        * This is the signal of a high-energy configuration being used to start active-learning. Try relaxing the structure before initializing the active-learning trajectory so that your 
         initial structure has atoms in local energy minima. High energy initial structures can yield high forces, leading to instability in the temperature and velocities of the atoms.
+	* If you are simulating with a high temperature or light atoms, you can try reducing the MD timestep to enhance stability.
 
         
 4. How do I know that my active-learning trajectory is "good"?
@@ -77,8 +79,13 @@ OTF (On-the-fly) Active-Learning
 5. When should I stop my active-learning trajectory?
         Active-learning can be ceased when the number of DFT calls becomes sparse as a function of timestep. The MAE values for energy, forces, and stresses can also indicate when a model has approached a given
         threshold in accuracy. If the number of DFT calls remains low throughout the entire trajectory, try altering the conditions under which the system performs MD (e.g., temperature or pressure) or decrease
-        the `std_tolerance_factor` so that more DFT calls will be made.
+        the ``std_tolerance_factor`` so that more DFT calls will be made.
 
+6. What happens if I get ``AssertionError`` from ``assert np.allclose(lmp_energy, gp_energy)``?
+	This error can appear when using ``PyLAMMPS`` for training on-the-fly with LAMMPS MD. FLARE does a sanity check to make sure LAMMPS energy and GP energy are the same. 
+	This error means their disagreement is not small enough, which might result from unphysical structure, temperature explosion, or unreasonable hyperparameters.
+	You can try relaxing the initial structure, reducing the timestep, or increasing the lower bound of ``train_hyps``.
+	
 
 Offline-Learning 
 ----
