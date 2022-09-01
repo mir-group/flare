@@ -133,6 +133,7 @@ def get_gp_calc(flare_config):
     gp_parameters = flare_config.get("gp_parameters")
     n_cpus = flare_config.get("n_cpus", 1)
     use_mapping = flare_config.get("use_mapping", False)
+    force_only = flare_config.get("force_only", True)
 
     # set up GP hyperparameters
     pm = ParameterHelper(
@@ -182,6 +183,7 @@ def get_gp_calc(flare_config):
         mgp_model=mgp_model,
         par=n_cpus > 1,
         use_mapping=use_mapping,
+        force_only=force_only,
     )
     return flare_calc, kernels
 

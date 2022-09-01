@@ -14,8 +14,8 @@ from flare.descriptors.env import AtomicEnvironment
 from . import GaussianProcess
 from ..mgp import MappedGaussianProcess
 from .predict import (
-    predict_on_structure_par_en,
-    predict_on_structure_en,
+    predict_on_structure_par,
+    predict_on_structure,
     predict_on_structure_efs,
     predict_on_structure_efs_par,
 )
@@ -61,7 +61,7 @@ class FLARE_Calculator(Calculator):
     implemented_properties = ["energy", "forces", "stress", "stds"]
 
     def __init__(
-        self, gp_model, mgp_model=None, par=False, use_mapping=False, **kwargs
+        self, gp_model, mgp_model=None, par=False, use_mapping=False, force_only=True, **kwargs
     ):
         super().__init__()  # all set to default values, TODO: change
         self.mgp_model = mgp_model
@@ -69,6 +69,7 @@ class FLARE_Calculator(Calculator):
         self.use_mapping = use_mapping
         self.par = par
         self.results = {}
+        self.force_only = force_only
 
     def get_uncertainties(self, atoms):
         return self.get_property("stds", atoms)
@@ -103,13 +104,39 @@ class FLARE_Calculator(Calculator):
     def calculate_gp(self, atoms):
         # Compute energy, forces, and stresses and their uncertainties
         if self.par:
-            res = predict_on_structure_efs_par(
-                atoms, self.gp_model, write_to_structure=False
-            )
+            if self.force_only:
+                res = predict_on_structure_par(
+                    atoms, self.gp_model, write_to_structure=False
+                )
+                res = [
+                    np.zeros(len(atoms)), 
+                    res[0], 
+                    np.zeros((len(atoms), 6)),
+                    np.zeros(len(atoms)), 
+                    res[1], 
+                    np.zeros((len(atoms), 6)),
+                ]                  
+            else:
+                res = predict_on_structure_efs_par(
+                    atoms, self.gp_model, write_to_structure=False
+                )
         else:
-            res = predict_on_structure_efs(
-                atoms, self.gp_model, write_to_structure=False
-            )
+            if self.force_only:
+                res = predict_on_structure(
+                    atoms, self.gp_model, write_to_structure=False
+                )
+                res = [
+                    np.zeros(len(atoms)), 
+                    res[0], 
+                    np.zeros((len(atoms), 6)),
+                    np.zeros(len(atoms)), 
+                    res[1], 
+                    np.zeros((len(atoms), 6)),
+                ]                  
+            else:
+                res = predict_on_structure_efs(
+                    atoms, self.gp_model, write_to_structure=False
+                )
 
         # Set the energy, force, and stress attributes of the calculator.
         self.results["local_energies"] = res[0]
@@ -188,6 +215,7 @@ class FLARE_Calculator(Calculator):
 
         outdict["par"] = self.par
         outdict["results"] = self.results
+        outdict["force_only"] = self.force_only
         return outdict
 
     @staticmethod
