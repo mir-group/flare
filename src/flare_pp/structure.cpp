@@ -46,7 +46,7 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
                       const std::vector<int> &species,
                       const Eigen::MatrixXd &positions, double cutoff,
                       std::vector<Descriptor *> descriptor_calculators,
-                      bool single_bond_only)
+                      bool single_bond_compute)
     : Structure(cell, species, positions) {
 
   this->cutoff = cutoff;
@@ -58,7 +58,7 @@ Structure ::Structure(const Eigen::MatrixXd &cell,
   cumulative_neighbor_count = Eigen::VectorXi::Zero(noa + 1);
 
   compute_neighbors();
-  if (single_bond_only) {
+  if (single_bond_compute) {
     descriptors.clear();
     for (int i = 0; i < descriptor_calculators.size(); i++){
       descriptors.push_back(descriptor_calculators[i]->compute_single_bonds(*this));

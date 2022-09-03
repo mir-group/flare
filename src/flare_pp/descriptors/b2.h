@@ -22,6 +22,7 @@ public:
   std::vector<int> descriptor_settings;
 
   std::string descriptor_name = "B2";
+  bool neighbor_only = false;
 
   /** Matrix of cutoff values, with element (i, j) corresponding to the cutoff
    * assigned to the species pair (i, j), where i is the central species
@@ -47,11 +48,19 @@ public:
 
   DescriptorValues compute_single_bonds(Structure &structure);
   DescriptorValues compute_struc(Structure &structure);
+  std::vector<std::vector<double>> get_Ylm(double x, double y, double z, int lmax);
 
   void write_to_file(std::ofstream &coeff_file, int coeff_size);
 
   nlohmann::json return_json();
 };
+
+void get_neighbor_list(
+    Eigen::VectorXi &neighbor_count,
+    Eigen::VectorXi &cumulative_neighbor_count,
+    Eigen::VectorXi &neighbor_indices,
+    const Structure &structure,
+    const Eigen::MatrixXd &cutoffs);
 
 void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
                 Eigen::VectorXd &B2_norms, Eigen::VectorXd &B2_force_dots,

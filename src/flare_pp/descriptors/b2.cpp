@@ -28,6 +28,13 @@ B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
   int n_species = descriptor_settings[0];
   double cutoff_val = radial_hyps[1];
   cutoffs = Eigen::MatrixXd::Constant(n_species, n_species, cutoff_val);
+
+  neighbor_only = false;
+  if (descriptor_settings.size() == 4) {
+    if (descriptor_settings[3] == 1) {
+      neighbor_only = true;
+    }
+  }
 }
 
 B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
@@ -86,11 +93,16 @@ DescriptorValues B2 ::compute_single_bonds(Structure &structure) {
   int N = descriptor_settings[1];
   int lmax = descriptor_settings[2];
 
-  single_bond_multiple_cutoffs(
-    single_bond_vals, force_dervs, neighbor_coords, unique_neighbor_count,
-    cumulative_neighbor_count, descriptor_indices, radial_pointer,
-    cutoff_pointer, nos, N, lmax, radial_hyps, cutoff_hyps, structure,
-    cutoffs);
+  if (neighbor_only) {
+    get_neighbor_list(unique_neighbor_count, cumulative_neighbor_count, 
+            descriptor_indices, structure, cutoffs);
+  } else {
+    single_bond_multiple_cutoffs(
+      single_bond_vals, force_dervs, neighbor_coords, unique_neighbor_count,
+      cumulative_neighbor_count, descriptor_indices, radial_pointer,
+      cutoff_pointer, nos, N, lmax, radial_hyps, cutoff_hyps, structure,
+      cutoffs);
+  }
 
   desc.single_bond_vals = single_bond_vals;
   desc.single_bond_force_dervs = force_dervs;
@@ -270,6 +282,17 @@ DescriptorValues B2 ::compute_struc(Structure &structure) {
   }
 
   return desc;
+}
+
+std::vector<std::vector<double>> B2:: get_Ylm(double x, double y, double z, int lmax) {
+  int number_of_harmonics = (lmax + 1) * (lmax + 1);
+  std::vector<double> h = std::vector<double>(number_of_harmonics, 0);
+  std::vector<double> hx = std::vector<double>(number_of_harmonics, 0);
+  std::vector<double> hy = std::vector<double>(number_of_harmonics, 0);
+  std::vector<double> hz = std::vector<double>(number_of_harmonics, 0);
+
+  get_Y(h, hx, hy, hz, x, y, z, lmax);
+  return {h, hx, hy, hz};
 }
 
 void compute_b2(Eigen::MatrixXd &B2_vals, Eigen::MatrixXd &B2_force_dervs,
@@ -491,6 +514,62 @@ void single_bond_multiple_cutoffs(
     }
   }
 }
+
+void get_neighbor_list(
+    Eigen::VectorXi &neighbor_count,
+    Eigen::VectorXi &cumulative_neighbor_count,
+    Eigen::VectorXi &neighbor_indices,
+    const Structure &structure,
+    const Eigen::MatrixXd &cutoffs) {
+
+  int n_atoms = structure.noa;
+  int n_neighbors = structure.n_neighbors;
+
+  // Count atoms inside the descriptor cutoff.
+  neighbor_count = Eigen::VectorXi::Zero(n_atoms);
+  Eigen::VectorXi store_neighbors = Eigen::VectorXi::Zero(n_neighbors);
+#pragma omp parallel for
+  for (int i = 0; i < n_atoms; i++) {
+    int i_neighbors = structure.neighbor_count(i);
+    int rel_index = structure.cumulative_neighbor_count(i);
+    int central_species = structure.species[i];
+    for (int j = 0; j < i_neighbors; j++) {
+      int current_count = neighbor_count(i);
+      int neigh_index = rel_index + j;
+      int neighbor_species = structure.neighbor_species(neigh_index);
+      double rcut = cutoffs(central_species, neighbor_species);
+      double r = structure.relative_positions(neigh_index, 0);
+      // Check that atom is within descriptor cutoff.
+      if (r <= rcut) {
+        int struc_index = structure.structure_indices(neigh_index);
+        // Update neighbor list.
+        store_neighbors(rel_index + current_count) = struc_index;
+        neighbor_count(i)++;
+      }
+    }
+  }
+
+  // Count cumulative number of unique neighbors.
+  cumulative_neighbor_count = Eigen::VectorXi::Zero(n_atoms + 1);
+  for (int i = 1; i < n_atoms + 1; i++) {
+    cumulative_neighbor_count(i) +=
+        cumulative_neighbor_count(i - 1) + neighbor_count(i - 1);
+  }
+
+  // Record neighbor indices.
+  int bond_neighbors = cumulative_neighbor_count(n_atoms);
+  neighbor_indices = Eigen::VectorXi::Zero(bond_neighbors);
+#pragma omp parallel for
+  for (int i = 0; i < n_atoms; i++) {
+    int i_neighbors = neighbor_count(i);
+    int ind1 = cumulative_neighbor_count(i);
+    int ind2 = structure.cumulative_neighbor_count(i);
+    for (int j = 0; j < i_neighbors; j++) {
+      neighbor_indices(ind1 + j) = store_neighbors(ind2 + j);
+    }
+  }
+}
+
 
 void compute_single_bond(
     Eigen::MatrixXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
