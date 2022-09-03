@@ -103,7 +103,4 @@ void compute_single_bond(
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps, const Structure &structure);
 
-void to_json(nlohmann::json& j, const B2_Embed & p);
-void from_json(const nlohmann::json& j, B2_Embed & p);
-
 #endif

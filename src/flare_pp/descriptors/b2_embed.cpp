@@ -430,33 +430,7 @@ void single_bond_multiple_cutoffs_embed(
   }
 }
 
-void to_json(nlohmann::json& j, const B2_Embed & p){
-  j = nlohmann::json{
-    {"radial_basis", p.radial_basis},
-    {"cutoff_function", p.cutoff_function},
-    {"radial_hyps", p.radial_hyps},
-    {"cutoff_hyps", p.cutoff_hyps},
-    {"descriptor_settings", p.descriptor_settings},
-    {"cutoffs", p.cutoffs},
-    {"descriptor_name", p.descriptor_name},
-    {"embed_coefficients", p.embed_coeffs}
-  };
-}
-
-void from_json(const nlohmann::json& j, B2_Embed & p){
-  p = B2_Embed(
-    j.at("radial_basis"),
-    j.at("cutoff_function"),
-    j.at("radial_hyps"),
-    j.at("radial_hyps"),
-    j.at("descriptor_settings"),
-    j.at("cutoffs"),
-    j.at("embed_coefficients")
-  );
-}
-
 nlohmann::json B2_Embed ::return_json(){
   nlohmann::json j;
-  to_json(j, *this);
   return j;
 }
