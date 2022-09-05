@@ -4,6 +4,7 @@
 #include "sparse_gp.h"
 #include "b2.h"
 #include "b2_embed.h"
+#include "b2_embed_contract.h"
 #include "b2_simple.h"
 #include "b2_norm.h"
 #include "b3.h"
@@ -49,6 +50,10 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("mean_efs", &Structure::mean_efs)
       .def_readwrite("variance_efs", &Structure::variance_efs)
       .def_readwrite("local_uncertainties", &Structure::local_uncertainties)
+      .def_readwrite("neighbor_count", &Structure::neighbor_count)
+      .def_readwrite("cumulative_neighbor_count", &Structure::cumulative_neighbor_count)
+      .def_readwrite("neighbor_species", &Structure::neighbor_species)
+      .def_readwrite("relative_positions", &Structure::relative_positions)
       .def_readwrite("descriptors", &Structure::descriptors)
       .def_readwrite("descriptor_calculators",
                     &Structure::descriptor_calculators)
@@ -134,7 +139,8 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("radial_hyps", &B2::radial_hyps)
       .def_readonly("cutoff_hyps", &B2::cutoff_hyps)
       .def_readonly("cutoffs", &B2::cutoffs)
-      .def_readonly("descriptor_settings", &B2::descriptor_settings);
+      .def_readonly("descriptor_settings", &B2::descriptor_settings)
+      .def("get_Ylm", &B2::get_Ylm);
 
   py::class_<B2_Embed, Descriptor>(m, "B2_Embed")
       .def(py::init<const std::string &, const std::string &,
@@ -151,6 +157,22 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("cutoffs", &B2_Embed::cutoffs)
       .def_readonly("descriptor_settings", &B2_Embed::descriptor_settings)
       .def_readonly("embed_coeffs", &B2_Embed::embed_coeffs);
+
+  py::class_<B2_Embed_Contract, Descriptor>(m, "B2_Embed_Contract")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &, const Eigen::MatrixXd &>())
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &,
+                    const Eigen::MatrixXd &, const Eigen::MatrixXd &>())
+      .def_readonly("radial_basis", &B2_Embed_Contract::radial_basis)
+      .def_readonly("cutoff_function", &B2_Embed_Contract::cutoff_function)
+      .def_readonly("radial_hyps", &B2_Embed_Contract::radial_hyps)
+      .def_readonly("cutoff_hyps", &B2_Embed_Contract::cutoff_hyps)
+      .def_readonly("cutoffs", &B2_Embed_Contract::cutoffs)
+      .def_readonly("descriptor_settings", &B2_Embed_Contract::descriptor_settings)
+      .def_readonly("embed_coeffs", &B2_Embed_Contract::embed_coeffs);
 
   py::class_<B2_Simple, Descriptor>(m, "B2_Simple")
       .def(py::init<const std::string &, const std::string &,
