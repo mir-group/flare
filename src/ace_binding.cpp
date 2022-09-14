@@ -171,7 +171,10 @@ PYBIND11_MODULE(_C_flare, m) {
            &SparseGP::add_uncertain_environments)
       .def("add_training_structure", &SparseGP::add_training_structure,
                        py::arg("structure"),
-                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1))
+                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1),
+                       py::arg("rel_e_noise") = 1.0,
+                       py::arg("rel_f_noise") = 1.0,
+                       py::arg("rel_s_noise") = 1.0)
       .def("update_matrices_QR", &SparseGP::update_matrices_QR)
       .def("compute_likelihood", &SparseGP::compute_likelihood)
       .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)
