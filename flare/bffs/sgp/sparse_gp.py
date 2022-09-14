@@ -278,6 +278,9 @@ class SGP_Wrapper:
             else:
                 energy = None
 
+            rel_efs_noise = train_struc.info.get("rel_efs_noise", [1, 1, 1])
+            rel_e_noise, rel_f_noise, rel_s_noise = rel_efs_noise
+
             gp.update_db(
                 train_struc,
                 train_struc.forces,
@@ -288,9 +291,9 @@ class SGP_Wrapper:
                 sgp=None,
                 update_qr=False,
                 atom_indices=atom_indices,
-                rel_e_noise=train_struc.info["rel_efs_noise"][0],
-                rel_f_noise=train_struc.info["rel_efs_noise"][1],
-                rel_s_noise=train_struc.info["rel_efs_noise"][2],
+                rel_e_noise=rel_e_noise,
+                rel_f_noise=rel_f_noise,
+                rel_s_noise=rel_s_noise,
             )
 
         gp.sparse_gp.update_matrices_QR()
