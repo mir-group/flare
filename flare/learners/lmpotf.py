@@ -1,8 +1,8 @@
 from lammps import lammps
 import ase, os, numpy as np, sys
 from typing import Union, Optional, Callable, Any, List
-from flare_pp._C_flare import Structure, SparseGP
-from flare_pp.sparse_gp import optimize_hyperparameters
+from flare.bffs.sgp._C_flare import Structure, SparseGP
+from flare.bffs.sgp.sparse_gp import optimize_hyperparameters
 import logging
 
 
