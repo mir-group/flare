@@ -20,9 +20,48 @@ def transform_stress(stress: List[List[float]]) -> List[List[float]]:
 
 
 class LMPOTF:
-    """"
+    """
     Module for performing On-The-Fly (OTF) training, also known as active learning,
     entirely within LAMMPS.
+
+    Parameters
+    ----------
+    sparse_gp
+        The :cpp:class:`SparseGP` object to train.
+    descriptors
+        A list of descriptor objects, or a single descriptor (most common), e.g. :cpp:class:`B2`.
+    rcut
+        The interaction cut-off radius.
+    type2number
+        The atomic numbers of all LAMMPS types.
+    dftcalc
+        An ASE calculator, e.g. Espresso.
+    energy_correction
+        Per-type correction to the DFT potential energy.
+    dft_call_threshold
+        Uncertainty threshold for whether to call DFT.
+    dft_add_threshold
+        Uncertainty threshold for whether to add an atom to the training set.
+    std_xyz_fname
+        Function for the name of the file in which to save ASE Atoms with per-atom uncertainties as charges.
+        Takes as input this LMPOTF object and the current step.
+    model_fname
+        Name of the saved model, must correspond to `pair_coeff`.
+    hyperparameter_optimization
+        Boolean function that determines whether to run hyperparameter optimization, as a function of this LMPOTF
+        object, the LAMMPS instance and the current step.
+    opt_bounds
+        Bounds for the hyperparameter optimization.
+    opt_method
+        Algorithm for the hyperparameter optimization.
+    opt_iterations
+        Max number of iterations for the hyperparameter optimization.
+    post_dft_callback
+        A function that is called after every DFT call. Receives this LMPOTF object and the current step.
+    wandb
+        The wandb object, which should already be initialized.
+    log_fname
+        An output file to which logging info is written.
     """
 
     def __init__(
@@ -53,44 +92,6 @@ class LMPOTF:
     ) -> object:
         """
 
-        Parameters
-        ----------
-        sparse_gp
-            The :cpp:class:`SparseGP` object to train.
-        descriptors
-            A list of descriptor objects, or a single descriptor (most common), e.g. :cpp:class:`B2`.
-        rcut
-            The interaction cut-off radius.
-        type2number
-            The atomic numbers of all LAMMPS types.
-        dftcalc
-            An ASE calculator, e.g. Espresso.
-        energy_correction
-            Per-type correction to the DFT potential energy.
-        dft_call_threshold
-            Uncertainty threshold for whether to call DFT.
-        dft_add_threshold
-            Uncertainty threshold for whether to add an atom to the training set.
-        std_xyz_fname
-            Function for the name of the file in which to save ASE Atoms with per-atom uncertainties as charges.
-            Takes as input this LMPOTF object and the current step.
-        model_fname
-            Name of the saved model, must correspond to `pair_coeff`.
-        hyperparameter_optimization
-            Boolean function that determines whether to run hyperparameter optimization, as a function of this LMPOTF
-            object, the LAMMPS instance and the current step.
-        opt_bounds
-            Bounds for the hyperparameter optimization.
-        opt_method
-            Algorithm for the hyperparameter optimization.
-        opt_iterations
-            Max number of iterations for the hyperparameter optimization.
-        post_dft_callback
-            A function that is called after every DFT call. Receives this LMPOTF object and the current step.
-        wandb
-            The wandb object, which should already be initialized.
-        log_fname
-            An output file to which logging info is written.
         """
         self.sparse_gp = sparse_gp
         self.descriptors = np.atleast_1d(descriptors)
