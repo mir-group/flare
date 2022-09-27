@@ -1,4 +1,6 @@
 #include "b2_embed.h"
+#include "b2_embed_contract.h"
+#include "b2_embed_multilayer.h"
 #include "b3.h"
 #include "descriptor.h"
 #include "test_structure.h"
@@ -99,7 +101,7 @@ public:
 };
 
 
-using DescEmbedTypes = ::testing::Types<B2_Embed>;
+using DescEmbedTypes = ::testing::Types<B2_Embed, B2_Embed_Multilayer>;
 TYPED_TEST_SUITE(DescEmbedTest, DescEmbedTypes);
 
 //TEST_P(DescRotTest, RotationTest) {
@@ -109,7 +111,7 @@ TYPED_TEST(DescEmbedTest, RotationEmbedTest) {
   std::vector<Descriptor *> descriptors;
 
   TypeParam desc;
-  Eigen::MatrixXd embed_coeffs = Eigen::MatrixXd::Random(3, this->n_species * this->N * (this->L + 1));
+  Eigen::MatrixXd embed_coeffs = Eigen::MatrixXd::Random(4, this->n_species * this->N * (this->L + 1));
   desc = TypeParam(this->radial_string, this->cutoff_string, this->radial_hyps, 
                    this->cutoff_hyps, descriptor_settings, embed_coeffs);
 
@@ -118,6 +120,7 @@ TYPED_TEST(DescEmbedTest, RotationEmbedTest) {
   Structure struc1 = Structure(this->cell, this->species, this->positions, this->cutoff, descriptors);
   Structure struc2 =
       Structure(this->rotated_cell, this->species, this->rotated_pos, this->cutoff, descriptors);
+  printf("done struc1 struc2\n");
 
   // Check that the descriptors are rotationally invariant.
   double d1, d2;

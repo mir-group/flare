@@ -125,6 +125,8 @@ set(FLARE_SOURCES
     src/flare_pp/descriptors/descriptor.cpp
     src/flare_pp/descriptors/b2.cpp
     src/flare_pp/descriptors/b2_embed.cpp
+    src/flare_pp/descriptors/b2_embed_multilayer.cpp
+    src/flare_pp/descriptors/b2_norm.cpp
     src/flare_pp/descriptors/b2_norm.cpp
     src/flare_pp/descriptors/b2_simple.cpp
     src/flare_pp/descriptors/b3.cpp
