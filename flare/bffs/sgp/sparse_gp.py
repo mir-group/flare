@@ -6,6 +6,7 @@ from typing import List
 import warnings
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
+from ase import Atoms
 
 try:
     from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
@@ -310,7 +311,7 @@ class SGP_Wrapper:
     ):
 
         # Convert coded species to 0, 1, 2, etc.
-        if isinstance(structure, FLARE_Atoms):
+        if isinstance(structure, (Atoms, FLARE_Atoms)):
             coded_species = []
             for spec in structure.numbers:
                 coded_species.append(self.species_map[spec])

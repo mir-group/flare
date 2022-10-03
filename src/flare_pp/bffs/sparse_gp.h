@@ -45,14 +45,27 @@ public:
 
   // Constructors.
   SparseGP();
+
+  // Destructors.
+  virtual ~SparseGP();
+
+  /**
+   Basic Sparse GP constructor.  
+
+   @param kernels A list of Kernel objects, e.g. NormalizedInnerProduct, SquaredExponential.
+        Note the number of kernels should be equal to the number of descriptor calculators.
+   @param energy_noise Noise hyperparameter for total energy.
+   @param force_noise Noise hyperparameter for atomic forces.
+   @param stress_noise Noise hyperparameter for total stress.
+   */
   SparseGP(std::vector<Kernel *> kernels, double energy_noise,
            double force_noise, double stress_noise);
 
   void initialize_sparse_descriptors(const Structure &structure);
   void add_all_environments(const Structure &structure);
 
-  void add_specific_environments(const Structure &structure,
-                                 const std::vector<int> atoms);
+  virtual void add_specific_environments(const Structure &structure,
+               const std::vector<std::vector<int>> atoms);
   void add_random_environments(const Structure &structure,
                                const std::vector<int> &n_added);
   void add_uncertain_environments(const Structure &structure,
@@ -62,29 +75,30 @@ public:
   std::vector<std::vector<int>>
   sort_clusters_by_uncertainty(const Structure &structure);
 
-  void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1});
+  virtual void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1});
+
   void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);
   void update_Kuf(const std::vector<ClusterDescriptor> &cluster_descriptors);
   void stack_Kuu();
-  void stack_Kuf();
+  virtual void stack_Kuf();
 
-  void update_matrices_QR();
+  virtual void update_matrices_QR();
 
   void predict_mean(Structure &structure);
   void predict_SOR(Structure &structure);
   void predict_DTC(Structure &structure);
-  void predict_local_uncertainties(Structure &structure);
+  virtual void predict_local_uncertainties(Structure &structure);
 
-  void compute_likelihood_stable();
-  double compute_likelihood_gradient_stable(bool precomputed_KnK = false);
-  void precompute_KnK();
-  void compute_KnK(bool precomputed = false);
-  Eigen::MatrixXd compute_dKnK(int i);
+  virtual void compute_likelihood_stable();
+  virtual double compute_likelihood_gradient_stable(bool precomputed_KnK = false);
+  virtual void precompute_KnK();
+  virtual void compute_KnK(bool precomputed = false);
+  virtual Eigen::MatrixXd compute_dKnK(int i);
 
-  void compute_likelihood();
+  virtual void compute_likelihood();
 
   double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
-  void set_hyperparameters(Eigen::VectorXd hyps);
+  virtual void set_hyperparameters(Eigen::VectorXd hyps);
 
   void write_mapping_coefficients(std::string file_name,
                                   std::string contributor,
