@@ -146,17 +146,25 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   int n_harmonics = (lmax + 1) * (lmax + 1);
   int n_bond = n_radial * n_harmonics;
 
-  int n_ls;
+  int n_ls = 0;
+  for (int l1 = 0; l1 < (lmax + 1); l1++) {
+    for (int l2 = 0; l2 < (lmax + 1); l2++) {
+      for (int l3 = 0; l3 < (lmax + 1); l3++) {
+        if ((abs(l1 - l2) <= l3) && (l3 <= l1 + l2)) n_ls += 1;
+      }
+    }
+  }
+
   if (lmax == 0)
-    n_ls = 1;
+    assert (n_ls == 1);
   else if (lmax == 1)
-    n_ls = 5;
+    assert (n_ls == 5);
   else if (lmax == 2)
-    n_ls = 15;
+    assert (n_ls == 15);
   else if (lmax == 3)
-    n_ls = 34;
+    assert (n_ls == 34);
   else if (lmax == 4)
-    n_ls = 65;
+    assert (n_ls == 65);
 
   int n_d = (n_radial * (n_radial + 1) * (n_radial + 2) / 6) * n_ls;
 
