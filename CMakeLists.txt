@@ -112,6 +112,22 @@ endif()
 
 # Greatly reduces the code bloat
 target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
+
+# Distmatrix
+###############################################################################
+FetchContent_Declare(
+    distmatrix
+    GIT_REPOSITORY https://github.com/mir-group/distmatrix.git
+)
+FetchContent_MakeAvailable(distmatrix)
+
+link_directories(${distmatrix_BINARY_DIR})
+link_directories(${distmatrix_BINARY_DIR}/scalapack_build/lib)
+
+include_directories(${distmatrix_SOURCE_DIR}/include)
+
+
+#target_link_libraries(flare PUBLIC distmatrix)
 ###############################################################################
 
 # Specify source files.
@@ -120,9 +136,12 @@ set(FLARE_SOURCES
     src/flare_pp/radial.cpp
     src/flare_pp/cutoffs.cpp
     src/flare_pp/structure.cpp
+    src/flare_pp/utils.cpp
     src/flare_pp/bffs/sparse_gp.cpp
+    src/flare_pp/bffs/parallel_sgp.cpp
     src/flare_pp/bffs/gp.cpp
     src/flare_pp/descriptors/descriptor.cpp
+    src/flare_pp/descriptors/b1.cpp
     src/flare_pp/descriptors/b2.cpp
     src/flare_pp/descriptors/b2_norm.cpp
     src/flare_pp/descriptors/b2_simple.cpp
@@ -153,6 +172,14 @@ include_directories(
 add_library(flare STATIC ${FLARE_SOURCES})
 set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_dependencies(flare eigen_project)
+add_dependencies(flare distmatrix)
+
+# Link to MPI
+find_package(MPI REQUIRED)
+target_link_libraries(flare PUBLIC MPI::MPI_CXX)
+
+# Link to distmatrix
+target_link_libraries(flare PUBLIC distmatrix -lgfortran)
 
 # Link to json.
 target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
@@ -182,6 +209,8 @@ if (DEFINED ENV{MKL_INCLUDE} AND DEFINED ENV{MKL_LIBS})
   include_directories($ENV{MKL_INCLUDE})
   target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
   target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
+  target_include_directories(flare PUBLIC $ENV{MKL_MPI})
+  message(MKL_MPI=$ENV{MKL_MPI})
 # Give the option to do a "bare-bones" build without Lapack/Lapacke.
 elseif(DEFINED ENV{NO_LAPACK})
   message(STATUS "Building without Lapack.")
