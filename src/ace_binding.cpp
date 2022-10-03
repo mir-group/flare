@@ -2,6 +2,8 @@
 #include "structure.h"
 #include "y_grad.h"
 #include "sparse_gp.h"
+#include "parallel_sgp.h"
+#include "b1.h"
 #include "b2.h"
 #include "b2_simple.h"
 #include "b2_norm.h"
@@ -130,6 +132,11 @@ PYBIND11_MODULE(_C_flare, m) {
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &>());
 
+  py::class_<B1, Descriptor>(m, "B1")
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &>());
+
   py::class_<B3, Descriptor>(m, "B3")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
@@ -220,4 +227,15 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("y", &SparseGP::y)
       .def_static("to_json", &SparseGP::to_json)
       .def_static("from_json", &SparseGP::from_json);
+
+  py::class_<ParallelSGP, SparseGP>(m, "ParallelSGP")
+      .def(py::init<>())
+      .def(py::init<std::vector<Kernel *>, double, double, double>())
+      .def_readwrite("finalize_MPI", &ParallelSGP::finalize_MPI)
+      .def("build", &ParallelSGP::build)
+      .def("set_hyperparameters", &ParallelSGP::set_hyperparameters)
+      .def("compute_likelihood_stable", &ParallelSGP::compute_likelihood_stable)
+      .def("compute_likelihood_gradient_stable", &ParallelSGP::compute_likelihood_gradient_stable)
+      .def("predict_local_uncertainties", &ParallelSGP::predict_local_uncertainties)
+      .def("predict_on_structures", &ParallelSGP::predict_on_structures);
 }
