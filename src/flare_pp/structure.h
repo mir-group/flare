@@ -100,6 +100,10 @@ public:
   double get_single_sweep_cutoff();
   void compute_neighbors();
   void compute_descriptors();
+  int n_energy() const;
+  int n_forces() const;
+  int n_stresses() const;
+  int n_labels() const;
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(Structure, neighbor_count,
     cutoff, cumulative_neighbor_count, structure_indices, neighbor_species,

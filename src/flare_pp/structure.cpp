@@ -164,6 +164,24 @@ double Structure ::get_single_sweep_cutoff() {
   return single_sweep_cutoff;
 }
 
+int Structure::n_energy() const {
+  return energy.size();
+}
+
+int Structure::n_forces() const {
+  return forces.size();
+}
+
+int Structure::n_stresses() const {
+  return stresses.size();
+}
+
+int Structure::n_labels() const {
+  int n_energy = energy.size();
+  int n_forces = forces.size();
+  int n_stresses = stresses.size();
+  return n_energy + n_forces + n_stresses;
+}
 
 void Structure ::to_json(std::string file_name, const Structure & struc){
   std::ofstream struc_file(file_name);
