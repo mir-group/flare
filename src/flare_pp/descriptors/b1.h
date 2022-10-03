@@ -19,7 +19,9 @@ public:
   std::vector<double> radial_hyps, cutoff_hyps;
   std::vector<int> descriptor_settings;
   int K = 1; // Body order
+  Eigen::MatrixXd cutoffs;
 
+  std::string descriptor_name = "B1";
   B1();
 
   B1(const std::string &radial_basis, const std::string &cutoff_function,

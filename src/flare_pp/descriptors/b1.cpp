@@ -23,10 +23,15 @@ B1 ::B1(const std::string &radial_basis, const std::string &cutoff_function,
 
   set_radial_basis(radial_basis, this->radial_pointer);
   set_cutoff(cutoff_function, this->cutoff_pointer);
+
+  // Create cutoff matrix.
+  int n_species = descriptor_settings[0];
+  double cutoff_val = radial_hyps[1];
+  cutoffs = Eigen::MatrixXd::Constant(n_species, n_species, cutoff_val);
 }
 
 void B1 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
-  coeff_file << "\n" << "B1" << "\n";
+  coeff_file << "B1" << "\n";
 
   // Report radial basis set.
   coeff_file << radial_basis << "\n";
@@ -41,9 +46,14 @@ void B1 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   coeff_file << coeff_size << "\n";
   coeff_file << cutoff_function << "\n";
 
-  // Report cutoff to 2 decimal places.
+  // Report cutoffs to 2 decimal places.
   coeff_file << std::fixed << std::setprecision(2);
-  coeff_file << cutoff << "\n";
+  for (int i = 0; i < n_species; i ++){
+    for (int j = 0; j < n_species; j ++){
+      coeff_file << cutoffs(i, j) << " ";
+    }
+  }
+  coeff_file << "\n";
 }
 
 DescriptorValues B1 ::compute_struc(Structure &structure) {

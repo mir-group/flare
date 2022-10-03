@@ -1,4 +1,4 @@
-#include "pair_flare.h"
+#include "pair_flare_b3.h"
 #include "atom.h"
 #include "comm.h"
 #include "error.h"
@@ -21,6 +21,7 @@
 #include "lammps_descriptor.h"
 #include "radial.h"
 #include "y_grad.h"
+#include "wigner3j.h"
 
 using namespace LAMMPS_NS;
 
@@ -40,7 +41,7 @@ get_timestamp ()
 
 /* ---------------------------------------------------------------------- */
 
-PairFLARE::PairFLARE(LAMMPS *lmp) : Pair(lmp) {
+PairFLAREB3::PairFLAREB3(LAMMPS *lmp) : Pair(lmp) {
   restartinfo = 0;
   manybody_flag = 1;
 
@@ -51,7 +52,7 @@ PairFLARE::PairFLARE(LAMMPS *lmp) : Pair(lmp) {
    check if allocated, since class can be destructed when incomplete
 ------------------------------------------------------------------------- */
 
-PairFLARE::~PairFLARE() {
+PairFLAREB3::~PairFLAREB3() {
   if (copymode)
     return;
 
@@ -65,7 +66,7 @@ PairFLARE::~PairFLARE() {
 
 /* ---------------------------------------------------------------------- */
 
-void PairFLARE::compute(int eflag, int vflag) {
+void PairFLAREB3::compute(int eflag, int vflag) {
   int i, j, ii, jj, inum, jnum, itype, jtype, n_inner, n_count;
   double evdwl, delx, dely, delz, xtmp, ytmp, ztmp, rsq;
   double *coeff;
@@ -87,9 +88,11 @@ void PairFLARE::compute(int eflag, int vflag) {
   firstneigh = list->firstneigh;
 
   int beta_init, beta_counter;
-  double B2_norm_squared, B2_val_1, B2_val_2;
-  Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, u;
-  Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
+  double norm_squared;
+  Eigen::VectorXcd single_bond_vals;
+  Eigen::VectorXd vals, env_dot, beta_p, partial_forces;
+  Eigen::MatrixXcd single_bond_env_dervs, u;
+  Eigen::MatrixXd env_dervs;
   double empty_thresh = 1e-8;
 
   for (ii = 0; ii < inum; ii++) {
@@ -117,23 +120,35 @@ void PairFLARE::compute(int eflag, int vflag) {
     }
 
     // Compute covariant descriptors.
-    double secs;
-    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
-                                 jlist, basis_function, cutoff_function,
-                                 n_species, n_max, l_max, radial_hyps,
-                                 cutoff_hyps, single_bond_vals,
-                                 single_bond_env_dervs, cutoff_matrix);
-
+    // TODO: this function call is duplicated for multiple kernels
+    complex_single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp, jlist,
+                        basis_function, cutoff_function, 
+                        n_species, n_max, l_max, 
+                        radial_hyps, cutoff_hyps, 
+                        single_bond_vals, single_bond_env_dervs, cutoff_matrix);
+  
     // Compute invariant descriptors.
-    B2_descriptor(B2_vals, B2_norm_squared,
-                  single_bond_vals, n_species, n_max, l_max);
-
-    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
-           n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
-
+    compute_Bk_and_u(vals, env_dervs, norm_squared, env_dot,
+               single_bond_vals, single_bond_env_dervs, nu,
+               n_species, 3, n_max, l_max, wigner3j_coeffs,
+               beta_matrices[itype - 1].col(0), u, &evdwl);
+ 
     // Continue if the environment is empty.
-    if (B2_norm_squared < empty_thresh)
+    if (norm_squared < empty_thresh)
       continue;
+
+    // Compute local energy and partial forces.
+    //// TODO: not needed if using "u"
+    //if (power == 1) {
+    //  double B3_norm = pow(norm_squared, 0.5);
+    //  evdwl = beta_matrices[itype - 1].col(0).dot(vals) / B3_norm;
+    //  partial_forces = - env_dervs * beta_matrices[itype - 1].col(0) / B3_norm + evdwl * env_dot / norm_squared;
+    //} else if (power == 2) {
+    //  beta_p = beta_matrices[itype - 1] * vals;
+    //  evdwl = vals.dot(beta_p) / norm_squared;
+    //  partial_forces =
+    //    2 * (- env_dervs * beta_p + evdwl * env_dot) / norm_squared;
+    //}
 
     // Update energy, force and stress arrays.
     n_count = 0;
@@ -149,11 +164,17 @@ void PairFLARE::compute(int eflag, int vflag) {
 
       if (rsq < (cutoff_val * cutoff_val)) {
         // Compute partial force f_ij = u * dA/dr_ij
-        double fx = single_bond_env_dervs.row(n_count * 3).dot(u);
-        double fy = single_bond_env_dervs.row(n_count * 3 + 1).dot(u);
-        double fz = single_bond_env_dervs.row(n_count * 3 + 2).dot(u);
-        // Compute local energy and partial forces.
+        //double fx = -partial_forces(n_count * 3);
+        //double fy = -partial_forces(n_count * 3 + 1);
+        //double fz = -partial_forces(n_count * 3 + 2);
+        double fx = 0, fy = 0, fz = 0;
+        for (int t = 0; t < u.rows(); t++) {
+          fx += real(single_bond_env_dervs.row(n_count * 3 + 0).conjugate().dot(u.row(t)));
+          fy += real(single_bond_env_dervs.row(n_count * 3 + 1).conjugate().dot(u.row(t)));
+          fz += real(single_bond_env_dervs.row(n_count * 3 + 2).conjugate().dot(u.row(t)));
+        }
 
+        // Compute local energy and partial forces.
         f[i][0] += fx;
         f[i][1] += fy;
         f[i][2] += fz;
@@ -187,7 +208,7 @@ void PairFLARE::compute(int eflag, int vflag) {
    allocate all arrays
 ------------------------------------------------------------------------- */
 
-void PairFLARE::allocate() {
+void PairFLAREB3::allocate() {
   allocated = 1;
   int n = atom->ntypes;
 
@@ -205,7 +226,7 @@ void PairFLARE::allocate() {
    global settings
 ------------------------------------------------------------------------- */
 
-void PairFLARE::settings(int narg, char ** /*arg*/) {
+void PairFLAREB3::settings(int narg, char ** /*arg*/) {
   // "flare" should be the only word after "pair_style" in the input file.
   if (narg > 0)
     error->all(FLERR, "Illegal pair_style command");
@@ -216,7 +237,7 @@ void PairFLARE::settings(int narg, char ** /*arg*/) {
    read DYNAMO funcfl file
 ------------------------------------------------------------------------- */
 
-void PairFLARE::coeff(int narg, char **arg) {
+void PairFLAREB3::coeff(int narg, char **arg) {
   if (!allocated)
     allocate();
 
@@ -235,7 +256,7 @@ void PairFLARE::coeff(int narg, char **arg) {
    init specific to this pair style
 ------------------------------------------------------------------------- */
 
-void PairFLARE::init_style() {
+void PairFLAREB3::init_style() {
   // Require newton on.
   if (force->newton_pair == 0)
     error->all(FLERR, "Pair style requires newton pair on");
@@ -248,7 +269,7 @@ void PairFLARE::init_style() {
    init for one type pair i,j and corresponding j,i
 ------------------------------------------------------------------------- */
 
-double PairFLARE::init_one(int i, int j) {
+double PairFLAREB3::init_one(int i, int j) {
   // init_one is called for each i, j pair in pair.cpp after calling init_style.
 
   return cutoff;
@@ -258,9 +279,9 @@ double PairFLARE::init_one(int i, int j) {
    read potential values from a DYNAMO single element funcfl file
 ------------------------------------------------------------------------- */
 
-void PairFLARE::read_file(char *filename) {
+void PairFLAREB3::read_file(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], body_order_string[MAXLINE];
   int radial_string_length, cutoff_string_length;
   FILE *fptr;
 
@@ -274,12 +295,22 @@ void PairFLARE::read_file(char *filename) {
     }
   }
 
+  printf("Reading header\n");
   int tmp, nwords;
   if (me == 0) {
     fgets(line, MAXLINE, fptr); // Date and contributor
 
     fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
     sscanf(line, "%i", &power);
+    if (power != 1) {
+      error->all(FLERR, "B3 power has to be 1");
+    }
+
+    fgets(line, MAXLINE, fptr); // Body order, B1/2/3
+    sscanf(line, "%s", body_order_string);
+    if (strcmp(body_order_string, "B3")) {
+      error->all(FLERR, "Potential has to be B3.");
+    }
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
@@ -311,6 +342,7 @@ void PairFLARE::read_file(char *filename) {
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
+  printf("Reading cutoffs\n");
   // Fill in the cutoff matrix.
   cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
@@ -324,9 +356,16 @@ void PairFLARE::read_file(char *filename) {
     }
   }
 
+  // Set indices of n, l, m.
+  int n_radial = n_species * n_max;
+  nu = B3_indices(n_radial, l_max);
+
   // Set number of descriptors.
-  int n_radial = n_max * n_species;
-  n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  std::vector<int> last_index = nu[nu.size()-1];
+  int n_descriptors = last_index[last_index.size()-1] + 1; 
+
+  // Set Wigner-3j coefficients
+  wigner3j_coeffs = compute_coeffs(l_max);
 
   // Check the relationship between the power spectrum and beta.
   int beta_check;
@@ -364,6 +403,7 @@ void PairFLARE::read_file(char *filename) {
   int beta_count = 0;
   double beta_val;
 
+  printf("Reading beta\n");
   if (power == 1) {
     for (int k = 0; k < n_species; k++) {
       beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, 1);
@@ -391,6 +431,7 @@ void PairFLARE::read_file(char *filename) {
       beta_matrices.push_back(beta_matrix);
     }
   }
+  printf("Finish reading potential\n");
 }
 
 /* ----------------------------------------------------------------------
@@ -399,7 +440,7 @@ void PairFLARE::read_file(char *filename) {
    only called by proc 0
 ------------------------------------------------------------------------- */
 
-void PairFLARE::grab(FILE *fptr, int n, double *list) {
+void PairFLAREB3::grab(FILE *fptr, int n, double *list) {
   char *ptr;
   char line[MAXLINE];
 

@@ -1,14 +1,14 @@
-// Jonathan Vandermause
+// Yu Xie
 // Pair style based on pair_eam.h
 
 #ifdef PAIR_CLASS
 
-PairStyle(flare, PairFLARE)
+PairStyle(flare/b1, PairFLAREB1)
 
 #else
 
-#ifndef LMP_PAIR_FLARE_H
-#define LMP_PAIR_FLARE_H
+#ifndef LMP_PAIR_FLARE_B1_H
+#define LMP_PAIR_FLARE_B1_H
 
 #include "pair.h"
 #include <Eigen/Dense>
@@ -17,10 +17,10 @@ PairStyle(flare, PairFLARE)
 
 namespace LAMMPS_NS {
 
-class PairFLARE : public Pair {
+class PairFLAREB1 : public Pair {
 public:
-  PairFLARE(class LAMMPS *);
-  virtual ~PairFLARE();
+  PairFLAREB1(class LAMMPS *);
+  virtual ~PairFLAREB1();
   virtual void compute(int, int);
   void settings(int, char **);
   virtual void coeff(int, char **);

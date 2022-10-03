@@ -5,6 +5,8 @@
 #include "structure.h"
 #include "wigner3j.h"
 #include "y_grad.h"
+#include <fstream> // File operations
+#include <iomanip> // setprecision
 #include <iostream>
 
 B3 ::B3() {}
@@ -24,7 +26,39 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
 
   set_radial_basis(radial_basis, this->radial_pointer);
   set_cutoff(cutoff_function, this->cutoff_pointer);
+
+  // Create cutoff matrix.
+  int n_species = descriptor_settings[0];
+  double cutoff_val = radial_hyps[1];
+  cutoffs = Eigen::MatrixXd::Constant(n_species, n_species, cutoff_val);
 }
+
+void B3 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
+  coeff_file << "B3" << "\n";
+
+  // Report radial basis set.
+  coeff_file << radial_basis << "\n";
+
+  // Record number of species, nmax, lmax, and the cutoff.
+  int n_species = descriptor_settings[0];
+  int n_max = descriptor_settings[1];
+  int l_max = descriptor_settings[2];
+  double cutoff = radial_hyps[1];
+
+  coeff_file << n_species << " " << n_max << " " << l_max << " ";
+  coeff_file << coeff_size << "\n";
+  coeff_file << cutoff_function << "\n";
+
+  // Report cutoffs to 2 decimal places.
+  coeff_file << std::fixed << std::setprecision(2);
+  for (int i = 0; i < n_species; i ++){
+    for (int j = 0; j < n_species; j ++){
+      coeff_file << cutoffs(i, j) << " ";
+    }
+  }
+  coeff_file << "\n";
+}
+
 
 DescriptorValues B3 ::compute_struc(Structure &structure) {
 

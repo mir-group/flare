@@ -4,6 +4,7 @@ import numpy as np
 from flare.atoms import FLARE_Atoms
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
+from ase import Atoms
 
 from .get_sgp import get_sgp_calc, get_random_atoms, get_isolated_atoms
 
@@ -13,7 +14,7 @@ power_list = [1, 2]
 struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
 n_cpus_list = [1]  # [1, 2]
-
+bk_list = [1, 2, 3] # B1/2/3
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
@@ -22,13 +23,14 @@ n_cpus_list = [1]  # [1, 2]
         "$lmp environment variable to point to the executatble."
     ),
 )
+@pytest.mark.parametrize("bk", bk_list)
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
 @pytest.mark.parametrize("power", power_list)
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
+def test_write_potential(bk, n_species, n_types, power, struc, multicut, n_cpus):
     """Test the flare pair style."""
 
     if n_species > n_types:
@@ -37,8 +39,14 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     if (power == 1) and ("kokkos" in os.environ.get("lmp")):
         pytest.skip()
 
+    if (power == 2) and (bk == 3):
+        pytest.skip()
+
+    if multicut and (bk in [1, 3]):
+        pytest.skip()
+
     # Write potential file.
-    sgp_model = get_sgp_calc(n_types, power, multicut)
+    sgp_model = get_sgp_calc(n_types, power, multicut, bk)
     potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
     contributor = "Jon"
     kernel_index = 0
@@ -59,6 +67,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     elif struc == "isolated":
         test_structure = get_isolated_atoms(numbers=numbers)
     test_structure.calc = sgp_model
+    print(test_structure, struc, numbers)
 
     # Predict with SGP.
     energy = test_structure.get_potential_energy()
@@ -74,7 +83,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     parameters = {
         "command": lmp_command,  # set up executable for ASE
         "newton": "on",
-        "pair_style": "flare",
+        "pair_style": f"flare/b{bk}",
         "pair_coeff": [f"* * {potential_name}"],
         "timestep": "0.001\ndump_modify dump_all sort id",
     }
@@ -86,7 +95,6 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
         specorder=species,
     )
 
-    print("built lmp_calc")
     # Predict with LAMMPS.
     test_structure.calc = lmp_calc
     energy_lmp = test_structure.get_potential_energy()
@@ -101,8 +109,8 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
 
     thresh = 1e-6
     print(energy, energy_lmp)
+    #print(forces[0], forces_lmp[0])
     assert np.allclose(energy, energy_lmp, atol=thresh)
-    # print(forces, forces_lmp)
     assert np.allclose(forces, forces_lmp, atol=thresh)
     assert np.allclose(stress, stress_lmp, atol=thresh)
 
@@ -203,7 +211,7 @@ atom_modify sort 0 0.0
 read_data data.lammps
 
 ### interactions
-pair_style flare
+pair_style flare/b2
 pair_coeff * * {potential_file}
 {mass_str}
 
