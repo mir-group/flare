@@ -6,6 +6,7 @@ add_executable(
   test_structure.cpp
   test_n_body.cpp
   test_sparse_gp.cpp
+  test_parallel_sgp.cpp
   test_descriptor.cpp
   test_kernels.cpp
   test_json.cpp
