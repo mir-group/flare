@@ -644,7 +644,7 @@ void ParallelSGP::compute_kernel_matrices(const std::vector<Structure> &training
       local_labels(cum_f + l) = y(cum_f_struc + local_label_indices[t][l]);
     }
     cum_f += f_size_i;
-    cum_f_struc += training_strucs[t].n_labels();
+    cum_f_struc += training_structures[t].n_labels();
   }
   timer.toc("compute_kernel_matrice", blacs::mpirank);
 
