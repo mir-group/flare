@@ -246,8 +246,9 @@ def get_training_data():
     n_frames = 5
     training_strucs = []
     training_sparse_indices = [[] for i in range(len(sgp.descriptor_calculators))]
+    sc_size_list = np.random.randint(2, size=n_frames) + 2
     for n in range(n_frames): 
-        train_structure = get_random_atoms(a=2.0, sc_size=2, numbers=list(species_map.keys()))
+        train_structure = get_random_atoms(a=2.0, sc_size=sc_size_list[n], numbers=list(species_map.keys()))
         n_atoms = len(train_structure)
         training_strucs.append(train_structure)
         for k in range(len(sgp.descriptor_calculators)):
