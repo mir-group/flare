@@ -7,7 +7,7 @@ from flare.atoms import FLARE_Atoms
 
 from flare.bffs.sgp.calculator import SGP_Calculator
 
-from .get_sgp import get_random_atoms, species_map, get_empty_parsgp, get_empty_sgp, get_training_data
+from .get_sgp import get_random_atoms, species_map, get_empty_parsgp, get_empty_sgp, get_empty_multikern_sgp, get_training_data
 
 # we set the same seed for different ranks, 
 # so no need to broadcast the structures
@@ -71,17 +71,24 @@ def test_predict():
     # build a non-empty parallel sgp
     training_strucs, training_sparse_indices = get_training_data()
     sgp = get_empty_parsgp()
-    sgp.build(training_strucs, training_sparse_indices, update=False)
+#    sgp.build(training_strucs, training_sparse_indices, update=False)
 
     # build serial sgp with the same training data set
-    sgp_serial = get_empty_sgp()
+    sgp_serial = get_empty_multikern_sgp()
     for t in range(len(training_strucs)):
+        custom_range = [training_sparse_indices[k][t] for k in range(len(sgp_serial.descriptor_calculators))]
         sgp_serial.update_db(
             training_strucs[t],
             training_strucs[t].forces,
-            custom_range=[training_sparse_indices[k][t] for k in range(len(sgp_serial.descriptor_calculators))],
+            custom_range=custom_range,
             energy=training_strucs[t].potential_energy,
             stress=training_strucs[t].stress,
+            mode="specific",
+        )
+
+        sgp.update_db(
+            training_strucs[t], 
+            custom_range=custom_range, 
             mode="specific",
         )
     sgp_serial.sparse_gp.update_matrices_QR()
