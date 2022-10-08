@@ -71,7 +71,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
         # local training dataset on the current process
         return self.sparse_gp.training_structures
 
-    @profile
+    #@profile
     def build(
         self,
         training_strucs: List[FLARE_Atoms],
@@ -138,7 +138,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
         self.training_sparse_indices = training_sparse_indices 
 
 
-    @profile
+    #@profile
     def update_db(
         self,
         structure,
@@ -164,7 +164,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
                 sparse_inds = custom_range
             else:
                 raise Exception(
-                    "The custom_range should length equal to the number of descriptors/kernels if mode='specific'"
+                    "The custom_range should have length equal to the number of descriptors/kernels if mode='specific'"
                 )
 
         elif mode == "random":
@@ -180,7 +180,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
                 sparse_inds = comm.bcast(sparse_inds, root=0)
             else:
                 raise Exception(
-                    "The custom_range should length equal to the number of descriptors/kernels if mode='random'"
+                    "The custom_range should have length equal to the number of descriptors/kernels if mode='random'"
                 )
         else:
             raise NotImplementedError
