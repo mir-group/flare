@@ -282,7 +282,7 @@ class SGP_Wrapper:
         # update db
         training_data = in_dict["training_structures"]
         for s in range(len(training_data)):
-            custom_range = in_dict["sparse_indice"][0][s]
+            custom_range = [in_dict["sparse_indice"][t][s] for t in range(len(in_dict["sparse_indice"]))]
             train_struc = FLARE_Atoms.from_dict(training_data[s])
             if "atom_indices" in in_dict:
                 atom_indices = in_dict["atom_indices"][s]

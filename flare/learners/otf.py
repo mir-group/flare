@@ -675,6 +675,9 @@ class OTF:
             self.atoms.calc = calc
 
         # update gp model
+        if isinstance(self.flare_calc, SGP_Calculator):
+            train_atoms = [train_atoms] # TODO: only support one kernel
+
         self.gp.update_db(
             struc_to_add,
             dft_frcs,
