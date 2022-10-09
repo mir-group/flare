@@ -64,7 +64,7 @@ class Output:
 
         self.logger = []
         for filetype in filesuffix:
-            self.open_new_log(filetype, filesuffix[filetype], verbose, self.use_mpi)
+            self.open_new_log(filetype, filesuffix[filetype], verbose)
 
     def conclude_run(self, extra_strings: List[str] = None):
         """
@@ -91,7 +91,7 @@ class Output:
         """
 
         if filetype not in self.logger:
-            if use_mpi: # if MPI is used for SGP, then only write with rank 0
+            if self.use_mpi: # if MPI is used for SGP, then only write with rank 0
                 from mpi4py import MPI
                 comm = MPI.COMM_WORLD
                 rank = comm.Get_rank()

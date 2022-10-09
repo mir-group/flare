@@ -95,7 +95,7 @@ def get_flare_calc(flare_config):
     gp_name = flare_config.get("gp")
     if gp_name == "GaussianProcess":
         return get_gp_calc(flare_config)
-    elif gp_name == "SGP_Wrapper":
+    elif gp_name in ["SGP_Wrapper", "ParSGP_Wrapper"]:
         return get_sgp_calc(flare_config)
     else:
         raise NotImplementedError(f"{gp_name} is not implemented")
@@ -193,12 +193,17 @@ def get_sgp_calc(flare_config):
     from flare.bffs.sgp._C_flare import NormalizedDotProduct, SquaredExponential
     from flare.bffs.sgp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody
     from flare.bffs.sgp import SGP_Wrapper
+    from flare.bffs.sgp.parallel_sgp import ParSGP_Wrapper
     from flare.bffs.sgp.calculator import SGP_Calculator
 
+    gp_name = flare_config.get("gp")
     sgp_file = flare_config.get("file", None)
 
     # Load sparse GP from file
     if sgp_file is not None:
+        if gp_name == "ParSGP_Wrapper":
+            raise NotImplementedError("ParSGP_Wrapper does not support warm start!")
+
         with open(sgp_file, "r") as f:
             gp_dct = json.loads(f.readline())
             if gp_dct.get("class", None) == "SGP_Calculator":
@@ -286,6 +291,11 @@ def get_sgp_calc(flare_config):
         ), "'single_atom_energies' should be the same length as 'species'"
         single_atom_energies = {i: sae_dct[i] for i in range(n_species)}
 
+    if gp_name == "SGP_Wrapper":
+        sgp_class = SGP_Wrapper
+    elif gp_name == "ParSGP_Wrapper":
+        sgp_class = ParSGP_Wrapper
+
     sgp = SGP_Wrapper(
         kernels=kernels,
         descriptor_calculators=descriptors,
@@ -317,6 +327,10 @@ def fresh_start_otf(config):
     dft_calc = get_dft_calc(config["dft_calc"])
     flare_calc, kernels = get_flare_calc(config["flare_calc"])
     otf_config = config.get("otf")
+
+    if (config["flare_calc"].get("gp") == "ParSGP_Wrapper") and \
+        (config["dft_calc"].get("name") != "FakeDFT"):
+        raise NotImplementedError("ParSGP_Wrapper only supports offline training!")
 
     # intialize velocity
     # The "file" option uses the velocities read from the supercell file.
