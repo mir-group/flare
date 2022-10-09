@@ -48,6 +48,7 @@ class Output:
         verbose: str = "INFO",
         print_as_xyz: bool = False,
         always_flush: bool = False,
+        use_mpi: bool = False,
     ):
         """
         Construction. Open files.
@@ -55,6 +56,7 @@ class Output:
         self.basename = f"{basename}"
         self.print_as_xyz = print_as_xyz
         self.always_flush = always_flush
+        self.use_mpi = use_mpi
 
         filesuffix = {"log": ".out", "hyps": "-hyps.dat"}
         if print_as_xyz:
@@ -62,7 +64,7 @@ class Output:
 
         self.logger = []
         for filetype in filesuffix:
-            self.open_new_log(filetype, filesuffix[filetype], verbose)
+            self.open_new_log(filetype, filesuffix[filetype], verbose, self.use_mpi)
 
     def conclude_run(self, extra_strings: List[str] = None):
         """
@@ -89,6 +91,13 @@ class Output:
         """
 
         if filetype not in self.logger:
+            if use_mpi: # if MPI is used for SGP, then only write with rank 0
+                from mpi4py import MPI
+                comm = MPI.COMM_WORLD
+                rank = comm.Get_rank()
+                if rank > 0:
+                    verbose = "notset"
+
             set_logger(
                 self.basename + filetype,
                 stream=False,
