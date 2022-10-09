@@ -174,12 +174,16 @@ void utils::Timer::tic() {
 }
 
 void utils::Timer::toc(const char* code_name) {
+  if (silent) return;
+
   t_end = std::chrono::high_resolution_clock::now();
   duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t_end - t_start ).count();
   std::cout << "Time: " << code_name << " " << duration << " ms" << std::endl;
 }
 
 void utils::Timer::toc(const char* code_name, int rank) {
+  if (silent) return;
+
   t_end = std::chrono::high_resolution_clock::now();
   duration = (double) std::chrono::duration_cast<std::chrono::milliseconds>( t_end - t_start ).count();
   std::cout << "Rank " << rank << " Time: " << code_name << " " << duration << " ms" << std::endl;

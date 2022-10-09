@@ -53,6 +53,7 @@ class utils::Timer {
 public:
   Timer();
 
+  bool silent = true;
   double duration = 0;
   std::chrono::high_resolution_clock::time_point t_start, t_end;
   void tic();

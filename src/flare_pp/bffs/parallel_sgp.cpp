@@ -212,6 +212,7 @@ void ParallelSGP::build(const std::vector<Structure> &training_strucs,
   blacs::initialize();
 
   timer.tic();
+  // timer.silent = false; // for debug & time profiling
 
   // Get the number of processes
   int world_size;
@@ -459,7 +460,7 @@ void ParallelSGP::load_local_training_data(const std::vector<Structure> &trainin
   }
 
   local_training_structure_indices = new_local_training_structure_indices;
-  std::cout << "Rank " << blacs::mpirank << " build " << num_build_strucs << " new strucs" << std::endl;
+  //std::cout << "Rank " << blacs::mpirank << " build " << num_build_strucs << " new strucs" << std::endl;
 
   blacs::barrier();
   timer.toc("erase old descriptors", blacs::mpirank);
@@ -665,7 +666,7 @@ void ParallelSGP::update_matrices_QR() {
   // specify the scope of the DistMatrix
   timer.tic();
 
-  std::cout << "f_size=" << f_size << " , u_size=" << u_size << std::endl;
+  //std::cout << "f_size=" << f_size << " , u_size=" << u_size << std::endl;
   DistMatrix<double> A(f_size + u_size, u_size); // use the default blocking
   DistMatrix<double> b(f_size + u_size, 1);
   DistMatrix<double> Kuu_dist(u_size, u_size);
@@ -1096,9 +1097,9 @@ Eigen::VectorXd ParallelSGP ::compute_like_grad_of_kernel_hyps() {
       if (blacs::mpirank == 0) {
         Eigen::MatrixXd Pi_mat = dK_noise_K + dK_noise_K.transpose() + dKuu;
         complexity_grad(hyp_index + j) += 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() - 1./2. * (Pi_mat * Sigma).trace(); 
-        std::cout << "complex_grad 1 = " << 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() << std::endl;
-        std::cout << "max Kuu_inv = " << Kuu_i.inverse().maxCoeff() << ", min = " << Kuu_i.inverse().minCoeff() << std::endl;
-        std::cout << "complex_grad 2 = " << 1./2. * (Pi_mat * Sigma).trace() << std::endl;
+        //std::cout << "complex_grad 1 = " << 1./2. * (Kuu_i.inverse() * Kuu_grad[j + 1]).trace() << std::endl;
+        //std::cout << "max Kuu_inv = " << Kuu_i.inverse().maxCoeff() << ", min = " << Kuu_i.inverse().minCoeff() << std::endl;
+        //std::cout << "complex_grad 2 = " << 1./2. * (Pi_mat * Sigma).trace() << std::endl;
       }
       timer.toc("Pi_mat and complexity_grad", blacs::mpirank);
 
@@ -1121,8 +1122,8 @@ Eigen::VectorXd ParallelSGP ::compute_like_grad_of_kernel_hyps() {
         datafit_grad(hyp_index + j) += 
             - 1./2. * alpha.transpose() * dKuu * alpha;
         likelihood_grad(hyp_index + j) += complexity_grad(hyp_index + j) + datafit_grad(hyp_index + j); 
-        std::cout << "datafit_grad 1 = " << dK_alpha.transpose() * global_noise_vector.cwiseProduct(y_K_alpha) << std::endl;
-        std::cout << "datafit_grad 2 = " << - 1./2. * alpha.transpose() * dKuu * alpha << std::endl;
+        //std::cout << "datafit_grad 1 = " << dK_alpha.transpose() * global_noise_vector.cwiseProduct(y_K_alpha) << std::endl;
+        //std::cout << "datafit_grad 2 = " << - 1./2. * alpha.transpose() * dKuu * alpha << std::endl;
       }
       timer.toc("datafit_grad of kernel hyps", blacs::mpirank);
     }
