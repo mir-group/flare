@@ -233,7 +233,7 @@ class LAMMPS_MD(MolecularDynamics):
         # Set up flare pair_style and compute command
         if self.params["pair_style"] == "mgp":
             self.uncertainty_file = "lmp.flare.std"
-        elif self.params["pair_style"] == "flare":
+        elif self.params["pair_style"] == "flare/b2":
             self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
 
         self.params["model_post"] += [f"reset_timestep {self.nsteps}"]
@@ -243,7 +243,7 @@ class LAMMPS_MD(MolecularDynamics):
         )
 
         lmp_calc, params = get_flare_lammps_calc(
-            pair_style="flare",
+            pair_style="flare/b2",
             potfile=self.potential_file,
             uncfile=self.uncertainty_file,
             specorder=self.params["specorder"],
@@ -377,7 +377,7 @@ def get_kinetic_stress(atoms):
 
 
 def get_flare_lammps_calc(
-    pair_style="flare",
+    pair_style="flare/b2",
     potfile="lmp.flare",
     uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
     specorder=None,
@@ -412,9 +412,9 @@ def get_flare_lammps_calc(
             ]
 
     # Set up default potential and uncertainty command for flare
-    elif pair_style == "flare":
+    elif pair_style == "flare/b2":
         params["newton"] = "on"
-        params["pair_style"] = "flare"
+        params["pair_style"] = "flare/b2"
         params["pair_coeff"] = [f"* * {potfile}"]
         if compute_uncertainty:
             params["compute"] += [
@@ -499,7 +499,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         label = now.strftime("%Y.%m.%d:%H:%M:%S:")
 
         lmp_calc, params = get_flare_lammps_calc(
-            pair_style="flare",
+            pair_style="flare/b2",
             potfile="lmp.flare",
             uncfile="L_inv_lmp.flare sparse_desc_lmp.flare",
             specorder=specorder,
