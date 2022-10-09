@@ -96,7 +96,7 @@ otf:
         command: "mpirun -n <n_cpus> <lammps_executable>"
         specorder: [Si, C]
         dump_period: 1
-        pair_style: flare
+        pair_style: flare/b2
         fix: ["1 all nve"]
         keep_alive: False
     initial_velocity: file                              # "file" means reading initial velocities from the supercell file. You can also set a float number like 1000, then OTF will generate random velocities based on the Boltzmann distribution at 1000 K.
