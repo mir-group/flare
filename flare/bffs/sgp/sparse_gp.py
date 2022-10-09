@@ -138,19 +138,19 @@ class SGP_Wrapper:
                 out_dict[key] = getattr(self, key, None)
 
         # save descriptor_settings
-        desc_calc = self.descriptor_calculators
-        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], (B1, B2, B3)))
-        b2_calc = desc_calc[0]
-        b2_dict = {
-            "type": "B2",
-            "radial_basis": b2_calc.radial_basis,
-            "cutoff_function": b2_calc.cutoff_function,
-            "radial_hyps": b2_calc.radial_hyps,
-            "cutoff_hyps": b2_calc.cutoff_hyps,
-            "descriptor_settings": b2_calc.descriptor_settings,
-            "cutoffs": b2_calc.cutoffs,
-        }
-        out_dict["descriptor_calculators"] = [b2_dict]
+        out_dict["descriptor_calculators"] = []
+        for desc_calc in self.descriptor_calculators:
+            assert isinstance(desc_calc, (B1, B2, B3))
+            desc_dict = {
+                "type": desc_calc.__class__.__name__,
+                "radial_basis": desc_calc.radial_basis,
+                "cutoff_function": desc_calc.cutoff_function,
+                "radial_hyps": desc_calc.radial_hyps,
+                "cutoff_hyps": desc_calc.cutoff_hyps,
+                "descriptor_settings": desc_calc.descriptor_settings,
+                "cutoffs": desc_calc.cutoffs,
+            }
+            out_dict["descriptor_calculators"].append(desc_dict)
 
         # save hyps
         out_dict["hyps"], out_dict["hyp_labels"] = self.hyps_and_labels
