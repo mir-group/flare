@@ -198,7 +198,7 @@ TEST_F(StructureTest, LikeGrad) {
     fin_diff = (like_up - like_down) / (2 * pert);
     printf("like_grad=%lg, fin_diff=%lg\n", like_grad(i), fin_diff);
 
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-3 * abs(fin_diff));
+    EXPECT_NEAR(like_grad(i), fin_diff, 5e-3 * abs(fin_diff));
   }
 }
 
