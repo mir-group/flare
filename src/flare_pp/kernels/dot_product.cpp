@@ -214,7 +214,7 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
                                    const DescriptorValues &struc2,
                                    const Eigen::VectorXd &hyps) {
   
-  throw std::logic_error("struc_struc kernel for DotProduct is not implemented");
+  //throw std::logic_error("struc_struc kernel for DotProduct is not implemented");
   
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
