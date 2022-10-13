@@ -6,6 +6,7 @@ from typing import List
 import warnings
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
+
 try:
     from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2, DotProduct
 except Exception as e:
@@ -48,6 +49,7 @@ class SGP_Wrapper:
         self.max_iterations = max_iterations
         self.opt_method = opt_method
         self.bounds = bounds
+        self.atom_indices = []
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -270,6 +272,10 @@ class SGP_Wrapper:
         for s in range(len(training_data)):
             custom_range = in_dict["sparse_indice"][0][s]
             train_struc = FLARE_Atoms.from_dict(training_data[s])
+            if "atom_indices" in in_dict:
+                atom_indices = in_dict["atom_indices"][s]
+            else:
+                atom_indices = [-1]
 
             if len(train_struc.energy) > 0:
                 energy = train_struc.energy[0]
@@ -285,6 +291,7 @@ class SGP_Wrapper:
                 mode="specific",
                 sgp=None,
                 update_qr=False,
+                atom_indices=atom_indices,
             )
 
         gp.sparse_gp.update_matrices_QR()
@@ -304,7 +311,7 @@ class SGP_Wrapper:
         energy: float = None,
         stress: "ndarray" = None,
         mode: str = "specific",
-        sgp = None,  # for creating sgp_var
+        sgp=None,  # for creating sgp_var
         update_qr=True,
         atom_indices=[-1],
     ):
@@ -349,6 +356,7 @@ class SGP_Wrapper:
         # Update the sparse GP.
         if sgp is None:
             sgp = self.sparse_gp
+            self.atom_indices.append(atom_indices)
 
         sgp.add_training_structure(structure_descriptor, atom_indices)
         if mode == "all":

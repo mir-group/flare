@@ -20,7 +20,7 @@ class LAMMPS_MOD(LAMMPS):
     to allow for more flexible input parameters, including compute,
     region, dump, fix/nvt, fix/npt etc.
 
-    The input arguments are the same as 
+    The input arguments are the same as
     https://databases.fysik.dtu.dk/ase/ase/calculators/lammps.html#ase.calculators.lammpsrun.LAMMPS
 
     Example:
@@ -34,7 +34,7 @@ class LAMMPS_MOD(LAMMPS):
         Ni = bulk("Ni", cubic=True)
         H = Atom("H", position=Ni.cell.diagonal() / 2)
         NiH = Ni + H
-    
+
         files = []
         param_dict = {
             "pair_style": "lj/cut 2.5",
@@ -46,7 +46,7 @@ class LAMMPS_MOD(LAMMPS):
             "timestep": 0.001,
             "keep_alive": False,
         }
-    
+
         lmp_calc = LAMMPS_MOD(
             command=<lammps_executable>,
             label="my_lammps",
@@ -61,7 +61,7 @@ class LAMMPS_MOD(LAMMPS):
 
     Supported customized commands for LAMMPS input:
 
-    .. code-block:: 
+    .. code-block::
 
         mass (set by arg `masses`)
         package
@@ -98,7 +98,7 @@ class LAMMPS_MOD(LAMMPS):
         thermo_style custom (thermo_args)
         thermo_modify flush yes format float %23.16g
         thermo 1
-    
+
 
     Customized parameters:
 
@@ -484,7 +484,10 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         assert np.allclose(lmp_energy, gp_energy, atol=1e-3)
         assert np.allclose(lmp_forces, gp_forces, atol=1e-3)
         assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
-        assert np.allclose(lmp_stds[:, 0], gp_stds[:, 0], atol=1e-4), (lmp_stds[:, 0], gp_stds[:, 0])
+        assert np.allclose(lmp_stds[:, 0], gp_stds[:, 0], atol=1e-4), (
+            lmp_stds[:, 0],
+            gp_stds[:, 0],
+        )
     except:
         # if the trajectory does not match sgp, this is probably because
         # 1. the dumped atomic positions in LAMMPS lose precision, or

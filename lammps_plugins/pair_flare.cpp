@@ -128,7 +128,7 @@ void PairFLARE::compute(int eflag, int vflag) {
     B2_descriptor(B2_vals, B2_norm_squared,
                   single_bond_vals, n_species, n_max, l_max);
 
-    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power, 
+    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
            n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
 
     // Continue if the environment is empty.
@@ -241,9 +241,7 @@ void PairFLARE::init_style() {
     error->all(FLERR, "Pair style requires newton pair on");
 
   // Request a full neighbor list.
-  int irequest = neighbor->request(this, instance_me);
-  neighbor->requests[irequest]->half = 0;
-  neighbor->requests[irequest]->full = 1;
+  neighbor->add_request(this, NeighConst::REQ_FULL);
 }
 
 /* ----------------------------------------------------------------------
