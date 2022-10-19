@@ -59,7 +59,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
         )
         self.sparse_gp = ParallelSGP(kernels, sigma_e, sigma_f, sigma_s)
         self.training_structures = []
-        self.training_sparse_indices = [[] for i in range(len(descriptor_calculators))]
+        self._training_sparse_indices = [[] for i in range(len(descriptor_calculators))]
 
     @property
     def training_data(self):
@@ -135,8 +135,12 @@ class ParSGP_Wrapper(SGP_Wrapper):
         )
 
         self.training_structures = training_strucs
-        self.training_sparse_indices = training_sparse_indices 
+        self._training_sparse_indices = training_sparse_indices 
 
+
+    @property
+    def training_sparse_indices(self):
+        return self._training_sparse_indices
 
     #@profile
     def update_db(
@@ -144,6 +148,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
         structure,
         custom_range=(),
         mode: str = "all",
+        **kwargs,
     ):
         if mode == "all":
             sparse_inds = [np.arange(len(structure)).tolist() for d in self.descriptor_calculators]
@@ -187,14 +192,15 @@ class ParSGP_Wrapper(SGP_Wrapper):
 
         self.training_structures.append(structure)
         for k in range(len(self.descriptor_calculators)):
-            self.training_sparse_indices[k].append(sparse_inds[k])
+            self._training_sparse_indices[k].append(sparse_inds[k])
+        self.atom_indices.append([-1])
 
         # build a new SGP
         if len(self.training_structures) == 1:
             update = False
         else:
             update = True
-        self.build(self.training_structures, self.training_sparse_indices, update=update)
+        self.build(self.training_structures, self._training_sparse_indices, update=update)
 
     def predict_on_structures(self, struc_list):
         # convert ASE Atoms to c++ Structure with descriptors not computed

@@ -132,6 +132,10 @@ class SGP_Wrapper:
         cls_dict = self.as_dict()
         return cls.from_dict(cls_dict)
 
+    @property
+    def training_sparse_indices(self):
+        return self.sparse_gp.sparse_indices
+
     def as_dict(self):
         out_dict = {}
         for key in vars(self):
@@ -177,12 +181,19 @@ class SGP_Wrapper:
 
         out_dict["training_structures"] = []
         for s in range(len(self.training_data)):
-            custom_range = self.sparse_gp.sparse_indices[0][s]
+            custom_range = [self.training_sparse_indices[k][s] for k in range(len(kernel_list))]
             struc_cpp = self.training_data[s]
 
-            # invert mapping of species
-            inv_species_map = {v: k for k, v in self.species_map.items()}
-            species = [inv_species_map[s] for s in struc_cpp.species]
+            if isinstance(struc_cpp, Structure):
+                # invert mapping of species
+                inv_species_map = {v: k for k, v in self.species_map.items()}
+                species = [inv_species_map[s] for s in struc_cpp.species]
+                coded_species = struc_cpp.species
+                stress = struc_cpp.stresses
+            else:
+                species = struc_cpp.numbers
+                coded_species = [self.species_map[k] for k in species]
+                stress = struc_cpp.get_stress()
 
             # build training structure
             train_struc = FLARE_Atoms(
@@ -190,20 +201,20 @@ class SGP_Wrapper:
                 symbols=species,
                 positions=struc_cpp.positions,
             )
-            train_struc.forces = struc_cpp.forces.reshape((struc_cpp.noa, 3))
-            train_struc.stress = struc_cpp.stresses
+            train_struc.forces = struc_cpp.forces.reshape((len(species), 3))
+            train_struc.stress = stress
 
             # Add back the single atom energies to dump the original energy
             single_atom_sum = 0
             if self.single_atom_energies is not None:
-                for spec in struc_cpp.species:
+                for spec in coded_species:
                     single_atom_sum += self.single_atom_energies[spec]
 
             train_struc.energy = struc_cpp.energy + single_atom_sum
 
             out_dict["training_structures"].append(train_struc.as_dict())
 
-        out_dict["sparse_indice"] = self.sparse_gp.sparse_indices
+        out_dict["sparse_indice"] = self.training_sparse_indices
         return out_dict
 
     @staticmethod
@@ -290,7 +301,9 @@ class SGP_Wrapper:
             else:
                 atom_indices = [-1]
 
-            if len(train_struc.energy) > 0:
+            if isinstance(train_struc.energy, float):
+                energy = train_struc.energy
+            elif len(train_struc.energy) > 0:
                 energy = train_struc.energy[0]
             else:
                 energy = None
@@ -454,7 +467,7 @@ class SGP_Wrapper:
             assert n_add > 0, "sgp_var has more training data than sgp"
             print("Training data not match, adding", n_add, "structures")
             for s in range(n_add):
-                custom_range = self.sparse_gp.sparse_indices[0][s + n_sgp_var]
+                custom_range = self.training_sparse_indices[0][s + n_sgp_var]
                 struc_cpp = self.training_data[s + n_sgp_var]
 
                 if len(struc_cpp.energy) > 0:
@@ -513,7 +526,7 @@ class SGP_Wrapper:
         new_gp = SparseGP(kernels, hyps[n_kern], hyps[n_kern + 1], hyps[n_kern + 2])
 
         # add training data
-        sparse_indices = self.sparse_gp.sparse_indices
+        sparse_indices = self.training_sparse_indices
         assert len(sparse_indices) == len(kernels)
         assert len(sparse_indices[0]) == len(self.training_data), (
             len(sparse_indices[0]),

@@ -159,41 +159,48 @@ def test_otf_md(md_engine):
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_otf_md_par(md_engine):
-    for f in glob.glob(md_engine + "*") + glob.glob("myotf*"):
-        if "_ckpt" not in f:
-            if f in os.listdir():
-                os.remove(f)
-        else:
-            shutil.rmtree(f)
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
 
-    # Run OTF with real MD
-    with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
-        config = yaml.safe_load(f)
+    if rank == 0:
+        for f in glob.glob(md_engine + "*") + glob.glob("myotf*"):
+            if "_ckpt" not in f:
+                if f in os.listdir():
+                    os.remove(f)
+            else:
+                shutil.rmtree(f)
+    
+        # Run OTF with real MD
+        with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
+            config = yaml.safe_load(f)
+    
+        config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp").replace(
+            "full", "half"
+        )
+        config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
+        config["otf"]["output_name"] = "myotf"
+        fresh_start_otf(config)
+        print("Done real OTF")
+    
+        # Modify the config for different MD engines
+        with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
+            config = yaml.safe_load(f)
+    
+        config["flare_calc"]["gp"] = "ParSGP_Wrapper"
+        config["otf"]["output_name"] = md_engine
+    
+        # Make a fake AIMD trajectory from the previous real OTF run
+        otf_traj = OtfAnalysis("myotf.out")
+        md_traj = read("myotf_md.xyz", index=":")
+        dft_traj = read("myotf_dft.xyz", index=":")
+        assert len(dft_traj) == len(otf_traj.dft_frames)
+        for i in range(len(dft_traj)):
+            md_traj[otf_traj.dft_frames[i]] = dft_traj[i]
+        write("fake_dft.xyz", md_traj)
+        print("Done making dft data")
 
-    config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp").replace(
-        "full", "half"
-    )
-    config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
-    config["otf"]["output_name"] = "myotf"
-    fresh_start_otf(config)
-    print("Done real OTF")
-
-    # Modify the config for different MD engines
-    with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
-        config = yaml.safe_load(f)
-
-    config["flare_calc"]["gp"] = "ParSGP_Wrapper"
-    config["otf"]["output_name"] = md_engine
-
-    # Make a fake AIMD trajectory from the previous real OTF run
-    otf_traj = OtfAnalysis("myotf.out")
-    md_traj = read("myotf_md.xyz", index=":")
-    dft_traj = read("myotf_dft.xyz", index=":")
-    assert len(dft_traj) == len(otf_traj.dft_frames)
-    for i in range(len(dft_traj)):
-        md_traj[otf_traj.dft_frames[i]] = dft_traj[i]
-    write("fake_dft.xyz", md_traj)
-    print("Done making dft data")
+    comm.Barrier()
 
     # Run fake OTF
     fresh_start_otf(config)

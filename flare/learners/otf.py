@@ -680,10 +680,11 @@ class OTF:
 
         self.gp.update_db(
             struc_to_add,
-            dft_frcs,
+            forces=dft_frcs,
             custom_range=train_atoms,
             energy=dft_energy,
             stress=flare_stress,
+            mode="specific",
         )
 
         self.gp.set_L_alpha()

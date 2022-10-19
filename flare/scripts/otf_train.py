@@ -296,7 +296,7 @@ def get_sgp_calc(flare_config):
     elif gp_name == "ParSGP_Wrapper":
         sgp_class = ParSGP_Wrapper
 
-    sgp = SGP_Wrapper(
+    sgp = sgp_class(
         kernels=kernels,
         descriptor_calculators=descriptors,
         cutoff=cutoff,
