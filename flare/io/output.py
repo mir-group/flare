@@ -18,7 +18,7 @@ from typing import Union, List
 import flare
 from ase.data import chemical_symbols
 from ase.io import write
-
+from ase.calculators.calculator import PropertyNotImplementedError
 
 # Unit conversions.
 eva_to_gpa = 160.21766208
@@ -277,14 +277,21 @@ class Output:
 
         string += "\n"
 
+        # Check if we need to report the stress and pressure tensors
+        try:
+            if type(structure.stress) == np.ndarray:
+                periodic = True
+        except PropertyNotImplementedError:
+            periodic = False
+
         # Report cell if stress attribute is present.
-        if structure.stress is not None:
+        if periodic and structure.stress is not None:
             string += "Periodic cell (A): \n"
             string += str(np.array(structure.cell)) + "\n\n"
 
         # Report stress tensor.
         pressure = None
-        if structure.stress is not None:
+        if periodic and structure.stress is not None:
             stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
             s8 = " " * 8
             string += "Stress tensor (GPa):\n"
@@ -308,7 +315,7 @@ class Output:
             pressure = (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
 
         # Report stress tensor uncertainties.
-        if structure.stress_stds is not None:
+        if periodic and structure.stress_stds is not None:
             stress_stds = structure.stress_stds * eva_to_gpa  # Convert to GPa
             string += "Stress tensor uncertainties (GPa):\n"
             for p in range(6):
