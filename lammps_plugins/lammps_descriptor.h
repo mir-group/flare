@@ -46,6 +46,6 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
                    const Eigen::VectorXd &single_bond_vals,
                    int power, int n_species,
                    int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
-                   Eigen::VectorXd &u, double *evdwl);
+                   Eigen::VectorXd &u, double *evdwl, bool normalized);
 
 #endif
