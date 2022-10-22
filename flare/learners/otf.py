@@ -151,6 +151,7 @@ class OTF:
         # other args
         build_mode="bayesian",
         wandb_log=None,
+        mpi_rank=None,
         **kwargs,
     ):
 
@@ -264,7 +265,10 @@ class OTF:
             )
 
         # set logger
-        self.output = Output(output_name, always_flush=True, print_as_xyz=True)
+        self.mpi_rank = mpi_rank
+        self.output = Output(
+            output_name, always_flush=True, print_as_xyz=True, mpi_rank=mpi_rank
+        )
         self.output_name = output_name
 
         self.checkpt_name = self.output_name + "_checkpt.json"
@@ -925,10 +929,11 @@ class OTF:
         return new_otf
 
     def backup_checkpoint(self):
-        dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
-        os.mkdir(dir_name)
-        for f in self.checkpt_files:
-            shutil.copyfile(f, f"{dir_name}/{f}")
+        if self.mpi_rank is None or self.mpi_rank == 0:
+            dir_name = f"{self.output_name}_ckpt_{self.curr_step}"
+            os.mkdir(dir_name)
+            for f in self.checkpt_files:
+                shutil.copyfile(f, f"{dir_name}/{f}")
 
     def checkpoint(self):
         name = self.checkpt_name

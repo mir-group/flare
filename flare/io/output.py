@@ -12,7 +12,7 @@ import numpy as np
 
 from logging import FileHandler, StreamHandler, Logger
 from os.path import isfile
-from shutil import move as movefile
+import shutil
 from typing import Union, List
 
 import flare
@@ -48,7 +48,7 @@ class Output:
         verbose: str = "INFO",
         print_as_xyz: bool = False,
         always_flush: bool = False,
-        use_mpi: bool = False,
+        mpi_rank: int = None,
     ):
         """
         Construction. Open files.
@@ -56,7 +56,7 @@ class Output:
         self.basename = f"{basename}"
         self.print_as_xyz = print_as_xyz
         self.always_flush = always_flush
-        self.use_mpi = use_mpi
+        self.mpi_rank = mpi_rank
 
         filesuffix = {"log": ".out", "hyps": "-hyps.dat"}
         if print_as_xyz:
@@ -91,17 +91,15 @@ class Output:
         """
 
         if filetype not in self.logger:
-            if self.use_mpi: # if MPI is used for SGP, then only write with rank 0
-                from mpi4py import MPI
-                comm = MPI.COMM_WORLD
-                rank = comm.Get_rank()
-                if rank > 0:
-                    verbose = "notset"
+            fileout_name = self.basename + suffix
+            if self.mpi_rank is not None and self.mpi_rank > 0: # if MPI is used for SGP, then only write with rank 0
+                verbose = "notset"
+                #fileout_name = None
 
             set_logger(
                 self.basename + filetype,
                 stream=False,
-                fileout_name=self.basename + suffix,
+                fileout_name=fileout_name,
                 verbose=verbose,
             )
             self.logger += [filetype]
@@ -603,10 +601,9 @@ def add_file(logger: Logger, filename: str, verbose: str = "info"):
             file_defined = True
 
     if not file_defined:
-
         # back up
         if isfile(filename):
-            movefile(filename, filename + "-bak")
+            shutil.copyfile(filename, filename + "-bak")
 
         fh = FileHandler(filename)
         verbose = getattr(logging, verbose.upper())

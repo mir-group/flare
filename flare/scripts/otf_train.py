@@ -20,6 +20,7 @@ from ase import io
 from ase.symbols import symbols2numbers
 
 import yaml
+from mpi4py import MPI
 
 
 def get_super_cell(atoms_config):
@@ -342,6 +343,12 @@ def fresh_start_otf(config):
         MaxwellBoltzmannDistribution(super_cell, init_temp * units.kB)
         Stationary(super_cell)
         ZeroRotation(super_cell)
+
+    # set up MPI
+    if otf_config.get("use_mpi", False):
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        otf_config["mpi_rank"] = rank
 
     otf = OTF(
         super_cell,
