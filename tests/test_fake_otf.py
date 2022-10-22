@@ -175,23 +175,19 @@ def test_otf_md_par(md_engine):
         with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
             config = yaml.safe_load(f)
     
-        config["dft_calc"]["kwargs"]["command"] = os.environ.get("lmp").replace(
-            "full", "half"
-        )
-        config["otf"]["md_kwargs"]["command"] = os.environ.get("lmp")
+        config["dft_calc"]["name"] = "LennardJones"
+        config["dft_calc"]["kwargs"] = {}
+        config["dft_calc"]["params"] = {}
+        config["otf"]["md_engine"] = "VelocityVerlet"
+        config["otf"]["md_kwargs"] = {}
         config["otf"]["output_name"] = "myotf"
+        config["otf"]["store_dft_output"] = [["test_files/HHe.json"], "./"]
         fresh_start_otf(config)
         print("Done real OTF")
     
-        # Modify the config for different MD engines
-        with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
-            config = yaml.safe_load(f)
-    
-        config["flare_calc"]["gp"] = "ParSGP_Wrapper"
-        config["otf"]["output_name"] = md_engine
-    
         # Make a fake AIMD trajectory from the previous real OTF run
         otf_traj = OtfAnalysis("myotf.out")
+        otf_traj.to_xyz("myotf_md.xyz")
         md_traj = read("myotf_md.xyz", index=":")
         dft_traj = read("myotf_dft.xyz", index=":")
         assert len(dft_traj) == len(otf_traj.dft_frames)
@@ -202,6 +198,13 @@ def test_otf_md_par(md_engine):
 
     comm.Barrier()
 
+    # Modify the config for different MD engines
+    with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    
+    config["flare_calc"]["gp"] = "ParSGP_Wrapper"
+    config["otf"]["output_name"] = md_engine
+ 
     # Run fake OTF
     fresh_start_otf(config)
     print("Done fake OTF")
@@ -238,13 +241,13 @@ def test_otf_md_par(md_engine):
     config["supercell"]["file"] = "myotf_dft.xyz"
     # config["dft_calc"]["kwargs"]["filename"] = "myotf_dft.xyz"
     config["otf"]["md_kwargs"]["filenames"] = ["myotf_dft.xyz"]
-    config["otf"]["output_name"] = "direct"
+    config["otf"]["output_name"] = "direct_par"
     config["otf"]["build_mode"] = "direct"
     config["otf"]["update_style"] = None
     config["otf"]["update_threshold"] = None
     fresh_start_otf(config)
 
-    fake_sgp_calc, _ = SGP_Calculator.from_file(f"direct_flare.json")
+    fake_sgp_calc, _ = SGP_Calculator.from_file(f"direct_par_flare.json")
     assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps)
     assert np.allclose(
         real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
