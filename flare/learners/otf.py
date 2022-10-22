@@ -29,6 +29,7 @@ from flare.md.lammps import LAMMPS_MD, check_sgp_match
 from flare.md.fake import FakeMD
 from ase import units
 from ase.io import read, write
+from ase.calculators.calculator import PropertyNotImplementedError
 
 from flare.io.output import Output, compute_mae
 from flare.learners.utils import is_std_in_bound, get_env_indices
@@ -466,7 +467,13 @@ class OTF:
         # call dft and update positions
         self.run_dft()
         dft_frcs = deepcopy(self.atoms.forces)
-        dft_stress = deepcopy(self.atoms.stress)
+
+        # some ase calculators don't have the stress property implemented
+        try:
+            dft_stress = deepcopy(self.atoms.stress)
+        except PropertyNotImplementedError:
+            dft_stress = None
+
         dft_energy = self.atoms.potential_energy
 
         self.update_temperature()
