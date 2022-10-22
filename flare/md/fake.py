@@ -1,9 +1,11 @@
 import warnings
 import numpy as np
 from copy import deepcopy
+from ase import Atoms
 from ase.md.md import MolecularDynamics
 from ase.io import iread, read, write
 from ase.calculators.calculator import Calculator, all_changes
+from ase.calculators.singlepoint import SinglePointCalculator
 from flare.io.output import compute_mae
 
 
@@ -39,13 +41,13 @@ class FakeMD(MolecularDynamics):
         self.stat_num = []
         all_data = []
         for fn in filenames:
-            trj = read(fn, format=format, index=":", **io_kwargs)
+            trj = read(fn, format=format, index=":", **io_kwargs, parallel=False)
             self.stat_num.append(len(trj))
             all_data += trj
         write("All_Data.xyz", all_data)
         del all_data
 
-        self.fake_trajectory = iread("All_Data.xyz", index=index, format="extxyz")
+        self.fake_trajectory = read("All_Data.xyz", index=index, format="extxyz", parallel=False)
         self.curr_step = 0  # TODO: This might be wrong if `index` does not start from 0
 
         super().__init__(
@@ -57,8 +59,6 @@ class FakeMD(MolecularDynamics):
             append_trajectory=append_trajectory,
         )
 
-        # skip the first frame
-        next(self.fake_trajectory)
         self.dft_energy = 0
         self.dft_forces = np.zeros((len(atoms), 3))
         self.dft_stress = np.zeros(6)
@@ -66,8 +66,9 @@ class FakeMD(MolecularDynamics):
     def step(self):
         # read the next frame
         try:
-            new_atoms = next(self.fake_trajectory)
-        except StopIteration:
+            # skip the first frame
+            new_atoms = self.fake_trajectory[self.curr_step + 1]
+        except IndexError:
             warnings.warn("FakeMD runs out of frames.")
             raise StopIteration
 
@@ -83,7 +84,7 @@ class FakeMD(MolecularDynamics):
         for key in self.atoms.info:
             self.atoms.info[key] = new_atoms.info.get(key, None)
 
-        self.atoms.arrays.pop("forces")
+        self.atoms.arrays.pop("forces", None)
         self.atoms.info.pop("free_energy", None)
         self.atoms.info.pop("stress", None)
 
@@ -150,8 +151,7 @@ class FakeDFT(Calculator):
 
         step = atoms.info.get("step", 0)
 
-        fake_trajectory = read("All_Data.xyz", index=":", format="extxyz")
-        fake_frame = fake_trajectory[step]
+        fake_frame = read("All_Data.xyz", index=step, format="extxyz", parallel=False)
         assert np.allclose(atoms.positions, fake_frame.positions), (
             atoms.positions[0],
             fake_frame.positions[0],

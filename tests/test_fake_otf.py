@@ -73,7 +73,7 @@ def test_traj_with_varying_sizes(md_engine):
 
 
 @pytest.mark.parametrize("md_engine", md_list)
-def test_otf_md(md_engine):
+def test_otf_serial(md_engine):
     for f in glob.glob(md_engine + "*") + glob.glob("myotf*"):
         if "_ckpt" not in f:
             if f in os.listdir():
@@ -157,46 +157,69 @@ def test_otf_md(md_engine):
         real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
     )
 
+# NOTE: to test the MPI, first run: pytest -k test_otf_serial -s test_fake_otf.py
+# to prepare otf trajectory from a serial run
+# Then run:  mpirun -n 4 pytest -k test_otf_parallel test_fake_otf.py
+# Including the otf traj generation into test_otf_parallel will make the build
+# of SGP stuck, not sure why
 @pytest.mark.parametrize("md_engine", md_list)
-def test_otf_md_par(md_engine):
+def test_otf_parallel(md_engine):
+    print("directory", os.listdir())
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
     if rank == 0:
-        for f in glob.glob(md_engine + "*") + glob.glob("myotf*"):
-            if "_ckpt" not in f:
-                if f in os.listdir():
-                    os.remove(f)
-            else:
+        for tmpdir in [md_engine + "*ckpt_*", "direct*ckpt_*"]:
+            for f in glob.glob(tmpdir):
                 shutil.rmtree(f)
     
-        # Run OTF with real MD
-        with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
-            config = yaml.safe_load(f)
-    
-        config["dft_calc"]["name"] = "LennardJones"
-        config["dft_calc"]["kwargs"] = {}
-        config["dft_calc"]["params"] = {}
-        config["otf"]["md_engine"] = "VelocityVerlet"
-        config["otf"]["md_kwargs"] = {}
-        config["otf"]["output_name"] = "myotf"
-        config["otf"]["store_dft_output"] = [["test_files/HHe.json"], "./"]
-        fresh_start_otf(config)
-        print("Done real OTF")
-    
-        # Make a fake AIMD trajectory from the previous real OTF run
-        otf_traj = OtfAnalysis("myotf.out")
-        otf_traj.to_xyz("myotf_md.xyz")
-        md_traj = read("myotf_md.xyz", index=":")
-        dft_traj = read("myotf_dft.xyz", index=":")
-        assert len(dft_traj) == len(otf_traj.dft_frames)
-        for i in range(len(dft_traj)):
-            md_traj[otf_traj.dft_frames[i]] = dft_traj[i]
-        write("fake_dft.xyz", md_traj)
-        print("Done making dft data")
+        for tmpfile in [
+            "*.flare",
+            "log.*",
+            md_engine + "*",
+            "direct*",
+            "*.tersoff",
+        ]:
+            for f in glob.glob(tmpfile):
+                os.remove(f)
 
-    comm.Barrier()
+
+    #if rank == 0:
+    #    for f in glob.glob(md_engine + "*") + glob.glob("myotf*"):
+    #        if "_ckpt" not in f:
+    #            if f in os.listdir():
+    #                os.remove(f)
+    #        else:
+    #            shutil.rmtree(f)
+    #
+    #    # Run OTF with real MD
+    #    with open("../examples/test_SGP_LMP_fresh.yaml", "r") as f:
+    #        config = yaml.safe_load(f)
+    #
+    #    config["dft_calc"]["name"] = "LennardJones"
+    #    config["dft_calc"]["kwargs"] = {}
+    #    config["dft_calc"]["params"] = {}
+    #    config["otf"]["md_engine"] = "VelocityVerlet"
+    #    config["otf"]["md_kwargs"] = {}
+    #    config["otf"]["output_name"] = "myotf"
+    #    config["otf"]["store_dft_output"] = [["test_files/HHe.json"], "./"]
+    #    fresh_start_otf(config)
+    #    print("Done real OTF")
+    #
+    #    # Make a fake AIMD trajectory from the previous real OTF run
+    #    otf_traj = OtfAnalysis("myotf.out")
+    #    otf_traj.to_xyz("myotf_md.xyz")
+    #    md_traj = read("myotf_md.xyz", index=":")
+    #    dft_traj = read("myotf_dft.xyz", index=":")
+    #    md_traj = [dft_traj[0]] + md_traj
+    #    assert len(dft_traj) == len(otf_traj.dft_frames)
+    #    for i in range(len(dft_traj)):
+    #        md_traj[otf_traj.dft_frames[i]] = dft_traj[i]
+    #    write("fake_dft.xyz", md_traj)
+    #    print("Done making dft data")
+
+    #comm.Barrier()
 
     # Modify the config for different MD engines
     with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
@@ -204,6 +227,8 @@ def test_otf_md_par(md_engine):
     
     config["flare_calc"]["gp"] = "ParSGP_Wrapper"
     config["otf"]["output_name"] = md_engine
+    config["otf"]["use_mpi"] = True
+    #config["otf"]["mpi_rank"] = rank
  
     # Run fake OTF
     fresh_start_otf(config)
@@ -227,12 +252,13 @@ def test_otf_md_par(md_engine):
             ), i
 
     # Check the final SGPs from real and fake trainings are the same
-    real_sgp_calc, _ = SGP_Calculator.from_file("myotf_flare.json")
-    fake_sgp_calc, _ = SGP_Calculator.from_file(f"{md_engine}_flare.json")
-    assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps)
-    assert np.allclose(
-        real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
-    )
+    if rank == 0:
+        real_sgp_calc, _ = SGP_Calculator.from_file("myotf_flare.json")
+        fake_sgp_calc, _ = SGP_Calculator.from_file(f"{md_engine}_flare.json")
+        assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps, atol=1e-6)
+        assert np.allclose(
+            real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
+        )
 
     # Check fake md with "direct" mode matches "bayesian" mode
     with open("../examples/test_SGP_Fake_fresh.yaml", "r") as f:
@@ -245,14 +271,16 @@ def test_otf_md_par(md_engine):
     config["otf"]["build_mode"] = "direct"
     config["otf"]["update_style"] = None
     config["otf"]["update_threshold"] = None
+    config["otf"]["use_mpi"] = True
+    #config["otf"]["mpi_rank"] = rank
     fresh_start_otf(config)
 
-    fake_sgp_calc, _ = SGP_Calculator.from_file(f"direct_par_flare.json")
-    assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps)
-    assert np.allclose(
-        real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
-    )
-
+    if rank == 0:
+        fake_sgp_calc, _ = SGP_Calculator.from_file(f"direct_par_flare.json")
+        assert np.allclose(real_sgp_calc.gp_model.hyps, fake_sgp_calc.gp_model.hyps, atol=1e-6)
+        assert np.allclose(
+            real_sgp_calc.gp_model.sparse_gp.Kuu, fake_sgp_calc.gp_model.sparse_gp.Kuu
+        )
 
 
 @pytest.mark.parametrize("md_engine", md_list)
