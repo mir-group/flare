@@ -17,6 +17,7 @@ NormalizedDotProduct_ICM ::NormalizedDotProduct_ICM(
   sig2 = sigma * sigma;
   this->power = power;
   this->icm_coeffs = icm_coeffs;
+  kernel_name = "NormalizedDotProduct_ICM";
 
   // Set kernel hyperparameters.
   no_types = icm_coeffs.rows();

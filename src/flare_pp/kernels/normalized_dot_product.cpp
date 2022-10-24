@@ -17,6 +17,7 @@ NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
   this->sigma = sigma;
   sig2 = sigma * sigma;
   this->power = power;
+  kernel_name = "NormalizedDotProduct";
 
   // Set kernel hyperparameters.
   Eigen::VectorXd hyps(1);

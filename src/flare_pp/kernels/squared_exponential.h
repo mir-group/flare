@@ -11,7 +11,6 @@ class ClusterDescriptor;
 class SquaredExponential : public Kernel {
 public:
   double sigma, ls, sig2, ls2;
-  std::string kernel_name = "SquaredExponential";
 
   SquaredExponential();
 
