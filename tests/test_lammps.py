@@ -136,8 +136,9 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
+@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
 def test_lammps_uncertainty(
-    n_species, n_types, use_map, power, struc, multicut, n_cpus
+    n_species, n_types, use_map, power, struc, multicut, n_cpus, kernel_type,
 ):
     if n_species > n_types:
         pytest.skip()
@@ -153,7 +154,7 @@ def test_lammps_uncertainty(
     print(lmp_command)
 
     # get sgp & dump coefficient files
-    sgp_model = get_sgp_calc(n_types, power, multicut)
+    sgp_model = get_sgp_calc(n_types, power, multicut, kernel_type)
     contributor = "YX"
     kernel_index = 0
 
@@ -245,7 +246,7 @@ run 0
     # print(sgp_stds)
     # print(lmp_stds)
     print(sgp_model.gp_model.hyps)
-    assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), atol=1e-4)
+    assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), rtol=2e-3, atol=3e-3)
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")
