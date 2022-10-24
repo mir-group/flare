@@ -261,7 +261,7 @@ double PairFLARE::init_one(int i, int j) {
 void PairFLARE::read_file(char *filename) {
   int me = comm->me;
   char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], kernel_string[MAXLINE];
-  int radial_string_length, cutoff_string_length;
+  int radial_string_length, cutoff_string_length, kernel_string_length;
   FILE *fptr;
 
   // Check that the potential file can be opened.
