@@ -4,6 +4,7 @@ from typing import Union, Optional, Callable, Any, List
 from flare.bffs.sgp._C_flare import Structure, SparseGP
 from flare.bffs.sgp.sparse_gp import optimize_hyperparameters
 import logging
+import time
 
 
 def transform_stress(stress: List[List[float]]) -> List[List[float]]:
@@ -121,6 +122,12 @@ class LMPOTF:
         )
         self.logger = logging.getLogger("lmpotf")
 
+        self.time_dft = 0.0
+        self.time_hyp_opt = 0.0
+        self.time_training = 0.0
+        self.time_predict_uncertainties = 0.0
+        self.time_prediction = 0.0
+
     def save(self, fname):
         self.sparse_gp.write_mapping_coefficients(fname, "LMPOTF", 0)
 
@@ -153,14 +160,18 @@ class LMPOTF:
             if self.dft_calls == 0:
                 self.logger.info("Initial step, calling DFT")
                 pe, F = self.run_dft(cell, x, types, step, structure)
+                t0 = time.time()
                 self.sparse_gp.add_training_structure(structure)
-                self.sparse_gp.add_random_environments(structure, [16])
+                self.sparse_gp.add_random_environments(structure, [int(natoms/4)])
                 self.sparse_gp.update_matrices_QR()
+                self.time_training += time.time() - t0
                 self.save(self.model_fname)
             else:
                 self.logger.info(f"Step {step}")
                 sigma = self.sparse_gp.hyperparameters[0]
+                t0 = time.time()
                 self.sparse_gp.predict_local_uncertainties(structure)
+                self.time_predict_uncertainties += time.time() - t0
                 variances = structure.local_uncertainties[0]
                 stds = np.sqrt(np.abs(variances)) / sigma
                 if self.std_xyz_fname is not None:
@@ -176,7 +187,9 @@ class LMPOTF:
                 self.logger.info(f"Max uncertainty: {np.amax(stds)}")
                 call_dft = np.any(stds > self.dft_call_threshold)
                 if call_dft:
+                    t0 = time.time()
                     self.sparse_gp.predict_DTC(structure)
+                    self.time_prediction += time.time() - t0
                     predE = structure.mean_efs[0]
                     predF = structure.mean_efs[1:-6].reshape((-1, 3))
                     predS = structure.mean_efs[-6:]
@@ -190,21 +203,25 @@ class LMPOTF:
                     self.logger.info(f"DFT call #{self.dft_calls}")
                     pe, F = self.run_dft(cell, x, types, step, structure)
                     atoms_to_be_added = np.arange(natoms)[stds > self.dft_add_threshold]
+                    t0 = time.time()
                     self.sparse_gp.add_training_structure(structure)
                     self.sparse_gp.add_specific_environments(
                         structure, atoms_to_be_added
                     )
                     self.sparse_gp.update_matrices_QR()
+                    self.time_training += time.time() - t0
                     if self.hyperparameter_optimization(self, lmp, step):
                         self.logger.info("Optimizing hyperparameters!")
                         self.sparse_gp.compute_likelihood_stable()
                         likelihood_before = self.sparse_gp.log_marginal_likelihood
+                        t0 = time.time()
                         optimize_hyperparameters(
                             (self.sparse_gp),
                             bounds=(self.opt_bounds),
                             method=(self.opt_method),
                             max_iterations=(self.opt_iterations),
                         )
+                        self.time_hyp_opt += time.time() - t0
                         likelihood_after = self.sparse_gp.log_marginal_likelihood
                         self.logger.info(
                             f"Likelihood before/after: {likelihood_before:.2e} {likelihood_after:.2e}"
@@ -229,10 +246,18 @@ class LMPOTF:
                     wandb_log["Press"] = lmp.get_thermo("press")
                     wandb_log["PotEng"] = lmp.get_thermo("pe")
                     wandb_log["Vol"] = lmp.get_thermo("vol")
+                    wandb_log["time_dft"] = self.time_dft
+                    wandb_log["time_training"] = self.time_training
+                    wandb_log["time_prediction"] = self.time_prediction
+                    wandb_log["time_predict_uncertainties"] = self.time_predict_uncertainties
+                    wandb_log["time_hyp_opt"] = self.time_hyp_opt
                     if call_dft:
                         wandb_log["Funcertainties"] = self.wandb.Histogram(Fstd.ravel())
                         wandb_log["Ferror"] = self.wandb.Histogram(
                             np.abs(F - predF).ravel()
+                        )
+                        wandb_log["logrelFerror"] = self.wandb.Histogram(
+                            np.log10(np.abs(F - predF)/np.abs(F)).ravel()
                         )
                     self.wandb.log(wandb_log, step=step)
         except Exception as err:
@@ -244,6 +269,7 @@ class LMPOTF:
                 del err
 
     def run_dft(self, cell, x, types, step, structure):
+        t0 = time.time()
         atomic_numbers = self.type2number[types - 1]
         frame = ase.Atoms(
             positions=x,
@@ -267,4 +293,6 @@ class LMPOTF:
         self.dft_calls += 1
         self.last_dft_call = step
         self.post_dft_callback(self, step)
+
+        self.time_dft += time.time() - t0
         return (pe, F)
