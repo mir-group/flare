@@ -199,6 +199,7 @@ void PairFLARE::allocate() {
 
   // Create cutsq array (used in pair.cpp)
   memory->create(cutsq, n + 1, n + 1, "pair:cutsq");
+  memset(&cutsq[0][0], 0, (n + 1) * (n + 1) * sizeof(double));
 }
 
 /* ----------------------------------------------------------------------
@@ -319,6 +320,7 @@ void PairFLARE::read_file(char *filename) {
     for (int j = 0; j < n_species; j++){
       double cutoff_val = cutoffs[cutoff_count];
       cutoff_matrix(i, j) = cutoff_val;
+      cutsq[i + 1][j + 1] = cutoff_val * cutoff_val;
       if (cutoff_val > cutoff) cutoff = cutoff_val;
       cutoff_count ++;
     }
