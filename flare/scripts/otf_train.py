@@ -229,6 +229,10 @@ def get_sgp_calc(flare_config):
     cutoff = flare_config["cutoff"]
     descriptors = []
     for d in flare_config["descriptors"]:
+        if "cutoff_matrix" in d:  # multiple cutoffs
+            assert np.allclose(np.array(d["cutoff_matrix"]), (n_species, n_species)),\
+                "cutoff_matrix needs to be of shape (n_species, n_species)"
+
         if d["name"] == "B2":
             radial_hyps = [0.0, cutoff]
             cutoff_hyps = []
