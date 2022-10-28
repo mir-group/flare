@@ -372,7 +372,11 @@ class OTF:
                     self.run_dft()
 
                     dft_forces = deepcopy(self.atoms.forces)
-                    dft_stress = deepcopy(self.atoms.stress)
+                    # some ase calculators don't have the stress property implemented
+                    try:
+                        dft_stress = deepcopy(self.atoms.stress)
+                    except PropertyNotImplementedError:
+                        dft_stress = None
                     dft_energy = self.atoms.potential_energy
 
                     # run MD step & record the state
