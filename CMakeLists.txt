@@ -27,6 +27,12 @@ endif()
 
 include(FetchContent)
 
+# Add conda include directories
+if (DEFINED ENV{CONDA_PREFIX})
+  message(STATUS "Adding conda include directories.")
+  include_directories($ENV{CONDA_PREFIX}/include)
+endif()
+
 # googletest
 ################################################################################
 
@@ -67,20 +73,30 @@ include_directories(${json_SOURCE_DIR})
 
 # Eigen3
 ################################################################################
-
-ExternalProject_Add(
-    eigen_project
-    SOURCE_DIR "${CMAKE_BINARY_DIR}/External/Eigen3"
-    URL "https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz"
-    URL_HASH MD5=77a2c934eaf35943c43ee600a83b72df
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-)
-ExternalProject_Get_Property(eigen_project SOURCE_DIR)
-add_library(Eigen3 INTERFACE)
-target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
-include_directories(${SOURCE_DIR})
+set(CONDA_EIGEN OFF)
+set(EIGEN_DIR $ENV{CONDA_PREFIX}/include/eigen3/Eigen)
+message(STATUS "eigen dir ${EIGEN_DIR}")
+if(EXISTS ${EIGEN_DIR})
+    message(STATUS "Find eigen in conda.")
+    find_package (Eigen3 3.3 REQUIRED)
+    set(CONDA_EIGEN ON)
+    add_library(Eigen3 INTERFACE)
+else()
+    message(STATUS "Download eigen")
+    ExternalProject_Add(
+        eigen_project
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/External/Eigen3"
+        URL "https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz"
+        URL_HASH MD5=77a2c934eaf35943c43ee600a83b72df
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+    )
+    ExternalProject_Get_Property(eigen_project SOURCE_DIR)
+    add_library(Eigen3 INTERFACE)
+    target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
+    include_directories(${SOURCE_DIR})
+endif()
 
 # pybind11
 ###############################################################################
@@ -152,7 +168,13 @@ include_directories(
 # See: https://github.com/pybind/cmake_example/issues/11
 add_library(flare STATIC ${FLARE_SOURCES})
 set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_dependencies(flare eigen_project)
+
+# Link to eigen
+if (CONDA_EIGEN)
+    target_link_libraries(flare PUBLIC Eigen3::Eigen)
+else()
+    add_dependencies(flare eigen_project)
+endif()
 
 # Link to json.
 target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
