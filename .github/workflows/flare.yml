@@ -81,7 +81,7 @@ jobs:
         echo "OpenMP ${{ matrix.omp }}"
         echo "Lapack ${{ matrix.lapack }}"
 
-        cmake ..
+        cmake .. -DCMAKE_BUILD_TYPE=Test
         cmake --build . -j
         cp _C_flare* ../flare/bffs/sgp
         cd ctests
