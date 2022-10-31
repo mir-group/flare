@@ -36,18 +36,24 @@ endif()
 # googletest
 ################################################################################
 
-FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.11.0
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
-    UPDATE_COMMAND ""
-)
-FetchContent_MakeAvailable(googletest)
+find_package(GTest)
+set(EXIST_GTEST OFF)
+if(GTest_FOUND)
+    set(EXIST_GTEST ON)
+else()
+    FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.11.0
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
+        UPDATE_COMMAND ""
+    )
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Json
 ################################################################################
 
-find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json)
 if (NOT nlohmann_json_FOUND)
     message(STATUS "Download nlohmann_json.")
     FetchContent_Declare(json
@@ -78,7 +84,7 @@ endif()
 # Eigen3
 ################################################################################
 set(EXIST_EIGEN OFF)
-find_package(Eigen3 3.3 REQUIRED)
+find_package(Eigen3 3.3)
 if(Eigen3_FOUND)
     message(STATUS "Found Eigen3.")
     set(EXIST_EIGEN ON)
@@ -107,7 +113,7 @@ if (NOT FLARE_PYTHON_VERSION)
 endif()
 find_package(PythonLibsNew ${FLARE_PYTHON_VERSION} REQUIRED)
 
-find_package(pybind11 CONFIG REQUIRED)
+find_package(pybind11 CONFIG)
 set(EXIST_PYBIND OFF)
 if(pybind11_FOUND)
     set(EXIST_PYBIND ON)
