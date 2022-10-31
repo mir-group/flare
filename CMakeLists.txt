@@ -47,15 +47,19 @@ FetchContent_MakeAvailable(googletest)
 # Json
 ################################################################################
 
-FetchContent_Declare(json
-    GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/json
-    GIT_TAG v3.9.1)
-
-FetchContent_GetProperties(json)
-FetchContent_Populate(json)
-add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
-include_directories(${json_SOURCE_DIR})
+find_package(nlohmann_json REQUIRED)
+if (NOT nlohmann_json_FOUND)
+    message(STATUS "Download nlohmann_json.")
+    FetchContent_Declare(json
+        GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/json
+        GIT_TAG v3.9.1)
+    
+    FetchContent_GetProperties(json)
+    FetchContent_Populate(json)
+    add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
+    include_directories(${json_SOURCE_DIR})
+endif()
 
 # Kokkos
 ################################################################################
@@ -73,13 +77,11 @@ include_directories(${json_SOURCE_DIR})
 
 # Eigen3
 ################################################################################
-set(CONDA_EIGEN OFF)
-set(EIGEN_DIR $ENV{CONDA_PREFIX}/include/eigen3/Eigen)
-message(STATUS "eigen dir ${EIGEN_DIR}")
-if(EXISTS ${EIGEN_DIR})
-    message(STATUS "Find eigen in conda.")
-    find_package (Eigen3 3.3 REQUIRED)
-    set(CONDA_EIGEN ON)
+set(EXIST_EIGEN OFF)
+find_package(Eigen3 3.3 REQUIRED)
+if(Eigen3_FOUND)
+    message(STATUS "Found Eigen3.")
+    set(EXIST_EIGEN ON)
     add_library(Eigen3 INTERFACE)
 else()
     message(STATUS "Download eigen")
@@ -100,34 +102,41 @@ endif()
 
 # pybind11
 ###############################################################################
-ExternalProject_Add(
-    pybind11_project
-    SOURCE_DIR "${CMAKE_BINARY_DIR}/External/pybind11"
-    URL "https://github.com/pybind/pybind11/archive/v2.3.0.tar.gz"
-    URL_HASH MD5=e2120c5b0e3c20a93f2dfcdc55026ba8
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-)
 if (NOT FLARE_PYTHON_VERSION)
-    set(Python_ADDITIONAL_VERSIONS 3.7 3.6 3.5)
+    set(Python_ADDITIONAL_VERSIONS 3.8 3.7 3.6 3.5)
 endif()
 find_package(PythonLibsNew ${FLARE_PYTHON_VERSION} REQUIRED)
 
-add_library(pybind11 INTERFACE)
-ExternalProject_Get_Property(pybind11_project SOURCE_DIR)
-target_include_directories(pybind11 SYSTEM INTERFACE ${SOURCE_DIR}/include)
-target_include_directories(pybind11 SYSTEM INTERFACE ${PYTHON_INCLUDE_DIRS})
-
-if(APPLE)
-      TARGET_LINK_LIBRARIES(pybind11 INTERFACE "-undefined dynamic_lookup")
-      message(STATUS "Building in conda environment on MAC")
+find_package(pybind11 CONFIG REQUIRED)
+set(EXIST_PYBIND OFF)
+if(pybind11_FOUND)
+    set(EXIST_PYBIND ON)
 else()
-      target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
+    ExternalProject_Add(
+        pybind11_project
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/External/pybind11"
+        URL "https://github.com/pybind/pybind11/archive/v2.3.0.tar.gz"
+        URL_HASH MD5=e2120c5b0e3c20a93f2dfcdc55026ba8
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+    )
+    ExternalProject_Get_Property(pybind11_project SOURCE_DIR)
+    target_include_directories(pybind11 SYSTEM INTERFACE ${SOURCE_DIR}/include)
+    target_include_directories(pybind11 SYSTEM INTERFACE ${PYTHON_INCLUDE_DIRS})
+    add_library(pybind11 INTERFACE)
+    
+    if(APPLE)
+          TARGET_LINK_LIBRARIES(pybind11 INTERFACE "-undefined dynamic_lookup")
+          message(STATUS "Building in conda environment on MAC")
+    else()
+          target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
+    endif()
+
+    # Greatly reduces the code bloat
+    target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
 endif()
 
-# Greatly reduces the code bloat
-target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
 ###############################################################################
 
 # Specify source files.
@@ -170,7 +179,7 @@ add_library(flare STATIC ${FLARE_SOURCES})
 set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Link to eigen
-if (CONDA_EIGEN)
+if (EXIST_EIGEN)
     target_link_libraries(flare PUBLIC Eigen3::Eigen)
 else()
     add_dependencies(flare eigen_project)
@@ -220,10 +229,14 @@ endif()
 
 # Create pybind module.
 add_library(flare_module SHARED ${PYBIND_SOURCES})
-target_link_libraries(flare_module PUBLIC flare pybind11)
-set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                              SUFFIX "${PYTHON_MODULE_EXTENSION}")
-add_dependencies(flare_module pybind11_project)
+if(EXIST_PYBIND)
+    target_link_libraries(flare_module PUBLIC pybind11::module)
+else()
+    target_link_libraries(flare_module PUBLIC flare pybind11)
+    set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                                  SUFFIX "${PYTHON_MODULE_EXTENSION}")
+    add_dependencies(flare_module pybind11_project)
+endif()
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
