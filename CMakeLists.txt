@@ -9,6 +9,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/)
 
 include(ExternalProject)
 
+option(BUILD_TESTING "" OFF)
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -36,7 +39,7 @@ endif()
 
 # googletest: only used in test mode
 ################################################################################
-if(CMAKE_BUILD_TYPE STREQUAL "Test")
+if(BUILD_TESTING)
     message(STATUS "Download gtest.")
     FetchContent_Declare(googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
@@ -244,6 +247,6 @@ endif()
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
-if(CMAKE_BUILD_TYPE STREQUAL "Test")
+if(BUILD_TESTING)
     add_subdirectory(ctests)
 endif()
