@@ -16,9 +16,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(FLARE_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling modules")
 
 if(NOT CMAKE_BUILD_TYPE)
-  message(STATUS "[flare] CMAKE_BUILD_TYPE not specified, setting it to "
-                 "Release. Use `-DCMAKE_BUILD_TYPE=...` to overwrite.")
-  set(CMAKE_BUILD_TYPE Release)
+    message(STATUS "[flare] CMAKE_BUILD_TYPE not specified, setting it to "
+                   "Release. Use `-DCMAKE_BUILD_TYPE=...` to overwrite.")
+    set(CMAKE_BUILD_TYPE Release)
 endif()
 
 #
@@ -29,18 +29,15 @@ include(FetchContent)
 
 # Add conda include directories
 if (DEFINED ENV{CONDA_PREFIX})
-  message(STATUS "Adding conda include directories.")
-  include_directories($ENV{CONDA_PREFIX}/include)
+    message(STATUS "Adding conda include directories.")
+    include_directories($ENV{CONDA_PREFIX}/include)
+    link_directories($ENV{CONDA_PREFIX}/lib)
 endif()
 
-# googletest
+# googletest: only used in test mode
 ################################################################################
-
-find_package(GTest)
-set(EXIST_GTEST OFF)
-if(GTest_FOUND)
-    set(EXIST_GTEST ON)
-else()
+if(CMAKE_BUILD_TYPE STREQUAL "Test")
+    message(STATUS "Download gtest.")
     FetchContent_Declare(googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG release-1.11.0
@@ -52,9 +49,9 @@ endif()
 
 # Json
 ################################################################################
-
-find_package(nlohmann_json)
-if (NOT nlohmann_json_FOUND)
+if(EXISTS $ENV{CONDA_PREFIX}/include/nlohmann)
+    find_package(nlohmann_json)
+else()
     message(STATUS "Download nlohmann_json.")
     FetchContent_Declare(json
         GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
@@ -84,8 +81,8 @@ endif()
 # Eigen3
 ################################################################################
 set(EXIST_EIGEN OFF)
-find_package(Eigen3 3.3)
-if(Eigen3_FOUND)
+if(EXISTS $ENV{CONDA_PREFIX}/include/eigen3)
+    find_package(Eigen3 3.3)
     message(STATUS "Found Eigen3.")
     set(EXIST_EIGEN ON)
     add_library(Eigen3 INTERFACE)
@@ -113,11 +110,12 @@ if (NOT FLARE_PYTHON_VERSION)
 endif()
 find_package(PythonLibsNew ${FLARE_PYTHON_VERSION} REQUIRED)
 
-find_package(pybind11 CONFIG)
 set(EXIST_PYBIND OFF)
-if(pybind11_FOUND)
+if(EXISTS $ENV{CONDA_PREFIX}/include/pybind11)
+    find_package(pybind11 CONFIG)
     set(EXIST_PYBIND ON)
 else()
+    message(STATUS "Download pybind11.")
     ExternalProject_Add(
         pybind11_project
         SOURCE_DIR "${CMAKE_BINARY_DIR}/External/pybind11"
@@ -127,16 +125,16 @@ else()
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
     )
+    add_library(pybind11 INTERFACE)
     ExternalProject_Get_Property(pybind11_project SOURCE_DIR)
     target_include_directories(pybind11 SYSTEM INTERFACE ${SOURCE_DIR}/include)
     target_include_directories(pybind11 SYSTEM INTERFACE ${PYTHON_INCLUDE_DIRS})
-    add_library(pybind11 INTERFACE)
     
     if(APPLE)
-          TARGET_LINK_LIBRARIES(pybind11 INTERFACE "-undefined dynamic_lookup")
-          message(STATUS "Building in conda environment on MAC")
+        TARGET_LINK_LIBRARIES(pybind11 INTERFACE "-undefined dynamic_lookup")
+        message(STATUS "Building in conda environment on MAC")
     else()
-          target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
+        target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
     endif()
 
     # Greatly reduces the code bloat
@@ -246,4 +244,6 @@ endif()
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
-add_subdirectory(ctests)
+if(CMAKE_BUILD_TYPE STREQUAL "Test")
+    add_subdirectory(ctests)
+endif()

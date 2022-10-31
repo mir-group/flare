@@ -12,8 +12,4 @@ add_executable(
 )
 
 include_directories(../src/flare_pp)
-if(EXIST_GTEST)
-    target_link_libraries(tests GTest::gtest GTest::gtest_main flare)
-else()
-    target_link_libraries(tests PUBLIC gtest gtest_main flare)
-endif()
+target_link_libraries(tests PUBLIC gtest gtest_main flare)
