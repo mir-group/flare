@@ -38,14 +38,17 @@ class LMPOTF:
     dftcalc
         An ASE calculator, e.g. Espresso.
     energy_correction
-        Per-type correction to the DFT potential energy.
+        Per-type corrections to the DFT potential energy.
     dft_call_threshold
         Uncertainty threshold for whether to call DFT.
     dft_add_threshold
         Uncertainty threshold for whether to add an atom to the training set.
+    dft_xyz_fname
+        Name of the file in which to save the DFT results.
+        Should contain '*', which will be replaced with the current step.
     std_xyz_fname
-        Function for the name of the file in which to save ASE Atoms with per-atom uncertainties as charges.
-        Takes as input this LMPOTF object and the current step.
+        Name of the file in which to save ASE Atoms with per-atom uncertainties as charges.
+        Should contain '*', which will be replaced with the current step.
     model_fname
         Name of the saved model, must correspond to `pair_coeff`.
     hyperparameter_optimization
@@ -78,8 +81,8 @@ class LMPOTF:
         stress_training=True,
         dft_call_threshold: float = 0.005,
         dft_add_threshold: float = 0.0025,
-        dft_xyz_fname=None,
-        std_xyz_fname: Optional[Callable[([int], str)]] = None,
+        dft_xyz_fname: Optional[str] = None,
+        std_xyz_fname: Optional[str] = None,
         model_fname: str = "otf.flare",
         hyperparameter_optimization: Callable[
             (["LMPOTF", object, int], bool)
@@ -183,7 +186,7 @@ class LMPOTF:
                         pbc=True,
                     )
                     frame.set_array("charges", stds)
-                    ase.io.write((self.std_xyz_fname(step)), frame, format="extxyz")
+                    ase.io.write(self.std_xyz_fname.replace("*", str(step)), frame, format="extxyz")
                 wandb_log = {"max_uncertainty": np.amax(stds)}
                 self.logger.info(f"Max uncertainty: {np.amax(stds)}")
                 call_dft = np.any(stds > self.dft_call_threshold)
@@ -284,7 +287,7 @@ class LMPOTF:
         F = frame.get_forces()
         stress = frame.get_stress(voigt=False)
         if self.dft_xyz_fname is not None:
-            ase.io.write((self.dft_xyz_fname(step)), frame, format="extxyz")
+            ase.io.write(self.dft_xyz_fname.replace("*", str(step)), frame, format="extxyz")
         if self.force_training:
             structure.forces = F.reshape(-1)
         if self.energy_training:
