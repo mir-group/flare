@@ -273,10 +273,6 @@ void ComputeFlareStdAtom::allocate() {
   // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
   for (int i = 1; i <= n; i++)
     setflag[i][i] = 1;
-
-  // Create cutsq array (used in pair.cpp)
-  memory->create(cutsq, n + 1, n + 1, "compute:cutsq");
-  memset(&cutsq[0][0], 0, (n + 1) * (n + 1) * sizeof(double));
 }
 
 /* ----------------------------------------------------------------------
@@ -326,6 +322,10 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
   if (me == 0)
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Create cutsq array (used in pair.cpp)
+  memory->create(cutsq, n_species + 1, n_species + 1, "compute:cutsq");
+  memset(&cutsq[0][0], 0, (n_species + 1) * (n_species + 1) * sizeof(double));
 
   // Fill in the cutoff matrix.
   cutoff = -1;
