@@ -196,9 +196,6 @@ void PairFLARE::allocate() {
   // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
   for (int i = 1; i <= n; i++)
     setflag[i][i] = 1;
-
-  // Create cutsq array (used in pair.cpp)
-  memory->create(cutsq, n + 1, n + 1, "pair:cutsq");
 }
 
 /* ----------------------------------------------------------------------
@@ -311,6 +308,10 @@ void PairFLARE::read_file(char *filename) {
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
+  // Create cutsq array (used in pair.cpp)
+  memory->create(cutsq, n_species + 1, n_species + 1, "pair:cutsq");
+  memset(&cutsq[0][0], 0, (n_species + 1) * (n_species + 1) * sizeof(double));
+
   // Fill in the cutoff matrix.
   cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
@@ -319,6 +320,7 @@ void PairFLARE::read_file(char *filename) {
     for (int j = 0; j < n_species; j++){
       double cutoff_val = cutoffs[cutoff_count];
       cutoff_matrix(i, j) = cutoff_val;
+      cutsq[i + 1][j + 1] = cutoff_val * cutoff_val;
       if (cutoff_val > cutoff) cutoff = cutoff_val;
       cutoff_count ++;
     }

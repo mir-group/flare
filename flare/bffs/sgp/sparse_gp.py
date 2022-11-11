@@ -4,6 +4,7 @@ import numpy as np
 from scipy.optimize import minimize
 from typing import List
 import warnings
+from ase import Atoms
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 
@@ -310,7 +311,7 @@ class SGP_Wrapper:
     ):
 
         # Convert coded species to 0, 1, 2, etc.
-        if isinstance(structure, FLARE_Atoms):
+        if isinstance(structure, (Atoms, FLARE_Atoms)):
             coded_species = []
             for spec in structure.numbers:
                 coded_species.append(self.species_map[spec])

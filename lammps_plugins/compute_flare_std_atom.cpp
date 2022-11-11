@@ -62,10 +62,10 @@ ComputeFlareStdAtom::~ComputeFlareStdAtom() {
 
   memory->destroy(beta);
 
-//  if (allocated) {
-//    memory->destroy(setflag);
-//    memory->destroy(cutsq);
-//  }
+  if (allocated) {
+    memory->destroy(setflag);
+    memory->destroy(cutsq);
+  }
 
   memory->destroy(stds);
   memory->destroy(desc_derv);
@@ -266,16 +266,13 @@ double ComputeFlareStdAtom::memory_usage()
 
 void ComputeFlareStdAtom::allocate() {
   allocated = 1;
-//  int n = atom->ntypes;
-//
-//  memory->create(setflag, n + 1, n + 1, "compute:setflag");
-//
-//  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
-//  for (int i = 1; i <= n; i++)
-//    setflag[i][i] = 1;
-//
-//  // Create cutsq array (used in pair.cpp)
-//  memory->create(cutsq, n + 1, n + 1, "compute:cutsq");
+  int n = atom->ntypes;
+
+  memory->create(setflag, n + 1, n + 1, "compute:setflag");
+
+  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
+  for (int i = 1; i <= n; i++)
+    setflag[i][i] = 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -326,6 +323,10 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
+  // Create cutsq array (used in pair.cpp)
+  memory->create(cutsq, n_species + 1, n_species + 1, "compute:cutsq");
+  memset(&cutsq[0][0], 0, (n_species + 1) * (n_species + 1) * sizeof(double));
+
   // Fill in the cutoff matrix.
   cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
@@ -334,6 +335,7 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
     for (int j = 0; j < n_species; j++){
       double cutoff_val = cutoffs[cutoff_count];
       cutoff_matrix(i, j) = cutoff_val;
+      cutsq[i + 1][j + 1] = cutoff_val * cutoff_val;
       if (cutoff_val > cutoff) cutoff = cutoff_val;
       cutoff_count ++;
     }
