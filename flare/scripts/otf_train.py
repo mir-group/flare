@@ -230,7 +230,7 @@ def get_sgp_calc(flare_config):
     descriptors = []
     for d in flare_config["descriptors"]:
         if "cutoff_matrix" in d:  # multiple cutoffs
-            assert np.allclose(np.array(d["cutoff_matrix"]), (n_species, n_species)),\
+            assert np.allclose(np.array(d["cutoff_matrix"]).shape, (n_species, n_species)),\
                 "cutoff_matrix needs to be of shape (n_species, n_species)"
 
         if d["name"] == "B2":
