@@ -13,7 +13,6 @@ public:
   double sigma, sig2, power;
   int no_types, n_icm_coeffs;
   Eigen::MatrixXd icm_coeffs;
-  std::string kernel_name = "NormalizedDotProduct_ICM";
 
   NormalizedDotProduct_ICM();
 

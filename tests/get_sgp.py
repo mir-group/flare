@@ -1,5 +1,5 @@
 import numpy as np
-from flare.bffs.sgp._C_flare import NormalizedDotProduct, B2
+from flare.bffs.sgp._C_flare import NormalizedDotProduct, DotProduct, B2
 from flare.bffs.sgp import SGP_Wrapper
 from flare.bffs.sgp.calculator import SGP_Calculator
 from flare.atoms import FLARE_Atoms
@@ -10,12 +10,13 @@ from ase.build import make_supercell
 # Define kernel.
 sigma = 2.0
 power = 1.0
-kernel = NormalizedDotProduct(sigma, power)
+dotprod_kernel = DotProduct(sigma, power)
+normdotprod_kernel = NormalizedDotProduct(sigma, power)
 
 # Define remaining parameters for the SGP wrapper.
-sigma_e = 0.001
-sigma_f = 0.05
-sigma_s = 0.006
+sigma_e = 0.3
+sigma_f = 0.2
+sigma_s = 0.1
 species_map = {6: 0, 8: 1}
 single_atom_energies = {0: -5, 1: -6}
 variance_type = "local"
@@ -60,7 +61,12 @@ def get_isolated_atoms(numbers=[6, 8]):
     return flare_atoms
 
 
-def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
+def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+    if kernel_type == "NormalizedDotProduct":
+        kernel = normdotprod_kernel
+    elif kernel_type == "DotProduct":
+        kernel = dotprod_kernel
+
     kernel.power = power
 
     # Define B2 calculator.
@@ -101,13 +107,13 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False):
     return empty_sgp
 
 
-def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
+def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
     if n_types == 1:
         numbers = [6, 6]
     elif n_types == 2:
         numbers = [6, 8]
 
-    sgp = get_empty_sgp(n_types, power, multiple_cutoff)
+    sgp = get_empty_sgp(n_types, power, multiple_cutoff, kernel_type)
 
     # add a random structure to the training set
     training_structure = get_random_atoms(numbers=numbers)
@@ -151,8 +157,8 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False):
     return sgp
 
 
-def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False):
-    sgp = get_updated_sgp(n_types, power, multiple_cutoff)
+def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+    sgp = get_updated_sgp(n_types, power, multiple_cutoff, kernel_type)
     sgp_calc = SGP_Calculator(sgp)
 
     return sgp_calc
