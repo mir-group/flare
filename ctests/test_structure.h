@@ -5,6 +5,7 @@
 #include "structure.h"
 #include "four_body.h"
 #include "normalized_dot_product.h"
+#include "dot_product.h"
 #include "norm_dot_icm.h"
 #include "squared_exponential.h"
 #include "structure.h"

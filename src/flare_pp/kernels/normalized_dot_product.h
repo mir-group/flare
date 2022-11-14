@@ -11,7 +11,6 @@ class ClusterDescriptor;
 class NormalizedDotProduct : public Kernel {
 public:
   double sigma, sig2, power;
-  std::string kernel_name = "NormalizedDotProduct";
 
   NormalizedDotProduct();
 
