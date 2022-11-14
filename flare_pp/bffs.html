@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian force fields &mdash; flare 1.3.1 documentation</title>
+  <title>Bayesian force fields &mdash; flare 1.3.3 documentation</title>
   
 
   
@@ -239,8 +239,8 @@
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEE">
-<span class="target" id="classSparseGP_1a10cbd1d826945d739208554d5e471829"></span>void <code class="descname">add_training_structure</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em>, <em class="property">const</em> std::vector&lt;int&gt; <em>atom_indices</em> = {-1}<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEE" title="Permalink to this definition">¶</a><br /></dt>
+<dt id="_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd">
+<span class="target" id="classSparseGP_1aab8e3236241483529bb27ff07c6ba83b"></span>void <code class="descname">add_training_structure</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em>, <em class="property">const</em> std::vector&lt;int&gt; <em>atom_indices</em> = {-1}, double <em>rel_e_noise</em> = 1, double <em>rel_f_noise</em> = 1, double <em>rel_s_noise</em> = 1<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -504,6 +504,21 @@
 <dl class="member">
 <dt id="_CPPv4N8SparseGP11s_noise_oneE">
 <span class="target" id="classSparseGP_1a4b16db19193acb3f6becf35c42c2fb2b"></span>Eigen::VectorXd <code class="descname">s_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP11s_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N8SparseGP15inv_e_noise_oneE">
+<span class="target" id="classSparseGP_1a16d9ba345168b6f70dcf89c7d81d328a"></span>Eigen::VectorXd <code class="descname">inv_e_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP15inv_e_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N8SparseGP15inv_f_noise_oneE">
+<span class="target" id="classSparseGP_1a5e8dccab8b71583ef51544187dc24554"></span>Eigen::VectorXd <code class="descname">inv_f_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP15inv_f_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="member">
+<dt id="_CPPv4N8SparseGP15inv_s_noise_oneE">
+<span class="target" id="classSparseGP_1a11cce1cc61309c1461326c053bee03ff"></span>Eigen::VectorXd <code class="descname">inv_s_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP15inv_s_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="member">
