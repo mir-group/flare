@@ -18,7 +18,7 @@ from typing import Union, List
 import flare
 from ase.data import chemical_symbols
 from ase.io import write
-
+from ase.calculators.calculator import PropertyNotImplementedError
 
 # Unit conversions.
 eva_to_gpa = 160.21766208
@@ -277,14 +277,21 @@ class Output:
 
         string += "\n"
 
+        # Check if we need to report the stress and pressure tensors
+        try:
+            if type(structure.stress) == np.ndarray:
+                stress_exist = True
+        except PropertyNotImplementedError:
+            stress_exist = False
+
         # Report cell if stress attribute is present.
-        if structure.stress is not None:
+        if stress_exist and structure.stress is not None:
             string += "Periodic cell (A): \n"
             string += str(np.array(structure.cell)) + "\n\n"
 
         # Report stress tensor.
         pressure = None
-        if structure.stress is not None:
+        if stress_exist and structure.stress is not None:
             stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
             s8 = " " * 8
             string += "Stress tensor (GPa):\n"
@@ -308,7 +315,7 @@ class Output:
             pressure = (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
 
         # Report stress tensor uncertainties.
-        if structure.stress_stds is not None:
+        if stress_exist and structure.stress_stds is not None:
             stress_stds = structure.stress_stds * eva_to_gpa  # Convert to GPa
             string += "Stress tensor uncertainties (GPa):\n"
             for p in range(6):
@@ -648,6 +655,7 @@ def compute_mae(
     f.info("Mean absolute errors & Mean absolute values")
 
     # compute energy/forces/stress mean absolute error and value
+    e_mae = e_mav = s_mae = s_mav = 0
     if not force_only:
         if dft_energy is not None and gp_energy is not None:
             e_mae = np.mean(np.abs(dft_energy - gp_energy))
@@ -683,3 +691,5 @@ def compute_mae(
         curr_species = unique_species[s]
         f.info(f"type {curr_species} forces mae: {per_species_mae[s]:.4f} eV/A")
         f.info(f"type {curr_species} forces mav: {per_species_mav[s]:.4f} eV/A")
+
+    return e_mae, e_mav, f_mae, f_mav, s_mae, s_mav

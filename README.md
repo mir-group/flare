@@ -30,11 +30,15 @@ Documentation of the code can be accessed here: https://mir-group.github.io/flar
 
 ### Google Colab Tutorials
 
-[FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). 
-The tutorial shows how to run flare++ on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
+[FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/1rZ-p3kN5CJbPJgD8HuQHSc7ecmwZYse6).
+The tutorial shows how to run flare with ACE and SGP on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. All the trainings use yaml files for configuration.
 
 [FLARE (ACE descriptors + sparse GP) with LAMMPS](https://colab.research.google.com/drive/1qgGlfu1BlXQgSrnolS4c4AYeZ-2TaX5Y).
 The tutorial shows how to compile LAMMPS with FLARE pair style and uncertainty compute code, and use LAMMPS for Bayesian active learning and uncertainty-aware molecular dynamics.
+
+[FLARE (ACE descriptors + sparse GP) Python API](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). 
+The tutorial shows how to do the offline and online trainings with python scripts.
+A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
 
 [FLARE (2+3-body + GP)](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
 The tutorial shows how to use flare 2+3 body descriptors and squared exponential kernel to train a Gaussian Process force field on-the-fly.
@@ -49,33 +53,17 @@ All the tutorials take a few minutes to run on a normal desktop computer or lapt
 
 ## Installation
 ### Pip installation
-If you're installing on a compute cluster, make sure to load the following modules first:
-```
-module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01
-```
-
-FLARE can be installed in two different ways.
-1. Download and install automatically:
-    ```
-    pip install mir-flare
-    ```
-2. Download this repository and install (required for unit tests):
-    ```
-    git clone https://github.com/mir-group/flare
-    cd flare
-    pip install .
-    ```
-    
+Please check the [installation guide here](https://mir-group.github.io/flare/installation/install.html).
 This will take a few minutes on a normal desktop computer or laptop.
 
 ### Developer's installation guide
-For developers, please check the [installation guide](https://mir-group.github.io/flare_pp/installation.html).
+For developers, please check the [installation guide](https://mir-group.github.io/flare/installation/install.html#developer-s-installation-guide).
 
 ### Compiling LAMMPS
 See [documentation on compiling LAMMPS with FLARE](https://mir-group.github.io/flare/installation/lammps.html)
 
 ### Trouble shooting
-If you have problem compiling and installing the code, please check the [FAQs](https://mir-group.github.io/flare_pp/faqs.html) to see if your problem is covered. Otherwise, please open an issue or contact us.
+If you have problem compiling and installing the code, please check the [FAQs](https://mir-group.github.io/flare/installation/install.html#trouble-shooting) to see if your problem is covered. Otherwise, please open an issue or contact us.
 
 ## System requirements
 ### Software dependencies

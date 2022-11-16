@@ -1245,7 +1245,7 @@ void SparseGP::write_varmap_coefficients(
   for (int i = 0; i < hyperparameters.size(); i++) {      
     coeff_file << hyperparameters(i) << " ";
   }
-  coeff_file << "\n";
+  coeff_file << "\n" << kernels[kernel_index]->kernel_name << "\n";
 
   // Write descriptor information to file.
   int coeff_size = varmap_coeffs.row(0).size();
@@ -1396,7 +1396,11 @@ void SparseGP::write_sparse_descriptors(
           if (sparse_descriptors[i].descriptor_norms[s](j) < empty_thresh) {
             coeff_file << 0.0 << " ";
           } else {
-            coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " "; 
+            if (kernels[i]->kernel_name.find("NormalizedDotProduct") != std::string::npos) {
+              coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " ";
+            } else {
+              coeff_file << sparse_descriptors[i].descriptors[s](j, k) << " ";
+            }
           }
 
           // Change line after writing 5 numbers

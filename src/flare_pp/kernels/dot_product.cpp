@@ -17,6 +17,7 @@ DotProduct ::DotProduct(double sigma, double power) {
   this->sigma = sigma;
   sig2 = sigma * sigma;
   this->power = power;
+  kernel_name = "DotProduct";
 
   // Set kernel hyperparameters.
   Eigen::VectorXd hyps(1);
@@ -213,7 +214,9 @@ Eigen::MatrixXd
 DotProduct ::struc_struc(const DescriptorValues &struc1,
                                    const DescriptorValues &struc2,
                                    const Eigen::VectorXd &hyps) {
-
+  
+  //throw std::logic_error("struc_struc kernel for DotProduct is not implemented");
+  
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
 
@@ -859,7 +862,7 @@ Eigen::MatrixXd DotProduct ::compute_varmap_coefficients(
 
 void DotProduct ::write_info(std::ofstream &coeff_file) {
   coeff_file << std::fixed << std::setprecision(0);
-  coeff_file << power << "\n";
+  coeff_file << power << " DotProduct\n";
 }
 
 nlohmann::json DotProduct ::return_json(){

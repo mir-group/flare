@@ -78,3 +78,4 @@ otf:
     update_threshold: 0.01
     force_only: False
     store_dft_output: [[tmp/SiC.tersoff, test_files/HHe.json], ./]
+    wandb_log: null

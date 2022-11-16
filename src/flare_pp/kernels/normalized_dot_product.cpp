@@ -17,6 +17,7 @@ NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
   this->sigma = sigma;
   sig2 = sigma * sigma;
   this->power = power;
+  kernel_name = "NormalizedDotProduct";
 
   // Set kernel hyperparameters.
   Eigen::VectorXd hyps(1);
@@ -859,7 +860,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
 
 void NormalizedDotProduct ::write_info(std::ofstream &coeff_file) {
   coeff_file << std::fixed << std::setprecision(0);
-  coeff_file << power << "\n";
+  coeff_file << power << " NormalizedDotProduct\n";
 }
 
 nlohmann::json NormalizedDotProduct ::return_json(){
