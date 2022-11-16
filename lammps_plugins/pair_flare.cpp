@@ -118,18 +118,34 @@ void PairFLARE::compute(int eflag, int vflag) {
 
     // Compute covariant descriptors.
     double secs;
-    single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
+
+    if (embed) {
+      single_bond_multiple_cutoffs_embed(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
+                                 jlist, basis_function, cutoff_function,
+                                 d_embed, n_max, l_max, radial_hyps,
+                                 cutoff_hyps, single_bond_vals,
+                                 single_bond_env_dervs, cutoff_matrix, embed_coeffs);
+
+      // Compute invariant descriptors.
+      B2_embed_descriptor(B2_vals, B2_norm_squared,
+                    single_bond_vals, d_embed, n_max, l_max);
+  
+      compute_energy_and_u_embed(B2_vals, B2_norm_squared, single_bond_vals, power,
+             d_embed, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
+    } else {
+      single_bond_multiple_cutoffs(x, type, jnum, n_inner, i, xtmp, ytmp, ztmp,
                                  jlist, basis_function, cutoff_function,
                                  n_species, n_max, l_max, radial_hyps,
                                  cutoff_hyps, single_bond_vals,
                                  single_bond_env_dervs, cutoff_matrix);
 
-    // Compute invariant descriptors.
-    B2_descriptor(B2_vals, B2_norm_squared,
-                  single_bond_vals, n_species, n_max, l_max);
-
-    compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
-           n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
+      // Compute invariant descriptors.
+      B2_descriptor(B2_vals, B2_norm_squared,
+                    single_bond_vals, n_species, n_max, l_max);
+  
+      compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
+             n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
+    }
 
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
@@ -152,6 +168,7 @@ void PairFLARE::compute(int eflag, int vflag) {
         double fx = single_bond_env_dervs.row(n_count * 3).dot(u);
         double fy = single_bond_env_dervs.row(n_count * 3 + 1).dot(u);
         double fz = single_bond_env_dervs.row(n_count * 3 + 2).dot(u);
+
         // Compute local energy and partial forces.
 
         f[i][0] += fx;
@@ -221,14 +238,22 @@ void PairFLARE::coeff(int narg, char **arg) {
     allocate();
 
   // Should be exactly 3 arguments following "pair_coeff" in the input file.
-  if (narg != 3)
+  if (narg == 3) {
+    embed = false;
+  } else if (narg == 4) {
+    embed = true;
+  } else {
     error->all(FLERR, "Incorrect args for pair coefficients");
+  }
 
   // Ensure I,J args are "* *".
   if (strcmp(arg[0], "*") != 0 || strcmp(arg[1], "*") != 0)
     error->all(FLERR, "Incorrect args for pair coefficients");
 
   read_file(arg[2]);
+  if (embed) {
+    read_embed_coeffs(arg[3]);
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -392,6 +417,60 @@ void PairFLARE::read_file(char *filename) {
     }
   }
 }
+
+void PairFLARE::read_embed_coeffs(char *filename) {
+  int me = comm->me;
+  char line[MAXLINE];
+  FILE *fptr;
+
+  // Check that the potential file can be opened.
+  if (me == 0) {
+    fptr = utils::open_potential(filename,lmp,nullptr);
+    if (fptr == NULL) {
+      char str[128];
+      snprintf(str, 128, "Cannot open potential file %s", filename);
+      error->one(FLERR, str);
+    }
+  }
+
+  int tmp, nwords, d_embed;
+  if (me == 0) {
+    fgets(line, MAXLINE, fptr); // Date and contributor
+
+    fgets(line, MAXLINE, fptr);
+    sscanf(line, "%i", &d_embed);
+  }
+
+  MPI_Bcast(&d_embed, 1, MPI_INT, 0, world);
+
+  // Check the relationship between the power spectrum and beta.
+  int coeff_size = (2 * d_embed) * n_species * n_max * (l_max + 1);
+
+  // Parse the beta vectors.
+  memory->create(embed_array, coeff_size, "pair:embed");
+  if (me == 0)
+    grab(fptr, coeff_size, embed_array);
+  MPI_Bcast(embed_array, coeff_size, MPI_DOUBLE, 0, world);
+
+  // Fill in the embed_coeffs.
+  Eigen::MatrixXd embed_coeffs = Eigen::MatrixXd::Zero(2 * d_embed, n_species * n_max * (l_max + 1));
+  double embed_val;
+  int embed_count = 0;
+
+  for (int d = 0; d < 2 * d_embed; d++) {
+    int count = 0;
+    for (int s = 0; s < n_species; s++) {
+      for (int n = 0; n < n_max; n++) {
+        for (int l = 0; n < l_max + 1; l++) {
+          embed_coeffs(d, count) = embed_array[embed_count];
+          count++;
+          embed_count++;
+        }
+      }
+    }
+  }
+}
+
 
 /* ----------------------------------------------------------------------
    grab n values from file fp and put them in list

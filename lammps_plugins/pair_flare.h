@@ -40,13 +40,18 @@ protected:
   std::vector<double> radial_hyps, cutoff_hyps;
 
   double cutoff;
-  double *beta, *cutoffs;
+  double *beta, *cutoffs, *embed_array;
   Eigen::MatrixXd beta_matrix, cutoff_matrix;
   std::vector<Eigen::MatrixXd> beta_matrices;
 
   virtual void allocate();
   virtual void read_file(char *);
+  void read_embed_coeffs(char *);
   void grab(FILE *, int, double *);
+
+  // Embedding
+  bool embed = false;
+  Eigen::MatrixXd embed_coeffs;
 };
 
 } // namespace LAMMPS_NS
