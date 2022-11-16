@@ -111,6 +111,102 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
     os.system("rm -r tmp")
 
 
+@pytest.mark.skipif(
+    not os.environ.get("lmp", False),
+    reason=(
+        "lmp not found in environment: Please install LAMMPS and set the "
+        "$lmp environment variable to point to the executatble."
+    ),
+)
+@pytest.mark.parametrize("n_species", n_species_list)
+@pytest.mark.parametrize("n_types", n_desc_types)
+@pytest.mark.parametrize("power", power_list)
+@pytest.mark.parametrize("struc", struc_list)
+@pytest.mark.parametrize("multicut", [False, True])
+@pytest.mark.parametrize("n_cpus", n_cpus_list)
+def test_embedding(n_species, n_types, power, struc, multicut, n_cpus):
+    """Test the flare pair style."""
+
+    if n_species > n_types:
+        pytest.skip()
+
+    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
+        pytest.skip()
+
+    # Write potential file.
+    sgp_model = get_sgp_calc(n_types, power, multicut)
+    potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
+    contributor = "Jon"
+    kernel_index = 0
+    sgp_model.gp_model.sparse_gp.write_mapping_coefficients(
+        potential_name, contributor, kernel_index
+    )
+
+    # Generate random testing structure
+    if n_species == 1:
+        numbers = [6, 6]
+        species = ["C"]
+    elif n_species == 2:
+        numbers = [6, 8]
+        species = ["C", "O"]
+
+    if struc == "random":
+        test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
+    elif struc == "isolated":
+        test_structure = get_isolated_atoms(numbers=numbers)
+    test_structure.calc = sgp_model
+
+    # Predict with SGP.
+    energy = test_structure.get_potential_energy()
+    forces = test_structure.get_forces()
+    stress = test_structure.get_stress()
+
+    # Set up LAMMPS calculator.
+    lmp_command = os.environ.get("lmp")
+    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+        lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
+
+    print(lmp_command)
+    parameters = {
+        "command": lmp_command,  # set up executable for ASE
+        "newton": "on",
+        "pair_style": "flare",
+        "pair_coeff": [f"* * {potential_name}"],
+        "timestep": "0.001\ndump_modify dump_all sort id",
+    }
+
+    lmp_calc = LAMMPS(
+        tmp_dir="./tmp/",
+        parameters=parameters,
+        files=[potential_name],
+        specorder=species,
+    )
+
+    print("built lmp_calc")
+    # Predict with LAMMPS.
+    test_structure.calc = lmp_calc
+    energy_lmp = test_structure.get_potential_energy()
+    forces_lmp = test_structure.get_forces()
+    stress_lmp = test_structure.get_stress()
+
+    # add back single_atom_energies to lammps energy
+    if sgp_model.gp_model.single_atom_energies is not None:
+        for spec in test_structure.numbers:
+            coded_spec = sgp_model.gp_model.species_map[spec]
+            energy_lmp += sgp_model.gp_model.single_atom_energies[coded_spec]
+
+    thresh = 1e-6
+    print(energy, energy_lmp)
+    assert np.allclose(energy, energy_lmp, atol=thresh)
+    # print(forces, forces_lmp)
+    assert np.allclose(forces, forces_lmp, atol=thresh)
+    assert np.allclose(stress, stress_lmp, atol=thresh)
+
+    # Remove files.
+    os.remove(potential_name)
+    os.system("rm -r tmp")
+
+
 import os
 import numpy as np
 from copy import deepcopy
