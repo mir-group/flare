@@ -1,5 +1,5 @@
 import numpy as np
-from flare.bffs.sgp._C_flare import NormalizedDotProduct, DotProduct, B2
+from flare.bffs.sgp._C_flare import NormalizedDotProduct, DotProduct, B2, B2_Embed_Multilayer
 from flare.bffs.sgp import SGP_Wrapper
 from flare.bffs.sgp.calculator import SGP_Calculator
 from flare.atoms import FLARE_Atoms
@@ -18,7 +18,8 @@ sigma_e = 0.3
 sigma_f = 0.2
 sigma_s = 0.1
 species_map = {6: 0, 8: 1}
-single_atom_energies = {0: -5, 1: -6}
+single_atom_energies = None
+#single_atom_energies = {0: -5, 1: -6}
 variance_type = "local"
 max_iterations = 20
 opt_method = "L-BFGS-B"
@@ -61,7 +62,7 @@ def get_isolated_atoms(numbers=[6, 8]):
     return flare_atoms
 
 
-def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct", d_embed=0):
     if kernel_type == "NormalizedDotProduct":
         kernel = normdotprod_kernel
     elif kernel_type == "DotProduct":
@@ -79,15 +80,29 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     if multiple_cutoff:
         cutoff_matrix += np.eye(n_types) - 1
 
-    descriptor_settings = [n_types, 3, 2]
-    b2_calc = B2(
-        radial_basis,
-        cutoff_function,
-        radial_hyps,
-        cutoff_hyps,
-        descriptor_settings,
-        cutoff_matrix,
-    )
+    n_max = 3
+    l_max = 2
+    descriptor_settings = [n_types, n_max, l_max]
+    if d_embed > 0:
+        embed_coeffs = np.random.rand(d_embed * 2, n_types * n_max * (l_max + 1))
+        b2_calc = B2_Embed_Multilayer(
+            radial_basis,
+            cutoff_function,
+            radial_hyps,
+            cutoff_hyps,
+            descriptor_settings,
+            cutoff_matrix,
+            embed_coeffs,
+        )
+    else:    
+        b2_calc = B2(
+            radial_basis,
+            cutoff_function,
+            radial_hyps,
+            cutoff_hyps,
+            descriptor_settings,
+            cutoff_matrix,
+        )
 
     empty_sgp = SGP_Wrapper(
         [kernel],
@@ -107,13 +122,13 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     return empty_sgp
 
 
-def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct", d_embed=0):
     if n_types == 1:
         numbers = [6, 6]
     elif n_types == 2:
         numbers = [6, 8]
 
-    sgp = get_empty_sgp(n_types, power, multiple_cutoff, kernel_type)
+    sgp = get_empty_sgp(n_types, power, multiple_cutoff, kernel_type, d_embed)
 
     # add a random structure to the training set
     training_structure = get_random_atoms(numbers=numbers)
@@ -154,8 +169,8 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     return sgp
 
 
-def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
-    sgp = get_updated_sgp(n_types, power, multiple_cutoff, kernel_type)
+def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct", d_embed=0):
+    sgp = get_updated_sgp(n_types, power, multiple_cutoff, kernel_type, d_embed)
     sgp_calc = SGP_Calculator(sgp)
 
     return sgp_calc

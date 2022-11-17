@@ -56,10 +56,14 @@ PairFLARE::~PairFLARE() {
     return;
 
   memory->destroy(beta);
+  memory->destroy(cutsq);
+
+  if (embed) {
+    memory->destroy(embed_array);
+  }
 
   if (allocated) {
     memory->destroy(setflag);
-    memory->destroy(cutsq);
   }
 }
 
@@ -308,8 +312,13 @@ void PairFLARE::read_file(char *filename) {
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
 
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
+    if (embed) {
+      fgets(line, MAXLINE, fptr);
+      sscanf(line, "%i %i %i %i %i", &d_embed, &n_species, &n_max, &l_max, &beta_size);
+    } else {
+      fgets(line, MAXLINE, fptr);
+      sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
+    }
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", cutoff_string); // Cutoff function
@@ -318,6 +327,7 @@ void PairFLARE::read_file(char *filename) {
 
   MPI_Bcast(&power, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_species, 1, MPI_INT, 0, world);
+  MPI_Bcast(&d_embed, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&beta_size, 1, MPI_INT, 0, world);
@@ -354,8 +364,14 @@ void PairFLARE::read_file(char *filename) {
   }
 
   // Set number of descriptors.
-  int n_radial = n_max * n_species;
-  n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  int n_radial;
+  if (!embed) {
+    n_radial = n_max * n_species;
+    n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
+  } else {
+    n_radial = n_max * d_embed;
+    n_descriptors = n_radial * n_radial * (l_max + 1);
+  }
 
   // Check the relationship between the power spectrum and beta.
   int beta_check;
@@ -366,8 +382,11 @@ void PairFLARE::read_file(char *filename) {
   } else {
     error->all(FLERR, "Power should be 1 or 2.");
   }
-  if (beta_check != beta_size)
-    error->all(FLERR, "Beta size doesn't match the number of descriptors.");
+  if (beta_check != beta_size) {
+    char str[128];
+    snprintf(str, 128, "Beta size (%d) doesn't match the number of descriptors (%d).", beta_size, beta_check);
+    error->one(FLERR, str);
+  }
 
   // Set the radial basis.
   if (!strcmp(radial_string, "chebyshev")) {
@@ -444,7 +463,7 @@ void PairFLARE::read_embed_coeffs(char *filename) {
     }
   }
 
-  int tmp, nwords, d_embed;
+  int tmp, nwords;
   if (me == 0) {
     fgets(line, MAXLINE, fptr); // Date and contributor
 
@@ -464,7 +483,7 @@ void PairFLARE::read_embed_coeffs(char *filename) {
   MPI_Bcast(embed_array, coeff_size, MPI_DOUBLE, 0, world);
 
   // Fill in the embed_coeffs.
-  Eigen::MatrixXd embed_coeffs = Eigen::MatrixXd::Zero(2 * d_embed, n_species * n_max * (l_max + 1));
+  embed_coeffs = Eigen::MatrixXd::Zero(2 * d_embed, n_species * n_max * (l_max + 1));
   double embed_val;
   int embed_count = 0;
 
@@ -472,7 +491,7 @@ void PairFLARE::read_embed_coeffs(char *filename) {
     int count = 0;
     for (int s = 0; s < n_species; s++) {
       for (int n = 0; n < n_max; n++) {
-        for (int l = 0; n < l_max + 1; l++) {
+        for (int l = 0; l < l_max + 1; l++) {
           embed_coeffs(d, count) = embed_array[embed_count];
           count++;
           embed_count++;

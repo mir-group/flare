@@ -67,8 +67,9 @@ void B2_Embed_Multilayer ::write_to_file(std::ofstream &coeff_file, int coeff_si
   int n_max = descriptor_settings[1];
   int l_max = descriptor_settings[2];
   double cutoff = radial_hyps[1];
+  int d_embed = embed_coeffs.rows() / 2;
 
-  coeff_file << n_species << " " << n_max << " " << l_max << " ";
+  coeff_file << d_embed << " " << n_species << " " << n_max << " " << l_max << " ";
   coeff_file << coeff_size << "\n";
   coeff_file << cutoff_function << "\n";
 

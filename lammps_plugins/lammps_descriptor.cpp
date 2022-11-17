@@ -140,7 +140,7 @@ void single_bond_multiple_cutoffs_embed(
   int j, s, descriptor_counter;
 
   // Initialize vectors.
-  int n_radial = d_embed * N;
+  int n_radial = 2 * d_embed * N;
   int n_bond = n_radial * n_harmonics;
   single_bond_vals = Eigen::VectorXd::Zero(n_bond);
   single_bond_env_dervs = Eigen::MatrixXd::Zero(n_inner * 3, n_bond);
@@ -269,14 +269,14 @@ void B2_embed_descriptor(Eigen::VectorXd &B2_vals,
   B2_vals = Eigen::VectorXd::Zero(n_descriptors);
 
   // Compute the descriptor.
-  for (int n1 = n_radial - 1; n1 >= 0; n1--) {
-    n1_count = (n1 * (2 * n_radial - n1 + 1)) / 2;
+  for (int n1 = 0; n1 < n_radial; n1++) {
+    n1_count = n1;
 
     for (int n2 = n_radial; n2 < 2 * n_radial; n2++) {
-      n2_count = n2 - n1;
+      n2_count = n2 - n_radial;
 
       for (int l = 0; l < (lmax + 1); l++) {
-        counter = l + (n1_count + n2_count) * (lmax + 1);
+        counter = l + (n1_count * n_radial + n2_count) * (lmax + 1);
 
         for (int m = 0; m < (2 * l + 1); m++) {
           n1_l = n1 * n_harmonics + (l * l + m);
@@ -396,13 +396,14 @@ void compute_energy_and_u_embed(Eigen::VectorXd &B2_vals,
 
   // Compute u(n1, l, m), where f_ik = u * dA/dr_ik
   u = Eigen::VectorXd::Zero(single_bond_vals.size());
-  for (int n1 = n_radial - 1; n1 >= 0; n1--) {
-    //for (int n2 = 0; n2 < n_radial; n2++) {
+  for (int n1 = 0; n1 < n_radial; n1++) {
+    n1_count = n1;
+
     for (int n2 = n_radial; n2 < 2 * n_radial; n2++) {
-      n2_count = n2 - n1;
+      n2_count = n2 - n_radial;
 
       for (int l = 0; l < (lmax + 1); l++) {
-        counter = l + (n1_count + n2_count) * (lmax + 1);
+        counter = l + (n1_count * n_radial + n2_count) * (lmax + 1);
 
         for (int m = 0; m < (2 * l + 1); m++) {
           n1_l = n1 * n_harmonics + (l * l + m);

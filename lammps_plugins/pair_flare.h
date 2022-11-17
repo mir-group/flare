@@ -53,6 +53,7 @@ protected:
   // Embedding
   bool embed = false;
   Eigen::MatrixXd embed_coeffs;
+  int d_embed;
 };
 
 } // namespace LAMMPS_NS

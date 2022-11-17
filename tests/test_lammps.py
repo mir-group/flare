@@ -2,6 +2,7 @@ import pytest
 import os, shutil
 import numpy as np
 from flare.atoms import FLARE_Atoms
+from flare.utils import write_embed_coeffs 
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
 
@@ -28,7 +29,8 @@ n_cpus_list = [1]  # [1, 2]
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
+@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
+def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, kernel_type):
     """Test the flare pair style."""
 
     if n_species > n_types:
@@ -38,7 +40,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
         pytest.skip()
 
     # Write potential file.
-    sgp_model = get_sgp_calc(n_types, power, multicut)
+    sgp_model = get_sgp_calc(n_types, power, multicut, kernel_type)
     potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
     contributor = "Jon"
     kernel_index = 0
@@ -118,29 +120,32 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
         "$lmp environment variable to point to the executatble."
     ),
 )
-@pytest.mark.parametrize("n_species", n_species_list)
-@pytest.mark.parametrize("n_types", n_desc_types)
-@pytest.mark.parametrize("power", power_list)
-@pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-def test_embedding(n_species, n_types, power, struc, multicut, n_cpus):
+def test_embedding(multicut, n_cpus):
     """Test the flare pair style."""
 
-    if n_species > n_types:
-        pytest.skip()
-
-    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
+    if ("kokkos" in os.environ.get("lmp")):
         pytest.skip()
 
     # Write potential file.
-    sgp_model = get_sgp_calc(n_types, power, multicut)
+    n_species = 2
+    n_types = n_species
+    power = 2
+    d_embed = 3
+    kernel_type = "DotProduct"
+    sgp_model = get_sgp_calc(n_types, power, multicut, kernel_type, d_embed)
     potential_name = f"LJ_{n_species}_{n_types}_{power}.txt"
-    contributor = "Jon"
+    contributor = "YX"
     kernel_index = 0
     sgp_model.gp_model.sparse_gp.write_mapping_coefficients(
         potential_name, contributor, kernel_index
     )
+    n_species, n_max, l_max = sgp_model.gp_model.descriptor_calculators[kernel_index].descriptor_settings
+    embed_coeffs = sgp_model.gp_model.descriptor_calculators[kernel_index].embed_coeffs
+    embed_file = f"embed_{n_species}_{n_types}_{power}.txt"
+    print("embed_coeffs=", embed_coeffs)
+    write_embed_coeffs(embed_file, embed_coeffs, n_species, n_max, l_max, contributor)
 
     # Generate random testing structure
     if n_species == 1:
@@ -150,10 +155,7 @@ def test_embedding(n_species, n_types, power, struc, multicut, n_cpus):
         numbers = [6, 8]
         species = ["C", "O"]
 
-    if struc == "random":
-        test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
-    elif struc == "isolated":
-        test_structure = get_isolated_atoms(numbers=numbers)
+    test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
     test_structure.calc = sgp_model
 
     # Predict with SGP.
@@ -171,14 +173,14 @@ def test_embedding(n_species, n_types, power, struc, multicut, n_cpus):
         "command": lmp_command,  # set up executable for ASE
         "newton": "on",
         "pair_style": "flare",
-        "pair_coeff": [f"* * {potential_name}"],
+        "pair_coeff": [f"* * {potential_name} {embed_file}"],
         "timestep": "0.001\ndump_modify dump_all sort id",
     }
 
     lmp_calc = LAMMPS(
         tmp_dir="./tmp/",
         parameters=parameters,
-        files=[potential_name],
+        files=[potential_name, embed_file],
         specorder=species,
     )
 
@@ -204,6 +206,7 @@ def test_embedding(n_species, n_types, power, struc, multicut, n_cpus):
 
     # Remove files.
     os.remove(potential_name)
+    os.remove(embed_file)
     os.system("rm -r tmp")
 
 
