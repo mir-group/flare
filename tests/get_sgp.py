@@ -130,6 +130,9 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
         energy=energy,
         stress=stress,
         mode="specific",
+        rel_e_noise=0.1,
+        rel_f_noise=0.2,
+        rel_s_noise=0.1,
     )
 
     # add an isolated atom to the training data
