@@ -82,7 +82,7 @@ jobs:
         echo "Lapack ${{ matrix.lapack }}"
 
         cmake ..
-        cmake --build . -j
+        cmake --build . -j2
         cp _C_flare* ../flare/bffs/sgp
         cd ctests
         ./tests
