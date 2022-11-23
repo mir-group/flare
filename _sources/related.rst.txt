@@ -67,3 +67,11 @@ We will list the applications of FLARE here.
     :align: center
 
     Cu-Zn surface alloying
+
+- Yu Xie, Jonathan Vandermause, Senja Ramakers, Nakib H. Protik, Anders Johansson, Boris Kozinsky. **Uncertainty-aware molecular dynamics from Bayesian active learning: Phase Transformations and Thermal Transport in SiC.** arXiv:2203.03824. (`arXiv <https://arxiv.org/abs/2203.03824>`_)
+
+.. figure:: https://d3i71xaburhd42.cloudfront.net/775fb27655f25e1b1ff46ce9bda5f77a3c86abdf/8-Figure3-1.png
+    :figwidth: 80 %
+    :align: center
+
+    SiC phase transition
