@@ -94,8 +94,8 @@ jobs:
         cd lammps/src
         rm pair_*.cpp pair_*.h
         cp MANYBODY/pair_tersoff.* .
-        rm KOKKOS/pair_.*
-        rm KOKKOS/fix_.*
+        rm KOKKOS/pair_*.*
+        rm KOKKOS/fix_*.*
         cd ../..
         
         cd lammps_plugins
