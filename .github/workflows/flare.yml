@@ -94,6 +94,8 @@ jobs:
         cd lammps/src
         rm pair_*.cpp pair_*.h
         cp MANYBODY/pair_tersoff.* .
+        rm MANYBODY/pair_*.*
+        mv pair_tersoff.* MANYBODY/
         rm KOKKOS/pair_*.*
         rm KOKKOS/fix_*.*
         cd ../..
@@ -105,7 +107,7 @@ jobs:
         cd lammps
         mkdir build
         cd build
-        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON
+        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DPKG_MANYBODY=ON
         make -j4
 
     - name: Pip install
