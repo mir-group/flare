@@ -96,10 +96,11 @@ jobs:
         cp MANYBODY/pair_tersoff.* .
         rm MANYBODY/pair_*.*
         mv pair_tersoff.* MANYBODY/
+        cp KOKKOS/pair_kokkos.* .
         rm KOKKOS/pair_*.*
-        rm KOKKOS/fix_*.*
+        mv pair_kokkos.* KOKKOS/
         cd ../..
-        
+       
         cd lammps_plugins
         ./install.sh $(pwd)/../lammps
         cd ..
