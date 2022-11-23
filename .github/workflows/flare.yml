@@ -92,7 +92,9 @@ jobs:
         git clone --depth 1 https://github.com/lammps/lammps.git lammps
         
         cd lammps/src
+        cp pair_hybrid.* ..
         rm pair_*.cpp pair_*.h
+        mv ../pair_hybrid.* .
         cp MANYBODY/pair_tersoff.* .
         rm MANYBODY/pair_*.*
         mv pair_tersoff.* MANYBODY/
