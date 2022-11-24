@@ -97,6 +97,7 @@ jobs:
         mv ../pair_hybrid.* .
         cp MANYBODY/pair_tersoff.* .
         rm MANYBODY/pair_*.*
+        rm MANYBODY/fix_*.*
         mv pair_tersoff.* MANYBODY/
         cp KOKKOS/pair_kokkos.* .
         rm KOKKOS/pair_*.*
