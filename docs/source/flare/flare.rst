@@ -1,13 +1,13 @@
-Code Documentation
-==================
+Python Code Documentation
+=========================
 
 .. toctree::
    :maxdepth: 3
 
-   gp
-   otf
-   otf_parser
-   mgp/mgp
-   ase/ase
-   gp_from_aimd
+   bffs/bffs
+   learners/learners
+   md/md
+   descriptors/descriptors
+   kernels/kernels
+   io/io
    utils/utils

@@ -1429,9 +1429,9 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
 
     ls2 = ls * ls
 
-    prefact = exp(-(qdiffsq / (2 * ls2))) * (sig * sig) / ls ** 5
+    prefact = exp(-(qdiffsq / (2 * ls2))) * (sig * sig) / ls**5
 
-    ret = -prefact * (qdiffsq ** 2 / ls2 - 5 * qdiffsq + 2 * ls2)
+    ret = -prefact * (qdiffsq**2 / ls2 - 5 * qdiffsq + 2 * ls2)
 
     return ret
 

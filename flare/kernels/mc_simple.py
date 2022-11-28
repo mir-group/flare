@@ -5,7 +5,7 @@ from numba import njit
 from math import exp
 import sys
 import os
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 import flare.kernels.cutoffs as cf
 from flare.kernels.kernels import (
     force_helper,

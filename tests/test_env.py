@@ -4,8 +4,8 @@ import numpy as np
 from json import dumps
 from copy import deepcopy
 from os import remove
-from flare.struc import Structure
-from flare.env import AtomicEnvironment
+from flare.atoms import FLARE_Atoms
+from flare.descriptors.env import AtomicEnvironment
 from flare.utils import NumpyEncoder
 
 np.random.seed(0)
@@ -22,7 +22,7 @@ cutoff_mask_list = [  # (True, np.array([1]), [10]),
 
 
 @pytest.fixture(scope="module")
-def structure() -> Structure:
+def structure() -> FLARE_Atoms:
     """
     Returns a GP instance with a two-body numba-based kernel
     """
@@ -33,7 +33,7 @@ def structure() -> Structure:
     positions = np.array(
         [[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1], [0.75, 0.75, 0.75]]
     )
-    struc_test = Structure(cell, species, positions)
+    struc_test = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
 
     yield struc_test
     del struc_test
@@ -49,7 +49,7 @@ def test_2bspecies_count(structure, mask, cutoff, result):
     env_test = AtomicEnvironment(
         structure=structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask
     )
-    assert len(structure.positions) == len(structure.coded_species)
+    assert len(structure.positions) == len(structure.numbers)
     print(env_test.__dict__)
 
     assert len(env_test.bond_array_2) == len(env_test.etypes)
@@ -162,7 +162,7 @@ def generate_mask(cutoff):
         # (1, 1) (1, 2) (1, 3) (2, 3) (*, *)
         # correspond to cutoff 0.5, 0.9, 0.8, 0.9, 0.05
         ncut3b = 5
-        tmask = np.ones(nspecie ** 2, dtype=int) * (ncut3b - 1)
+        tmask = np.ones(nspecie**2, dtype=int) * (ncut3b - 1)
         count = 0
         for i, j in [(1, 1), (1, 2), (1, 3), (2, 3)]:
             cs1 = species_mask[i]
@@ -207,7 +207,7 @@ def test_auto_sweep():
         ]
     )
     species = np.array([1, 2, 3, 4, 5])
-    arbitrary_structure = Structure(cell, species, positions)
+    arbitrary_structure = FLARE_Atoms(symbols=species, positions=positions, cell=cell)
 
     # Construct an environment.
     cutoffs = np.array([4.0, 3.0])

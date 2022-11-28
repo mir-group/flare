@@ -5,62 +5,126 @@ Installation of FLARE
 Requirements
 ************
 
-* Python_ 
-* NumPy_ 
-* SciPy_ 
-* Memory_profiler_
-* Numba_
-
-Optional:
-
-* ASE_
-* Pymatgen_
-
-.. _Python: https://www.python.org/
-.. _NumPy: https://docs.scipy.org/doc/numpy/reference/
-.. _SciPy: https://docs.scipy.org/doc/scipy/reference/
-.. _Memory_profiler: https://pypi.org/project/memory-profiler/
-.. _Numba: http://numba.pydata.org/
-.. _ASE: https://wiki.fysik.dtu.dk/ase/
-.. _Pymatgen: https://pymatgen.org/
-
-**********************
-Installation using pip
-**********************
-
-Pip can automatically fetch the source code from PyPI_ and install.
+1. Create a new conda environment to install flare
 
 .. code-block:: bash
 
-  $ pip install mir-flare
+    conda create --name flare python=3.8
+    conda activate flare
 
-For non-admin users
+2. Use conda to install compilers and dependencies for flare
 
-.. code-block:: bash
-
-  $ pip install --upgrade --user mir-flare
+* Option 1: If you want to install flare with mkl
     
-.. _PyPI: https://pypi.org/project/mir-flare/
+.. code-block:: bash
 
-****************************
-Manual Installation with Git
-****************************
+    conda install -y gcc gxx cmake mkl-devel mkl-service mkl_fft openmp -c conda-forge
+    
+* Option 2: If you want to install flare with openblas + lapacke
+    
+.. code-block:: bash
 
-First, copy the source code from https://github.com/mir-group/flare
+    conda install -y gcc gxx cmake openmp liblapacke openblas -c conda-forge
+
+* Option 3: You can load modules if your machine have already installed them
 
 .. code-block:: bash
 
-   $ git clone https://github.com/mir-group/flare.git
+    module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
 
-Then add the current path to PYTHONPATH
+3. Download flare code from github repo and pip install 
 
 .. code-block:: bash
 
-    $ cd flare; export PYTHONPATH=$(pwd):$PYTHONPATH
+    git clone -b development https://github.com/mir-group/flare.git
+    cd flare
+    pip install .
+
+
+******************************
+Developer's installation guide
+******************************
+
+After loading modules as above, we use ``cmake`` to compile the c++ code 
+
+.. code-block:: bash
+
+    git clone git@github.com:mir-group/flare.git
+    cd flare
+    mkdir build
+    cd build
+    cmake ..
+    make -j
+
+Then copy the c-library file into the python code folder to make it importable through python
+
+.. code-block:: bash
+
+    cp _C_flare*.so ../flare/bffs/sgp
+    cd ..
+
+Finally, add the path of ``flare`` to ``PYTHONPATH``, such that you can ``import flare`` in python. 
+
+.. code-block:: bash
+
+    export PYTHONPATH=${PYTHONPATH}:<current_dir>
+
+An alternative way is setting ``sys.path.append(<flare path>)`` in your python script.
+
+
+***********************
+Test FLARE installation
+***********************
+
+After the installation is done, you can leave the current folder and in the python console, try
+
+.. code-block:: ipython
+
+    >>> import flare
+    >>> flare.__file__
+    '/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py'
+    >>> import flare.bffs.sgp
+
+You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by
+
+.. code-block:: bash
+
+    ldd /xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/bffs/sgp/_C_flare.*.so
+
+where it is expected to show libmkl (or libopenblas), libgomp etc.
+
+****************
+Trouble shooting
+****************
+
+* If it fails to build mir-flare during pip install, check whether you have done `conda install cxx-compiler`, then it sometimes does not find the correct g++, i.e. `which gcc` gives the conda’s gcc, while `which g++` still gives the local one. In such case, try `conda uninstall cxx-compiler gxx`, and then redo `conda install gxx -c conda-forge`
+
+* If you get the error that `mkl.h` is not found during pip install, first check `conda list` that `mkl-include` is installed in the current environment. You can also use your own mkl headers by setting environment variable `MKL_INCLUDE` to the directory
+
+* If you manage to install flare, but get warning when `import flare.bffs.sgp`, then please check
+
+    * `which pip` should show that `pip` is in the `.conda/envs/flare/bin/` directory, instead of others
+
+    * the `ldd` command above should show the linked libraries in the `.conda/envs/flare` directory
+
 
 *****************************************
 Acceleration with multiprocessing and MKL
 *****************************************
+
+Sparse Gaussian Process model
+-----------------------------
+
+We use OpenMP for parallelization, so please set
+
+.. code-block:: bash
+
+    export OMP_NUM_THREADS=<number of CPUs on a node>
+
+such that the model parallelized into ``OMP_NUM_THREADS`` threads.
+
+Full Gaussian Process model
+---------------------------
 
 If users have access to high-performance computers, we recommend 
 Multiprocessing_ and MKL_ library set up to accelerate the training and prediction.
@@ -96,10 +160,12 @@ Third, set the number of threads for MKL before running your python script.
     python training.py
 
 .. note::
+
    The "n_cpus" and OMP_NUM_THREADS should be equal or less than the number of CPUs available in the computer.
    If these numbers are larger than the actual CPUs number, it can lead to an overload of the machine.
 
 .. note::
+
    If gp_model.per_atom_par=True and OMP_NUM_THREADS>1, it is equivalent to run with OMP_NUM_THREADS * otf.n_cpus threads
    because the MKL calls are nested in the multiprocessing code. 
 
@@ -107,18 +173,3 @@ The current version of FLARE can only support parallel calculations within one c
 Interfaces with MPI using multiple nodes are still under development.
 
 If users encounter unusually slow FLARE training and prediction, please file us a Github Issue.
-
-********************************
-Environment variables (optional)
-********************************
-
-Flare uses a couple environmental variables in its tests for DFT and MD interfaces. These variables are not needed in the run of active learning.
-
-.. code-block:: bash
-
-  # the path and filename of Quantum Espresso executable
-  export PWSCF_COMMAND=$(which pw.x)
-  # the path and filename of CP2K executable
-  export CP2K_COMMAND=$(which cp2k.popt)
-  # the path and filename of LAMMPS executable
-  export lmp=$(which lmp_mpi)

@@ -4,10 +4,10 @@ corresponding to atoms in structures. These functions automatically
 cast atoms into their respective atomic environments.
 """
 import numpy as np
-from flare.gp import GaussianProcess
-from flare.struc import Structure
+from flare.bffs.gp import GaussianProcess
+from flare.atoms import FLARE_Atoms
 from copy import deepcopy
-from flare.predict import (
+from flare.bffs.gp.predict import (
     predict_on_structure_par,
     predict_on_atom,
     predict_on_atom_en,
@@ -15,7 +15,7 @@ from flare.predict import (
 )
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
-from flare.predict import (
+from flare.bffs.gp.predict import (
     predict_on_structure,
     predict_on_structure_par,
     predict_on_structure_efs,
@@ -60,8 +60,8 @@ def two_plus_three_gp() -> GaussianProcess:
 _fake_gp = GaussianProcess(
     kernel_name="2+3", cutoffs=[5.0, 5.0], hyps=[1.0, 1.0, 1.0, 1.0, 1.0]
 )
-_fake_structure = Structure(
-    cell=np.eye(3), species=[1, 1, 1], positions=np.random.uniform(0, 1, size=(3, 3))
+_fake_structure = FLARE_Atoms(
+    cell=np.eye(3), symbols=[1, 1, 1], positions=np.random.uniform(0, 1, size=(3, 3))
 )
 _fake_gp.predict = fake_predict
 _fake_gp.predict_local_energy = fake_predict_local_energy
@@ -153,8 +153,6 @@ def test_predict_on_structure_par(n_cpu):
     # Get new examples to also test the results not being written
     selective_atoms = [0, 1]
 
-    selective_atoms = [0, 1]
-
     forces, stds = predict_on_structure_par(
         _fake_structure,
         _fake_gp,
@@ -170,11 +168,8 @@ def test_predict_on_structure_par(n_cpu):
     for x in stds.flatten():
         assert isinstance(x, float)
 
-    assert np.array_equal(_fake_structure.forces[:2][:], forces[:2][:])
-    assert not np.array_equal(_fake_structure.forces[2][:], forces[2][:])
-
-    assert np.array_equal(_fake_structure.stds[:2][:], stds[:2][:])
-    assert not np.array_equal(_fake_structure.stds[2][:], stds[2][:])
+    assert np.array_equal(_fake_structure.forces, forces)
+    assert np.array_equal(_fake_structure.stds, stds)
 
 
 def test_predict_efs(two_plus_three_gp):
@@ -254,8 +249,8 @@ def test_predict_on_structure_en(n_cpus, write_to_structure, selective_atoms):
     if write_to_structure:
 
         if selective_atoms == [1]:
-            assert np.array_equal(old_structure.forces[0], used_structure.forces[0])
-            assert np.array_equal(old_structure.forces[2], used_structure.forces[2])
+            assert np.array_equal(np.zeros(3), used_structure.forces[0])
+            assert np.array_equal(np.zeros(3), used_structure.forces[2])
 
             assert np.array_equal(used_structure.forces[1], forces[1])
 

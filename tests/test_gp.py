@@ -9,18 +9,18 @@ from pytest import raises
 from scipy.optimize import OptimizeResult
 
 import flare
-from flare.predict import predict_on_structure
-from flare.gp import GaussianProcess
-from flare.env import AtomicEnvironment
-from flare.struc import Structure
+from flare.bffs.gp.predict import predict_on_structure
+from flare.bffs.gp import GaussianProcess
+from flare.descriptors.env import AtomicEnvironment
 import flare.kernels.sc as en
 import flare.kernels.mc_simple as mc_simple
-from flare.otf_parser import OtfAnalysis
+from flare.io.otf_parser import OtfAnalysis
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy
 
 multihyps_list = [True, False]
+n_cpus = 2
 
 
 @pytest.fixture(scope="class")
@@ -153,7 +153,7 @@ class TestDataUpdating:
 
 
 class TestTraining:
-    @pytest.mark.parametrize("par, n_cpus", [(False, 1), (True, 2)])
+    @pytest.mark.parametrize("par, n_cpus", [(False, 1), (True, n_cpus)])
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_train(self, all_gps, params, par, n_cpus, multihyps):
 
@@ -180,14 +180,14 @@ class TestTraining:
         training falls back to BFGS
         """
         # Sets up mocker for scipy minimize. Note that we are mocking
-        # 'flare.gp.minimize' because of how the imports are done in gp
+        # 'flare.bffs.gp.gp.minimize' because of how the imports are done in gp
         x_result = np.random.rand()
         fun_result = np.random.rand()
         jac_result = np.random.rand()
         train_result = OptimizeResult(x=x_result, fun=fun_result, jac=jac_result)
 
         side_effects = [np.linalg.LinAlgError(), train_result]
-        mocker.patch("flare.gp.minimize", side_effect=side_effects)
+        mocker.patch("flare.bffs.gp.gp.minimize", side_effect=side_effects)
         two_body_gp = all_gps[True]
         two_body_gp.set_L_alpha = mocker.Mock()
 
@@ -196,9 +196,9 @@ class TestTraining:
         two_body_gp.train()
 
         # Assert that everything happened as expected
-        assert flare.gp.minimize.call_count == 2
+        assert flare.bffs.gp.gp.minimize.call_count == 2
 
-        calls = flare.gp.minimize.call_args_list
+        calls = flare.bffs.gp.gp.minimize.call_args_list
         args, kwargs = calls[0]
         assert kwargs["method"] == "L-BFGS-B"
 
@@ -240,7 +240,7 @@ class TestConstraint:
 class TestAlgebra:
     @pytest.mark.parametrize(
         "par, per_atom_par, n_cpus",
-        [(False, False, 1), (True, True, 2), (True, False, 2)],
+        [(False, False, 1), (True, True, n_cpus), (True, False, n_cpus)],
     )
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_predict(
@@ -256,7 +256,7 @@ class TestAlgebra:
 
     @pytest.mark.parametrize(
         "par, per_atom_par, n_cpus",
-        [(False, False, 1), (True, True, 2), (True, False, 2)],
+        [(False, False, 1), (True, True, n_cpus), (True, False, n_cpus)],
     )
     def test_predict_efs(
         self, two_plus_three_gp, validation_env, par, per_atom_par, n_cpus
@@ -285,7 +285,7 @@ class TestAlgebra:
         assert np.isclose(force_pred[0], force_pred_2)
         assert np.isclose(force_var[0], force_var_2)
 
-    @pytest.mark.parametrize("par, n_cpus", [(True, 2), (False, 1)])
+    @pytest.mark.parametrize("par, n_cpus", [(True, n_cpus), (False, 1)])
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_set_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
         test_gp = all_gps[multihyps]
@@ -293,7 +293,7 @@ class TestAlgebra:
         test_gp.n_cpus = n_cpus
         test_gp.set_L_alpha()
 
-    @pytest.mark.parametrize("par, n_cpus", [(True, 2), (False, 1)])
+    @pytest.mark.parametrize("par, n_cpus", [(True, n_cpus), (False, 1)])
     @pytest.mark.parametrize("multihyps", multihyps_list)
     def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
         # set up gp model
@@ -488,8 +488,8 @@ def test_training_statistics():
     data = gp.training_statistics
 
     assert data["N"] == 10
-    assert len(data["species"]) == len(set(test_structure.coded_species))
-    assert len(data["envs_by_species"]) == len(set(test_structure.coded_species))
+    assert len(data["species"]) == len(set(test_structure.numbers))
+    assert len(data["envs_by_species"]) == len(set(test_structure.numbers))
 
 
 def test_remove_force_data():

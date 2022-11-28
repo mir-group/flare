@@ -3,9 +3,8 @@ import pytest
 
 from pytest import raises
 
-from flare.struc import Structure
-from flare.utils.element_coder import element_to_Z, Z_to_element
-from flare.utils.learner import (
+from flare.atoms import FLARE_Atoms
+from flare.learners.utils import (
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,
     subset_of_frame_by_element,
@@ -14,36 +13,9 @@ from flare.utils.learner import (
 from tests.test_gp import get_random_structure
 
 
-def test_element_to_Z():
-    for i in range(120):
-        assert element_to_Z(i) == i
-
-    assert element_to_Z("1") == 1
-    assert element_to_Z(int(1.0)) == 1
-
-    for pair in zip(["H", "C", "O", "Og"], [1, 6, 8, 118]):
-        assert element_to_Z(pair[0]) == pair[1]
-
-
-def test_elt_warning():
-    with pytest.warns(Warning):
-        element_to_Z("Fe2")
-
-
-def test_Z_to_element():
-    for i in range(1, 118):
-        assert isinstance(Z_to_element(i), str)
-
-    for pair in zip([1, 6, "8", "118"], ["H", "C", "O", "Og"]):
-        assert Z_to_element(pair[0]) == pair[1]
-
-    with raises(ValueError):
-        Z_to_element("a")
-
-
 def test_std_in_bound_per_species():
     test_structure, _ = get_random_structure(np.eye(3), ["H", "O"], 3)
-    test_structure.species_labels = ["H", "H", "O"]
+    test_structure.symbols = ["H", "H", "O"]
     test_structure.stds = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
     # Test that 'test mode' works
     result, target_atoms = is_std_in_bound_per_species(
@@ -162,7 +134,7 @@ def test_std_in_bound_per_species():
 
 def test_force_in_bound_per_species():
     test_structure, _ = get_random_structure(np.eye(3), ["H", "O"], 3)
-    test_structure.species_labels = ["H", "H", "O"]
+    test_structure.symbols = ["H", "H", "O"]
     test_structure.forces = np.array([[0, 0, 0], [2, 0, 0], [3, 0, 0]])
     true_forces = np.array([[0.001, 0, 0], [1, 0, 0], [5, 0, 0]])
 
@@ -278,8 +250,8 @@ def test_force_in_bound_per_species():
 
 def test_subset_of_frame_by_element():
     spec_list = ["H", "H", "O", "O", "O", "C"]
-    test_struc_1 = Structure(
-        cell=np.eye(3), species=spec_list, positions=np.zeros(shape=(len(spec_list), 3))
+    test_struc_1 = FLARE_Atoms(
+        cell=np.eye(3), symbols=spec_list, positions=np.zeros(shape=(len(spec_list), 3))
     )
 
     assert np.array_equal(

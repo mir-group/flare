@@ -1,18 +1,20 @@
-from flare.rbcm import RobustBayesianCommitteeMachine
-from flare.gp import GaussianProcess
+from flare.bffs.rbcm import RobustBayesianCommitteeMachine
+from flare.bffs.gp import GaussianProcess
 import os as os
 import numpy as np
-from flare.struc import Structure
-from flare.env import AtomicEnvironment
-from flare.gp_algebra import get_kernel_vector
+from flare.atoms import FLARE_Atoms
+from ase.io import read
+from flare.descriptors.env import AtomicEnvironment
+from flare.bffs.gp.gp_algebra import get_kernel_vector
 
 TEST_DIR = os.path.dirname(__file__)
 TEST_FILE_DIR = os.path.join(TEST_DIR, "test_files")
 
 
-methanol_frames = Structure.from_file(
-    os.path.join(TEST_FILE_DIR, "methanol_frames.json")
-)
+methanol_frames = read(os.path.join(TEST_FILE_DIR, "methanol_frames.json"), index=":")
+methanol_frames = [
+    FLARE_Atoms.from_ase_atoms(f, copy_calc_results=True) for f in methanol_frames
+]
 
 methanol_envs = AtomicEnvironment.from_file(
     os.path.join(TEST_FILE_DIR, "methanol_envs.json")

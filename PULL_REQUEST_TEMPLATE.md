@@ -36,7 +36,7 @@ Before a pull request can be merged, the following items must be checked:
 - [ ] Type annotations are **highly** encouraged.
 - [ ] Tests have been added for any new functionality or bug fixes.
 - [ ] All existing tests pass.
-- [ ] The version number in `setup.py` is updated. We are using a version number format a.b.c
+- [ ] The version number in `flare/_version.py` is updated. We are using a version number format a.b.c
     - If this PR fixes bugs, update version number to a.b.c+1
     - If this PR adds new features, update version number to a.b+1.0
     - If this PR includes significant changes in framework or interface, update version number to a+1.0.0

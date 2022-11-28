@@ -1,0 +1,81 @@
+# Super cell is read from a file such as POSCAR, xyz, lammps-data
+# or any format that ASE supports
+supercell: 
+    file: test_files/4H_SiC_jittered.xyz 
+    format: extxyz
+    replicate: [1, 1, 1]
+    jitter: 0.0
+
+# Set up FLARE calculator with (sparse) Gaussian process
+flare_calc:
+    gp: SGP_Wrapper
+    kernels:
+        - name: NormalizedDotProduct
+          sigma: 2.0
+          power: 2
+    descriptors:
+        - name: B2
+          nmax: 8
+          lmax: 4
+          cutoff_function: quadratic
+          radial_basis: chebyshev
+    energy_noise: 0.01
+    forces_noise: 0.05
+    stress_noise: 0.005
+    species:
+        - 14
+        - 6
+    single_atom_energies:
+        - 0
+        - 0
+    cutoff: 4.0
+    variance_type: local
+    max_iterations: 1
+    use_mapping: True
+
+# Set up DFT calculator, it can be any calculator supported by ASE
+# For VASP, please set the environment variable VASP_PP_PATH to be
+# the directory of pseudo-potentials, and VASP_COMMAND to be the
+# location of the VASP executable
+# point the user to the ASE documentation
+dft_calc:
+    name: LAMMPS
+    kwargs: 
+        command: "mpirun -n <n_cpus> <lammps_executable>"
+        label: sic
+        keep_tmp_files: True
+        tmp_dir: tmp
+        files: [test_files/SiC.tersoff]
+        specorder: [Si, C]
+    params:
+        keep_alive: False
+        newton: "on"
+        pair_style: tersoff
+        pair_coeff: ["* * tmp/SiC.tersoff Si C"]
+        masses: ["1 28", "2 12"]
+
+# Set up On-the-fly training and MD
+otf: 
+    mode: fresh
+    md_engine: PyLAMMPS
+    md_kwargs: 
+        command: "mpirun -n <n_cpus> <lammps_executable>"
+        specorder: [Si, C]
+        dump_period: 1
+        pair_style: flare
+        fix: ["1 all nve"]
+        keep_alive: False
+    initial_velocity: file
+    dt: 0.001 # timestep is 1 fs
+    number_of_steps: 5
+    output_name: myotf
+    init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    std_tolerance_factor: -0.02
+    max_atoms_added: -1
+    train_hyps: [2, inf]
+    write_model: 4
+    update_style: threshold
+    update_threshold: 0.01
+    force_only: False
+    store_dft_output: [[tmp/SiC.tersoff, test_files/HHe.json], ./]
+    wandb_log: null

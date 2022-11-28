@@ -13,7 +13,7 @@ from math import exp
 
 import flare.kernels.cutoffs as cf
 
-from flare.env import AtomicEnvironment
+from flare.descriptors.env import AtomicEnvironment
 from flare.kernels.kernels import (
     coordination_number,
     q_value,

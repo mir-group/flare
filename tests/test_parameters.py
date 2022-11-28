@@ -3,9 +3,8 @@ import numpy as np
 
 from pytest import raises
 
-from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
-from flare.parameters import Parameters
+from flare.utils.parameters import Parameters
 
 
 def test_initialization():
