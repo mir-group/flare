@@ -1,4 +1,6 @@
-[![Build Status](https://github.com/mir-group/flare/actions/workflows/main.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+[![Build Status](https://github.com/mir-group/flare/actions/workflows/flare.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+
+***NOTE: This is the latest release [1.3.3](https://github.com/mir-group/flare/releases/tag/1.3.3) which includes significant changes compared to the previous version [0.2.4](https://github.com/mir-group/flare/releases/tag/0.2.4). Please check the updated tutorials and documentations from the links below.***
 
 # FLARE: Fast Learning of Atomistic Rare Events
 
