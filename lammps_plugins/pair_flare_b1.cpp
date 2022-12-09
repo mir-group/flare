@@ -192,8 +192,11 @@ void PairFLAREB1::allocate() {
   memory->create(setflag, n + 1, n + 1, "pair:setflag");
 
   // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
-  for (int i = 1; i <= n; i++)
-    setflag[i][i] = 1;
+  for (int i = 1; i <= n; i++) {
+    for (int j = 1; j <= n; j++) {
+      setflag[i][j] = 1;
+    }
+  }
 
   // Create cutsq array (used in pair.cpp)
   memory->create(cutsq, n + 1, n + 1, "pair:cutsq");
@@ -272,7 +275,6 @@ void PairFLAREB1::read_file(char *filename) {
     }
   }
 
-  printf("Reading header\n");
   int tmp, nwords;
   if (me == 0) {
     fgets(line, MAXLINE, fptr); // Date and contributor
@@ -316,7 +318,6 @@ void PairFLAREB1::read_file(char *filename) {
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
-  printf("Reading cutoffs\n");
   // Fill in the cutoff matrix.
   cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
@@ -370,7 +371,6 @@ void PairFLAREB1::read_file(char *filename) {
   int beta_count = 0;
   double beta_val;
 
-  printf("Reading beta\n");
   if (power == 1) {
     for (int k = 0; k < n_species; k++) {
       beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, 1);
@@ -398,7 +398,6 @@ void PairFLAREB1::read_file(char *filename) {
       beta_matrices.push_back(beta_matrix);
     }
   }
-  printf("Finish reading potential\n");
 }
 
 /* ----------------------------------------------------------------------

@@ -194,8 +194,11 @@ void PairFLAREB2::allocate() {
   memory->create(setflag, n + 1, n + 1, "pair:setflag");
 
   // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
-  for (int i = 1; i <= n; i++)
-    setflag[i][i] = 1;
+  for (int i = 1; i <= n; i++) {
+    for (int j = 1; j <= n; j++) {
+      setflag[i][j] = 1;
+    }
+  }
 
   // Create cutsq array (used in pair.cpp)
   memory->create(cutsq, n + 1, n + 1, "pair:cutsq");
