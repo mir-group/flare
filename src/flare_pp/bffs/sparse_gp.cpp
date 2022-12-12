@@ -462,7 +462,10 @@ void SparseGP ::update_Kuf(
 }
 
 void SparseGP ::add_training_structure(const Structure &structure,
-                                       const std::vector<int> atom_indices) {
+                                       const std::vector<int> atom_indices, 
+                                       double rel_e_noise,
+                                       double rel_f_noise,
+                                       double rel_s_noise) {
   // Allow adding a subset of force labels
   initialize_sparse_descriptors(structure);
 
@@ -496,11 +499,11 @@ void SparseGP ::add_training_structure(const Structure &structure,
   // Update noise.
   noise_vector.conservativeResize(n_labels + n_struc_labels);
   noise_vector.segment(n_labels, n_energy) =
-      Eigen::VectorXd::Constant(n_energy, 1 / (energy_noise * energy_noise));
+      Eigen::VectorXd::Constant(n_energy, 1 / (energy_noise * energy_noise * rel_e_noise * rel_e_noise));
   noise_vector.segment(n_labels + n_energy, n_force) =
-      Eigen::VectorXd::Constant(n_force, 1 / (force_noise * force_noise));
+      Eigen::VectorXd::Constant(n_force, 1 / (force_noise * force_noise * rel_f_noise * rel_f_noise));
   noise_vector.segment(n_labels + n_energy + n_force, n_stress) =
-      Eigen::VectorXd::Constant(n_stress, 1 / (stress_noise * stress_noise));
+      Eigen::VectorXd::Constant(n_stress, 1 / (stress_noise * stress_noise * rel_s_noise * rel_s_noise));
 
   // Save "1" vector for energy, force and stress noise, for likelihood gradient calculation
   e_noise_one.conservativeResize(n_labels + n_struc_labels);
@@ -511,9 +514,27 @@ void SparseGP ::add_training_structure(const Structure &structure,
   f_noise_one.segment(n_labels, n_struc_labels) = Eigen::VectorXd::Zero(n_struc_labels);
   s_noise_one.segment(n_labels, n_struc_labels) = Eigen::VectorXd::Zero(n_struc_labels);
 
-  e_noise_one.segment(n_labels, n_energy) = Eigen::VectorXd::Ones(n_energy);
-  f_noise_one.segment(n_labels + n_energy, n_force) = Eigen::VectorXd::Ones(n_force);
-  s_noise_one.segment(n_labels + n_energy + n_force, n_stress) = Eigen::VectorXd::Ones(n_stress);
+  e_noise_one.segment(n_labels, n_energy) =
+      Eigen::VectorXd::Constant(n_energy, 1 / (rel_e_noise * rel_e_noise));
+  f_noise_one.segment(n_labels + n_energy, n_force) =
+      Eigen::VectorXd::Constant(n_force, 1 / (rel_f_noise * rel_f_noise));
+  s_noise_one.segment(n_labels + n_energy + n_force, n_stress) =
+      Eigen::VectorXd::Constant(n_stress, 1 / (rel_s_noise * rel_s_noise));
+
+  inv_e_noise_one.conservativeResize(n_labels + n_struc_labels);
+  inv_f_noise_one.conservativeResize(n_labels + n_struc_labels);
+  inv_s_noise_one.conservativeResize(n_labels + n_struc_labels);
+
+  inv_e_noise_one.segment(n_labels, n_struc_labels) = Eigen::VectorXd::Zero(n_struc_labels);
+  inv_f_noise_one.segment(n_labels, n_struc_labels) = Eigen::VectorXd::Zero(n_struc_labels);
+  inv_s_noise_one.segment(n_labels, n_struc_labels) = Eigen::VectorXd::Zero(n_struc_labels);
+
+  inv_e_noise_one.segment(n_labels, n_energy) =
+      Eigen::VectorXd::Constant(n_energy, rel_e_noise * rel_e_noise);
+  inv_f_noise_one.segment(n_labels + n_energy, n_force) =
+      Eigen::VectorXd::Constant(n_force, rel_f_noise * rel_f_noise);
+  inv_s_noise_one.segment(n_labels + n_energy + n_force, n_stress) =
+      Eigen::VectorXd::Constant(n_stress, rel_s_noise * rel_s_noise);
 
   // Update Kuf kernels.
   Eigen::MatrixXd envs_struc_kernels;
@@ -741,9 +762,10 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   constant_term = -(1. / 2.) * n_labels * log(2 * M_PI);
 
   // Compute complexity penalty.
-  double noise_det = - 2 * (n_energy_labels * log(abs(energy_noise))
-          + n_force_labels * log(abs(force_noise))
-          + n_stress_labels * log(abs(stress_noise)));
+  double noise_det = 0;
+  for (int i = 0; i < noise_vector.size(); i++) {
+    noise_det += log(noise_vector(i));
+  }
 
   assert(L_diag.size() == R_inv_diag.size());
   double Kuu_inv_det = 0;
@@ -838,11 +860,11 @@ double SparseGP ::compute_likelihood_gradient_stable(bool precomputed_KnK) {
   double sn3 = stress_noise * stress_noise * stress_noise;
   
   compute_KnK(precomputed_KnK);
-  complexity_grad(hyp_index + 0) = - e_noise_one.sum() / energy_noise 
+  complexity_grad(hyp_index + 0) = - n_energy_labels / energy_noise 
       + (KnK_e * Sigma).trace() / en3;
-  complexity_grad(hyp_index + 1) = - f_noise_one.sum() / force_noise 
+  complexity_grad(hyp_index + 1) = - n_force_labels / force_noise 
       + (KnK_f * Sigma).trace() / fn3;
-  complexity_grad(hyp_index + 2) = - s_noise_one.sum() / stress_noise 
+  complexity_grad(hyp_index + 2) = - n_stress_labels / stress_noise 
       + (KnK_s * Sigma).trace() / sn3;
 
   // Derivative of data_fit over noise  
@@ -1039,10 +1061,12 @@ SparseGP ::compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters) {
   double sigma_f = hyperparameters(hyp_index + 1);
   double sigma_s = hyperparameters(hyp_index + 2);
 
-  Eigen::VectorXd noise_vec = sigma_e * sigma_e * e_noise_one + sigma_f * sigma_f * f_noise_one + sigma_s * sigma_s * s_noise_one; 
-  Eigen::VectorXd e_noise_grad = 2 * sigma_e * e_noise_one;
-  Eigen::VectorXd f_noise_grad = 2 * sigma_f * f_noise_one;
-  Eigen::VectorXd s_noise_grad = 2 * sigma_s * s_noise_one;
+  Eigen::VectorXd noise_vec = sigma_e * sigma_e * inv_e_noise_one 
+                            + sigma_f * sigma_f * inv_f_noise_one 
+                            + sigma_s * sigma_s * inv_s_noise_one; 
+  Eigen::VectorXd e_noise_grad = 2 * sigma_e * inv_e_noise_one;
+  Eigen::VectorXd f_noise_grad = 2 * sigma_f * inv_f_noise_one;
+  Eigen::VectorXd s_noise_grad = 2 * sigma_s * inv_s_noise_one;
 
   // Compute Qff and Qff grads.
   Eigen::MatrixXd Qff_plus_lambda =
@@ -1236,7 +1260,7 @@ void SparseGP::write_varmap_coefficients(
   for (int i = 0; i < hyperparameters.size(); i++) {      
     coeff_file << hyperparameters(i) << " ";
   }
-  coeff_file << "\n";
+  coeff_file << "\n" << kernels[kernel_index]->kernel_name << "\n";
 
   // Write descriptor information to file.
   int coeff_size = varmap_coeffs.row(0).size();
@@ -1387,7 +1411,11 @@ void SparseGP::write_sparse_descriptors(
           if (sparse_descriptors[i].descriptor_norms[s](j) < empty_thresh) {
             coeff_file << 0.0 << " ";
           } else {
-            coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " "; 
+            if (kernels[i]->kernel_name.find("NormalizedDotProduct") != std::string::npos) {
+              coeff_file << sparse_descriptors[i].descriptors[s](j, k) / sparse_descriptors[i].descriptor_norms[s](j) << " ";
+            } else {
+              coeff_file << sparse_descriptors[i].descriptors[s](j, k) << " ";
+            }
           }
 
           // Change line after writing 5 numbers

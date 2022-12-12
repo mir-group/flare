@@ -62,10 +62,10 @@ ComputeFlareStdAtom::~ComputeFlareStdAtom() {
 
   memory->destroy(beta);
 
-//  if (allocated) {
-//    memory->destroy(setflag);
-//    memory->destroy(cutsq);
-//  }
+  if (allocated) {
+    memory->destroy(setflag);
+    memory->destroy(cutsq);
+  }
 
   memory->destroy(stds);
   memory->destroy(desc_derv);
@@ -182,22 +182,28 @@ void ComputeFlareStdAtom::compute_peratom() {
     if (use_map) {
       int power = 2;
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
-              n_species, n_max, l_max, beta_matrices[itype - 1], u, &variance);
+              n_species, n_max, l_max, beta_matrices[itype - 1], u, &variance, normalized);
       variance /= sig2;
     } else {
+      Eigen::VectorXd kernel_vec = Eigen::VectorXd::Zero(n_clusters);
+      double K_self;
       double B2_norm = pow(B2_norm_squared, 0.5);
       Eigen::VectorXd normed_B2 = B2_vals / B2_norm;
-      Eigen::VectorXd kernel_vec = Eigen::VectorXd::Zero(n_clusters);
       int cum_types = 0;
       for (int s = 0; s < n_types; s++) {
         if (type[i] - 1 == s) {
-          kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * normed_B2).array().pow(power);
+          if (normalized) {
+            kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * normed_B2).array().pow(power);
+            K_self = 1.0;
+          } else {
+            // the normed_sparse_descriptors is non-normalized in this case
+            kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * B2_vals).array().pow(power);
+            K_self = pow(B2_norm_squared, power);
+          }
         }
         cum_types += n_clusters_by_type[s];
       }
       Eigen::VectorXd L_inv_kv = L_inv_blocks[0] * kernel_vec;
-
-      double K_self = 1.0;
       double Q_self = sig2 * L_inv_kv.transpose() * L_inv_kv;
 
       variance = K_self - Q_self;
@@ -266,16 +272,13 @@ double ComputeFlareStdAtom::memory_usage()
 
 void ComputeFlareStdAtom::allocate() {
   allocated = 1;
-//  int n = atom->ntypes;
-//
-//  memory->create(setflag, n + 1, n + 1, "compute:setflag");
-//
-//  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
-//  for (int i = 1; i <= n; i++)
-//    setflag[i][i] = 1;
-//
-//  // Create cutsq array (used in pair.cpp)
-//  memory->create(cutsq, n + 1, n + 1, "compute:cutsq");
+  int n = atom->ntypes;
+
+  memory->create(setflag, n + 1, n + 1, "compute:setflag");
+
+  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
+  for (int i = 1; i <= n; i++)
+    setflag[i][i] = 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -326,6 +329,10 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
+  // Create cutsq array (used in pair.cpp)
+  memory->create(cutsq, n_species + 1, n_species + 1, "compute:cutsq");
+  memset(&cutsq[0][0], 0, (n_species + 1) * (n_species + 1) * sizeof(double));
+
   // Fill in the cutoff matrix.
   cutoff = -1;
   cutoff_matrix = Eigen::MatrixXd::Zero(n_species, n_species);
@@ -334,6 +341,7 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
     for (int j = 0; j < n_species; j++){
       double cutoff_val = cutoffs[cutoff_count];
       cutoff_matrix(i, j) = cutoff_val;
+      cutsq[i + 1][j + 1] = cutoff_val * cutoff_val;
       if (cutoff_val > cutoff) cutoff = cutoff_val;
       cutoff_count ++;
     }
@@ -343,8 +351,8 @@ void ComputeFlareStdAtom::parse_cutoff_matrix(int n_species, FILE *fptr){
 
 void ComputeFlareStdAtom::read_file(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
-  int radial_string_length, cutoff_string_length;
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], kernel_string[MAXLINE];
+  int radial_string_length, cutoff_string_length, kernel_string_length;
   FILE *fptr;
 
   // Check that the potential file can be opened.
@@ -376,6 +384,10 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     hyperparameters(3) = sn;
 
     fgets(line, MAXLINE, fptr);
+    sscanf(line, "%s", kernel_string); // kernel name
+    kernel_string_length = strlen(kernel_string);
+
+    fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
     fgets(line, MAXLINE, fptr);
@@ -395,6 +407,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+  MPI_Bcast(kernel_string, kernel_string_length + 1, MPI_CHAR, 0, world);
 
   // Parse the cutoffs and fill in the cutoff matrix
   parse_cutoff_matrix(n_species, fptr);
@@ -419,6 +432,13 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     cutoff_function = quadratic_cutoff;
   else if (!strcmp(cutoff_string, "cosine"))
     cutoff_function = cos_cutoff;
+
+  // Set the kernel
+  if (!strcmp(kernel_string, "NormalizedDotProduct")) {
+    normalized = true;
+  } else {
+    normalized = false;
+  }
 
   // Parse the beta vectors.
   //memory->create(beta, beta_size * n_species * n_species, "compute:beta");
@@ -454,8 +474,8 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
 void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
-  int radial_string_length, cutoff_string_length;
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], kernel_string[MAXLINE];
+  int radial_string_length, cutoff_string_length, kernel_string_length;
   FILE *fptr;
 
   // Check that the potential file can be opened.
@@ -473,7 +493,8 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     fgets(line, MAXLINE, fptr); // skip the first line
 
     fgets(line, MAXLINE, fptr); // power
-    sscanf(line, "%i", &power);
+    sscanf(line, "%i %s", &power, kernel_string);
+    kernel_string_length = strlen(kernel_string);
 
     fgets(line, MAXLINE, fptr); // hyperparameters
     sscanf(line, "%i", &n_hyps);
@@ -513,6 +534,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+  MPI_Bcast(kernel_string, kernel_string_length + 1, MPI_CHAR, 0, world);
 
   // Parse the cutoffs and fill in the cutoff matrix
   parse_cutoff_matrix(n_species, fptr);
@@ -544,6 +566,13 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     cutoff_function = quadratic_cutoff;
   else if (!strcmp(cutoff_string, "cosine"))
     cutoff_function = cos_cutoff;
+
+  // Set the kernel
+  if (!strcmp(kernel_string, "NormalizedDotProduct")) {
+    normalized = true;
+  } else {
+    normalized = false;
+  }
 
   // Parse the beta vectors.
   memory->create(beta, Linv_size, "compute:L_inv");
