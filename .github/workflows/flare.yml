@@ -34,7 +34,7 @@ jobs:
     - name: Install Sphinx and Breathe
       run: |
         sudo apt-get update
-        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
+        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx libopenmpi-dev
 
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
@@ -90,7 +90,7 @@ jobs:
     - name: Install LAMMPS
       run: |
         git clone --depth 1 https://github.com/lammps/lammps.git lammps
-        
+
         cd lammps/src
         cp pair_hybrid.* pair_lj_cut.* ..
         rm pair_*.cpp pair_*.h
@@ -103,7 +103,7 @@ jobs:
         rm KOKKOS/pair_*.*
         mv pair_kokkos.* KOKKOS/
         cd ../..
-       
+
         cd lammps_plugins
         ./install.sh $(pwd)/../lammps
         cd ..
@@ -130,9 +130,21 @@ jobs:
         cd tests
         pytest
 
+    - name: Run LAMMPS tests with MPI
+      run: |
+        export lmp="mpirun -np 2 $(pwd)/lammps/build/lmp"
+        cd tests
+        pytest test_lammps.py
+
     - name: Run LAMMPS tests with Kokkos
       run: |
         export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
+        cd tests
+        pytest test_lammps.py
+
+    - name: Run LAMMPS tests with MPI and Kokkos
+      run: |
+        export lmp="mpirun -np 2 $(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
         cd tests
         pytest test_lammps.py
 
