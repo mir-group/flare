@@ -1,68 +1,32 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Training a 2+3-body Gaussian Process from an AIMD Run &mdash; flare 1.3.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Build 2+3-body Mapped GP" href="after_training.html" />
     <link rel="prev" title="FLARE: Active Learning Bayesian Force Fields" href="colabs.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> flare
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,17 +34,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Tutorials</a><ul class="current">
@@ -104,82 +58,43 @@
 <li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">flare</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="tutorials.html">Tutorials</a> &raquo;</li>
-        
       <li>Training a 2+3-body Gaussian Process from an AIMD Run</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/tutorials/gpfa.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
-.nbinput.nblast,
-.nboutput.nblast {
+.nbinput.nblast.container,
+.nboutput.nblast.container {
     margin-bottom: 19px;  /* padding has already 5px */
 }
 
 /* ... except between code cells! */
-.nblast + .nbinput {
+.nblast.container + .nbinput.container {
     margin-top: -19px;
 }
 
@@ -192,8 +107,8 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="training-a-2-3-body-gaussian-process-from-an-aimd-run">
-<h1>Training a 2+3-body Gaussian Process from an AIMD Run<a class="headerlink" href="#training-a-2-3-body-gaussian-process-from-an-aimd-run" title="Permalink to this headline">¶</a></h1>
+<section id="training-a-2-3-body-gaussian-process-from-an-aimd-run">
+<h1>Training a 2+3-body Gaussian Process from an AIMD Run<a class="headerlink" href="#training-a-2-3-body-gaussian-process-from-an-aimd-run" title="Permalink to this headline"></a></h1>
 <p>This is a tutorial for using the GPFA (Gaussian process for AIMD) module with
 2+3-body based GP model. A similar functionality is also supported in the offline
 training with yaml configuration, which is shown in
@@ -205,15 +120,15 @@ Molecular  Dynamics (AIMD) trajectory can be used to train a Gaussian Process mo
 included in the test files in order to demonstrate how to set up and run the code.
 The trajectory this tutorial focuses on  involves a few frames of the
 molecule Methanol vibrating about its equilibrium configuration ran in VASP.</p>
-<div class="section" id="roadmap-figure">
-<h2>Roadmap Figure<a class="headerlink" href="#roadmap-figure" title="Permalink to this headline">¶</a></h2>
+<section id="roadmap-figure">
+<h2>Roadmap Figure<a class="headerlink" href="#roadmap-figure" title="Permalink to this headline"></a></h2>
 <p>In this tutorial, we will walk through the first two steps contained in the below figure. the GP from AIMD module is designed to give you the tools necessary to extract FLARE structures from a previously existing molecular dynamics run.</p>
-<div class="figure align-center">
+<figure class="align-center">
 <img alt="../_images/GPFA_tutorial.png" src="../_images/GPFA_tutorial.png" />
-</div>
-</div>
-<div class="section" id="step-1-setting-up-a-gaussian-process-object">
-<h2>Step 1: Setting up a Gaussian Process Object<a class="headerlink" href="#step-1-setting-up-a-gaussian-process-object" title="Permalink to this headline">¶</a></h2>
+</figure>
+</section>
+<section id="step-1-setting-up-a-gaussian-process-object">
+<h2>Step 1: Setting up a Gaussian Process Object<a class="headerlink" href="#step-1-setting-up-a-gaussian-process-object" title="Permalink to this headline"></a></h2>
 <p>Our goal is to train a GP, which first must be instantiated with a set of parameters.</p>
 <p>For the sake of this example, which is a molecule, we will use a two-plus-three body kernel.
 We must provide the kernel name to the GP, “two-plus-three-mc” or “2+3mc’.
@@ -227,14 +142,14 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 </div>
 <p>We will then set up the <code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code> object.</p>
 <ul>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line">The <code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code> object class contains the methods which, from an</div>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">AtomicEnvironment</span></code> object, predict the corresponding forces and</div>
 <div class="line">uncertainties by comparing the atomic environment to each environment in the</div>
 <div class="line">training set. The kernel we will use has 5 hyperparameters and requires two cutoffs.</div>
 </div>
 </li>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line">The first four hyperparameters correspond to the signal variance and length</div>
 <div class="line">scale which parameterize the two- and three-body comparison</div>
 <div class="line">functions. These hyperparameters will be optimized later once data has</div>
@@ -243,17 +158,17 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 <div class="line">initial guesses for each hyperparameter.</div>
 </div>
 </li>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line">The two cutoff values correspond to the functions which set up</div>
 <div class="line">the two- and three-body Atomic Environments. Since Methanol is a small</div>
 <div class="line">molecule, 7 Angstrom each will be sufficent.</div>
 </div>
 </li>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line">The kernel name must contain the terms you want to use.</div>
 </div>
 </li>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line">Here, we will use the <code class="docutils literal notranslate"><span class="pre">two_plus_three_body_mc</span></code> kernel, which</div>
 <div class="line">uses two-body and three-body comparisons. <code class="docutils literal notranslate"><span class="pre">mc</span></code> means multi-component,</div>
 <div class="line">indicating that it can handle multiple atomic species being present.</div>
@@ -268,9 +183,9 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
                 <span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-2-optional-extracting-the-frames-from-a-previous-aimd-run">
-<h2>Step 2 (Optional): Extracting the Frames from a previous AIMD Run<a class="headerlink" href="#step-2-optional-extracting-the-frames-from-a-previous-aimd-run" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-2-optional-extracting-the-frames-from-a-previous-aimd-run">
+<h2>Step 2 (Optional): Extracting the Frames from a previous AIMD Run<a class="headerlink" href="#step-2-optional-extracting-the-frames-from-a-previous-aimd-run" title="Permalink to this headline"></a></h2>
 <p>FLARE uses ASE IO (<a class="reference external" href="https://databases.fysik.dtu.dk/ase/ase/io/io.html">https://databases.fysik.dtu.dk/ase/ase/io/io.html</a>) to parse the trajectory
 including format such as xyz, VASP/QE/LAMMPS output. Then a list of ASE Atoms will be returned.
 We then need to convert the list of ASE Atoms into FLARE_Atoms.</p>
@@ -281,9 +196,9 @@ We then need to convert the list of ASE Atoms into FLARE_Atoms.</p>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">FLARE_Atoms</span><span class="o">.</span><span class="n">from_ase_atoms</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">trajectory</span><span class="p">]</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="step-3-training-your-gaussian-process">
-<h2>Step 3: Training your Gaussian Process<a class="headerlink" href="#step-3-training-your-gaussian-process" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="step-3-training-your-gaussian-process">
+<h2>Step 3: Training your Gaussian Process<a class="headerlink" href="#step-3-training-your-gaussian-process" title="Permalink to this headline"></a></h2>
 <p>If you don’t have a previously existing Vasprun, you can also use the one
 available in the test_files directory, which is <code class="docutils literal notranslate"><span class="pre">methanol_frames.json</span></code>.
 You can open it via the command</p>
@@ -304,12 +219,12 @@ variety of useful tools to help train your <code class="docutils literal notrans
 to it in order to give you a fine degree of control over how your model is
 trained. Here, we will pass in the following:</p>
 <ul>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">frames</span></code>: A list of FLARE <a href="#id1"><span class="problematic" id="id2">``</span></a>structure``s decorated with forces. Ultimately,</div>
 <div class="line">these structures will be iterated over and will be used to train the model.</div>
 </div>
 </li>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">gp</span></code>: Our <code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code> object. The process of training will involve</div>
 <div class="line">populating the training set with representative atomic environments and</div>
 <div class="line">optimizing the hyperparameters via likelihood maximization to best explain</div>
@@ -319,7 +234,7 @@ trained. Here, we will pass in the following:</p>
 </ul>
 <p>Input arguments for training include:</p>
 <ul>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">rel_std_tolerance</span></code>: The noise variance heuristically describes the amount</div>
 <div class="line">of variance in force predictions which cannot be explained by the model.</div>
 <div class="line">Once optimized, it provides a natural length scale for the degree of</div>
@@ -333,7 +248,7 @@ trained. Here, we will pass in the following:</p>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">rel_std_tolerance</span> <span class="pre">*</span> <span class="pre">sig_n</span></code>. Here, we will set it to 3.</div>
 </div>
 </li>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">abs_std_tolerance</span></code>: The above value describes a cutoff uncertainty which</div>
 <div class="line">is defined with respect to the data set. In some cases it may be desirable</div>
 <div class="line">to have a stringent cutoff which is invariant to the hyperparameters, in</div>
@@ -344,9 +259,9 @@ trained. Here, we will pass in the following:</p>
 </div>
 </li>
 </ul>
-</div>
-<div class="section" id="pre-training-arguments">
-<h2>Pre-Training arguments<a class="headerlink" href="#pre-training-arguments" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="pre-training-arguments">
+<h2>Pre-Training arguments<a class="headerlink" href="#pre-training-arguments" title="Permalink to this headline"></a></h2>
 <p>When the training set contains a low diversity of
 atomic configurations relative to what you expect to see at test time, the
 hyperparameters may not be representative; furthermore, the training process
@@ -360,7 +275,7 @@ the training set. This is acceptable for small molecules, but you may want
 to use a more selective subset of atoms for large unit cells.</p>
 <p>For now, we will only show one argument to seed frames for simplicity.</p>
 <ul>
-<li><div class="first line-block">
+<li><div class="line-block">
 <div class="line"><code class="docutils literal notranslate"><span class="pre">pre_train_on_skips</span></code>: Slice the input frames via</div>
 <div class="line"><code class="docutils literal notranslate"><span class="pre">frames[::pre_train_on_skips]</span></code>; use those frames as seed frames. For</div>
 <div class="line">instance, if we used <code class="docutils literal notranslate"><span class="pre">pre_train_on_skips=5</span></code> then we would use every fifth</div>
@@ -378,7 +293,7 @@ to use a more selective subset of atoms for large unit cells.</p>
 </div>
 <p>After this, all you need to do is call the run method!</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">TT</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Done!&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done!&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The results, by default, will be stored in <code class="docutils literal notranslate"><span class="pre">gp_from_aimd.out</span></code>, as well as a
@@ -388,56 +303,38 @@ variety of other output files. The resultant model will be stored in a
 diagnosing if an individual species will be problematic (for example, you
 may find that an organic adsorbate on a metallic surface has a higher error,
 requiring more representative data for the dataset).</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="after_training.html" class="btn btn-neutral float-right" title="Build 2+3-body Mapped GP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="colabs.html" class="btn btn-neutral float-left" title="FLARE: Active Learning Bayesian Force Fields" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="colabs.html" class="btn btn-neutral float-left" title="FLARE: Active Learning Bayesian Force Fields" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="after_training.html" class="btn btn-neutral float-right" title="Build 2+3-body Mapped GP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
-
-    </p>
+    <p>&#169; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

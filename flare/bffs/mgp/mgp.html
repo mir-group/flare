@@ -1,68 +1,32 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mapped Gaussian Process &mdash; flare 1.3.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Splines Methods" href="splines_methods.html" />
     <link rel="prev" title="FLARE ASE Calculator" href="../gp/calculator.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> flare
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,17 +34,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
@@ -110,84 +64,44 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">flare</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
-        
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../flare.html">Python Code Documentation</a> &raquo;</li>
-        
           <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
-        
       <li>Mapped Gaussian Process</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../../../_sources/flare/bffs/mgp/mgp.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
-.nbinput.nblast,
-.nboutput.nblast {
+.nbinput.nblast.container,
+.nboutput.nblast.container {
     margin-bottom: 19px;  /* padding has already 5px */
 }
 
 /* ... except between code cells! */
-.nblast + .nbinput {
+.nblast.container + .nbinput.container {
     margin-top: -19px;
 }
 
@@ -200,8 +114,8 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="mapped-gaussian-process">
-<h1>Mapped Gaussian Process<a class="headerlink" href="#mapped-gaussian-process" title="Permalink to this headline">¶</a></h1>
+<section id="mapped-gaussian-process">
+<h1>Mapped Gaussian Process<a class="headerlink" href="#mapped-gaussian-process" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="splines_methods.html">Splines Methods</a></li>
@@ -214,140 +128,127 @@
 </ul>
 </div>
 <span class="target" id="module-flare.bffs.mgp.mgp"></span><p><a class="reference internal" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="flare.bffs.mgp.mgp.MappedGaussianProcess"><code class="xref py py-class docutils literal notranslate"><span class="pre">MappedGaussianProcess</span></code></a> uses splines to build up interpolationfunction of the low-dimensional decomposition of Gaussian Process, with little loss of accuracy. Refer to <a class="reference external" href="https://arxiv.org/abs/2008.11796">Xie et al.</a>, <a class="reference external" href="https://www.nature.com/articles/s41524-020-0283-z">Vandermause et al.</a>, <a class="reference external" href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307">Glielmo et al.</a></p>
-<dl class="class">
-<dt id="flare.bffs.mgp.mgp.MappedGaussianProcess">
-<em class="property">class </em><code class="descclassname">flare.bffs.mgp.mgp.</code><code class="descname">MappedGaussianProcess</code><span class="sig-paren">(</span><em>grid_params: dict</em>, <em>unique_species: list = []</em>, <em>GP: flare.bffs.gp.gp.GaussianProcess = None</em>, <em>var_map: str = None</em>, <em>container_only: bool = True</em>, <em>lmp_file_name: str = 'lmp'</em>, <em>n_cpus: int = None</em>, <em>n_sample: int = 10</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="Permalink to this definition">¶</a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.mgp.mgp.</span></span><span class="sig-name descname"><span class="pre">MappedGaussianProcess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique_species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../gp/gp.html#flare.bffs.gp.gp.GaussianProcess" title="flare.bffs.gp.gp.GaussianProcess"><span class="pre">flare.bffs.gp.gp.GaussianProcess</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmp_file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lmp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="Permalink to this definition"></a></dt>
 <dd><p>Build Mapped Gaussian Process (MGP)
 and automatically save coefficients for LAMMPS pair style.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>grid_params</strong> (<em>dict</em>) – Parameters for the mapping itself, such as
-grid size of spline fit, etc. As described below.</li>
-<li><strong>unique_species</strong> (<em>dict</em>) – List of all the (unique) species included during
-the training that need to be mapped</li>
-<li><strong>GP</strong> (<em>GaussianProcess</em>) – None or a GaussianProcess object. If a GP is input,
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_params</strong> (<em>dict</em>) – Parameters for the mapping itself, such as
+grid size of spline fit, etc. As described below.</p></li>
+<li><p><strong>unique_species</strong> (<em>dict</em>) – List of all the (unique) species included during
+the training that need to be mapped</p></li>
+<li><p><strong>GP</strong> (<em>GaussianProcess</em>) – None or a GaussianProcess object. If a GP is input,
 and container_only is False, automatically build a mapping corresponding
-to the GaussianProcess.</li>
-<li><strong>var_map</strong> (<em>str</em>) – if None: only build mapping for mean (force). If ‘pca’, then
+to the GaussianProcess.</p></li>
+<li><p><strong>var_map</strong> (<em>str</em>) – if None: only build mapping for mean (force). If ‘pca’, then
 use PCA to map the variance, based on <cite>grid_params[‘xxbody’][‘svd_rank’]</cite>.
 If ‘simple’, then only map the diagonal of covariance, and predict the
 upper bound of variance. The ‘pca’ mode is much heavier in terms of
-memory, but its prediction is much closer to GP variance.</li>
-<li><strong>container_only</strong> (<em>bool</em>) – if True: only build splines container
-(with no coefficients); if False: Attempt to build map immediately</li>
-<li><strong>lmp_file_name</strong> (<em>str</em>) – LAMMPS coefficient file name</li>
-<li><strong>n_cpus</strong> (<em>int</em>) – Default None. Set to the number of cores needed for
-parallelization. Used in the construction of the map.</li>
-<li><strong>n_sample</strong> (<em>int</em>) – Default 10. The batch size for building map. Not used now.</li>
+memory, but its prediction is much closer to GP variance.</p></li>
+<li><p><strong>container_only</strong> (<em>bool</em>) – if True: only build splines container
+(with no coefficients); if False: Attempt to build map immediately</p></li>
+<li><p><strong>lmp_file_name</strong> (<em>str</em>) – LAMMPS coefficient file name</p></li>
+<li><p><strong>n_cpus</strong> (<em>int</em>) – Default None. Set to the number of cores needed for
+parallelization. Used in the construction of the map.</p></li>
+<li><p><strong>n_sample</strong> (<em>int</em>) – Default 10. The batch size for building map. Not used now.</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># build 2 + 3 body map</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># build 2 + 3 body map</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">grid_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">]},</span>
 <span class="gp">... </span>               <span class="s1">&#39;threebody&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">]}}</span>
 </pre></div>
 </div>
 <p>For <cite>grid_params</cite>, the following keys and values are allowed</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>‘twobody’</strong> (<em>dict, optional</em>) – if 2-body is present, set as a dictionary
-of parameters for 2-body mapping. Parameters see below.</li>
-<li><strong>‘threebody’</strong> (<em>dict, optional</em>) – if 3-body is present, set as a dictionary
-of parameters for 3-body mapping. Parameters see below.</li>
-<li><strong>‘load_grid’</strong> (<em>str, optional</em>) – Default None. the path to the directory
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>‘twobody’</strong> (<em>dict, optional</em>) – if 2-body is present, set as a dictionary
+of parameters for 2-body mapping. Parameters see below.</p></li>
+<li><p><strong>‘threebody’</strong> (<em>dict, optional</em>) – if 3-body is present, set as a dictionary
+of parameters for 3-body mapping. Parameters see below.</p></li>
+<li><p><strong>‘load_grid’</strong> (<em>str, optional</em>) – Default None. the path to the directory
 where the previously generated grids (<code class="docutils literal notranslate"><span class="pre">grid_*.npy</span></code>) are stored.
-If no path is specified, MGP will construct grids from scratch.</li>
-<li><strong>‘lower_bound_relax’</strong> (<em>float, optional</em>) – Default 0.1. if ‘lower_bound’ is
+If no path is specified, MGP will construct grids from scratch.</p></li>
+<li><p><strong>‘lower_bound_relax’</strong> (<em>float, optional</em>) – Default 0.1. if ‘lower_bound’ is
 set to ‘auto’ this value will be used as a relaxation of lower
-bound. (see below the description of ‘lower_bound’)</li>
+bound. (see below the description of ‘lower_bound’)</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <p>For two/three body parameter dictionary, the following keys and values are allowed</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>‘grid_num’</strong> (<em>list</em>) – a list of integers, the number of grid points for
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>‘grid_num’</strong> (<em>list</em>) – a list of integers, the number of grid points for
 interpolation. The larger the number, the better the approximation
-of MGP is compared with GP.</li>
-<li><strong>‘lower_bound’</strong> (<em>str or list, optional</em>) – Default ‘auto’, the lower bound
+of MGP is compared with GP.</p></li>
+<li><p><strong>‘lower_bound’</strong> (<em>str or list, optional</em>) – Default ‘auto’, the lower bound
 of the spline interpolation will be searched. First, search the
 training set of GP and find the minimal interatomic distance r_min.
 Then, the <code class="docutils literal notranslate"><span class="pre">lower_bound</span> <span class="pre">=</span> <span class="pre">r_min</span> <span class="pre">-</span> <span class="pre">lower_bound_relax</span></code>. The user
 can set their own lower_bound, of the same shape as ‘grid_num’.
 E.g. for threebody, the customized lower bound can be set as
-[1.2, 1.2, 1.2].</li>
-<li><strong>‘upper_bound’</strong> (<em>str or list, optional</em>) – Default ‘auto’, the upper bound
+[1.2, 1.2, 1.2].</p></li>
+<li><p><strong>‘upper_bound’</strong> (<em>str or list, optional</em>) – Default ‘auto’, the upper bound
 of the spline interpolation will be the cutoffs of GP. The user
 can set their own upper_bound, of the same shape as ‘grid_num’.
 E.g. for threebody, the customized lower bound can be set as
-[3.5, 3.5, 3.5].</li>
-<li><strong>‘svd_rank’</strong> (<em>int, optional</em>) – Default ‘auto’. If the variance mapping is
+[3.5, 3.5, 3.5].</p></li>
+<li><p><strong>‘svd_rank’</strong> (<em>int, optional</em>) – Default ‘auto’. If the variance mapping is
 needed, it is set as the rank of the mapping. ‘auto’ uses full
 rank, which is the smaller one between the total number of grid
 points and training set size. i.e.
-<code class="docutils literal notranslate"><span class="pre">full_rank</span> <span class="pre">=</span> <span class="pre">min(np.prod(grid_num),</span> <span class="pre">3</span> <span class="pre">*</span> <span class="pre">N_train)</span></code></li>
+<code class="docutils literal notranslate"><span class="pre">full_rank</span> <span class="pre">=</span> <span class="pre">min(np.prod(grid_num),</span> <span class="pre">3</span> <span class="pre">*</span> <span class="pre">N_train)</span></code></p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="flare.bffs.mgp.mgp.MappedGaussianProcess.as_dict">
-<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; dict<a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.as_dict" title="Permalink to this definition">¶</a></dt>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.as_dict">
+<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.as_dict" title="Permalink to this definition"></a></dt>
 <dd><p>Dictionary representation of the MGP model.</p>
 </dd></dl>
 
-<dl class="staticmethod">
-<dt id="flare.bffs.mgp.mgp.MappedGaussianProcess.from_dict">
-<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>dictionary: dict</em><span class="sig-paren">)</span> &#x2192; flare.bffs.mgp.mgp.MappedGaussianProcess<a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.from_dict" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.from_dict">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="flare.bffs.mgp.mgp.MappedGaussianProcess"><span class="pre">flare.bffs.mgp.mgp.MappedGaussianProcess</span></a></span></span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.from_dict" title="Permalink to this definition"></a></dt>
 <dd><p>Create MGP object from dictionary representation.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="flare.bffs.mgp.mgp.MappedGaussianProcess.predict">
-<code class="descname">predict</code><span class="sig-paren">(</span><em>atom_env: flare.descriptors.env.AtomicEnvironment) -&gt; ('ndarray'</em>, <em>'ndarray'</em>, <em>'ndarray'</em>, <em>&lt;class 'float'&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.predict" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_env:</span> <span class="pre">flare.descriptors.env.AtomicEnvironment)</span> <span class="pre">-&gt;</span> <span class="pre">('ndarray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'ndarray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'ndarray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.predict" title="Permalink to this definition"></a></dt>
 <dd><p>predict force, variance, stress and local energy for given
 atomic environment</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>atom_env</strong> – atomic environment (with a center atom and its neighbors)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">3d array of atomic force
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>atom_env</strong> – atomic environment (with a center atom and its neighbors)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>3d array of atomic force
 variance: 3d array of the predictive variance
 stress: 6d array of the virial stress
-energy: the local energy (atomic energy)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">force</td>
-</tr>
-</tbody>
-</table>
+energy: the local energy (atomic energy)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>force</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="flare.bffs.mgp.mgp.MappedGaussianProcess.write_lmp_file">
-<code class="descname">write_lmp_file</code><span class="sig-paren">(</span><em>lammps_name: str</em>, <em>write_var: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.write_lmp_file" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.write_lmp_file">
+<span class="sig-name descname"><span class="pre">write_lmp_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lammps_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_var</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.write_lmp_file" title="Permalink to this definition"></a></dt>
 <dd><p>write the coefficients to a file that can be used by lammps pair style</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="flare.bffs.mgp.mgp.MappedGaussianProcess.write_model">
-<code class="descname">write_model</code><span class="sig-paren">(</span><em>name: str</em>, <em>format: str = 'json'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.write_model" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.write_model">
+<span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'json'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.write_model" title="Permalink to this definition"></a></dt>
 <dd><p>Write everything necessary to re-load and re-use the model
 :param model_name:
 :return:</p>
@@ -355,55 +256,37 @@ energy: the local energy (atomic energy)</td>
 
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="splines_methods.html" class="btn btn-neutral float-right" title="Splines Methods" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../gp/calculator.html" class="btn btn-neutral float-left" title="FLARE ASE Calculator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../gp/calculator.html" class="btn btn-neutral float-left" title="FLARE ASE Calculator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="splines_methods.html" class="btn btn-neutral float-right" title="Splines Methods" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
-
-    </p>
+    <p>&#169; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -1,68 +1,32 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sparse Gaussian Process Force Fields &mdash; flare 1.3.3 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="ASE Calculator of Sparse GP" href="calculator.html" />
     <link rel="prev" title="Formulation of Mapped Gaussian Process" href="../mgp/formulas.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> flare
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,17 +34,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorials.html">Tutorials</a></li>
@@ -109,84 +63,44 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../citing.html">How to Cite</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">flare</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html">Docs</a> &raquo;</li>
-        
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../../flare.html">Python Code Documentation</a> &raquo;</li>
-        
           <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
-        
       <li>Sparse Gaussian Process Force Fields</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../../../_sources/flare/bffs/sgp/sgp.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
-.nbinput.nblast,
-.nboutput.nblast {
+.nbinput.nblast.container,
+.nboutput.nblast.container {
     margin-bottom: 19px;  /* padding has already 5px */
 }
 
 /* ... except between code cells! */
-.nblast + .nbinput {
+.nblast.container + .nbinput.container {
     margin-top: -19px;
 }
 
@@ -199,108 +113,90 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="sparse-gaussian-process-force-fields">
-<h1>Sparse Gaussian Process Force Fields<a class="headerlink" href="#sparse-gaussian-process-force-fields" title="Permalink to this headline">¶</a></h1>
+<section id="sparse-gaussian-process-force-fields">
+<h1>Sparse Gaussian Process Force Fields<a class="headerlink" href="#sparse-gaussian-process-force-fields" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="calculator.html">ASE Calculator of Sparse GP</a></li>
 </ul>
 </div>
-<span class="target" id="module-flare.bffs.sgp.sparse_gp"></span><dl class="class">
-<dt id="flare.bffs.sgp.sparse_gp.SGP_Wrapper">
-<em class="property">class </em><code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">SGP_Wrapper</code><span class="sig-paren">(</span><em>kernels: List[T], descriptor_calculators: List[T], cutoff: float, sigma_e: float, sigma_f: float, sigma_s: float, species_map: dict, variance_type: str = 'SOR', single_atom_energies: dict = None, energy_training=True, force_training=True, stress_training=True, max_iterations=10, opt_method='BFGS', bounds=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper" title="Permalink to this definition">¶</a></dt>
+<span class="target" id="module-flare.bffs.sgp.sparse_gp"></span><dl class="py class">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.SGP_Wrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">SGP_Wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">descriptor_calculators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SOR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_atom_energies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BFGS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper" title="Permalink to this definition"></a></dt>
 <dd><p>Wrapper class used to make the C++ sparse GP object compatible with
 OTF. Methods and properties are designed to mirror the GP class.</p>
-<dl class="staticmethod">
-<dt id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict">
-<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>in_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict" title="Permalink to this definition"></a></dt>
 <dd><p>Need an initialized GP</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model">
-<code class="descname">write_model</code><span class="sig-paren">(</span><em>name: str</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model">
+<span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model" title="Permalink to this definition"></a></dt>
 <dd><p>Write to .json file</p>
 </dd></dl>
 
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood">
-<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">compute_negative_likelihood</code><span class="sig-paren">(</span><em>hyperparameters</em>, <em>sparse_gp</em>, <em>print_vals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">compute_negative_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the negative log likelihood and gradient with respect to the
 hyperparameters.</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad">
-<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">compute_negative_likelihood_grad</code><span class="sig-paren">(</span><em>hyperparameters</em>, <em>sparse_gp</em>, <em>print_vals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">compute_negative_likelihood_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the negative log likelihood and gradient with respect to the
 hyperparameters.</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable">
-<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">compute_negative_likelihood_grad_stable</code><span class="sig-paren">(</span><em>hyperparameters</em>, <em>sparse_gp</em>, <em>precomputed=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">compute_negative_likelihood_grad_stable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precomputed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the negative log likelihood and gradient with respect to the
 hyperparameters.</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.bffs.sgp.sparse_gp.optimize_hyperparameters">
-<code class="descclassname">flare.bffs.sgp.sparse_gp.</code><code class="descname">optimize_hyperparameters</code><span class="sig-paren">(</span><em>sparse_gp</em>, <em>display_results=False</em>, <em>gradient_tolerance=0.0001</em>, <em>max_iterations=10</em>, <em>bounds=None</em>, <em>method='BFGS'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.optimize_hyperparameters" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.optimize_hyperparameters">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">optimize_hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BFGS'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.optimize_hyperparameters" title="Permalink to this definition"></a></dt>
 <dd><p>Optimize the hyperparameters of a sparse GP model.</p>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="calculator.html" class="btn btn-neutral float-right" title="ASE Calculator of Sparse GP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../mgp/formulas.html" class="btn btn-neutral float-left" title="Formulation of Mapped Gaussian Process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../mgp/formulas.html" class="btn btn-neutral float-left" title="Formulation of Mapped Gaussian Process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="calculator.html" class="btn btn-neutral float-right" title="ASE Calculator of Sparse GP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
-
-    </p>
+    <p>&#169; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

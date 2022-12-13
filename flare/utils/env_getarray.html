@@ -1,68 +1,32 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Construct Atomic Environment &mdash; flare 1.3.3 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="C++ Code Documentation" href="../../flare_pp/flare_pp.html" />
     <link rel="prev" title="Advanced Hyperparameters Set Up" href="mask_helper.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../index.html" class="icon icon-home"> flare
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,17 +34,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
@@ -105,84 +59,44 @@
 <li class="toctree-l1"><a class="reference internal" href="../../citing.html">How to Cite</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">flare</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../flare.html">Python Code Documentation</a> &raquo;</li>
-        
           <li><a href="utils.html">Utility</a> &raquo;</li>
-        
       <li>Construct Atomic Environment</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../../_sources/flare/utils/env_getarray.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
-.nbinput.nblast,
-.nboutput.nblast {
+.nbinput.nblast.container,
+.nboutput.nblast.container {
     margin-bottom: 19px;  /* padding has already 5px */
 }
 
 /* ... except between code cells! */
-.nblast + .nbinput {
+.nblast.container + .nbinput.container {
     margin-top: -19px;
 }
 
@@ -195,41 +109,39 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="module-flare.utils.env_getarray">
-<span id="construct-atomic-environment"></span><h1>Construct Atomic Environment<a class="headerlink" href="#module-flare.utils.env_getarray" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
-<dt id="flare.utils.env_getarray.get_2_body_arrays">
-<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_2_body_arrays</code><span class="sig-paren">(</span><em>positions</em>, <em>atom: int</em>, <em>cell</em>, <em>r_cut</em>, <em>cutoff_2</em>, <em>species</em>, <em>sweep</em>, <em>nspecie</em>, <em>species_mask</em>, <em>twobody_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_2_body_arrays" title="Permalink to this definition">¶</a></dt>
+<section id="module-flare.utils.env_getarray">
+<span id="construct-atomic-environment"></span><h1>Construct Atomic Environment<a class="headerlink" href="#module-flare.utils.env_getarray" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.utils.env_getarray.get_2_body_arrays">
+<span class="sig-prename descclassname"><span class="pre">flare.utils.env_getarray.</span></span><span class="sig-name descname"><span class="pre">get_2_body_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sweep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nspecie</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">twobody_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_2_body_arrays" title="Permalink to this definition"></a></dt>
 <dd><p>Returns distances, coordinates, species of atoms, and indices of neighbors
 in the 2-body local environment. This method is implemented outside
 the AtomicEnvironment class to allow for njit acceleration with Numba.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>positions</strong> (<em>np.ndarray</em>) – Positions of atoms in the structure.</li>
-<li><strong>atom</strong> (<em>int</em>) – Index of the central atom of the local environment.</li>
-<li><strong>cell</strong> (<em>np.ndarray</em>) – 3x3 array whose rows are the Bravais lattice vectors of the
-cell.</li>
-<li><strong>cutoff_2</strong> (<em>np.ndarray</em>) – 2-body cutoff radius.</li>
-<li><strong>species</strong> (<em>np.ndarray</em>) – Numpy array of species represented by their atomic numbers.</li>
-<li><strong>nspecie</strong> – number of atom types to define bonds</li>
-<li><strong>species_mask</strong> – mapping from atomic number to atom types</li>
-<li><strong>twobody_mask</strong> – mapping from the types of end atoms to bond types</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>positions</strong> (<em>np.ndarray</em>) – Positions of atoms in the structure.</p></li>
+<li><p><strong>atom</strong> (<em>int</em>) – Index of the central atom of the local environment.</p></li>
+<li><p><strong>cell</strong> (<em>np.ndarray</em>) – 3x3 array whose rows are the Bravais lattice vectors of the
+cell.</p></li>
+<li><p><strong>cutoff_2</strong> (<em>np.ndarray</em>) – 2-body cutoff radius.</p></li>
+<li><p><strong>species</strong> (<em>np.ndarray</em>) – Numpy array of species represented by their atomic numbers.</p></li>
+<li><p><strong>nspecie</strong> – number of atom types to define bonds</p></li>
+<li><p><strong>species_mask</strong> – mapping from atomic number to atom types</p></li>
+<li><p><strong>twobody_mask</strong> – mapping from the types of end atoms to bond types</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">int</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Tuple of arrays describing pairs of atoms in the 2-body local
+</dd>
+<dt class="field-even">Type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>Tuple of arrays describing pairs of atoms in the 2-body local
 environment.</p>
 <p>bond_array_2: Array containing the distances and relative
 coordinates of atoms in the 2-body local environment. First column
@@ -241,49 +153,45 @@ central atom). The rows are sorted by distance from the central atom.</p>
 their atomic number.</p>
 <p>bond_indices: Structure indices of atoms in the local environment.</p>
 </p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray, np.ndarray, np.ndarray, np.ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>np.ndarray, np.ndarray, np.ndarray, np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.utils.env_getarray.get_3_body_arrays">
-<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_3_body_arrays</code><span class="sig-paren">(</span><em>bond_array_2</em>, <em>bond_positions_2</em>, <em>ctype</em>, <em>etypes</em>, <em>r_cut</em>, <em>cutoff_3</em>, <em>nspecie</em>, <em>species_mask</em>, <em>cut3b_mask</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_3_body_arrays" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.utils.env_getarray.get_3_body_arrays">
+<span class="sig-prename descclassname"><span class="pre">flare.utils.env_getarray.</span></span><span class="sig-name descname"><span class="pre">get_3_body_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_positions_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etypes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nspecie</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cut3b_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_3_body_arrays" title="Permalink to this definition"></a></dt>
 <dd><p>Returns distances and coordinates of triplets of atoms in the
 3-body local environment.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array.</li>
-<li><strong>bond_positions_2</strong> (<em>np.ndarray</em>) – Coordinates of atoms in the 2-body local
-environment.</li>
-<li><strong>ctype</strong> – atomic number of the center atom</li>
-<li><strong>cutoff_3</strong> (<em>np.ndarray</em>) – 3-body cutoff radius.</li>
-<li><strong>nspecie</strong> – number of atom types to define bonds</li>
-<li><strong>species_mask</strong> – mapping from atomic number to atom types</li>
-<li><strong>cut3b_mask</strong> – mapping from the types of end atoms to bond types</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bond_array_2</strong> (<em>np.ndarray</em>) – 2-body bond array.</p></li>
+<li><p><strong>bond_positions_2</strong> (<em>np.ndarray</em>) – Coordinates of atoms in the 2-body local
+environment.</p></li>
+<li><p><strong>ctype</strong> – atomic number of the center atom</p></li>
+<li><p><strong>cutoff_3</strong> (<em>np.ndarray</em>) – 3-body cutoff radius.</p></li>
+<li><p><strong>nspecie</strong> – number of atom types to define bonds</p></li>
+<li><p><strong>species_mask</strong> – mapping from atomic number to atom types</p></li>
+<li><p><strong>cut3b_mask</strong> – mapping from the types of end atoms to bond types</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">int</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">int</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><p class="first">np.ndarray</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Tuple of 4 arrays describing triplets of atoms in the 3-body local
+</dd>
+<dt class="field-even">Type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Type</dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>Tuple of 4 arrays describing triplets of atoms in the 3-body local
 environment.</p>
 <p>bond_array_3: Array containing the distances and relative
 coordinates of atoms in the 3-body local environment. First column
@@ -299,125 +207,97 @@ of both atom n and the central atom.</p>
 <p>triplet_counts: One dimensional array of integers whose entry m is the
 number of atoms that are within a distance cutoff_3 of atom m.</p>
 </p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(np.ndarray, np.ndarray, np.ndarray, np.ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(np.ndarray, np.ndarray, np.ndarray, np.ndarray)</p>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.utils.env_getarray.get_m2_body_arrays">
-<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_m2_body_arrays</code><span class="sig-paren">(</span><em>positions</em>, <em>atom: int</em>, <em>cell</em>, <em>r_cut</em>, <em>manybody_cutoff_list</em>, <em>species</em>, <em>sweep: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x7efc7c5f5df0&gt;</em>, <em>nspec</em>, <em>spec_mask</em>, <em>manybody_mask</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_m2_body_arrays" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>positions</strong> (<em>np.ndarray</em>) – Positions of atoms in the structure.</li>
-<li><strong>atom</strong> (<em>int</em>) – Index of the central atom of the local environment.</li>
-<li><strong>cell</strong> (<em>np.ndarray</em>) – 3x3 array whose rows are the Bravais lattice vectors of the
-cell.</li>
-<li><strong>manybody_cutoff_list</strong> (<em>float</em>) – 2-body cutoff radius.</li>
-<li><strong>species</strong> (<em>np.ndarray</em>) – Numpy array of species represented by their atomic numbers.</li>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.utils.env_getarray.get_m2_body_arrays">
+<span class="sig-prename descclassname"><span class="pre">flare.utils.env_getarray.</span></span><span class="sig-name descname"><span class="pre">get_m2_body_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manybody_cutoff_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sweep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nspec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manybody_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_m2_body_arrays" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>positions</strong> (<em>np.ndarray</em>) – Positions of atoms in the structure.</p></li>
+<li><p><strong>atom</strong> (<em>int</em>) – Index of the central atom of the local environment.</p></li>
+<li><p><strong>cell</strong> (<em>np.ndarray</em>) – 3x3 array whose rows are the Bravais lattice vectors of the
+cell.</p></li>
+<li><p><strong>manybody_cutoff_list</strong> (<em>float</em>) – 2-body cutoff radius.</p></li>
+<li><p><strong>species</strong> (<em>np.ndarray</em>) – Numpy array of species represented by their atomic numbers.</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Tuple of arrays describing pairs of atoms in the 2-body local
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Tuple of arrays describing pairs of atoms in the 2-body local
 environment.</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.utils.env_getarray.get_m3_body_arrays">
-<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">get_m3_body_arrays</code><span class="sig-paren">(</span><em>positions</em>, <em>atom: int</em>, <em>cell</em>, <em>cutoff: float</em>, <em>species</em>, <em>sweep</em>, <em>cutoff_func=&lt;function quadratic_cutoff&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_m3_body_arrays" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.utils.env_getarray.get_m3_body_arrays">
+<span class="sig-prename descclassname"><span class="pre">flare.utils.env_getarray.</span></span><span class="sig-name descname"><span class="pre">get_m3_body_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sweep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.get_m3_body_arrays" title="Permalink to this definition"></a></dt>
 <dd><p>Note: here we assume the cutoff is not too large,
 i.e., 2 * cutoff &lt; cell_size</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="flare.utils.env_getarray.q3_value_mc">
-<code class="descclassname">flare.utils.env_getarray.</code><code class="descname">q3_value_mc</code><span class="sig-paren">(</span><em>distances</em>, <em>cross_bond_inds</em>, <em>cross_bond_dists</em>, <em>triplets</em>, <em>r_cut</em>, <em>species_list</em>, <em>etypes</em>, <em>cutoff_func</em>, <em>q_func=&lt;function coordination_number&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.q3_value_mc" title="Permalink to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.utils.env_getarray.q3_value_mc">
+<span class="sig-prename descclassname"><span class="pre">flare.utils.env_getarray.</span></span><span class="sig-name descname"><span class="pre">q3_value_mc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etypes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.utils.env_getarray.q3_value_mc" title="Permalink to this definition"></a></dt>
 <dd><p>Compute value of many-body many components descriptor based
 on distances of atoms in the local many-body environment.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</li>
-<li><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</li>
-<li><strong>ref_species</strong> (<em>int</em>) – species to consider to compute the contribution</li>
-<li><strong>etypes</strong> (<em>np.ndarray</em>) – atomic species of neighbours</li>
-<li><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</li>
-<li><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</p></li>
+<li><p><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</p></li>
+<li><p><strong>ref_species</strong> (<em>int</em>) – species to consider to compute the contribution</p></li>
+<li><p><strong>etypes</strong> (<em>np.ndarray</em>) – atomic species of neighbours</p></li>
+<li><p><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</p></li>
+<li><p><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the value of the many-body descriptor</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the value of the many-body descriptor</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../../flare_pp/flare_pp.html" class="btn btn-neutral float-right" title="C++ Code Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="mask_helper.html" class="btn btn-neutral float-left" title="Advanced Hyperparameters Set Up" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mask_helper.html" class="btn btn-neutral float-left" title="Advanced Hyperparameters Set Up" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../flare_pp/flare_pp.html" class="btn btn-neutral float-right" title="C++ Code Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
-
-    </p>
+    <p>&#169; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -1,68 +1,32 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bayesian force fields &mdash; flare 1.3.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Descriptors" href="descriptors.html" />
     <link rel="prev" title="Structures" href="structure.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> flare
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,17 +34,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
@@ -98,82 +52,43 @@
 <li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">flare</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="flare_pp.html">C++ Code Documentation</a> &raquo;</li>
-        
       <li>Bayesian force fields</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/flare_pp/bffs.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
-.nbinput.nblast,
-.nboutput.nblast {
+.nbinput.nblast.container,
+.nboutput.nblast.container {
     margin-bottom: 19px;  /* padding has already 5px */
 }
 
 /* ... except between code cells! */
-.nblast + .nbinput {
+.nblast.container + .nbinput.container {
     margin-top: -19px;
 }
 
@@ -186,481 +101,463 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="bayesian-force-fields">
-<h1>Bayesian force fields<a class="headerlink" href="#bayesian-force-fields" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="_CPPv48SparseGP">
-<span class="target" id="classSparseGP"></span><em class="property">class </em><code class="descname">SparseGP</code><a class="headerlink" href="#_CPPv48SparseGP" title="Permalink to this definition">¶</a><br /></dt>
+<section id="bayesian-force-fields">
+<h1>Bayesian force fields<a class="headerlink" href="#bayesian-force-fields" title="Permalink to this headline"></a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv48SparseGP">
+<span class="target" id="classSparseGP"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseGP</span></span></span><a class="headerlink" href="#_CPPv48SparseGP" title="Permalink to this definition"></a><br /></dt>
 <dd><div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric">Public Functions</p>
-<dl class="function">
-<dt id="_CPPv4N8SparseGP8SparseGPEv">
-<span class="target" id="classSparseGP_1a99fe5d3b19ca73899003f2bc992ffc28"></span><code class="descname">SparseGP</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP8SparseGPEv" title="Permalink to this definition">¶</a><br /></dt>
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP8SparseGPEv">
+<span class="target" id="classSparseGP_1a99fe5d3b19ca73899003f2bc992ffc28"></span><span class="sig-name descname"><span class="n"><span class="pre">SparseGP</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP8SparseGPEv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP8SparseGPENSt6vectorIP6KernelEEddd">
-<span class="target" id="classSparseGP_1a85fcca5f8f1d9b6bef932f31571275f1"></span><code class="descname">SparseGP</code><span class="sig-paren">(</span>std::vector&lt;<a class="reference internal" href="kernels.html#_CPPv46Kernel" title="Kernel">Kernel</a> *&gt; <em>kernels</em>, double <em>energy_noise</em>, double <em>force_noise</em>, double <em>stress_noise</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP8SparseGPENSt6vectorIP6KernelEEddd" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP8SparseGPENSt6vectorIP6KernelEEddd">
+<span class="target" id="classSparseGP_1a85fcca5f8f1d9b6bef932f31571275f1"></span><span class="sig-name descname"><span class="n"><span class="pre">SparseGP</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="kernels.html#_CPPv46Kernel" title="Kernel"><span class="n"><span class="pre">Kernel</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">kernels</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">energy_noise</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_noise</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">stress_noise</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP8SparseGPENSt6vectorIP6KernelEEddd" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP29initialize_sparse_descriptorsERK9Structure">
-<span class="target" id="classSparseGP_1a8ddbf74b10224f07c55c820faf2eb67b"></span>void <code class="descname">initialize_sparse_descriptors</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP29initialize_sparse_descriptorsERK9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP29initialize_sparse_descriptorsERK9Structure">
+<span class="target" id="classSparseGP_1a8ddbf74b10224f07c55c820faf2eb67b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">initialize_sparse_descriptors</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP29initialize_sparse_descriptorsERK9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP20add_all_environmentsERK9Structure">
-<span class="target" id="classSparseGP_1a1320eacb2af13ca031586f7b54432414"></span>void <code class="descname">add_all_environments</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP20add_all_environmentsERK9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP20add_all_environmentsERK9Structure">
+<span class="target" id="classSparseGP_1a1320eacb2af13ca031586f7b54432414"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_all_environments</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP20add_all_environmentsERK9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP25add_specific_environmentsERK9StructureKNSt6vectorIiEE">
-<span class="target" id="classSparseGP_1afb8c75791c2b4b9e9f17189523390600"></span>void <code class="descname">add_specific_environments</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em>, <em class="property">const</em> std::vector&lt;int&gt; <em>atoms</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP25add_specific_environmentsERK9StructureKNSt6vectorIiEE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP25add_specific_environmentsERK9StructureKNSt6vectorIiEE">
+<span class="target" id="classSparseGP_1afb8c75791c2b4b9e9f17189523390600"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_specific_environments</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">atoms</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP25add_specific_environmentsERK9StructureKNSt6vectorIiEE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP23add_random_environmentsERK9StructureRKNSt6vectorIiEE">
-<span class="target" id="classSparseGP_1ae5b477cd4f380a15d80c3ad78e394e55"></span>void <code class="descname">add_random_environments</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em>, <em class="property">const</em> std::vector&lt;int&gt; &amp;<em>n_added</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP23add_random_environmentsERK9StructureRKNSt6vectorIiEE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP23add_random_environmentsERK9StructureRKNSt6vectorIiEE">
+<span class="target" id="classSparseGP_1ae5b477cd4f380a15d80c3ad78e394e55"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_random_environments</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n_added</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP23add_random_environmentsERK9StructureRKNSt6vectorIiEE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP26add_uncertain_environmentsERK9StructureRKNSt6vectorIiEE">
-<span class="target" id="classSparseGP_1a20c15614cb81606bcbce64491d838864"></span>void <code class="descname">add_uncertain_environments</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em>, <em class="property">const</em> std::vector&lt;int&gt; &amp;<em>n_added</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP26add_uncertain_environmentsERK9StructureRKNSt6vectorIiEE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP26add_uncertain_environmentsERK9StructureRKNSt6vectorIiEE">
+<span class="target" id="classSparseGP_1a20c15614cb81606bcbce64491d838864"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_uncertain_environments</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n_added</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP26add_uncertain_environmentsERK9StructureRKNSt6vectorIiEE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP29compute_cluster_uncertaintiesERK9Structure">
-<span class="target" id="classSparseGP_1ae27dc60d852f3fe71ae6eef4d35a1dd5"></span>std::vector&lt;Eigen::VectorXd&gt; <code class="descname">compute_cluster_uncertainties</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP29compute_cluster_uncertaintiesERK9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP29compute_cluster_uncertaintiesERK9Structure">
+<span class="target" id="classSparseGP_1ae27dc60d852f3fe71ae6eef4d35a1dd5"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_cluster_uncertainties</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP29compute_cluster_uncertaintiesERK9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP28sort_clusters_by_uncertaintyERK9Structure">
-<span class="target" id="classSparseGP_1ac0efaacb766ee5d53e27cd6b6629e98f"></span>std::vector&lt;std::vector&lt;int&gt;&gt; <code class="descname">sort_clusters_by_uncertainty</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP28sort_clusters_by_uncertaintyERK9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP28sort_clusters_by_uncertaintyERK9Structure">
+<span class="target" id="classSparseGP_1ac0efaacb766ee5d53e27cd6b6629e98f"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sort_clusters_by_uncertainty</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP28sort_clusters_by_uncertaintyERK9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd">
-<span class="target" id="classSparseGP_1aab8e3236241483529bb27ff07c6ba83b"></span>void <code class="descname">add_training_structure</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em>, <em class="property">const</em> std::vector&lt;int&gt; <em>atom_indices</em> = {-1}, double <em>rel_e_noise</em> = 1, double <em>rel_f_noise</em> = 1, double <em>rel_s_noise</em> = 1<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd">
+<span class="target" id="classSparseGP_1aab8e3236241483529bb27ff07c6ba83b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_training_structure</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">atom_indices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">rel_e_noise</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">rel_f_noise</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span>, <span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">rel_s_noise</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP10update_KuuERKNSt6vectorI17ClusterDescriptorEE">
-<span class="target" id="classSparseGP_1afb858b0bffc2e0ec10f289bc8d8eebad"></span>void <code class="descname">update_Kuu</code><span class="sig-paren">(</span><em class="property">const</em> std::vector&lt;<a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a>&gt; &amp;<em>cluster_descriptors</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP10update_KuuERKNSt6vectorI17ClusterDescriptorEE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP10update_KuuERKNSt6vectorI17ClusterDescriptorEE">
+<span class="target" id="classSparseGP_1afb858b0bffc2e0ec10f289bc8d8eebad"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update_Kuu</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor"><span class="n"><span class="pre">ClusterDescriptor</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cluster_descriptors</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP10update_KuuERKNSt6vectorI17ClusterDescriptorEE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP10update_KufERKNSt6vectorI17ClusterDescriptorEE">
-<span class="target" id="classSparseGP_1a651cea0843dbefc7dafa2baf175d7dca"></span>void <code class="descname">update_Kuf</code><span class="sig-paren">(</span><em class="property">const</em> std::vector&lt;<a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a>&gt; &amp;<em>cluster_descriptors</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP10update_KufERKNSt6vectorI17ClusterDescriptorEE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP10update_KufERKNSt6vectorI17ClusterDescriptorEE">
+<span class="target" id="classSparseGP_1a651cea0843dbefc7dafa2baf175d7dca"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update_Kuf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor"><span class="n"><span class="pre">ClusterDescriptor</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cluster_descriptors</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP10update_KufERKNSt6vectorI17ClusterDescriptorEE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP9stack_KuuEv">
-<span class="target" id="classSparseGP_1ae542c9587ee494b0249407680df52999"></span>void <code class="descname">stack_Kuu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP9stack_KuuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP9stack_KuuEv">
+<span class="target" id="classSparseGP_1ae542c9587ee494b0249407680df52999"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stack_Kuu</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP9stack_KuuEv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP9stack_KufEv">
-<span class="target" id="classSparseGP_1a96a7e80176a5edd78b94981ae7c0871b"></span>void <code class="descname">stack_Kuf</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP9stack_KufEv" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP9stack_KufEv">
+<span class="target" id="classSparseGP_1a96a7e80176a5edd78b94981ae7c0871b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stack_Kuf</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP9stack_KufEv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP18update_matrices_QREv">
-<span class="target" id="classSparseGP_1a35708495008bf3702192cb6f26dd7631"></span>void <code class="descname">update_matrices_QR</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP18update_matrices_QREv" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP18update_matrices_QREv">
+<span class="target" id="classSparseGP_1a35708495008bf3702192cb6f26dd7631"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update_matrices_QR</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP18update_matrices_QREv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP12predict_meanER9Structure">
-<span class="target" id="classSparseGP_1a59f802cdf62bba25a48c1b54b8393398"></span>void <code class="descname">predict_mean</code><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP12predict_meanER9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP12predict_meanER9Structure">
+<span class="target" id="classSparseGP_1a59f802cdf62bba25a48c1b54b8393398"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">predict_mean</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP12predict_meanER9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP11predict_SORER9Structure">
-<span class="target" id="classSparseGP_1a2b095497ca8bcb83408ced497ddd32a3"></span>void <code class="descname">predict_SOR</code><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP11predict_SORER9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11predict_SORER9Structure">
+<span class="target" id="classSparseGP_1a2b095497ca8bcb83408ced497ddd32a3"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">predict_SOR</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP11predict_SORER9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP11predict_DTCER9Structure">
-<span class="target" id="classSparseGP_1a7c26fdfa87931a4d2f16ecb2762a58cb"></span>void <code class="descname">predict_DTC</code><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP11predict_DTCER9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11predict_DTCER9Structure">
+<span class="target" id="classSparseGP_1a7c26fdfa87931a4d2f16ecb2762a58cb"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">predict_DTC</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP11predict_DTCER9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP27predict_local_uncertaintiesER9Structure">
-<span class="target" id="classSparseGP_1a5efa993fce0ebbbd65d0d30d2509c01c"></span>void <code class="descname">predict_local_uncertainties</code><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a> &amp;<em>structure</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP27predict_local_uncertaintiesER9Structure" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP27predict_local_uncertaintiesER9Structure">
+<span class="target" id="classSparseGP_1a5efa993fce0ebbbd65d0d30d2509c01c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">predict_local_uncertainties</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">structure</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP27predict_local_uncertaintiesER9Structure" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP25compute_likelihood_stableEv">
-<span class="target" id="classSparseGP_1a4ec3688c611c0a80700dc9db78d0f9b5"></span>void <code class="descname">compute_likelihood_stable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP25compute_likelihood_stableEv" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP25compute_likelihood_stableEv">
+<span class="target" id="classSparseGP_1a4ec3688c611c0a80700dc9db78d0f9b5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_likelihood_stable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP25compute_likelihood_stableEv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP34compute_likelihood_gradient_stableEb">
-<span class="target" id="classSparseGP_1a6835ee8e1a1efd063cbcec4dae9ee49d"></span>double <code class="descname">compute_likelihood_gradient_stable</code><span class="sig-paren">(</span>bool <em>precomputed_KnK</em> = false<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP34compute_likelihood_gradient_stableEb" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP34compute_likelihood_gradient_stableEb">
+<span class="target" id="classSparseGP_1a6835ee8e1a1efd063cbcec4dae9ee49d"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_likelihood_gradient_stable</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">precomputed_KnK</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP34compute_likelihood_gradient_stableEb" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP14precompute_KnKEv">
-<span class="target" id="classSparseGP_1a7c9d34d0c8b008b820d340a8c44e8b8a"></span>void <code class="descname">precompute_KnK</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP14precompute_KnKEv" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP14precompute_KnKEv">
+<span class="target" id="classSparseGP_1a7c9d34d0c8b008b820d340a8c44e8b8a"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">precompute_KnK</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP14precompute_KnKEv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP11compute_KnKEb">
-<span class="target" id="classSparseGP_1a415161449006a5f530fb4ae04cd86f71"></span>void <code class="descname">compute_KnK</code><span class="sig-paren">(</span>bool <em>precomputed</em> = false<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP11compute_KnKEb" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11compute_KnKEb">
+<span class="target" id="classSparseGP_1a415161449006a5f530fb4ae04cd86f71"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_KnK</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">precomputed</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP11compute_KnKEb" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP12compute_dKnKEi">
-<span class="target" id="classSparseGP_1abee5cd9dd18379e926b68cc5ee6959dc"></span>Eigen::MatrixXd <code class="descname">compute_dKnK</code><span class="sig-paren">(</span>int <em>i</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP12compute_dKnKEi" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP12compute_dKnKEi">
+<span class="target" id="classSparseGP_1abee5cd9dd18379e926b68cc5ee6959dc"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_dKnK</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP12compute_dKnKEi" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP18compute_likelihoodEv">
-<span class="target" id="classSparseGP_1a485e3157b8e7f3775e225986d3d1ec7b"></span>void <code class="descname">compute_likelihood</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP18compute_likelihoodEv" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP18compute_likelihoodEv">
+<span class="target" id="classSparseGP_1a485e3157b8e7f3775e225986d3d1ec7b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_likelihood</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP18compute_likelihoodEv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP27compute_likelihood_gradientERKN5Eigen8VectorXdE">
-<span class="target" id="classSparseGP_1adb3b7c2f3e5ee62bbace08b8bb26ed4b"></span>double <code class="descname">compute_likelihood_gradient</code><span class="sig-paren">(</span><em class="property">const</em> Eigen::VectorXd &amp;<em>hyperparameters</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP27compute_likelihood_gradientERKN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP27compute_likelihood_gradientERKN5Eigen8VectorXdE">
+<span class="target" id="classSparseGP_1adb3b7c2f3e5ee62bbace08b8bb26ed4b"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">compute_likelihood_gradient</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hyperparameters</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP27compute_likelihood_gradientERKN5Eigen8VectorXdE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP19set_hyperparametersEN5Eigen8VectorXdE">
-<span class="target" id="classSparseGP_1af0bf64c66fa7f1cb6c9c6b3165ed3fd4"></span>void <code class="descname">set_hyperparameters</code><span class="sig-paren">(</span>Eigen::VectorXd <em>hyps</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP19set_hyperparametersEN5Eigen8VectorXdE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP19set_hyperparametersEN5Eigen8VectorXdE">
+<span class="target" id="classSparseGP_1af0bf64c66fa7f1cb6c9c6b3165ed3fd4"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_hyperparameters</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hyps</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP19set_hyperparametersEN5Eigen8VectorXdE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP26write_mapping_coefficientsENSt6stringENSt6stringEi">
-<span class="target" id="classSparseGP_1adbbe4ec72c9bff8b1e6fac28cd612a7e"></span>void <code class="descname">write_mapping_coefficients</code><span class="sig-paren">(</span>std::string <em>file_name</em>, std::string <em>contributor</em>, int <em>kernel_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP26write_mapping_coefficientsENSt6stringENSt6stringEi" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP26write_mapping_coefficientsENSt6stringENSt6stringEi">
+<span class="target" id="classSparseGP_1adbbe4ec72c9bff8b1e6fac28cd612a7e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write_mapping_coefficients</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">file_name</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">contributor</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">kernel_index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP26write_mapping_coefficientsENSt6stringENSt6stringEi" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP25write_varmap_coefficientsENSt6stringENSt6stringEi">
-<span class="target" id="classSparseGP_1a50c6c52bf7a234dda4fe9c31c7f84cfa"></span>void <code class="descname">write_varmap_coefficients</code><span class="sig-paren">(</span>std::string <em>file_name</em>, std::string <em>contributor</em>, int <em>kernel_index</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP25write_varmap_coefficientsENSt6stringENSt6stringEi" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP25write_varmap_coefficientsENSt6stringENSt6stringEi">
+<span class="target" id="classSparseGP_1a50c6c52bf7a234dda4fe9c31c7f84cfa"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write_varmap_coefficients</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">file_name</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">contributor</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">kernel_index</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP25write_varmap_coefficientsENSt6stringENSt6stringEi" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP24write_sparse_descriptorsENSt6stringENSt6stringE">
-<span class="target" id="classSparseGP_1ad07cd7a4520382e896341be6634992ae"></span>void <code class="descname">write_sparse_descriptors</code><span class="sig-paren">(</span>std::string <em>file_name</em>, std::string <em>contributor</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP24write_sparse_descriptorsENSt6stringENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP24write_sparse_descriptorsENSt6stringENSt6stringE">
+<span class="target" id="classSparseGP_1ad07cd7a4520382e896341be6634992ae"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write_sparse_descriptors</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">file_name</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">contributor</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP24write_sparse_descriptorsENSt6stringENSt6stringE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="_CPPv4N8SparseGP15write_L_inverseENSt6stringENSt6stringE">
-<span class="target" id="classSparseGP_1a70bc7fce6f88592fb5083c842fd18b3a"></span>void <code class="descname">write_L_inverse</code><span class="sig-paren">(</span>std::string <em>file_name</em>, std::string <em>contributor</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP15write_L_inverseENSt6stringENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15write_L_inverseENSt6stringENSt6stringE">
+<span class="target" id="classSparseGP_1a70bc7fce6f88592fb5083c842fd18b3a"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write_L_inverse</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">file_name</span></span>, <span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">contributor</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP15write_L_inverseENSt6stringENSt6stringE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </div>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric">Public Members</p>
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15hyperparametersE">
-<span class="target" id="classSparseGP_1a2586aeed36833f13dd851f41a4e97c49"></span>Eigen::VectorXd <code class="descname">hyperparameters</code><a class="headerlink" href="#_CPPv4N8SparseGP15hyperparametersE" title="Permalink to this definition">¶</a><br /></dt>
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15hyperparametersE">
+<span class="target" id="classSparseGP_1a2586aeed36833f13dd851f41a4e97c49"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">hyperparameters</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15hyperparametersE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP7kernelsE">
-<span class="target" id="classSparseGP_1a7d5200517edf2a031ecee9658e196522"></span>std::vector&lt;<a class="reference internal" href="kernels.html#_CPPv46Kernel" title="Kernel">Kernel</a> *&gt; <code class="descname">kernels</code><a class="headerlink" href="#_CPPv4N8SparseGP7kernelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP7kernelsE">
+<span class="target" id="classSparseGP_1a7d5200517edf2a031ecee9658e196522"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="kernels.html#_CPPv46Kernel" title="Kernel"><span class="n"><span class="pre">Kernel</span></span></a><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">kernels</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP7kernelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11Kuu_kernelsE">
-<span class="target" id="classSparseGP_1a824a5c194c80fa02d3cd74a20dd30002"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuu_kernels</code><a class="headerlink" href="#_CPPv4N8SparseGP11Kuu_kernelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11Kuu_kernelsE">
+<span class="target" id="classSparseGP_1a824a5c194c80fa02d3cd74a20dd30002"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuu_kernels</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11Kuu_kernelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11Kuf_kernelsE">
-<span class="target" id="classSparseGP_1afc932aa48dfa43b747f45bcb86cbd9d6"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuf_kernels</code><a class="headerlink" href="#_CPPv4N8SparseGP11Kuf_kernelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11Kuf_kernelsE">
+<span class="target" id="classSparseGP_1afc932aa48dfa43b747f45bcb86cbd9d6"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuf_kernels</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11Kuf_kernelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP3KuuE">
-<span class="target" id="classSparseGP_1a2e3d498ebef9c69e115faa80764f0f9f"></span>Eigen::MatrixXd <code class="descname">Kuu</code><a class="headerlink" href="#_CPPv4N8SparseGP3KuuE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP3KuuE">
+<span class="target" id="classSparseGP_1a2e3d498ebef9c69e115faa80764f0f9f"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuu</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP3KuuE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP3KufE">
-<span class="target" id="classSparseGP_1aab642089f7e199a318a3df0d1a5c66c7"></span>Eigen::MatrixXd <code class="descname">Kuf</code><a class="headerlink" href="#_CPPv4N8SparseGP3KufE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP3KufE">
+<span class="target" id="classSparseGP_1aab642089f7e199a318a3df0d1a5c66c7"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuf</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP3KufE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15Kuf_e_noise_KfuE">
-<span class="target" id="classSparseGP_1a9b25222ab408d19a277d22cf6fbc846f"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuf_e_noise_Kfu</code><a class="headerlink" href="#_CPPv4N8SparseGP15Kuf_e_noise_KfuE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15Kuf_e_noise_KfuE">
+<span class="target" id="classSparseGP_1a9b25222ab408d19a277d22cf6fbc846f"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuf_e_noise_Kfu</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15Kuf_e_noise_KfuE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15Kuf_f_noise_KfuE">
-<span class="target" id="classSparseGP_1af148968fae50978c577f8dd8a6397bb6"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuf_f_noise_Kfu</code><a class="headerlink" href="#_CPPv4N8SparseGP15Kuf_f_noise_KfuE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15Kuf_f_noise_KfuE">
+<span class="target" id="classSparseGP_1af148968fae50978c577f8dd8a6397bb6"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuf_f_noise_Kfu</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15Kuf_f_noise_KfuE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15Kuf_s_noise_KfuE">
-<span class="target" id="classSparseGP_1a0279d70627ed7203386c2be12b283268"></span>std::vector&lt;Eigen::MatrixXd&gt; <code class="descname">Kuf_s_noise_Kfu</code><a class="headerlink" href="#_CPPv4N8SparseGP15Kuf_s_noise_KfuE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15Kuf_s_noise_KfuE">
+<span class="target" id="classSparseGP_1a0279d70627ed7203386c2be12b283268"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuf_s_noise_Kfu</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15Kuf_s_noise_KfuE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5KnK_eE">
-<span class="target" id="classSparseGP_1a0cf5c2b2b6b30bf01c6d8ad4e935451c"></span>Eigen::MatrixXd <code class="descname">KnK_e</code><a class="headerlink" href="#_CPPv4N8SparseGP5KnK_eE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5KnK_eE">
+<span class="target" id="classSparseGP_1a0cf5c2b2b6b30bf01c6d8ad4e935451c"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">KnK_e</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5KnK_eE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5KnK_fE">
-<span class="target" id="classSparseGP_1a294e48726846a196eaccc626fe3f1f2e"></span>Eigen::MatrixXd <code class="descname">KnK_f</code><a class="headerlink" href="#_CPPv4N8SparseGP5KnK_fE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5KnK_fE">
+<span class="target" id="classSparseGP_1a294e48726846a196eaccc626fe3f1f2e"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">KnK_f</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5KnK_fE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5KnK_sE">
-<span class="target" id="classSparseGP_1ac5793b0703a41e405afccdb1a68bb8fc"></span>Eigen::MatrixXd <code class="descname">KnK_s</code><a class="headerlink" href="#_CPPv4N8SparseGP5KnK_sE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5KnK_sE">
+<span class="target" id="classSparseGP_1ac5793b0703a41e405afccdb1a68bb8fc"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">KnK_s</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5KnK_sE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP9n_kernelsE">
-<span class="target" id="classSparseGP_1af664a85e7153ae8fb615cb86f69a1398"></span>int <code class="descname">n_kernels</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP9n_kernelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP9n_kernelsE">
+<span class="target" id="classSparseGP_1af664a85e7153ae8fb615cb86f69a1398"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_kernels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP9n_kernelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP10Kuu_jitterE">
-<span class="target" id="classSparseGP_1aa3547657bb80516758fbd18be83d0d38"></span>double <code class="descname">Kuu_jitter</code><a class="headerlink" href="#_CPPv4N8SparseGP10Kuu_jitterE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP10Kuu_jitterE">
+<span class="target" id="classSparseGP_1aa3547657bb80516758fbd18be83d0d38"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuu_jitter</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP10Kuu_jitterE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5SigmaE">
-<span class="target" id="classSparseGP_1a9d58d403908dcd63f3a0ba4ba902f245"></span>Eigen::MatrixXd <code class="descname">Sigma</code><a class="headerlink" href="#_CPPv4N8SparseGP5SigmaE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5SigmaE">
+<span class="target" id="classSparseGP_1a9d58d403908dcd63f3a0ba4ba902f245"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Sigma</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5SigmaE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11Kuu_inverseE">
-<span class="target" id="classSparseGP_1a41693ba039e117bda15b0ff9fef6cd48"></span>Eigen::MatrixXd <code class="descname">Kuu_inverse</code><a class="headerlink" href="#_CPPv4N8SparseGP11Kuu_inverseE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11Kuu_inverseE">
+<span class="target" id="classSparseGP_1a41693ba039e117bda15b0ff9fef6cd48"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Kuu_inverse</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11Kuu_inverseE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5R_invE">
-<span class="target" id="classSparseGP_1ac51fb40306c614f3e5bb852076da076b"></span>Eigen::MatrixXd <code class="descname">R_inv</code><a class="headerlink" href="#_CPPv4N8SparseGP5R_invE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5R_invE">
+<span class="target" id="classSparseGP_1ac51fb40306c614f3e5bb852076da076b"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R_inv</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5R_invE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5L_invE">
-<span class="target" id="classSparseGP_1ab61487ea30090d70bdb10767ccebffe2"></span>Eigen::MatrixXd <code class="descname">L_inv</code><a class="headerlink" href="#_CPPv4N8SparseGP5L_invE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5L_invE">
+<span class="target" id="classSparseGP_1ab61487ea30090d70bdb10767ccebffe2"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">L_inv</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5L_invE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP5alphaE">
-<span class="target" id="classSparseGP_1a110045148b2bad7da845d3b617d79a7d"></span>Eigen::VectorXd <code class="descname">alpha</code><a class="headerlink" href="#_CPPv4N8SparseGP5alphaE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP5alphaE">
+<span class="target" id="classSparseGP_1a110045148b2bad7da845d3b617d79a7d"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">alpha</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP5alphaE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP10R_inv_diagE">
-<span class="target" id="classSparseGP_1af632c09c77211ba36d9bc0a75e1fdd5e"></span>Eigen::VectorXd <code class="descname">R_inv_diag</code><a class="headerlink" href="#_CPPv4N8SparseGP10R_inv_diagE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP10R_inv_diagE">
+<span class="target" id="classSparseGP_1af632c09c77211ba36d9bc0a75e1fdd5e"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R_inv_diag</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP10R_inv_diagE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP6L_diagE">
-<span class="target" id="classSparseGP_1ae3bb7d99b981dc2927c15b8b129f414d"></span>Eigen::VectorXd <code class="descname">L_diag</code><a class="headerlink" href="#_CPPv4N8SparseGP6L_diagE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP6L_diagE">
+<span class="target" id="classSparseGP_1ae3bb7d99b981dc2927c15b8b129f414d"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">L_diag</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP6L_diagE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP18sparse_descriptorsE">
-<span class="target" id="classSparseGP_1a1a8f021c9f4847ba47c56cfc0edc3312"></span>std::vector&lt;<a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor">ClusterDescriptor</a>&gt; <code class="descname">sparse_descriptors</code><a class="headerlink" href="#_CPPv4N8SparseGP18sparse_descriptorsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP18sparse_descriptorsE">
+<span class="target" id="classSparseGP_1a1a8f021c9f4847ba47c56cfc0edc3312"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="descriptors.html#_CPPv417ClusterDescriptor" title="ClusterDescriptor"><span class="n"><span class="pre">ClusterDescriptor</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sparse_descriptors</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP18sparse_descriptorsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP19training_structuresE">
-<span class="target" id="classSparseGP_1a837be4d1f4308158a7889b3400d54624"></span>std::vector&lt;<a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure">Structure</a>&gt; <code class="descname">training_structures</code><a class="headerlink" href="#_CPPv4N8SparseGP19training_structuresE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP19training_structuresE">
+<span class="target" id="classSparseGP_1a837be4d1f4308158a7889b3400d54624"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="structure.html#_CPPv49Structure" title="Structure"><span class="n"><span class="pre">Structure</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">training_structures</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP19training_structuresE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP14sparse_indicesE">
-<span class="target" id="classSparseGP_1a64119987dc2c43fc874509d784406463"></span>std::vector&lt;std::vector&lt;std::vector&lt;int&gt;&gt;&gt; <code class="descname">sparse_indices</code><a class="headerlink" href="#_CPPv4N8SparseGP14sparse_indicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP14sparse_indicesE">
+<span class="target" id="classSparseGP_1a64119987dc2c43fc874509d784406463"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sparse_indices</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP14sparse_indicesE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP21training_atom_indicesE">
-<span class="target" id="classSparseGP_1a08839685245cebd453574797ac2430d1"></span>std::vector&lt;std::vector&lt;int&gt;&gt; <code class="descname">training_atom_indices</code><a class="headerlink" href="#_CPPv4N8SparseGP21training_atom_indicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP21training_atom_indicesE">
+<span class="target" id="classSparseGP_1a08839685245cebd453574797ac2430d1"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">int</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">training_atom_indices</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP21training_atom_indicesE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP12noise_vectorE">
-<span class="target" id="classSparseGP_1a77dce9774930c40258f541ef9b638aa6"></span>Eigen::VectorXd <code class="descname">noise_vector</code><a class="headerlink" href="#_CPPv4N8SparseGP12noise_vectorE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP12noise_vectorE">
+<span class="target" id="classSparseGP_1a77dce9774930c40258f541ef9b638aa6"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">noise_vector</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP12noise_vectorE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP1yE">
-<span class="target" id="classSparseGP_1a8288ad2ec3815c548639342f3688c056"></span>Eigen::VectorXd <code class="descname">y</code><a class="headerlink" href="#_CPPv4N8SparseGP1yE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP1yE">
+<span class="target" id="classSparseGP_1a8288ad2ec3815c548639342f3688c056"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">y</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP1yE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11label_countE">
-<span class="target" id="classSparseGP_1ac9019277d1017d1e6b7da6a64e8776e3"></span>Eigen::VectorXd <code class="descname">label_count</code><a class="headerlink" href="#_CPPv4N8SparseGP11label_countE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11label_countE">
+<span class="target" id="classSparseGP_1ac9019277d1017d1e6b7da6a64e8776e3"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">label_count</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11label_countE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11e_noise_oneE">
-<span class="target" id="classSparseGP_1adf90c1f9ccc44f7fea2c0bc08014fa14"></span>Eigen::VectorXd <code class="descname">e_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP11e_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11e_noise_oneE">
+<span class="target" id="classSparseGP_1adf90c1f9ccc44f7fea2c0bc08014fa14"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">e_noise_one</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11e_noise_oneE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11f_noise_oneE">
-<span class="target" id="classSparseGP_1a360eebf42301d44e9c227ffab84f8474"></span>Eigen::VectorXd <code class="descname">f_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP11f_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11f_noise_oneE">
+<span class="target" id="classSparseGP_1a360eebf42301d44e9c227ffab84f8474"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">f_noise_one</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11f_noise_oneE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11s_noise_oneE">
-<span class="target" id="classSparseGP_1a4b16db19193acb3f6becf35c42c2fb2b"></span>Eigen::VectorXd <code class="descname">s_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP11s_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11s_noise_oneE">
+<span class="target" id="classSparseGP_1a4b16db19193acb3f6becf35c42c2fb2b"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">s_noise_one</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11s_noise_oneE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15inv_e_noise_oneE">
-<span class="target" id="classSparseGP_1a16d9ba345168b6f70dcf89c7d81d328a"></span>Eigen::VectorXd <code class="descname">inv_e_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP15inv_e_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15inv_e_noise_oneE">
+<span class="target" id="classSparseGP_1a16d9ba345168b6f70dcf89c7d81d328a"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inv_e_noise_one</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15inv_e_noise_oneE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15inv_f_noise_oneE">
-<span class="target" id="classSparseGP_1a5e8dccab8b71583ef51544187dc24554"></span>Eigen::VectorXd <code class="descname">inv_f_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP15inv_f_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15inv_f_noise_oneE">
+<span class="target" id="classSparseGP_1a5e8dccab8b71583ef51544187dc24554"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inv_f_noise_one</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15inv_f_noise_oneE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15inv_s_noise_oneE">
-<span class="target" id="classSparseGP_1a11cce1cc61309c1461326c053bee03ff"></span>Eigen::VectorXd <code class="descname">inv_s_noise_one</code><a class="headerlink" href="#_CPPv4N8SparseGP15inv_s_noise_oneE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15inv_s_noise_oneE">
+<span class="target" id="classSparseGP_1a11cce1cc61309c1461326c053bee03ff"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inv_s_noise_one</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP15inv_s_noise_oneE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15n_energy_labelsE">
-<span class="target" id="classSparseGP_1a1d14578521939f2637d3938862e99eb4"></span>int <code class="descname">n_energy_labels</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP15n_energy_labelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15n_energy_labelsE">
+<span class="target" id="classSparseGP_1a1d14578521939f2637d3938862e99eb4"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_energy_labels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP15n_energy_labelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP14n_force_labelsE">
-<span class="target" id="classSparseGP_1a2b268c374dfe962932e7a58bd4e5c779"></span>int <code class="descname">n_force_labels</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP14n_force_labelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP14n_force_labelsE">
+<span class="target" id="classSparseGP_1a2b268c374dfe962932e7a58bd4e5c779"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_force_labels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP14n_force_labelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP15n_stress_labelsE">
-<span class="target" id="classSparseGP_1aaa9446915071730508c8c9b09b3ca87a"></span>int <code class="descname">n_stress_labels</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP15n_stress_labelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP15n_stress_labelsE">
+<span class="target" id="classSparseGP_1aaa9446915071730508c8c9b09b3ca87a"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_stress_labels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP15n_stress_labelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP8n_sparseE">
-<span class="target" id="classSparseGP_1ac536fdb9c7c06736d0761b6258648aa1"></span>int <code class="descname">n_sparse</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP8n_sparseE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP8n_sparseE">
+<span class="target" id="classSparseGP_1ac536fdb9c7c06736d0761b6258648aa1"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_sparse</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP8n_sparseE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP8n_labelsE">
-<span class="target" id="classSparseGP_1aaf4f35e8118b473f42af4dca0dd7af2a"></span>int <code class="descname">n_labels</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP8n_labelsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP8n_labelsE">
+<span class="target" id="classSparseGP_1aaf4f35e8118b473f42af4dca0dd7af2a"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_labels</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP8n_labelsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP8n_strucsE">
-<span class="target" id="classSparseGP_1a0a422c6f0ea637ccea1d85ea0bafa03e"></span>int <code class="descname">n_strucs</code> = 0<a class="headerlink" href="#_CPPv4N8SparseGP8n_strucsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP8n_strucsE">
+<span class="target" id="classSparseGP_1a0a422c6f0ea637ccea1d85ea0bafa03e"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">n_strucs</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N8SparseGP8n_strucsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP12energy_noiseE">
-<span class="target" id="classSparseGP_1a88625c04d8352c4c6d5a983114581cb8"></span>double <code class="descname">energy_noise</code><a class="headerlink" href="#_CPPv4N8SparseGP12energy_noiseE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP12energy_noiseE">
+<span class="target" id="classSparseGP_1a88625c04d8352c4c6d5a983114581cb8"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">energy_noise</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP12energy_noiseE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP11force_noiseE">
-<span class="target" id="classSparseGP_1af600ec140f4a6a02ce2435ab8ab617cc"></span>double <code class="descname">force_noise</code><a class="headerlink" href="#_CPPv4N8SparseGP11force_noiseE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP11force_noiseE">
+<span class="target" id="classSparseGP_1af600ec140f4a6a02ce2435ab8ab617cc"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">force_noise</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP11force_noiseE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP12stress_noiseE">
-<span class="target" id="classSparseGP_1a6ab04615e6e57fde42d0a88509edda45"></span>double <code class="descname">stress_noise</code><a class="headerlink" href="#_CPPv4N8SparseGP12stress_noiseE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP12stress_noiseE">
+<span class="target" id="classSparseGP_1a6ab04615e6e57fde42d0a88509edda45"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stress_noise</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP12stress_noiseE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP23log_marginal_likelihoodE">
-<span class="target" id="classSparseGP_1a3beb704b18cb84f06536425f8a7b2cdc"></span>double <code class="descname">log_marginal_likelihood</code><a class="headerlink" href="#_CPPv4N8SparseGP23log_marginal_likelihoodE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP23log_marginal_likelihoodE">
+<span class="target" id="classSparseGP_1a3beb704b18cb84f06536425f8a7b2cdc"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">log_marginal_likelihood</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP23log_marginal_likelihoodE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP8data_fitE">
-<span class="target" id="classSparseGP_1a908fa23626213bbfcb74dd18e93a6e82"></span>double <code class="descname">data_fit</code><a class="headerlink" href="#_CPPv4N8SparseGP8data_fitE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP8data_fitE">
+<span class="target" id="classSparseGP_1a908fa23626213bbfcb74dd18e93a6e82"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">data_fit</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP8data_fitE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP18complexity_penaltyE">
-<span class="target" id="classSparseGP_1aff907e985f047fc278afb65e1ea4d70c"></span>double <code class="descname">complexity_penalty</code><a class="headerlink" href="#_CPPv4N8SparseGP18complexity_penaltyE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP18complexity_penaltyE">
+<span class="target" id="classSparseGP_1aff907e985f047fc278afb65e1ea4d70c"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">complexity_penalty</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP18complexity_penaltyE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP10trace_termE">
-<span class="target" id="classSparseGP_1a61231d252971f3ba4f71c5ad825ef65d"></span>double <code class="descname">trace_term</code><a class="headerlink" href="#_CPPv4N8SparseGP10trace_termE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP10trace_termE">
+<span class="target" id="classSparseGP_1a61231d252971f3ba4f71c5ad825ef65d"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trace_term</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP10trace_termE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP13constant_termE">
-<span class="target" id="classSparseGP_1a7a11ad5dda90ac91a40cfe9c0db301d4"></span>double <code class="descname">constant_term</code><a class="headerlink" href="#_CPPv4N8SparseGP13constant_termE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP13constant_termE">
+<span class="target" id="classSparseGP_1a7a11ad5dda90ac91a40cfe9c0db301d4"></span><span class="kt"><span class="pre">double</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">constant_term</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP13constant_termE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP19likelihood_gradientE">
-<span class="target" id="classSparseGP_1a984092d701b97f1c5c706164c00834e3"></span>Eigen::VectorXd <code class="descname">likelihood_gradient</code><a class="headerlink" href="#_CPPv4N8SparseGP19likelihood_gradientE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP19likelihood_gradientE">
+<span class="target" id="classSparseGP_1a984092d701b97f1c5c706164c00834e3"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">VectorXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">likelihood_gradient</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP19likelihood_gradientE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
-<dl class="member">
-<dt id="_CPPv4N8SparseGP13varmap_coeffsE">
-<span class="target" id="classSparseGP_1a02b6c5a486ab317c6711356a2a74dd6d"></span>Eigen::MatrixXd <code class="descname">varmap_coeffs</code><a class="headerlink" href="#_CPPv4N8SparseGP13varmap_coeffsE" title="Permalink to this definition">¶</a><br /></dt>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N8SparseGP13varmap_coeffsE">
+<span class="target" id="classSparseGP_1a02b6c5a486ab317c6711356a2a74dd6d"></span><span class="n"><span class="pre">Eigen</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">MatrixXd</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">varmap_coeffs</span></span></span><a class="headerlink" href="#_CPPv4N8SparseGP13varmap_coeffsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </div>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric">Public Static Functions</p>
-<dl class="function">
-<dt id="_CPPv4N8SparseGP9from_jsonENSt6stringE">
-<span class="target" id="classSparseGP_1abb5115fa2ce1ad2272547594b891ebf5"></span><a class="reference internal" href="#_CPPv48SparseGP" title="SparseGP">SparseGP</a> <code class="descname">from_json</code><span class="sig-paren">(</span>std::string <em>file_name</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N8SparseGP9from_jsonENSt6stringE" title="Permalink to this definition">¶</a><br /></dt>
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp">
+<span class="target" id="classSparseGP_1abb5115fa2ce1ad2272547594b891ebf5"></span><span class="sig-name descname"><span class="pre">static</span> <span class="pre">NLOHMANN_DEFINE_TYPE_INTRUSIVE(SparseGP,</span> <span class="pre">hyperparameters,</span> <span class="pre">kernels,</span> <span class="pre">Kuu_kernels,</span> <span class="pre">Kuf_kernels,</span> <span class="pre">Kuu,</span> <span class="pre">Kuf,</span> <span class="pre">n_kernels,</span> <span class="pre">Kuu_jitter,</span> <span class="pre">Sigma,</span> <span class="pre">Kuu_inverse,</span> <span class="pre">R_inv,</span> <span class="pre">L_inv,</span> <span class="pre">alpha,</span> <span class="pre">R_inv_diag,</span> <span class="pre">L_diag,</span> <span class="pre">sparse_descriptors,</span> <span class="pre">training_structures,</span> <span class="pre">sparse_indices,</span> <span class="pre">noise_vector,</span> <span class="pre">y,</span> <span class="pre">label_count,</span> <span class="pre">n_energy_labels,</span> <span class="pre">n_force_labels,</span> <span class="pre">n_stress_labels,</span> <span class="pre">n_sparse,</span> <span class="pre">n_labels,</span> <span class="pre">n_strucs,</span> <span class="pre">energy_noise,</span> <span class="pre">force_noise,</span> <span class="pre">stress_noise,</span> <span class="pre">log_marginal_likelihood,</span> <span class="pre">data_fit,</span> <span class="pre">complexity_penalty,</span> <span class="pre">trace_term,</span> <span class="pre">constant_term,</span> <span class="pre">likelihood_gradient)</span> <span class="pre">void</span> <span class="pre">to_json(std</span> <span class="pre">SparseGP</span> <span class="pre">from_json</span> <span class="pre">(std::string</span> <span class="pre">file_name)</span></span></dt>
 <dd></dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="descriptors.html" class="btn btn-neutral float-right" title="Descriptors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="structure.html" class="btn btn-neutral float-left" title="Structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="structure.html" class="btn btn-neutral float-left" title="Structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="descriptors.html" class="btn btn-neutral float-right" title="Descriptors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
-
-    </p>
+    <p>&#169; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -1,68 +1,32 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compile LAMMPS with FLARE &mdash; flare 1.3.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Tutorials" href="../tutorials/tutorials.html" />
     <link rel="prev" title="Installation of FLARE" href="install.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> flare
-          
-
-          
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,17 +34,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="install.html">Installation of FLARE</a></li>
@@ -107,82 +61,43 @@
 <li class="toctree-l1"><a class="reference internal" href="../citing.html">How to Cite</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">flare</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="installation.html">Installation</a> &raquo;</li>
-        
       <li>Compile LAMMPS with FLARE</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/installation/lammps.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   
 <style>
 /* CSS overrides for sphinx_rtd_theme */
 
 /* 24px margin */
-.nbinput.nblast,
-.nboutput.nblast {
+.nbinput.nblast.container,
+.nboutput.nblast.container {
     margin-bottom: 19px;  /* padding has already 5px */
 }
 
 /* ... except between code cells! */
-.nblast + .nbinput {
+.nblast.container + .nbinput.container {
     margin-top: -19px;
 }
 
@@ -195,19 +110,19 @@
     text-align: unset;
 }
 </style>
-<div class="section" id="compile-lammps-with-flare">
-<h1>Compile LAMMPS with FLARE<a class="headerlink" href="#compile-lammps-with-flare" title="Permalink to this headline">¶</a></h1>
+<section id="compile-lammps-with-flare">
+<h1>Compile LAMMPS with FLARE<a class="headerlink" href="#compile-lammps-with-flare" title="Permalink to this headline"></a></h1>
 <p>Anders Johansson</p>
-<div class="section" id="compilation-with-cmake">
-<h2>Compilation with CMake<a class="headerlink" href="#compilation-with-cmake" title="Permalink to this headline">¶</a></h2>
+<section id="compilation-with-cmake">
+<h2>Compilation with CMake<a class="headerlink" href="#compilation-with-cmake" title="Permalink to this headline"></a></h2>
 <ol class="arabic simple">
-<li>Download LAMMPS, e.g.</li>
+<li><p>Download LAMMPS, e.g.</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --depth<span class="o">=</span><span class="m">1</span> https://github.com/lammps/lammps.git
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
-<li>From the directory <code class="docutils literal notranslate"><span class="pre">flare/lammps_plugins</span></code>, run the install script.</li>
+<li><p>From the directory <code class="docutils literal notranslate"><span class="pre">flare/lammps_plugins</span></code>, run the install script.</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> path/to/flare/lammps_plugins
 ./install.sh /path/to/lammps
@@ -215,16 +130,16 @@
 </div>
 <p>This copies the necessary files and slightly updates the LAMMPS CMake file.</p>
 <ol class="arabic simple" start="3">
-<li>Compile LAMMPS with CMake as usual. If you’re not using Kokkos, the Makefile system might also work.</li>
+<li><p>Compile LAMMPS with CMake as usual. If you’re not using Kokkos, the Makefile system might also work.</p></li>
 </ol>
 <p>Note: The pair style uses the Eigen (<a class="reference external" href="https://gitlab.com/libeigen/eigen">https://gitlab.com/libeigen/eigen</a>) (header-only) library.
 This needs to be found by the compiler. Specifically, the <code class="docutils literal notranslate"><span class="pre">Eigen</span></code> folder. There are two workarounds.</p>
 <ol class="arabic simple">
-<li>Clone the <code class="docutils literal notranslate"><span class="pre">eigen</span></code> repository, and <code class="docutils literal notranslate"><span class="pre">mv</span> <span class="pre">eigen/Eigen</span> <span class="pre">/path/to/lammps/src/</span></code> if it is not easily available on your system.</li>
-<li>If you are using LAMMPS version &gt; 17Feb22, then you can set <code class="docutils literal notranslate"><span class="pre">-DPKG_MACHDYN=yes</span> <span class="pre">-DDOWNLOAD_EIGEN3=yes</span></code> for cmake, and Eigen3 will be downloaded and compiled automatically.</li>
+<li><p>Clone the <code class="docutils literal notranslate"><span class="pre">eigen</span></code> repository, and <code class="docutils literal notranslate"><span class="pre">mv</span> <span class="pre">eigen/Eigen</span> <span class="pre">/path/to/lammps/src/</span></code> if it is not easily available on your system.</p></li>
+<li><p>If you are using LAMMPS version &gt; 17Feb22, then you can set <code class="docutils literal notranslate"><span class="pre">-DPKG_MACHDYN=yes</span> <span class="pre">-DDOWNLOAD_EIGEN3=yes</span></code> for cmake, and Eigen3 will be downloaded and compiled automatically.</p></li>
 </ol>
-<div class="section" id="compilation-for-gpu-with-kokkos">
-<h3>Compilation for GPU with Kokkos<a class="headerlink" href="#compilation-for-gpu-with-kokkos" title="Permalink to this headline">¶</a></h3>
+<section id="compilation-for-gpu-with-kokkos">
+<h3>Compilation for GPU with Kokkos<a class="headerlink" href="#compilation-for-gpu-with-kokkos" title="Permalink to this headline"></a></h3>
 <p>Run the above steps, follow LAMMPS’s compilation instructions with Kokkos (<a class="reference external" href="https://docs.lammps.org/Build_extras.html#kokkos">https://docs.lammps.org/Build_extras.html#kokkos</a>). Typically</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> lammps
 mkdir build
@@ -235,10 +150,10 @@ make -j&lt;n_cpus&gt;
 </div>
 <p>If you really, really, really want to use the old Makefile system, you should be able to copy the files from <code class="docutils literal notranslate"><span class="pre">kokkos/</span></code> into <code class="docutils literal notranslate"><span class="pre">/path/to/lammps/src</span></code>, do <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">yes-kokkos</span></code> and otherwise follow the LAMMPS Kokkos instructions.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">KOKKOS_ARCH</span></code> must be changed according to your GPU model. <code class="docutils literal notranslate"><span class="pre">Volta70</span></code> is for V100, <code class="docutils literal notranslate"><span class="pre">Pascal60</span></code> is for P100, etc.</p>
-</div>
-</div>
-<div class="section" id="basic-usage">
-<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="basic-usage">
+<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h2>
 <p>For the model with B2 descriptors and NormalizedDotProduct kernel, the LAMMPS input script:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>newton on
 pair_style  flare
@@ -247,10 +162,10 @@ pair_coeff  * * Si.txt
 </div>
 <p>where <code class="docutils literal notranslate"><span class="pre">Si.txt</span></code> should be replaced by the name of your mapped model. Then run <code class="docutils literal notranslate"><span class="pre">lmp</span> <span class="pre">-in</span> <span class="pre">in.script</span></code> as usual.</p>
 <p>For the model with 2+3 body descriptors, the LAMMPS non-Kokkos version uses <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code>, while the Kokkos version uses <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code>.</p>
-<div class="section" id="running-on-a-gpu-with-kokkos">
-<h3>Running on a GPU with Kokkos<a class="headerlink" href="#running-on-a-gpu-with-kokkos" title="Permalink to this headline">¶</a></h3>
+<section id="running-on-a-gpu-with-kokkos">
+<h3>Running on a GPU with Kokkos<a class="headerlink" href="#running-on-a-gpu-with-kokkos" title="Permalink to this headline"></a></h3>
 <p>See the LAMMPS documentation (<a class="reference external" href="https://docs.lammps.org/Speed_kokkos.html">https://docs.lammps.org/Speed_kokkos.html</a>). In general, run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lmp -k on g <span class="m">1</span> -sf kk -pk kokkos newton on neigh full -in in.script
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lmp -k on g <span class="m">1</span> -sf kk -pk kokkos newton on neigh full -in <span class="k">in</span>.script
 </pre></div>
 </div>
 <p>When running with MPI, replace <code class="docutils literal notranslate"><span class="pre">g</span> <span class="pre">1</span></code> with the number of GPUs <em>per node</em>.</p>
@@ -263,7 +178,7 @@ A sample SLURM job script for 4 nodes, each with 48 cores, may look something li
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --nodes=4</span>
 <span class="c1">#SBATCH --ntasks-per-node=1</span>
 <span class="c1">#SBATCH --cpus-per-task=48</span>
-mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="nv">$SLURM_CPUS_PER_TASK</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_omp -k on t <span class="nv">$SLURM_CPUS_PER_TASK</span> -sf kk -package kokkos newton off neigh full -in <span class="k">in</span>.lammps
 </pre></div>
 </div>
 <p>When running on Knight’s Landing or other heavily hyperthreaded systems, you may want to try using more than one thread per CPU.</p>
@@ -274,69 +189,51 @@ A sample SLURM job script for 4 nodes, each with 2 GPUs, may look something like
 <span class="c1">#SBATCH --ntasks-per-node=2</span>
 <span class="c1">#SBATCH --cpus-per-task=1</span>
 <span class="c1">#SBATCH --gpus-per-node=2</span>
-mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="nv">$SLURM_GPUS_PER_NODE</span> -sf kk -package kokkos newton off neigh full -in in.lammps
+mpirun -np <span class="nv">$SLURM_NTASKS</span> /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g <span class="nv">$SLURM_GPUS_PER_NODE</span> -sf kk -package kokkos newton off neigh full -in <span class="k">in</span>.lammps
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="notes-on-newton-only-relevant-with-kokkos">
-<h2>Notes on Newton (only relevant with Kokkos)<a class="headerlink" href="#notes-on-newton-only-relevant-with-kokkos" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="notes-on-newton-only-relevant-with-kokkos">
+<h2>Notes on Newton (only relevant with Kokkos)<a class="headerlink" href="#notes-on-newton-only-relevant-with-kokkos" title="Permalink to this headline"></a></h2>
 <p>There are defaults which will kick in if you don’t specify anything in the input
 script and/or skip the <code class="docutils literal notranslate"><span class="pre">-package</span> <span class="pre">kokkos</span> <span class="pre">newton</span> <span class="pre">...</span> <span class="pre">neigh</span> <span class="pre">...</span></code> flag.
 You can try these at your own risk, but it is safest to specify everything.
 See also the <a class="reference external" href="https://lammps.sandia.gov/doc/Speed_kokkos.html">documentation</a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code> will probably be faster if you have a 2-body potential,
 otherwise the alternatives should give roughly equal performance.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="../tutorials/tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="install.html" class="btn btn-neutral float-left" title="Installation of FLARE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Installation of FLARE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tutorials/tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen
-
-    </p>
+    <p>&#169; Copyright 2021, Jonathan Vandermause, Yu Xie, Anders Johansson, Cameron Owen.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
