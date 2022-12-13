@@ -163,8 +163,10 @@ TEST_F(StructureTest, LikeGrad) {
   test_struc.forces = forces;
   test_struc.stresses = stresses;
 
-  sparse_gp.add_training_structure(test_struc);
+  sparse_gp.add_training_structure(test_struc, {-1}, 0.4, 0.2, 0.3);
   sparse_gp.add_all_environments(test_struc);
+
+  // TODO: add another test structure
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
@@ -194,6 +196,7 @@ TEST_F(StructureTest, LikeGrad) {
     like_down = sparse_gp.compute_likelihood_gradient(hyps_down);
 
     fin_diff = (like_up - like_down) / (2 * pert);
+    printf("like_grad=%lg, fin_diff=%lg\n", like_grad(i), fin_diff);
 
     EXPECT_NEAR(like_grad(i), fin_diff, 5e-3 * abs(fin_diff));
   }
@@ -230,8 +233,19 @@ TEST_F(StructureTest, LikeGradStable) {
   test_struc.forces = forces;
   test_struc.stresses = stresses;
 
-  sparse_gp.add_training_structure(test_struc, {0, 1, 3, 5});
+  test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
+
+  Eigen::VectorXd energy_2 = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd forces_2 = Eigen::VectorXd::Random(n_atoms * 3);
+  Eigen::VectorXd stresses_2 = Eigen::VectorXd::Random(6);
+  test_struc_2.energy = energy_2;
+  test_struc_2.forces = forces_2;
+  test_struc_2.stresses = stresses_2;
+
+  sparse_gp.add_training_structure(test_struc, {-1}, 0.4, 0.2, 0.3);
   sparse_gp.add_specific_environments(test_struc, {0, 1, 3}); 
+  sparse_gp.add_training_structure(test_struc_2, {0, 1, 3, 5}, 0.64, 0.55, 0.45);
+  sparse_gp.add_specific_environments(test_struc_2, {2, 3, 4}); 
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
@@ -282,8 +296,8 @@ TEST_F(StructureTest, LikeGradStable) {
     fin_diff = (like_up - like_down) / (2 * pert);
 
     std::cout << like_grad(i) << " " << fin_diff << std::endl;
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-5);
-    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-6);
+    EXPECT_NEAR(like_grad(i), fin_diff, 1e-5 * abs(fin_diff));
+    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-6 * abs(fin_diff));
   }
 }
 
@@ -320,14 +334,14 @@ TEST_F(StructureTest, Set_Hyps) {
 
   // Add sparse environments and training structures.
   std::cout << "adding training structure" << std::endl;
-  sparse_gp_1.add_training_structure(test_struc);
-  sparse_gp_1.add_training_structure(test_struc_2);
+  sparse_gp_1.add_training_structure(test_struc, {-1}, 0.1, 0.2, 0.3);
+  sparse_gp_1.add_training_structure(test_struc_2, {-1}, 0.5, 0.4, 0.6);
   sparse_gp_1.add_all_environments(test_struc);
   sparse_gp_1.add_all_environments(test_struc_2);
 
   std::cout << "adding training structure" << std::endl;
-  sparse_gp_2.add_training_structure(test_struc);
-  sparse_gp_2.add_training_structure(test_struc_2);
+  sparse_gp_2.add_training_structure(test_struc, {-1}, 0.1, 0.2, 0.3);
+  sparse_gp_2.add_training_structure(test_struc_2, {-1}, 0.5, 0.4, 0.6);
   sparse_gp_2.add_all_environments(test_struc);
   sparse_gp_2.add_all_environments(test_struc_2);
 

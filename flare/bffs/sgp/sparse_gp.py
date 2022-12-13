@@ -51,6 +51,7 @@ class SGP_Wrapper:
         self.opt_method = opt_method
         self.bounds = bounds
         self.atom_indices = []
+        self.rel_efs_noise = []
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -196,6 +197,7 @@ class SGP_Wrapper:
             )
             train_struc.forces = struc_cpp.forces.reshape((struc_cpp.noa, 3))
             train_struc.stress = struc_cpp.stresses
+            train_struc.info["rel_efs_noise"] = np.array(self.rel_efs_noise[s])
 
             # Add back the single atom energies to dump the original energy
             single_atom_sum = 0
@@ -283,6 +285,9 @@ class SGP_Wrapper:
             else:
                 energy = None
 
+            rel_efs_noise = train_struc.info.get("rel_efs_noise", [1, 1, 1])
+            rel_e_noise, rel_f_noise, rel_s_noise = rel_efs_noise
+
             gp.update_db(
                 train_struc,
                 train_struc.forces,
@@ -293,6 +298,9 @@ class SGP_Wrapper:
                 sgp=None,
                 update_qr=False,
                 atom_indices=atom_indices,
+                rel_e_noise=rel_e_noise,
+                rel_f_noise=rel_f_noise,
+                rel_s_noise=rel_s_noise,
             )
 
         gp.sparse_gp.update_matrices_QR()
@@ -315,6 +323,9 @@ class SGP_Wrapper:
         sgp=None,  # for creating sgp_var
         update_qr=True,
         atom_indices=[-1],
+        rel_e_noise: float = 1,
+        rel_f_noise: float = 1,
+        rel_s_noise: float = 1,
     ):
 
         # Convert coded species to 0, 1, 2, etc.
@@ -359,7 +370,10 @@ class SGP_Wrapper:
             sgp = self.sparse_gp
             self.atom_indices.append(atom_indices)
 
-        sgp.add_training_structure(structure_descriptor, atom_indices)
+        sgp.add_training_structure(
+            structure_descriptor, atom_indices, rel_e_noise, rel_f_noise, rel_s_noise
+        )
+        self.rel_efs_noise.append([rel_e_noise, rel_f_noise, rel_s_noise])
         if mode == "all":
             if not custom_range:
                 sgp.add_all_environments(structure_descriptor)
@@ -458,6 +472,10 @@ class SGP_Wrapper:
                     mode="specific",
                     sgp=self.sgp_var,
                     update_qr=False,
+                    atom_indices=self.atom_indices[s + n_sgp_var],
+                    rel_e_noise=self.rel_efs_noise[s + n_sgp_var][0],
+                    rel_f_noise=self.rel_efs_noise[s + n_sgp_var][1],
+                    rel_s_noise=self.rel_efs_noise[s + n_sgp_var][2],
                 )
 
             self.sgp_var.update_matrices_QR()
@@ -525,6 +543,10 @@ class SGP_Wrapper:
                 mode="specific",
                 sgp=new_gp,
                 update_qr=False,
+                atom_indices=self.atom_indices[s],
+                rel_e_noise=self.rel_efs_noise[s][0],
+                rel_f_noise=self.rel_efs_noise[s][1],
+                rel_s_noise=self.rel_efs_noise[s][2],
             )
 
         new_gp.update_matrices_QR()

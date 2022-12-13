@@ -82,7 +82,7 @@ jobs:
         echo "Lapack ${{ matrix.lapack }}"
 
         cmake ..
-        cmake --build . -j
+        cmake --build . -j4
         cp _C_flare* ../flare/bffs/sgp
         cd ctests
         ./tests
@@ -90,6 +90,20 @@ jobs:
     - name: Install LAMMPS
       run: |
         git clone --depth 1 https://github.com/lammps/lammps.git lammps
+        
+        cd lammps/src
+        cp pair_hybrid.* pair_lj_cut.* ..
+        rm pair_*.cpp pair_*.h
+        mv ../pair_hybrid.* ../pair_lj_cut.* .
+        cp MANYBODY/pair_tersoff.* .
+        rm MANYBODY/pair_*.*
+        rm MANYBODY/fix_*.*
+        mv pair_tersoff.* MANYBODY/
+        cp KOKKOS/pair_kokkos.* .
+        rm KOKKOS/pair_*.*
+        mv pair_kokkos.* KOKKOS/
+        cd ../..
+       
         cd lammps_plugins
         ./install.sh $(pwd)/../lammps
         cd ..
@@ -97,7 +111,7 @@ jobs:
         cd lammps
         mkdir build
         cd build
-        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DPKG_MANYBODY=yes
+        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DPKG_MANYBODY=ON
         make -j4
 
     - name: Pip install
