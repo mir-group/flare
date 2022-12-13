@@ -299,6 +299,7 @@ void PairFLARE::read_file(char *filename) {
   MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
   MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
+  MPI_Bcast(&kernel_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(kernel_string, kernel_string_length + 1, MPI_CHAR, 0, world);
