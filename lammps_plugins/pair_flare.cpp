@@ -299,6 +299,7 @@ void PairFLARE::read_file(char *filename) {
   MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
   MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
+  MPI_Bcast(&kernel_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(kernel_string, kernel_string_length + 1, MPI_CHAR, 0, world);
@@ -357,10 +358,14 @@ void PairFLARE::read_file(char *filename) {
     cutoff_function = cos_cutoff;
 
   // Set the kernel
-  if (!strcmp(kernel_string, "NormalizedDotProduct")) {
+  if (strcmp(kernel_string, "NormalizedDotProduct") == 0) {
     normalized = true;
-  } else {
+  }
+  else if (strcmp(kernel_string, "DotProduct") == 0){
     normalized = false;
+  }
+  else {
+    error->all(FLERR, "Kernel string not recognized, expected <power> <kernel string>");
   }
 
   // Parse the beta vectors.

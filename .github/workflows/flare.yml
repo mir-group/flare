@@ -16,7 +16,8 @@ jobs:
       matrix:
         omp: [OFF, ON]
         lapack: [OFF, ON]
-    name: "(OpenMP, Lapack) ="
+        python-version: ["3.7", "3.8"]
+    name: "(OpenMP, Lapack, Python) ="
 
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
@@ -30,6 +31,10 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
 
     - name: Install Sphinx and Breathe
       run: |
@@ -90,7 +95,7 @@ jobs:
     - name: Install LAMMPS
       run: |
         git clone --depth 1 https://github.com/lammps/lammps.git lammps
-        
+
         cd lammps/src
         cp pair_hybrid.* pair_lj_cut.* ..
         rm pair_*.cpp pair_*.h
@@ -103,7 +108,7 @@ jobs:
         rm KOKKOS/pair_*.*
         mv pair_kokkos.* KOKKOS/
         cd ../..
-       
+
         cd lammps_plugins
         ./install.sh $(pwd)/../lammps
         cd ..
