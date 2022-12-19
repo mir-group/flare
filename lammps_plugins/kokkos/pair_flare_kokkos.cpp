@@ -721,6 +721,12 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
 {
   PairFLARE::coeff(narg,arg);
 
+  if(!normalized)
+    error->all(FLERR, "for now, pair flare/kk only supports the normalized kernel");
+  if(power != 2)
+    error->all(FLERR, "for now, pair flare/kk only supports the power-2 kernel");
+  //TODO check chebyshev and quadratic
+
   n_harmonics = (l_max+1)*(l_max+1);
   n_radial = n_species * n_max;
   n_bond = n_radial * n_harmonics;
