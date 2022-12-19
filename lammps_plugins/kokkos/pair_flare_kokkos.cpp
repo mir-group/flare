@@ -783,7 +783,7 @@ void PairFLAREKokkos<DeviceType>::init_style()
   if (memstr != NULL) {
     maxmem = std::atof(memstr) * 1.0e9;
   }
-  printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
+  if(comm->me==0 || comm->me==comm->nprocs-1) printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
 }
 
 
