@@ -531,6 +531,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_kernels, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&kernel_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
