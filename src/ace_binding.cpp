@@ -13,6 +13,7 @@
 #include "four_body.h"
 #include "squared_exponential.h"
 #include "normalized_dot_product.h"
+#include "dot_product.h"
 #include "norm_dot_icm.h"
 
 #include <pybind11/eigen.h>
@@ -154,6 +155,16 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("envs_struc", &NormalizedDotProduct::envs_struc)
       .def("struc_struc", &NormalizedDotProduct::struc_struc);
 
+  py::class_<DotProduct, Kernel>(m, "DotProduct")
+      .def(py::init<double, double>())
+      .def_readonly("sigma", &DotProduct::sigma)
+      .def_readwrite("power", &DotProduct::power)
+      .def_readonly("kernel_hyperparameters",
+                    &DotProduct::kernel_hyperparameters)
+      .def("envs_envs", &DotProduct::envs_envs)
+      .def("envs_struc", &DotProduct::envs_struc)
+      .def("struc_struc", &DotProduct::struc_struc);
+
   py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
       .def(py::init<double, double, Eigen::MatrixXd>());
 
@@ -177,7 +188,10 @@ PYBIND11_MODULE(_C_flare, m) {
            &SparseGP::add_uncertain_environments)
       .def("add_training_structure", &SparseGP::add_training_structure,
                        py::arg("structure"),
-                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1))
+                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1),
+                       py::arg("rel_e_noise") = 1.0,
+                       py::arg("rel_f_noise") = 1.0,
+                       py::arg("rel_s_noise") = 1.0)
       .def("update_matrices_QR", &SparseGP::update_matrices_QR)
       .def("compute_likelihood", &SparseGP::compute_likelihood)
       .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)

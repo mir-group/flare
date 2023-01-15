@@ -1,4 +1,6 @@
-[![Build Status](https://github.com/mir-group/flare/actions/workflows/main.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+[![Build Status](https://github.com/mir-group/flare/actions/workflows/flare.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+
+***NOTE: This is the latest release [1.3.3](https://github.com/mir-group/flare/releases/tag/1.3.3) which includes significant changes compared to the previous version [0.2.4](https://github.com/mir-group/flare/releases/tag/0.2.4). Please check the updated tutorials and documentations from the links below.***
 
 # FLARE: Fast Learning of Atomistic Rare Events
 
@@ -53,33 +55,17 @@ All the tutorials take a few minutes to run on a normal desktop computer or lapt
 
 ## Installation
 ### Pip installation
-If you're installing on a compute cluster, make sure to load the following modules first:
-```
-module load cmake/3.17.3-fasrc01 python/3.6.3-fasrc01 gcc/9.3.0-fasrc01
-```
-
-FLARE can be installed in two different ways.
-1. Download and install automatically:
-    ```
-    pip install mir-flare
-    ```
-2. Download this repository and install (required for unit tests):
-    ```
-    git clone https://github.com/mir-group/flare
-    cd flare
-    pip install .
-    ```
-    
+Please check the [installation guide here](https://mir-group.github.io/flare/installation/install.html).
 This will take a few minutes on a normal desktop computer or laptop.
 
 ### Developer's installation guide
-For developers, please check the [installation guide](https://mir-group.github.io/flare_pp/installation.html).
+For developers, please check the [installation guide](https://mir-group.github.io/flare/installation/install.html#developer-s-installation-guide).
 
 ### Compiling LAMMPS
 See [documentation on compiling LAMMPS with FLARE](https://mir-group.github.io/flare/installation/lammps.html)
 
 ### Trouble shooting
-If you have problem compiling and installing the code, please check the [FAQs](https://mir-group.github.io/flare_pp/faqs.html) to see if your problem is covered. Otherwise, please open an issue or contact us.
+If you have problem compiling and installing the code, please check the [FAQs](https://mir-group.github.io/flare/installation/install.html#trouble-shooting) to see if your problem is covered. Otherwise, please open an issue or contact us.
 
 ## System requirements
 ### Software dependencies

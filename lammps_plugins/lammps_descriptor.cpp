@@ -187,21 +187,32 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
                    const Eigen::VectorXd &single_bond_vals,
                    int power, int n_species,
                    int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
-                   Eigen::VectorXd &u, double *evdwl) {
+                   Eigen::VectorXd &u, double *evdwl, bool normalized) {
 
   int n1_l, n2_l, counter, n1_count, n2_count;
   int n_radial = n_species * N;
   int n_harmonics = (lmax + 1) * (lmax + 1);
 
   Eigen::VectorXd w;
-  if (power == 1) {
-    double B2_norm = pow(norm_squared, 0.5);
-    *evdwl = B2_vals.dot(beta_matrix.col(0)) / B2_norm;
-    w = beta_matrix.col(0) / B2_norm - *evdwl * B2_vals / norm_squared;
-  } else if (power == 2) { 
-    Eigen::VectorXd beta_p = beta_matrix * B2_vals;
-    *evdwl = B2_vals.dot(beta_p) / norm_squared;
-    w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared;
+  if (normalized) {
+    if (power == 1) {
+      double B2_norm = pow(norm_squared, 0.5);
+      *evdwl = B2_vals.dot(beta_matrix.col(0)) / B2_norm;
+      w = beta_matrix.col(0) / B2_norm - *evdwl * B2_vals / norm_squared;
+    } else if (power == 2) { 
+      Eigen::VectorXd beta_p = beta_matrix * B2_vals;
+      *evdwl = B2_vals.dot(beta_p) / norm_squared;
+      w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared;
+    }
+  } else {
+    if (power == 1) {
+      w = beta_matrix.col(0);
+      *evdwl = B2_vals.dot(w);
+    } else if (power == 2) { 
+      Eigen::VectorXd beta_p = beta_matrix * B2_vals;
+      *evdwl = B2_vals.dot(beta_p);
+      w = 2 * beta_p;
+    }
   }
 
   // Compute u(n1, l, m), where f_ik = u * dA/dr_ik
