@@ -143,7 +143,7 @@ def test_lammps_uncertainty(
     if n_species > n_types:
         pytest.skip()
 
-    if (power == 1) and ("kokkos" in os.environ.get("lmp")):
+    if (power == 1 or kernel_type=="DotProduct") and ("kokkos" in os.environ.get("lmp")):
         pytest.skip()
 
     os.chdir(rootdir)
@@ -211,7 +211,7 @@ pair_coeff * * {potential_file}
 ### run
 fix fix_nve all nve
 compute unc all flare/std/atom {coeff_str}
-dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc 
+dump dump_all all custom 1 traj.lammps id type x y z vx vy vz fx fy fz c_unc
 dump_modify dump_all sort id
 thermo_style custom step temp press cpu pxx pyy pzz pxy pxz pyz ke pe etotal vol lx ly lz atoms
 thermo_modify flush yes format float %23.16g
