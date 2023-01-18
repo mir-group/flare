@@ -364,10 +364,14 @@ void PairFLARE::read_file(char *filename) {
     cutoff_function = cos_cutoff;
 
   // Set the kernel
-  if (!strcmp(kernel_string, "NormalizedDotProduct")) {
+  if (strcmp(kernel_string, "NormalizedDotProduct") == 0) {
     normalized = true;
-  } else {
+  }
+  else if (strcmp(kernel_string, "DotProduct") == 0){
     normalized = false;
+  }
+  else {
+    error->all(FLERR, "Kernel string not recognized, expected <power> <kernel string>");
   }
 
   // Parse the beta vectors.
