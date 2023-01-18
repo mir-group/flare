@@ -189,8 +189,9 @@ class OTF:
         if self.md_engine == "PyLAMMPS":
             md_kwargs["output_name"] = output_name
             if isinstance(self.atoms.calc, SGP_Calculator):
-                assert self.atoms.calc.gp_model.variance_type == "local", \
-                        "LAMMPS training only supports variance_type='local'"
+                assert (
+                    self.atoms.calc.gp_model.variance_type == "local"
+                ), "LAMMPS training only supports variance_type='local'"
 
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
@@ -232,7 +233,9 @@ class OTF:
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         elif isinstance(init_atoms, int):
-            self.init_atoms = np.random.choice(len(self.atoms), size=init_atoms, replace=False)
+            self.init_atoms = np.random.choice(
+                len(self.atoms), size=init_atoms, replace=False
+            )
         else:
             # detect if there are duplicated atoms
             assert len(set(init_atoms)) == len(
@@ -428,7 +431,7 @@ class OTF:
                                 "dft_s_mae": s_mae,
                                 "dft_s_mav": s_mav,
                             },
-                            step = self.curr_step,
+                            step=self.curr_step,
                         )
 
             # write gp forces
@@ -589,10 +592,10 @@ class OTF:
             self.dft_calc.write("tmp-cp2k")
 
             # now re-initiate the CP2K calculator
-            cp2k_command = os.getenv('ASE_CP2K_COMMAND').split()[-1].split(os.sep)[-1]
-            self.atoms.calc = CP2K(restart="tmp-cp2k", command = cp2k_command)
+            cp2k_command = os.getenv("ASE_CP2K_COMMAND").split()[-1].split(os.sep)[-1]
+            self.atoms.calc = CP2K(restart="tmp-cp2k", command=cp2k_command)
             self.atoms.calc.calculate(
-                atoms=self.ase_atoms, properties=['forces', 'energy', 'stress']
+                atoms=self.ase_atoms, properties=["forces", "energy", "stress"]
             )
             self.atoms.calc = deepcopy(self.ase_atoms)
 
@@ -815,14 +818,14 @@ class OTF:
                     "ke": self.KE,
                     "pe": self.atoms.get_potential_energy(),
                 },
-                step = self.curr_step,
+                step=self.curr_step,
             )
             if "stds" in self.atoms.calc.results:
                 wandb.log(
                     {
                         "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
                     },
-                    step = self.curr_step,
+                    step=self.curr_step,
                 )
 
         if self.md_engine == "Fake" and not self.dft_step:
@@ -851,9 +854,8 @@ class OTF:
                         "s_mae": s_mae,
                         "s_mav": s_mav,
                     },
-                    step = self.curr_step,
+                    step=self.curr_step,
                 )
-
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)
