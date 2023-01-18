@@ -30,7 +30,6 @@ from flare.md.fake import FakeMD
 from ase import units
 from ase.io import read, write
 from ase.calculators.calculator import PropertyNotImplementedError
-from ase.calculators.cp2k import CP2K
 
 from flare.io.output import Output, compute_mae
 from flare.learners.utils import is_std_in_bound, get_env_indices
@@ -157,9 +156,6 @@ class OTF:
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
-
-        # save ase atoms for later temporary generation of CP2K calculator
-        self.ase_atoms = deepcopy(atoms)
 
         if flare_calc is not None:
             self.atoms.calc = flare_calc
@@ -586,27 +582,9 @@ class OTF:
         f = logging.getLogger(self.output.basename + "log")
         f.info("\nCalling DFT...\n")
 
-        # CP2K calculators cannot be pickled; solution is to just create a new instance
-        if type(self.dft_calc) == CP2K:
-            self.dft_calc.atoms = self.ase_atoms
-            self.dft_calc.write("tmp-cp2k")
-
-            # now re-initiate the CP2K calculator
-            cp2k_command = os.getenv("ASE_CP2K_COMMAND").split()[-1].split(os.sep)[-1]
-            self.atoms.calc = CP2K(restart="tmp-cp2k", command=cp2k_command)
-            self.atoms.calc.calculate(
-                atoms=self.ase_atoms, properties=["forces", "energy", "stress"]
-            )
-            self.atoms.calc = deepcopy(self.ase_atoms)
-
-            # remove temporarily-generated file
-            os.remove("tmp-cp2k_params.ase")
-
-        else:
-            self.atoms.calc = deepcopy(self.dft_calc)
-
-        # change from FLARE to DFT calculator
-        self.atoms.calc = deepcopy(self.dft_calc)
+        # avoid duplicating a previous DFT calculation
+        self.dft_calc.reset()
+        self.atoms.calc = self.dft_calc
 
         # Calculate DFT energy, forces, and stress.
         # Note that ASE and QE stresses differ by a minus sign.
@@ -875,11 +853,9 @@ class OTF:
         self.gp = None
         self.atoms.calc = None
 
-        # DFT calculator and ASE Atoms may not be picklable. Temporarily set to None before copying.
+        # DFT calculator may not be picklable. Temporarily set to None before copying.
         dft_calc = self.dft_calc
         self.dft_calc = None
-        ase_atoms = self.ase_atoms
-        self.ase_atoms = None
 
         # Deepcopy OTF object.
         dct = deepcopy(dict(vars(self)))
@@ -891,7 +867,6 @@ class OTF:
         self.gp = gp
         self.atoms.calc = flare_calc
         self.dft_calc = dft_calc
-        self.ase_atoms = ase_atoms
 
         # write atoms and flare calculator to separate files
         write(self.atoms_name, self.atoms)
