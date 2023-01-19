@@ -36,35 +36,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Sphinx and Breathe
-      run: |
-        sudo apt-get update
-        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
-
-    - name: Run Doxygen
-      uses: mattnotmitt/doxygen-action@v1.1.0
-      with:
-        # Path to Doxyfile
-        doxyfile-path: "./Doxyfile" # default is ./Doxyfile
-        # Working directory
-        working-directory: "./docs" # default is .
-
-    - name: Run Sphinx
-      run: |
-        cd docs
-        pwd
-        ls
-        make html
-
-    - name: Publish the docs
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        # Default Doxyfile build documentation to html directory.
-        # Change the directory if changes in Doxyfile
-        publish_dir: ./docs/build/html
-      if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
-
     - name: Build
       run: |
         sudo apt install liblapacke liblapacke-dev
@@ -140,6 +111,33 @@ jobs:
         export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
         cd tests
         pytest test_lammps.py
+
+- name: Install Sphinx and Breathe
+      run: |
+        sudo apt-get update
+        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
+    - name: Run Doxygen
+      uses: mattnotmitt/doxygen-action@v1.1.0
+      with:
+        # Path to Doxyfile
+        doxyfile-path: "./Doxyfile" # default is ./Doxyfile
+        # Working directory
+        working-directory: "./docs" # default is .
+
+    - name: Run Sphinx
+      run: |
+        cd docs
+        pwd
+        ls
+        make html
+    - name: Publish the docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        # Default Doxyfile build documentation to html directory.
+        # Change the directory if changes in Doxyfile
+        publish_dir: ./docs/build/html
+      if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
 
 #     - name: Run tutorial
 #       run: |
