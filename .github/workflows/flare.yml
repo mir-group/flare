@@ -112,7 +112,7 @@ jobs:
         cd tests
         pytest test_lammps.py
 
-- name: Install Sphinx and Breathe
+    - name: Install Sphinx and Breathe
       run: |
         sudo apt-get update
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
