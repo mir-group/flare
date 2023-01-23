@@ -95,8 +95,10 @@ class OTF:
             DFT is called. Defaults to 1.
         train_hyps (tuple, optional): Specifies the range of steps the
             hyperparameters of the GP are optimized. If the number of DFT
-            calls is in this range, the hyperparameters are frozen.
-            Defaults to (None, None) which means always training.
+            calls is ouside this range, the hyperparameters are kept fixed.
+            To always optimize hyperparameters use (0,"inf").
+            Defaults to (0, 1) which means it only optimizes on the first dft 
+            call.
         min_steps_with_model (int, optional): Minimum number of steps the
             model takes in between calls to DFT. Defaults to 0.
         dft_kwargs ([type], optional): Additional arguments which are
@@ -223,8 +225,9 @@ class OTF:
             self.max_atoms_added = max_atoms_added
 
         if train_hyps[1] == "inf":
-            train_hyps[1] = np.inf
-        self.train_hyps = train_hyps
+            self.train_hyps = (train_hyps[0], np.inf)
+        else:
+            self.train_hyps = train_hyps
 
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
@@ -703,7 +706,7 @@ class OTF:
         self.output.write_wall_time(tic, task="Update GP")
 
         # train model
-        if self.train_hyps[0] <= self.dft_count <= self.train_hyps[1]:
+        if self.train_hyps[0] <= self.dft_count < self.train_hyps[1]:
             self.train_gp()
 
         # update mgp model
@@ -713,7 +716,7 @@ class OTF:
             self.output.write_wall_time(tic, task="Build Map")
 
         # write model
-        if self.train_hyps[0] <= self.dft_count <= self.train_hyps[1]:
+        if self.train_hyps[0] <= self.dft_count < self.train_hyps[1]:
             if self.write_model == 2:
                 self.write_gp()
         if self.write_model == 3:
