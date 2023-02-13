@@ -14,23 +14,23 @@ Requirements
 
 2. Use conda to install compilers and dependencies for flare
 
-* Option 1: If you want to install flare with mkl
+* Option 1: You can load modules if your machine have already installed them (with mkl)
+
+.. code-block:: bash
+
+    module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
+
+* Option 2: If you want to install flare with mkl
     
 .. code-block:: bash
 
     conda install -y gcc gxx cmake mkl-devel mkl-service mkl_fft openmp -c conda-forge
     
-* Option 2: If you want to install flare with openblas + lapacke
+* Option 3: If you want to install flare with openblas + lapacke
     
 .. code-block:: bash
 
     conda install -y gcc gxx cmake openmp liblapacke openblas -c conda-forge
-
-* Option 3: You can load modules if your machine have already installed them
-
-.. code-block:: bash
-
-    module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
 
 3. Download flare code from github repo and pip install 
 
@@ -107,6 +107,13 @@ Trouble shooting
 
     * the `ldd` command above should show the linked libraries in the `.conda/envs/flare` directory
 
+* If you encounter `Intel MKL FATAL ERROR` when running flare (after the compilation has done), this is likely a static library linkage issue. You can set up the environmental variable
+
+.. code-block:: bash
+
+    export LD_PRELOAD=${CONDA_PREFIX}/lib/libmkl_core.so:${CONDA_PREFIX}/lib/libmkl_intel_thread.so:${CONDA_PREFIX}/lib/libiomp5.so
+
+as instructed in `this discussion <https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/mkl-fails-to-load/m-p/1155538>`_.
 
 *****************************************
 Acceleration with multiprocessing and MKL
