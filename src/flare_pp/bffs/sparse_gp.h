@@ -34,6 +34,7 @@ public:
 
   // Label attributes.
   Eigen::VectorXd noise_vector, y, label_count, e_noise_one, f_noise_one, s_noise_one;
+  Eigen::VectorXd inv_e_noise_one, inv_f_noise_one, inv_s_noise_one;
   int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
       n_sparse = 0, n_labels = 0, n_strucs = 0;
   double energy_noise, force_noise, stress_noise;
@@ -76,6 +77,8 @@ public:
   sort_clusters_by_uncertainty(const Structure &structure);
 
   virtual void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1});
+
+  void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1}, double rel_e_noise = 1, double rel_f_noise = 1, double rel_s_noise = 1);
 
   void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);
   void update_Kuf(const std::vector<ClusterDescriptor> &cluster_descriptors);

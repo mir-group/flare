@@ -52,7 +52,7 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
                    const Eigen::VectorXd &single_bond_vals,
                    int power, int n_species,
                    int N, int lmax, const Eigen::MatrixXd &beta_matrix, 
-                   Eigen::VectorXd &u, double *evdwl);
+                   Eigen::VectorXd &u, double *evdwl, bool normalized);
 
 void compute_Bk_and_u(Eigen::VectorXd &Bk_vals, Eigen::MatrixXd &Bk_force_dervs,
                 double &norm_squared, Eigen::VectorXd &Bk_force_dots,

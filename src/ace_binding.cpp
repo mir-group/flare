@@ -14,6 +14,7 @@
 #include "four_body.h"
 #include "squared_exponential.h"
 #include "normalized_dot_product.h"
+#include "dot_product.h"
 #include "norm_dot_icm.h"
 
 #include <pybind11/eigen.h>
@@ -110,7 +111,13 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B1, Descriptor>(m, "B1")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-                    const std::vector<int> &>());
+                    const std::vector<int> &>())
+      .def_readonly("radial_basis", &B1::radial_basis)
+      .def_readonly("cutoff_function", &B1::cutoff_function)
+      .def_readonly("radial_hyps", &B1::radial_hyps)
+      .def_readonly("cutoff_hyps", &B1::cutoff_hyps)
+      .def_readonly("cutoffs", &B1::cutoffs)
+      .def_readonly("descriptor_settings", &B1::descriptor_settings);
 
   py::class_<B2, Descriptor>(m, "B2")
       .def(py::init<const std::string &, const std::string &,
@@ -140,7 +147,13 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B3, Descriptor>(m, "B3")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-                    const std::vector<int> &>());
+                    const std::vector<int> &>())
+      .def_readonly("radial_basis", &B3::radial_basis)
+      .def_readonly("cutoff_function", &B3::cutoff_function)
+      .def_readonly("radial_hyps", &B3::radial_hyps)
+      .def_readonly("cutoff_hyps", &B3::cutoff_hyps)
+      .def_readonly("cutoffs", &B3::cutoffs)
+      .def_readonly("descriptor_settings", &B3::descriptor_settings);
 
   // Kernel functions
   py::class_<Kernel>(m, "Kernel");
@@ -154,6 +167,16 @@ PYBIND11_MODULE(_C_flare, m) {
       .def("envs_envs", &NormalizedDotProduct::envs_envs)
       .def("envs_struc", &NormalizedDotProduct::envs_struc)
       .def("struc_struc", &NormalizedDotProduct::struc_struc);
+
+  py::class_<DotProduct, Kernel>(m, "DotProduct")
+      .def(py::init<double, double>())
+      .def_readonly("sigma", &DotProduct::sigma)
+      .def_readwrite("power", &DotProduct::power)
+      .def_readonly("kernel_hyperparameters",
+                    &DotProduct::kernel_hyperparameters)
+      .def("envs_envs", &DotProduct::envs_envs)
+      .def("envs_struc", &DotProduct::envs_struc)
+      .def("struc_struc", &DotProduct::struc_struc);
 
   py::class_<NormalizedDotProduct_ICM, Kernel>(m, "NormalizedDotProduct_ICM")
       .def(py::init<double, double, Eigen::MatrixXd>());
@@ -178,7 +201,10 @@ PYBIND11_MODULE(_C_flare, m) {
            &SparseGP::add_uncertain_environments)
       .def("add_training_structure", &SparseGP::add_training_structure,
                        py::arg("structure"),
-                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1))
+                       py::arg("atom_indices") = - Eigen::VectorXi::Ones(1),
+                       py::arg("rel_e_noise") = 1.0,
+                       py::arg("rel_f_noise") = 1.0,
+                       py::arg("rel_s_noise") = 1.0)
       .def("update_matrices_QR", &SparseGP::update_matrices_QR)
       .def("compute_likelihood", &SparseGP::compute_likelihood)
       .def("compute_likelihood_stable", &SparseGP::compute_likelihood_stable)

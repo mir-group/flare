@@ -62,8 +62,16 @@ We will list the applications of FLARE here.
 
 - Harry H. Halim and Yoshitada Morikawa. **Elucidation of Cu–Zn Surface Alloying on Cu(997) by Machine-Learning Molecular Dynamics.** ACS Phys. Chem Au (2022). (`published version <https://pubs.acs.org/doi/10.1021/acsphyschemau.2c00017>`_)
 
-.. figure:: https://pubs.acs.org/cms/10.1021/acsphyschemau.2c00017/asset/images/large/pg2c00017_0020.jpeg
+.. figure:: https://pbs.twimg.com/media/FVYfta1VUAA0Ya8.jpg
     :figwidth 80 %
     :align: center
 
     Cu-Zn surface alloying
+
+- Yu Xie, Jonathan Vandermause, Senja Ramakers, Nakib H. Protik, Anders Johansson, Boris Kozinsky. **Uncertainty-aware molecular dynamics from Bayesian active learning: Phase Transformations and Thermal Transport in SiC.** arXiv:2203.03824. (`arXiv <https://arxiv.org/abs/2203.03824>`_)
+
+.. figure:: https://d3i71xaburhd42.cloudfront.net/775fb27655f25e1b1ff46ce9bda5f77a3c86abdf/8-Figure3-1.png
+    :figwidth: 80 %
+    :align: center
+
+    SiC phase transition

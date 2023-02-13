@@ -19,7 +19,7 @@ public:
 
 };
 
-using KernelTypes = ::testing::Types<SquaredExponential, NormalizedDotProduct>;
+using KernelTypes = ::testing::Types<SquaredExponential, NormalizedDotProduct, DotProduct>;
 TYPED_TEST_SUITE(KernelTest, KernelTypes);
 
 TYPED_TEST(KernelTest, TimeSelfKernel) {

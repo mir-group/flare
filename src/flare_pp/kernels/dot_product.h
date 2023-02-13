@@ -1,5 +1,5 @@
-#ifndef NORMALIZED_DOT_PRODUCT_ICM_H
-#define NORMALIZED_DOT_PRODUCT_ICM_H
+#ifndef DOT_PRODUCT_H
+#define DOT_PRODUCT_H
 
 #include "kernel.h"
 #include <Eigen/Dense>
@@ -8,16 +8,13 @@
 class DescriptorValues;
 class ClusterDescriptor;
 
-class NormalizedDotProduct_ICM : public Kernel {
+class DotProduct : public Kernel {
 public:
   double sigma, sig2, power;
-  int no_types, n_icm_coeffs;
-  Eigen::MatrixXd icm_coeffs;
 
-  NormalizedDotProduct_ICM();
+  DotProduct();
 
-  NormalizedDotProduct_ICM(double sigma, double power,
-                           Eigen::MatrixXd icm_coeffs);
+  DotProduct(double sigma, double power);
 
   Eigen::MatrixXd envs_envs(const ClusterDescriptor &envs1,
                             const ClusterDescriptor &envs2,
@@ -42,20 +39,36 @@ public:
                               const DescriptorValues &struc2,
                               const Eigen::VectorXd &hyps);
 
+  // Because of the simplicity of this kernel, Kuu_grad and Kuf_grad can
+  // be significantly accelerated over the default implementation, which
+  // reconstructs the covariance matrices from scratch.
+  std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
+                                        const Eigen::MatrixXd &Kuu,
+                                        const Eigen::VectorXd &new_hyps);
+
+  std::vector<Eigen::MatrixXd> Kuf_grad(const ClusterDescriptor &envs,
+                                        const std::vector<Structure> &strucs,
+                                        int kernel_index,
+                                        const Eigen::MatrixXd &Kuf,
+                                        const Eigen::VectorXd &new_hyps);
+
   void set_hyperparameters(Eigen::VectorXd new_hyps);
+
+  Eigen::MatrixXd compute_map_coeff_pow1(const SparseGP &gp_model,
+                                         int kernel_index);
+  Eigen::MatrixXd compute_map_coeff_pow2(const SparseGP &gp_model,
+                                         int kernel_index);
 
   Eigen::MatrixXd compute_mapping_coefficients(const SparseGP &gp_model,
                                                int kernel_index);
   Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
-                                               int kernel_index);
+                                              int kernel_index);
   void write_info(std::ofstream &coeff_file);
 
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct_ICM,
-    sigma, sig2, power, no_types, n_icm_coeffs, icm_coeffs, kernel_name)
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(DotProduct,
+    sigma, sig2, power, kernel_name, kernel_hyperparameters)
 
   nlohmann::json return_json();
 };
-
-int get_icm_index(int s1, int s2, int n_types);
 
 #endif

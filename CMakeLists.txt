@@ -153,6 +153,7 @@ set(FLARE_SOURCES
     src/flare_pp/descriptors/four_body.cpp
     src/flare_pp/kernels/kernel.cpp
     src/flare_pp/kernels/normalized_dot_product.cpp
+    src/flare_pp/kernels/dot_product.cpp
     src/flare_pp/kernels/norm_dot_icm.cpp
     src/flare_pp/kernels/squared_exponential.cpp)
 

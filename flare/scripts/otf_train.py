@@ -235,6 +235,10 @@ def get_sgp_calc(flare_config):
     cutoff = flare_config["cutoff"]
     descriptors = []
     for d in flare_config["descriptors"]:
+        if "cutoff_matrix" in d:  # multiple cutoffs
+            assert np.allclose(np.array(d["cutoff_matrix"]).shape, (n_species, n_species)),\
+                "cutoff_matrix needs to be of shape (n_species, n_species)"
+
         if d["name"] == "B2":
             radial_hyps = [0.0, cutoff]
             cutoff_hyps = []
@@ -291,6 +295,8 @@ def get_sgp_calc(flare_config):
             sae_dct
         ), "'single_atom_energies' should be the same length as 'species'"
         single_atom_energies = {i: sae_dct[i] for i in range(n_species)}
+    else:
+        single_atom_energies = {i: 0 for i in range(n_species)}
 
     if gp_name == "SGP_Wrapper":
         sgp_class = SGP_Wrapper
