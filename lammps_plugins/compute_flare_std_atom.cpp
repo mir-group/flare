@@ -480,13 +480,8 @@ void ComputeFlareStdAtom::read_file(char *filename) {
 
 void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   int me = comm->me;
-<<<<<<< HEAD
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], bodyorder_string[MAXLINE];
-  int radial_string_length, cutoff_string_length;
-=======
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], kernel_string[MAXLINE];
-  int radial_string_length, cutoff_string_length, kernel_string_length;
->>>>>>> 960757e5802fe60eb187a43dba19f763a1c6e1e3
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], bodyorder_string[MAXLINE], kernel_string[MAXLINE];
+  int radial_string_length, cutoff_string_length, kernel_string_length, bodyorder_string_length;
   FILE *fptr;
 
   // Check that the potential file can be opened.
@@ -525,6 +520,9 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", bodyorder_string); // Body order B1/2/3
+    if (strcmp(body_order_string, "B2")) {
+      error->all(FLERR, "Descriptors need to be B2");
+    }
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
