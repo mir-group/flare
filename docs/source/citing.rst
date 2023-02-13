@@ -3,7 +3,7 @@ How to Cite
 
 If you use FLARE++ including B2 descriptors, NormalizedDotProduct kernel and Sparse GP, please cite the following paper:
 
-  [1] Vandermause, J., Xie, Y., Lim, J.S., Owen, C.J. and Kozinsky, B., 2021. *Active learning of reactive Bayesian force fields: Application to heterogeneous hydrogen-platinum catalysis dynamics.* [arXiv preprint arXiv:2106.01949](https://arxiv.org/abs/2106.01949).
+  [1] Vandermause, J., Xie, Y., Lim, J.S., Owen, C.J. and Kozinsky, B., 2021. *Active learning of reactive Bayesian force fields: Application to heterogeneous hydrogen-platinum catalysis dynamics.* Nature Communications 13.1 (2022): 5183. https://www.nature.com/articles/s41467-022-32294-0
   
 If you use FLARE active learning workflow, full Gaussian process or 2-body/3-body kernel in your research, please cite the following paper:
 
