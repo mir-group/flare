@@ -87,7 +87,7 @@ void PairFLAREB2::compute(int eflag, int vflag) {
   firstneigh = list->firstneigh;
 
   int beta_init, beta_counter;
-  double B2_norm_squared, B2_val_1, B2_val_2;
+  double B2_norm_squared;
   Eigen::VectorXd single_bond_vals, B2_vals, B2_env_dot, u;
   Eigen::MatrixXd single_bond_env_dervs, B2_env_dervs;
   double empty_thresh = 1e-8;
