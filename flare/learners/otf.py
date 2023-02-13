@@ -156,6 +156,7 @@ class OTF:
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+
         if flare_calc is not None:
             self.atoms.calc = flare_calc
         self.md_engine = md_engine
@@ -184,9 +185,10 @@ class OTF:
         if self.md_engine == "PyLAMMPS":
             md_kwargs["output_name"] = output_name
             if isinstance(self.atoms.calc, SGP_Calculator):
-                assert self.atoms.calc.gp_model.variance_type == "local", \
-                        "LAMMPS training only supports variance_type='local'"
-            
+                assert (
+                    self.atoms.calc.gp_model.variance_type == "local"
+                ), "LAMMPS training only supports variance_type='local'"
+
         self.md = MD(
             atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
         )
@@ -227,7 +229,9 @@ class OTF:
         if init_atoms is None:  # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         elif isinstance(init_atoms, int):
-            self.init_atoms = np.random.choice(len(self.atoms), size=init_atoms, replace=False)
+            self.init_atoms = np.random.choice(
+                len(self.atoms), size=init_atoms, replace=False
+            )
         else:
             # detect if there are duplicated atoms
             assert len(set(init_atoms)) == len(
@@ -423,7 +427,7 @@ class OTF:
                                 "dft_s_mae": s_mae,
                                 "dft_s_mav": s_mav,
                             },
-                            step = self.curr_step,
+                            step=self.curr_step,
                         )
 
             # write gp forces
@@ -578,8 +582,9 @@ class OTF:
         f = logging.getLogger(self.output.basename + "log")
         f.info("\nCalling DFT...\n")
 
-        # change from FLARE to DFT calculator
-        self.atoms.calc = deepcopy(self.dft_calc)
+        # avoid duplicating a previous DFT calculation
+        self.dft_calc.reset()
+        self.atoms.calc = self.dft_calc
 
         # Calculate DFT energy, forces, and stress.
         # Note that ASE and QE stresses differ by a minus sign.
@@ -791,14 +796,14 @@ class OTF:
                     "ke": self.KE,
                     "pe": self.atoms.get_potential_energy(),
                 },
-                step = self.curr_step,
+                step=self.curr_step,
             )
             if "stds" in self.atoms.calc.results:
                 wandb.log(
                     {
                         "maxunc": np.max(np.abs(self.atoms.calc.results["stds"])),
                     },
-                    step = self.curr_step,
+                    step=self.curr_step,
                 )
 
         if self.md_engine == "Fake" and not self.dft_step:
@@ -827,9 +832,8 @@ class OTF:
                         "s_mae": s_mae,
                         "s_mav": s_mav,
                     },
-                    step = self.curr_step,
+                    step=self.curr_step,
                 )
-
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)
@@ -849,6 +853,10 @@ class OTF:
         self.gp = None
         self.atoms.calc = None
 
+        # DFT calculator may not be picklable. Temporarily set to None before copying.
+        dft_calc = self.dft_calc
+        self.dft_calc = None
+
         # Deepcopy OTF object.
         dct = deepcopy(dict(vars(self)))
 
@@ -858,6 +866,7 @@ class OTF:
         self.flare_calc = flare_calc
         self.gp = gp
         self.atoms.calc = flare_calc
+        self.dft_calc = dft_calc
 
         # write atoms and flare calculator to separate files
         write(self.atoms_name, self.atoms)
@@ -870,7 +879,7 @@ class OTF:
         try:
             with open(self.dft_name, "wb") as f:
                 pickle.dump(self.dft_calc, f)
-        except AttributeError:
+        except (AttributeError, TypeError):
             with open(self.dft_name + ".json", "w") as f:
                 json.dump(self.dft_calc.todict(), f, cls=NumpyEncoder)
 
