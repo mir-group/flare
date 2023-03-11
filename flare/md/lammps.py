@@ -492,6 +492,12 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     lmp_stress = atoms.stress
     lmp_stds = atoms.get_array("c_unc")
 
+    # Add back single atom energies
+    if sgp_calc.gp_model.single_atom_energies is not None:
+        for spec in atoms.numbers:
+            coded_spec = sgp_calc.gp_model.species_map[spec]
+            lmp_energy += sgp_calc.gp_model.single_atom_energies[coded_spec]
+
     # subtract the pressure from temperature
     kinetic_stress = get_kinetic_stress(atoms)
     lmp_stress += kinetic_stress
