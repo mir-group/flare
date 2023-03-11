@@ -240,8 +240,10 @@ class LAMMPS_MD(MolecularDynamics):
         self.params["run"] = (
             f"{N_steps} upto every {self.params['dump_period']} "
             f"\"if '$(c_MaxUnc) > {std_tolerance}' then 'write_restart restart_*.dat' quit\""
+            f"\nwrite_restart restart_*.dat"
         )
 
+        print("lammps nsteps =", self.nsteps)
         if self.nsteps > 0:
             restart_file = f"restart_{self.nsteps}.dat"
         else:
