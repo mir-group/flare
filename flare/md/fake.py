@@ -102,6 +102,20 @@ class FakeMD(MolecularDynamics):
 
         self.atoms.calc.reset()
         gp_forces = self.atoms.get_forces()
+        try:
+            self.dft_energy = new_atoms.get_potential_energy()
+        except:
+            self.dft_energy = None
+
+        try:
+            self.dft_forces = new_atoms.get_forces()
+        except:
+            self.dft_forces = None
+
+        try:
+            self.dft_stress = new_atoms.get_stress()
+        except:
+            self.dft_stress = None
 
         self.curr_step += 1
         self.atoms.info["step"] = self.curr_step
