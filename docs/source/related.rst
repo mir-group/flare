@@ -98,3 +98,8 @@ We will list the applications of FLARE here.
     :figwidth: 80 %
     :align: center
 
+- Cameron J Owen, Steven B Torrisi, Yu Xie, Simon Batzner, Jennifer Coulter, Albert Musaelian, Lixin Sun, Boris Kozinsky. **Complexity of Many-Body Interactions in Transition Metals via Machine-Learned Force Fields from the TM23 Data Set.** arXiv preprint arXiv:2302.12993 (2023).
+
+.. figure:: https://www.linkpicture.com/q/Screenshot-2023-03-15-at-3.41.52-PM.png
+    :figwidth: 80 %
+    :align: center
