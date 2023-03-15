@@ -4,13 +4,17 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Code Standards &mdash; flare 1.3.3 documentation</title>
+  <title>Code Standards &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -25,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> flare
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            flare
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -68,9 +76,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="contribute.html">How To Contribute</a> &raquo;</li>
-      <li>Code Standards</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="contribute.html">How To Contribute</a></li>
+      <li class="breadcrumb-item active">Code Standards</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/contribute/standards.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -80,46 +88,22 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="code-standards">
-<h1>Code Standards<a class="headerlink" href="#code-standards" title="Permalink to this headline"></a></h1>
+  <section id="code-standards">
+<h1>Code Standards<a class="headerlink" href="#code-standards" title="Permalink to this heading"></a></h1>
 <p>Before pushing code to the development branch, please make sure your changes respect the following code standards.</p>
 <section id="pep-8">
-<h2>PEP 8<a class="headerlink" href="#pep-8" title="Permalink to this headline"></a></h2>
+<h2>PEP 8<a class="headerlink" href="#pep-8" title="Permalink to this heading"></a></h2>
 <p>Run your code through pylint to check that you’re in compliance with <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pylint &lt;file name&gt;
 </pre></div>
 </div>
 </section>
 <section id="docstrings">
-<h2>Docstrings<a class="headerlink" href="#docstrings" title="Permalink to this headline"></a></h2>
+<h2>Docstrings<a class="headerlink" href="#docstrings" title="Permalink to this heading"></a></h2>
 <p>All new modules, classes, and methods should have <a class="reference external" href="https://pythonhosted.org/an_example_pypi_project/sphinx.html">Sphinx style docstrings</a> describing what the code does and what its inputs are. These docstrings are used to automatically generate FLARE’s documentation, so please make sure they’re clear and descriptive.</p>
 </section>
 <section id="tests">
-<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline"></a></h2>
+<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this heading"></a></h2>
 <p>New features must be accompanied by unit and integration tests written using <a class="reference external" href="https://docs.pytest.org/en/latest/">pytest</a>. This helps ensure the code works properly and makes the code as a whole easier to maintain.</p>
 </section>
 </section>

@@ -4,13 +4,17 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Formulation of Mapped Gaussian Process &mdash; flare 1.3.3 documentation</title>
+  <title>Formulation of Mapped Gaussian Process &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -25,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../index.html" class="icon icon-home"> flare
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            flare
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -77,11 +85,11 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../flare.html">Python Code Documentation</a> &raquo;</li>
-          <li><a href="../bffs.html">Bayesian Force Fields</a> &raquo;</li>
-          <li><a href="mgp.html">Mapped Gaussian Process</a> &raquo;</li>
-      <li>Formulation of Mapped Gaussian Process</li>
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../flare.html">Python Code Documentation</a></li>
+          <li class="breadcrumb-item"><a href="../bffs.html">Bayesian Force Fields</a></li>
+          <li class="breadcrumb-item"><a href="mgp.html">Mapped Gaussian Process</a></li>
+      <li class="breadcrumb-item active">Formulation of Mapped Gaussian Process</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../_sources/flare/bffs/mgp/formulas.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -91,35 +99,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="Formulation-of-Mapped-Gaussian-Process">
-<h1>Formulation of Mapped Gaussian Process<a class="headerlink" href="#Formulation-of-Mapped-Gaussian-Process" title="Permalink to this headline"></a></h1>
+  <section id="Formulation-of-Mapped-Gaussian-Process">
+<h1>Formulation of Mapped Gaussian Process<a class="headerlink" href="#Formulation-of-Mapped-Gaussian-Process" title="Permalink to this heading"></a></h1>
 <p>We take 2-body kernel as an example, for the simplicity of explanation. The local environment to be predicted is denoted as <span class="math">\rho_i</span>, which consists of a center atom <span class="math">i</span> whose force is to be predicted, and all its neighbors within a certain cutoff.</p>
 <section id="Energy">
-<h2>Energy<a class="headerlink" href="#Energy" title="Permalink to this headline"></a></h2>
+<h2>Energy<a class="headerlink" href="#Energy" title="Permalink to this heading"></a></h2>
 <p>The atomic energy of <span class="math">\rho_i</span> from Gaussian Process regression is</p>
 <div class="math">
 <p><span class="math">\begin{aligned}
@@ -132,7 +116,7 @@ E(\rho_i)
 <p>While in GP, the triple summations are needed in prediction, after mapping to the cubic spline, the two summations w.r.t. the training data set <span class="math">\sum_{j=1}^N \sum_{q\in \rho_j}</span> are removed. The computational cost in prediction of GP scales linearly w.r.t. the training set size <span class="math">N</span> due to the two summations, and MGP is independent of <span class="math">N</span>.</p>
 </section>
 <section id="Uncertainty">
-<h2>Uncertainty<a class="headerlink" href="#Uncertainty" title="Permalink to this headline"></a></h2>
+<h2>Uncertainty<a class="headerlink" href="#Uncertainty" title="Permalink to this heading"></a></h2>
 <p>The atomic uncertainty of <span class="math">\rho</span> from Gaussian Process regression is</p>
 <div class="math">
 <p><span class="math">V(\rho) = \sum_{p\in \rho, q \in \rho} V(p, q)</span></p>
@@ -148,7 +132,7 @@ E(\rho_i)
 <p><span class="math">V(p,q) = \tilde{k}(p,q) - \boldsymbol{\psi}(p)^\top \boldsymbol{\psi}(q)</span></p>
 </div><p>Then we use splines to map the vector function <span class="math">\boldsymbol{\psi}(p)</span>. Notice <span class="math">\boldsymbol{\psi}(p)</span> has <span class="math">3N_{train}\sim O(10^3)</span> components. Have to build <span class="math">3N_{train}</span> maps <span class="math">\to</span> too many!</p>
 <section id="Dimension-reduction">
-<h3>Dimension reduction<a class="headerlink" href="#Dimension-reduction" title="Permalink to this headline"></a></h3>
+<h3>Dimension reduction<a class="headerlink" href="#Dimension-reduction" title="Permalink to this heading"></a></h3>
 <p>Can we find <span class="math">m</span>-component vector function <span class="math">\boldsymbol{\phi}(p)</span> (<span class="math">m</span> is small), such that</p>
 <div class="math">
 <p><span class="math">\min_{\boldsymbol{\phi}} \|\boldsymbol{\phi}^\top(p)\boldsymbol{\phi}(q) - \boldsymbol{\psi}(p)^\top \boldsymbol{\psi}(q)\|^2,
@@ -164,11 +148,11 @@ E(\rho_i)
 </section>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline"></a></h2>
-<p>[1] Xie, Yu, et al. “Fast Bayesian Force Fields from Active Learning: Study of Inter-Dimensional Transformation of Stanene.” <em>arXiv preprint arXiv:2008.11796</em> (2020).</p>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this heading"></a></h2>
+<p>[1] Xie, Yu, et al. “Fast Bayesian Force Fields from Active Learning: Study of Inter-Dimensional Transformation of Stanene.” <em>arXiv preprint arXiv:2008.11796</em> (2020).</p>
 <p>[2] Glielmo, Aldo, Claudio Zeni, and Alessandro De Vita. “Efficient nonparametric n-body force fields from machine learning.” <em>Physical Review B</em> 97.18 (2018): 184307.</p>
-<p>[3] Glielmo, Aldo, et al. “Building nonparametric n-body force fields using gaussian process regression.” <em>Machine Learning Meets Quantum Physics</em>. Springer, Cham, 2020. 67-98.</p>
-<p>[4] Vandermause, Jonathan, et al. “On-the-fly active learning of interpretable Bayesian force fields for atomistic rare events.” <em>npj Computational Materials</em> 6.1 (2020): 1-11.</p>
+<p>[3] Glielmo, Aldo, et al. “Building nonparametric n-body force fields using gaussian process regression.” <em>Machine Learning Meets Quantum Physics</em>. Springer, Cham, 2020. 67-98.</p>
+<p>[4] Vandermause, Jonathan, et al. “On-the-fly active learning of interpretable Bayesian force fields for atomistic rare events.” <em>npj Computational Materials</em> 6.1 (2020): 1-11.</p>
 </section>
 </section>
 

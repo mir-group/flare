@@ -4,13 +4,17 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation of FLARE &mdash; flare 1.3.3 documentation</title>
+  <title>Installation of FLARE &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -25,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> flare
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            flare
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -74,9 +82,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="installation.html">Installation</a> &raquo;</li>
-      <li>Installation of FLARE</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="installation.html">Installation</a></li>
+      <li class="breadcrumb-item active">Installation of FLARE</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/installation/install.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -86,34 +94,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="installation-of-flare">
-<h1>Installation of FLARE<a class="headerlink" href="#installation-of-flare" title="Permalink to this headline"></a></h1>
+  <section id="installation-of-flare">
+<h1>Installation of FLARE<a class="headerlink" href="#installation-of-flare" title="Permalink to this heading"></a></h1>
 <section id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Create a new conda environment to install flare</p></li>
 </ol>
@@ -125,21 +109,21 @@ conda activate flare
 <li><p>Use conda to install compilers and dependencies for flare</p></li>
 </ol>
 <ul class="simple">
-<li><p>Option 1: If you want to install flare with mkl</p></li>
+<li><p>Option 1: You can load modules if your machine have already installed them (with mkl)</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Option 2: If you want to install flare with mkl</p></li>
 </ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -y gcc gxx cmake mkl-devel mkl-service mkl_fft openmp -c conda-forge
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>Option 2: If you want to install flare with openblas + lapacke</p></li>
+<li><p>Option 3: If you want to install flare with openblas + lapacke</p></li>
 </ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -y gcc gxx cmake openmp liblapacke openblas -c conda-forge
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Option 3: You can load modules if your machine have already installed them</p></li>
-</ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
@@ -152,7 +136,7 @@ pip install .
 </div>
 </section>
 <section id="developer-s-installation-guide">
-<h2>Developer’s installation guide<a class="headerlink" href="#developer-s-installation-guide" title="Permalink to this headline"></a></h2>
+<h2>Developer’s installation guide<a class="headerlink" href="#developer-s-installation-guide" title="Permalink to this heading"></a></h2>
 <p>After loading modules as above, we use <code class="docutils literal notranslate"><span class="pre">cmake</span></code> to compile the c++ code</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:mir-group/flare.git
 <span class="nb">cd</span> flare
@@ -174,12 +158,12 @@ make -j
 <p>An alternative way is setting <code class="docutils literal notranslate"><span class="pre">sys.path.append(&lt;flare</span> <span class="pre">path&gt;)</span></code> in your python script.</p>
 </section>
 <section id="test-flare-installation">
-<h2>Test FLARE installation<a class="headerlink" href="#test-flare-installation" title="Permalink to this headline"></a></h2>
+<h2>Test FLARE installation<a class="headerlink" href="#test-flare-installation" title="Permalink to this heading"></a></h2>
 <p>After the installation is done, you can leave the current folder and in the python console, try</p>
-<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; import flare
-&gt;&gt;&gt; flare.__file__
-&#39;/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py&#39;
-&gt;&gt;&gt; import flare.bffs.sgp
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">flare</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">flare</span><span class="o">.</span><span class="vm">__file__</span>
+<span class="s1">&#39;/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">flare.bffs.sgp</span>
 </pre></div>
 </div>
 <p>You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by</p>
@@ -189,7 +173,7 @@ make -j
 <p>where it is expected to show libmkl (or libopenblas), libgomp etc.</p>
 </section>
 <section id="trouble-shooting">
-<h2>Trouble shooting<a class="headerlink" href="#trouble-shooting" title="Permalink to this headline"></a></h2>
+<h2>Trouble shooting<a class="headerlink" href="#trouble-shooting" title="Permalink to this heading"></a></h2>
 <ul>
 <li><p>If it fails to build mir-flare during pip install, check whether you have done <cite>conda install cxx-compiler</cite>, then it sometimes does not find the correct g++, i.e. <cite>which gcc</cite> gives the conda’s gcc, while <cite>which g++</cite> still gives the local one. In such case, try <cite>conda uninstall cxx-compiler gxx</cite>, and then redo <cite>conda install gxx -c conda-forge</cite></p></li>
 <li><p>If you get the error that <cite>mkl.h</cite> is not found during pip install, first check <cite>conda list</cite> that <cite>mkl-include</cite> is installed in the current environment. You can also use your own mkl headers by setting environment variable <cite>MKL_INCLUDE</cite> to the directory</p></li>
@@ -201,12 +185,17 @@ make -j
 </ul>
 </div></blockquote>
 </li>
+<li><p>If you encounter <cite>Intel MKL FATAL ERROR</cite> when running flare (after the compilation has done), this is likely a static library linkage issue. You can set up the environmental variable</p></li>
 </ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libmkl_core.so:<span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libmkl_intel_thread.so:<span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libiomp5.so
+</pre></div>
+</div>
+<p>as instructed in <a class="reference external" href="https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/mkl-fails-to-load/m-p/1155538">this discussion</a>.</p>
 </section>
 <section id="acceleration-with-multiprocessing-and-mkl">
-<h2>Acceleration with multiprocessing and MKL<a class="headerlink" href="#acceleration-with-multiprocessing-and-mkl" title="Permalink to this headline"></a></h2>
+<h2>Acceleration with multiprocessing and MKL<a class="headerlink" href="#acceleration-with-multiprocessing-and-mkl" title="Permalink to this heading"></a></h2>
 <section id="sparse-gaussian-process-model">
-<h3>Sparse Gaussian Process model<a class="headerlink" href="#sparse-gaussian-process-model" title="Permalink to this headline"></a></h3>
+<h3>Sparse Gaussian Process model<a class="headerlink" href="#sparse-gaussian-process-model" title="Permalink to this heading"></a></h3>
 <p>We use OpenMP for parallelization, so please set</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">OMP_NUM_THREADS</span><span class="o">=</span>&lt;number of CPUs on a node&gt;
 </pre></div>
@@ -214,7 +203,7 @@ make -j
 <p>such that the model parallelized into <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> threads.</p>
 </section>
 <section id="full-gaussian-process-model">
-<h3>Full Gaussian Process model<a class="headerlink" href="#full-gaussian-process-model" title="Permalink to this headline"></a></h3>
+<h3>Full Gaussian Process model<a class="headerlink" href="#full-gaussian-process-model" title="Permalink to this heading"></a></h3>
 <p>If users have access to high-performance computers, we recommend
 <a class="reference external" href="https://docs.python.org/2/library/multiprocessing.html">Multiprocessing</a> and <a class="reference external" href="https://software.intel.com/en-us/mkl">MKL</a> library set up to accelerate the training and prediction.
 The acceleration can be significant when the GP training data is large.

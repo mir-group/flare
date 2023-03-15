@@ -4,13 +4,17 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Git Workflow &mdash; flare 1.3.3 documentation</title>
+  <title>Git Workflow &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -25,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> flare
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            flare
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -69,9 +77,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="contribute.html">How To Contribute</a> &raquo;</li>
-      <li>Git Workflow</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="contribute.html">How To Contribute</a></li>
+      <li class="breadcrumb-item active">Git Workflow</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/contribute/workflow.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -81,35 +89,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="git-workflow">
-<h1>Git Workflow<a class="headerlink" href="#git-workflow" title="Permalink to this headline"></a></h1>
+  <section id="git-workflow">
+<h1>Git Workflow<a class="headerlink" href="#git-workflow" title="Permalink to this heading"></a></h1>
 <p>To contribute to the FLARE source code, please follow the guidelines in this section. If any of the git commands are unfamiliar, check out Chapters 3-5 of the <a class="reference external" href="https://git-scm.com/book/en/v2">Pro Git book</a>.</p>
 <section id="general-workflow">
-<h2>General workflow<a class="headerlink" href="#general-workflow" title="Permalink to this headline"></a></h2>
+<h2>General workflow<a class="headerlink" href="#general-workflow" title="Permalink to this heading"></a></h2>
 <p>Development should follow this pattern:</p>
 <ol class="arabic simple">
 <li><p>Create an issue on Github describing what you want to contribute.</p></li>
@@ -118,7 +102,7 @@
 </ol>
 </section>
 <section id="master-development-and-topic-branches">
-<h2>Master, development, and topic branches<a class="headerlink" href="#master-development-and-topic-branches" title="Permalink to this headline"></a></h2>
+<h2>Master, development, and topic branches<a class="headerlink" href="#master-development-and-topic-branches" title="Permalink to this heading"></a></h2>
 <p>The FLARE repository has a three-tiered structure: there is the master branch, which is only for battle-tested code that is both documented and unit tested; the development branch, which is used to push new features; and topic branches, which focus on specific issues and are deleted once the issue is addressed.</p>
 <p>You can create local copies of branches from the remote repository as follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git checkout -b &lt;local branch name&gt; origin/&lt;remote branch name&gt;
@@ -126,7 +110,7 @@
 </div>
 </section>
 <section id="pushing-changes-to-the-mir-repo-directly">
-<h2>Pushing changes to the MIR repo directly<a class="headerlink" href="#pushing-changes-to-the-mir-repo-directly" title="Permalink to this headline"></a></h2>
+<h2>Pushing changes to the MIR repo directly<a class="headerlink" href="#pushing-changes-to-the-mir-repo-directly" title="Permalink to this heading"></a></h2>
 <p>If you have write access to the MIR version of FLARE, you can make edits directly to the source code. Here are the steps you should follow:</p>
 <ol class="arabic">
 <li><p>Go into the development branch.</p></li>
@@ -144,7 +128,7 @@
 </ol>
 </section>
 <section id="pushing-changes-from-a-forked-repo">
-<h2>Pushing changes from a forked repo<a class="headerlink" href="#pushing-changes-from-a-forked-repo" title="Permalink to this headline"></a></h2>
+<h2>Pushing changes from a forked repo<a class="headerlink" href="#pushing-changes-from-a-forked-repo" title="Permalink to this heading"></a></h2>
 <ol class="arabic">
 <li><p>Fork the <a class="reference external" href="https://github.com/mir-group/flare">FLARE repository</a>.</p></li>
 <li><p>Set FLARE as an upstream remote:</p>

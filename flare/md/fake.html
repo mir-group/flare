@@ -4,13 +4,17 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fake MD &mdash; flare 1.3.3 documentation</title>
+  <title>Fake MD &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -25,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../index.html" class="icon icon-home"> flare
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            flare
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -73,10 +81,10 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../flare.html">Python Code Documentation</a> &raquo;</li>
-          <li><a href="md.html">ASE MD Engine</a> &raquo;</li>
-      <li>Fake MD</li>
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../flare.html">Python Code Documentation</a></li>
+          <li class="breadcrumb-item"><a href="md.html">ASE MD Engine</a></li>
+      <li class="breadcrumb-item active">Fake MD</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/flare/md/fake.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -86,32 +94,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="fake-md">
-<h1>Fake MD<a class="headerlink" href="#fake-md" title="Permalink to this headline"></a></h1>
+  <section id="fake-md">
+<h1>Fake MD<a class="headerlink" href="#fake-md" title="Permalink to this heading"></a></h1>
 <p>The fake MD and fake DFT modules provide interfaces to OTF, such that we can do
 offline training, i.e. use a given ab-initio MD trajectory to train a GP
 potential with active learning.</p>
@@ -119,41 +103,6 @@ potential with active learning.</p>
 fake MD feeds the next frame from the given trajectory. And instead of using
 real DFT for ground truth calculation, fake DFT reads the forces from the given
 trajectory as ground truth.</p>
-<span class="target" id="module-flare.md.fake"></span><dl class="py class">
-<dt class="sig sig-object py" id="flare.md.fake.FakeDFT">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.md.fake.</span></span><span class="sig-name descname"><span class="pre">FakeDFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.fake.FakeDFT" title="Permalink to this definition"></a></dt>
-<dd><p>Fake DFT to read energy/forces/stress from a trajectory file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> (<em>str</em>) – The name of the trajectory file to read in.</p></li>
-<li><p><strong>format</strong> (<em>str</em>) – The format supported by ASE IO.</p></li>
-<li><p><strong>index</strong> (<em>float or str</em>) – The indices of frames to read from the
-trajectory. Default is “:”, which reads the whole trajectory.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="flare.md.fake.FakeMD">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.md.fake.</span></span><span class="sig-name descname"><span class="pre">FakeMD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.fake.FakeMD" title="Permalink to this definition"></a></dt>
-<dd><p>Fake MD for offline training with OTF module and AIMD trajectories</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>atoms</strong> (<em>ASE Atoms</em>) – The list of atoms.</p></li>
-<li><p><strong>timestep</strong> (<em>float</em>) – The time step.</p></li>
-<li><p><strong>filenames</strong> (<em>list</em>) – The name of the trajectory file to read in.</p></li>
-<li><p><strong>format</strong> (<em>str</em>) – The format supported by ASE IO.</p></li>
-<li><p><strong>index</strong> (<em>float or str</em>) – The indices of frames to read from the
-trajectory. Default is “:”, which reads the whole trajectory.</p></li>
-<li><p><strong>io_kwargs</strong> (<em>dict</em>) – The arguments needed for reading specific format.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 
 

@@ -4,13 +4,17 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Training a 2+3-body Gaussian Process from an AIMD Run &mdash; flare 1.3.3 documentation</title>
+  <title>Training a 2+3-body Gaussian Process from an AIMD Run &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -25,11 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> flare
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            flare
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -71,9 +79,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="tutorials.html">Tutorials</a> &raquo;</li>
-      <li>Training a 2+3-body Gaussian Process from an AIMD Run</li>
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Training a 2+3-body Gaussian Process from an AIMD Run</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/tutorials/gpfa.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -83,32 +91,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="training-a-2-3-body-gaussian-process-from-an-aimd-run">
-<h1>Training a 2+3-body Gaussian Process from an AIMD Run<a class="headerlink" href="#training-a-2-3-body-gaussian-process-from-an-aimd-run" title="Permalink to this headline"></a></h1>
+  <section id="training-a-2-3-body-gaussian-process-from-an-aimd-run">
+<h1>Training a 2+3-body Gaussian Process from an AIMD Run<a class="headerlink" href="#training-a-2-3-body-gaussian-process-from-an-aimd-run" title="Permalink to this heading"></a></h1>
 <p>This is a tutorial for using the GPFA (Gaussian process for AIMD) module with
 2+3-body based GP model. A similar functionality is also supported in the offline
 training with yaml configuration, which is shown in
@@ -121,14 +105,14 @@ included in the test files in order to demonstrate how to set up and run the cod
 The trajectory this tutorial focuses on  involves a few frames of the
 molecule Methanol vibrating about its equilibrium configuration ran in VASP.</p>
 <section id="roadmap-figure">
-<h2>Roadmap Figure<a class="headerlink" href="#roadmap-figure" title="Permalink to this headline"></a></h2>
+<h2>Roadmap Figure<a class="headerlink" href="#roadmap-figure" title="Permalink to this heading"></a></h2>
 <p>In this tutorial, we will walk through the first two steps contained in the below figure. the GP from AIMD module is designed to give you the tools necessary to extract FLARE structures from a previously existing molecular dynamics run.</p>
 <figure class="align-center">
 <img alt="../_images/GPFA_tutorial.png" src="../_images/GPFA_tutorial.png" />
 </figure>
 </section>
 <section id="step-1-setting-up-a-gaussian-process-object">
-<h2>Step 1: Setting up a Gaussian Process Object<a class="headerlink" href="#step-1-setting-up-a-gaussian-process-object" title="Permalink to this headline"></a></h2>
+<h2>Step 1: Setting up a Gaussian Process Object<a class="headerlink" href="#step-1-setting-up-a-gaussian-process-object" title="Permalink to this heading"></a></h2>
 <p>Our goal is to train a GP, which first must be instantiated with a set of parameters.</p>
 <p>For the sake of this example, which is a molecule, we will use a two-plus-three body kernel.
 We must provide the kernel name to the GP, “two-plus-three-mc” or “2+3mc’.
@@ -185,7 +169,7 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 </div>
 </section>
 <section id="step-2-optional-extracting-the-frames-from-a-previous-aimd-run">
-<h2>Step 2 (Optional): Extracting the Frames from a previous AIMD Run<a class="headerlink" href="#step-2-optional-extracting-the-frames-from-a-previous-aimd-run" title="Permalink to this headline"></a></h2>
+<h2>Step 2 (Optional): Extracting the Frames from a previous AIMD Run<a class="headerlink" href="#step-2-optional-extracting-the-frames-from-a-previous-aimd-run" title="Permalink to this heading"></a></h2>
 <p>FLARE uses ASE IO (<a class="reference external" href="https://databases.fysik.dtu.dk/ase/ase/io/io.html">https://databases.fysik.dtu.dk/ase/ase/io/io.html</a>) to parse the trajectory
 including format such as xyz, VASP/QE/LAMMPS output. Then a list of ASE Atoms will be returned.
 We then need to convert the list of ASE Atoms into FLARE_Atoms.</p>
@@ -198,7 +182,7 @@ We then need to convert the list of ASE Atoms into FLARE_Atoms.</p>
 </div>
 </section>
 <section id="step-3-training-your-gaussian-process">
-<h2>Step 3: Training your Gaussian Process<a class="headerlink" href="#step-3-training-your-gaussian-process" title="Permalink to this headline"></a></h2>
+<h2>Step 3: Training your Gaussian Process<a class="headerlink" href="#step-3-training-your-gaussian-process" title="Permalink to this heading"></a></h2>
 <p>If you don’t have a previously existing Vasprun, you can also use the one
 available in the test_files directory, which is <code class="docutils literal notranslate"><span class="pre">methanol_frames.json</span></code>.
 You can open it via the command</p>
@@ -261,7 +245,7 @@ trained. Here, we will pass in the following:</p>
 </ul>
 </section>
 <section id="pre-training-arguments">
-<h2>Pre-Training arguments<a class="headerlink" href="#pre-training-arguments" title="Permalink to this headline"></a></h2>
+<h2>Pre-Training arguments<a class="headerlink" href="#pre-training-arguments" title="Permalink to this heading"></a></h2>
 <p>When the training set contains a low diversity of
 atomic configurations relative to what you expect to see at test time, the
 hyperparameters may not be representative; furthermore, the training process
