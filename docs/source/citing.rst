@@ -13,4 +13,12 @@ If you use FLARE LAMMPS pair style or MGP (mapped Gaussian process), please cite
 
   [3] Xie, Y., Vandermause, J., Sun, L. et al. *Bayesian force fields from active learning for simulation of inter-dimensional transformation of stanene.* npj Comput Mater 7, 40 (2021). https://doi.org/10.1038/s41524-021-00510-y
 
+If you use FLARE PyLAMMPS for training, please cite the following paper:
+
+  [4] Xie, Y., Vandermause, J., Ramakers, S., Protik, N.H., Johansson, A. and Kozinsky, B., 2022. *Uncertainty-aware molecular dynamics from Bayesian active learning: Phase Transformations and Thermal Transport in SiC.* npj Comput. Mater. 9(1), 36 (2023).
+
+If you use FLARE LAMMPS Kokkos pair style with GPU acceleration, please cite the following paper:
+
+  [5] Johansson, A., Xie, Y., Owen, C.J., Soo, J., Sun, L., Vandermause, J. and Kozinsky, B., 2022. *Micron-scale heterogeneous catalysis with Bayesian force fields from first principles and active learning.* arXiv preprint arXiv:2204.12573.
+
 Thank you for using FLARE!

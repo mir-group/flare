@@ -75,3 +75,27 @@ We will list the applications of FLARE here.
     :align: center
 
     SiC phase transition
+
+- Zhou, Chen, Hio Tong Ngan, Jin Soo Lim, Zubin Darbari, Adrian Lewandowski, Dario J. Stacchiola, Boris Kozinsky, Philippe Sautet, and Jorge Anibal Boscoboinik. **Dynamical Study of Adsorbate-Induced Restructuring Kinetics in Bimetallic Catalysts Using the PdAu (111) Model System.** Journal of the American Chemical Society 144, no. 33 (2022): 15132-15142.
+
+.. figure:: https://www.linkpicture.com/q/ja2c04871_0006.png
+    :figwidth: 80 %
+    :align: center
+
+- Hong, Sung Jun, Hoje Chun, Jehyun Lee, Byung-Hyun Kim, Min Ho Seo, Joonhee Kang, and Byungchan Han. **First-principles-based machine-learning molecular dynamics for crystalline polymers with van der Waals interactions.** The Journal of Physical Chemistry Letters 12, no. 25 (2021): 6000-6006.
+
+.. figure:: https://www.linkpicture.com/q/jz1c01140_0006.png
+    :figwidth: 80 %
+    :align: center
+
+- Duschatko, Blake R., Jonathan Vandermause, Nicola Molinari, and Boris Kozinsky. **Uncertainty Driven Active Learning of Coarse Grained Free Energy Models.** arXiv preprint arXiv:2210.16364 (2022).
+
+.. figure:: https://www.linkpicture.com/q/Screenshot-2023-02-23-at-2.57.53-PM.png 
+    :figwidth: 80 %
+    :align: center
+
+- Cameron J Owen, Steven B Torrisi, Yu Xie, Simon Batzner, Jennifer Coulter, Albert Musaelian, Lixin Sun, Boris Kozinsky. **Complexity of Many-Body Interactions in Transition Metals via Machine-Learned Force Fields from the TM23 Data Set.** arXiv preprint arXiv:2302.12993 (2023).
+
+.. figure:: https://www.linkpicture.com/q/Screenshot-2023-03-15-at-3.41.52-PM.png
+    :figwidth: 80 %
+    :align: center
