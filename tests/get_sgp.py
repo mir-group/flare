@@ -8,21 +8,18 @@ from ase.calculators.lj import LennardJones
 from ase.build import make_supercell
 
 # Define kernel.
-sigma = 2.0
+sigma = 2.0 
 power = 1.0
 dotprod_kernel = DotProduct(sigma, power)
 normdotprod_kernel = NormalizedDotProduct(sigma, power)
 
 # Define remaining parameters for the SGP wrapper.
-sigma_e = 0.3
-sigma_f = 0.2
-sigma_s = 0.1
 species_map = {6: 0, 8: 1}
 single_atom_energies = {0: -5, 1: -6}
 variance_type = "local"
 max_iterations = 20
 opt_method = "L-BFGS-B"
-bounds = [(None, None), (sigma_e, None), (None, None), (None, None)]
+bounds = [(None, None), (None, None), (None, None), (None, None)]
 
 
 def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8], set_seed: int = None):
@@ -33,7 +30,8 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8], set_seed: int = None):
         np.random.seed(set_seed)
 
     cell = np.eye(3) * a
-    positions = np.array([[0, 0, 0], np.random.rand(3)])
+    positions = np.array([[0, 0, 0], np.random.rand(3) + 0.1])
+    print("positions", positions)
     unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers, pbc=True)
     multiplier = np.identity(3) * sc_size
     atoms = make_supercell(unit_cell, multiplier)
@@ -67,6 +65,7 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     elif kernel_type == "DotProduct":
         kernel = dotprod_kernel
 
+    kernel.sigma = 1 + np.random.rand()
     kernel.power = power
 
     # Define B2 calculator.
@@ -88,6 +87,11 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         descriptor_settings,
         cutoff_matrix,
     )
+
+    sigma_e = np.random.rand() 
+    sigma_f = np.random.rand() 
+    sigma_s = np.random.rand() 
+    print("Hyps", kernel.sigma, sigma_e, sigma_f, sigma_s)
 
     empty_sgp = SGP_Wrapper(
         [kernel],
@@ -126,13 +130,13 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     sgp.update_db(
         training_structure,
         forces,
-        custom_range=(1, 2, 3, 4, 5),
+        custom_range=np.random.choice(len(training_structure), size=np.random.randint(len(training_structure))).tolist(),
         energy=energy,
         stress=stress,
         mode="specific",
-        rel_e_noise=0.1,
-        rel_f_noise=0.2,
-        rel_s_noise=0.1,
+        rel_e_noise=np.random.rand(),
+        rel_f_noise=np.random.rand(),
+        rel_s_noise=np.random.rand(),
     )
 
     # add an isolated atom to the training data
@@ -146,13 +150,13 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     sgp.update_db(
         training_structure,
         forces,
-        custom_range=(0,),
+        custom_range=np.random.choice(len(training_structure), size=np.random.randint(len(training_structure))).tolist(),
         energy=energy,
         stress=stress,
         mode="specific",
     )
 
-    print("sparse_indices", sgp.sparse_gp.sparse_indices)
+    # print("sparse_indices", sgp.sparse_gp.sparse_indices)
 
     return sgp
 
