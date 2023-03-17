@@ -200,7 +200,7 @@ PYBIND11_MODULE(_C_flare, m) {
 
   py::class_<NormalizedDotProduct, Kernel>(m, "NormalizedDotProduct")
       .def(py::init<double, double>())
-      .def_readonly("sigma", &NormalizedDotProduct::sigma)
+      .def_readwrite("sigma", &NormalizedDotProduct::sigma)
       .def_readwrite("power", &NormalizedDotProduct::power)
       .def_readonly("kernel_hyperparameters",
                     &NormalizedDotProduct::kernel_hyperparameters)
@@ -210,7 +210,7 @@ PYBIND11_MODULE(_C_flare, m) {
 
   py::class_<DotProduct, Kernel>(m, "DotProduct")
       .def(py::init<double, double>())
-      .def_readonly("sigma", &DotProduct::sigma)
+      .def_readwrite("sigma", &DotProduct::sigma)
       .def_readwrite("power", &DotProduct::power)
       .def_readonly("kernel_hyperparameters",
                     &DotProduct::kernel_hyperparameters)
