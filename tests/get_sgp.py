@@ -8,7 +8,7 @@ from ase.calculators.lj import LennardJones
 from ase.build import make_supercell
 
 # Define kernel.
-sigma = 2.0 
+sigma = 2.0
 power = 1.0
 dotprod_kernel = DotProduct(sigma, power)
 normdotprod_kernel = NormalizedDotProduct(sigma, power)
@@ -30,8 +30,7 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8], set_seed: int = None):
         np.random.seed(set_seed)
 
     cell = np.eye(3) * a
-    positions = np.array([[0, 0, 0], np.random.rand(3) + 0.1])
-    print("positions", positions)
+    positions = np.array([[0, 0, 0], np.random.rand(3)])
     unit_cell = Atoms(cell=cell, positions=positions, numbers=numbers, pbc=True)
     multiplier = np.identity(3) * sc_size
     atoms = make_supercell(unit_cell, multiplier)
@@ -127,10 +126,11 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
+    custom_range = np.random.choice(len(training_structure), size=np.random.randint(len(training_structure)), replace=False).tolist()
     sgp.update_db(
         training_structure,
         forces,
-        custom_range=np.random.choice(len(training_structure), size=np.random.randint(len(training_structure))).tolist(),
+        custom_range=custom_range,
         energy=energy,
         stress=stress,
         mode="specific",
@@ -147,16 +147,17 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
+    custom_range = np.random.choice(len(training_structure), size=np.random.randint(len(training_structure)), replace=False).tolist()
     sgp.update_db(
         training_structure,
         forces,
-        custom_range=np.random.choice(len(training_structure), size=np.random.randint(len(training_structure))).tolist(),
+        custom_range=custom_range,
         energy=energy,
         stress=stress,
         mode="specific",
     )
 
-    # print("sparse_indices", sgp.sparse_gp.sparse_indices)
+    print("sparse_indices", sgp.sparse_gp.sparse_indices)
 
     return sgp
 

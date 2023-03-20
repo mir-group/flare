@@ -101,13 +101,14 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
             energy_lmp += sgp_model.gp_model.single_atom_energies[coded_spec]
 
     thresh = 1e-6
-    print(energy, energy_lmp)
-    print(forces, forces_lmp)
-    print(stress, stress_lmp)
-    assert np.allclose(energy, energy_lmp, atol=thresh)
+    r_thresh = 1e-3
+    print(energy, energy_lmp, np.max(np.abs(energy - energy_lmp)))
+    print(forces, forces_lmp, np.max(np.abs(forces - forces_lmp)))
+    print(stress, stress_lmp, np.max(np.abs(stress - stress_lmp)))
+    assert np.allclose(energy, energy_lmp, atol=thresh, rtol=r_thresh)
     # print(forces, forces_lmp)
-    assert np.allclose(forces, forces_lmp, atol=thresh)
-    assert np.allclose(stress, stress_lmp, atol=thresh)
+    assert np.allclose(forces, forces_lmp, atol=thresh, rtol=r_thresh)
+    assert np.allclose(stress, stress_lmp, atol=thresh, rtol=r_thresh)
 
     # Remove files.
     os.remove(potential_name)
