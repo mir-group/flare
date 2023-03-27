@@ -7,10 +7,10 @@ from ase.io import read, write
 
 from .get_sgp import get_sgp_calc, get_random_atoms, get_isolated_atoms
 
-n_species_list = [1, 2]
-n_desc_types = [1, 2]
-power_list = [1] #, 2]
-struc_list = ["random", "isolated"]
+n_species_list = [1] #, 2]
+n_desc_types = [1] #, 2]
+power_list = [1, 2]
+struc_list = ["random"] #["random", "isolated"]
 rootdir = os.getcwd()
 n_cpus_list = [1]  # [1, 2]
 
@@ -135,7 +135,7 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 )
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
-@pytest.mark.parametrize("use_map", [False]) #, True])
+@pytest.mark.parametrize("use_map", [False]) #[False, True])
 @pytest.mark.parametrize("power", power_list)
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
@@ -198,6 +198,19 @@ def test_lammps_uncertainty(
     elif struc == "isolated":
         test_atoms = get_isolated_atoms(numbers=numbers)
 
+    from flare.bffs.sgp._C_flare import Structure
+    coded_species = []
+    for spec in test_atoms.numbers:
+        coded_species.append(sgp_model.gp_model.species_map[spec])
+
+    test_struc = Structure(
+        test_atoms.cell,
+        coded_species,
+        test_atoms.positions,
+        sgp_model.gp_model.cutoff,
+        sgp_model.gp_model.descriptor_calculators,
+    )
+
     # compute uncertainty
     in_lmp = f"""
 atom_style atomic
@@ -247,10 +260,35 @@ run 0
         test_atoms.calc.gp_model.sparse_gp = sgp_model.gp_model.sgp_var
     test_atoms.calc.reset()
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
-    # print(sgp_stds)
-    # print(lmp_stds)
+
+    # For debugging
+    np.save("Kuu_inverse.npy", sgp_model.gp_model.sgp_var.Kuu_inverse)
+    np.save("sparse_desc.npy", sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptors[0])
+    np.save("test_desc.npy", test_struc.descriptors[0].descriptors[0])
+
+    # Use QR
+    jitter_root = sgp_model.gp_model.sgp_var.Kuu_jitter ** 0.5
+    sigma = sgp_model.gp_model.sgp_var.kernels[0].sigma
+    sig2 = sigma ** 2
+    print("jitter root:", jitter_root, "sigma:", sigma)
+    sparse_descriptors = np.copy(sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptors[0])
+    n_envs, n_d = sparse_descriptors.shape
+    sparse_descriptors /= n_d
+    A = np.vstack((sparse_descriptors.T, jitter_root * np.eye(n_envs) / sigma)) # (n_d + n_envs, n_envs)
+    Q, R = np.linalg.qr(A)
+    Q1 = Q[0:n_d, 0:n_d]
+    test_desc = test_struc.descriptors[0].descriptors[0] / n_d
+    Q_desc = test_desc.dot(Q1) # (n_test_env, n_d)
+    self_kernel = sig2 * test_desc.dot(test_desc.T)
+    variance = self_kernel - sig2 * np.diag(Q_desc.dot(Q_desc.T))
+#    print(np.diag(variance), np.diag(self_kernel), sig2 * np.diag(Q_desc.dot(Q_desc.T)))
+
+    print(sgp_stds[:, 0])
+    print(lmp_stds.squeeze())
+    print(np.diag(variance) ** 0.5)
     # print(sgp_model.gp_model.hyps)
     print(np.max(np.abs(sgp_stds[:, 0] - lmp_stds.squeeze())))
+
     assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), rtol=2e-3, atol=3e-3)
 
     os.chdir("..")

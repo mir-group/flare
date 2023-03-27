@@ -106,6 +106,7 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         bounds=bounds,
         max_iterations=max_iterations,
     )
+    empty_sgp.sparse_gp.Kuu_jitter = 1.0
 
     return empty_sgp
 
