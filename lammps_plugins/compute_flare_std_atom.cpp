@@ -179,6 +179,7 @@ void ComputeFlareStdAtom::compute_peratom() {
     if (B2_norm_squared < empty_thresh)
       continue;
 
+    std::cout << "use_map=" << use_map << std::endl;
     if (use_map) {
       int power = 2;
       compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
@@ -197,8 +198,9 @@ void ComputeFlareStdAtom::compute_peratom() {
             K_self = 1.0;
           } else {
             // the normed_sparse_descriptors is non-normalized in this case
-            kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * B2_vals).array().pow(power);
-            K_self = pow(B2_norm_squared, power);
+            double size_norm = B2_vals.size() * B2_vals.size();
+            kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * B2_vals / size_norm).array().pow(power);
+            K_self = pow(B2_norm_squared / size_norm, power);
           }
         }
         cum_types += n_clusters_by_type[s];
