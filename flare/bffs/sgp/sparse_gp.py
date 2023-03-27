@@ -522,6 +522,7 @@ class SGP_Wrapper:
 
         n_kern = len(kernels)
         new_gp = SparseGP(kernels, hyps[n_kern], hyps[n_kern + 1], hyps[n_kern + 2])
+        new_gp.Kuu_jitter = self.sparse_gp.Kuu_jitter
 
         # add training data
         sparse_indices = self.sparse_gp.sparse_indices
