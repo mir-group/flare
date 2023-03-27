@@ -48,8 +48,6 @@ Eigen::MatrixXd DotProduct ::envs_envs(const ClusterDescriptor &envs1,
   double empty_thresh = 1e-8;
 
   for (int s = 0; s < n_types; s++) {
-      // Why not do envs1.descriptors[s] / envs1.descriptor_norms[s]
-      // and then multiply them to get norm_dot matrix directly??
     // Compute dot products. (Should be done in parallel with MKL.)
     Eigen::MatrixXd dot_vals =
         envs1.descriptors[s] * envs2.descriptors[s].transpose();
@@ -71,7 +69,7 @@ Eigen::MatrixXd DotProduct ::envs_envs(const ClusterDescriptor &envs1,
 
       for (int j = 0; j < n_sparse_2; j++) {
         double norm_j = envs2.descriptor_norms[s](j);
-        //double norm_ij = norm_i * norm_j;
+        double norm_ij = n_descriptors_1 * n_descriptors_2;
 
         // Continue if atom j has no neighbors.
         if (norm_j < empty_thresh)
@@ -79,7 +77,7 @@ Eigen::MatrixXd DotProduct ::envs_envs(const ClusterDescriptor &envs1,
         int ind2 = c_sparse_2 + j;
 
         // Energy kernel.
-        double norm_dot = dot_vals(i, j);
+        double norm_dot = dot_vals(i, j) / norm_ij;
         kern_mat(ind1, ind2) += sig_sq * pow(norm_dot, power);
       }
     }
@@ -143,8 +141,6 @@ Eigen::MatrixXd DotProduct ::envs_struc(const ClusterDescriptor &envs,
     Eigen::MatrixXd force_dot =
         envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
 
-    Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
-
     // Compute kernels. Can parallelize over environments.
     int n_sparse = envs.n_clusters_by_type[s];
     int n_struc = struc.n_clusters_by_type[s];
@@ -161,15 +157,14 @@ Eigen::MatrixXd DotProduct ::envs_struc(const ClusterDescriptor &envs,
 
       for (int j = 0; j < n_struc; j++) {
         double norm_j = struc.descriptor_norms[s](j);
-        //double norm_ij = norm_i * norm_j;
-        //double norm_ij3 = norm_ij * norm_j * norm_j;
+        double norm_ij = n_descriptors_1 * n_descriptors_2;
 
         // Continue if atom j has no neighbors.
         if (norm_j < empty_thresh)
           continue;
 
         // Energy kernel.
-        double norm_dot = dot_vals(i, j); // / norm_ij;
+        double norm_dot = dot_vals(i, j) / norm_ij;
         double dval = power * pow(norm_dot, power - 1);
         kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power);
 
@@ -185,11 +180,8 @@ Eigen::MatrixXd DotProduct ::envs_struc(const ClusterDescriptor &envs,
           for (int comp = 0; comp < 3; comp++) {
             int ind = c_neigh + k;
             int force_index = 3 * ind + comp;
-            double f1 = force_dot(i, force_index); // / norm_ij;
-            //double f2 =
-            //    dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
-            double f3 = f1; // - f2;
-            double force_kern_val = sig_sq * dval * f3;
+            double f1 = force_dot(i, force_index) / norm_ij;
+            double force_kern_val = sig_sq * dval * f1;
 
             kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
                 force_kern_val;
@@ -215,7 +207,7 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
                                    const DescriptorValues &struc2,
                                    const Eigen::VectorXd &hyps) {
   
-  //throw std::logic_error("struc_struc kernel for DotProduct is not implemented");
+  std::cout << "Warning: the DotProduct struc_struc kernel is not fully tested." << std::endl; 
   
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
@@ -253,8 +245,8 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
     Eigen::MatrixXd force_force = struc1.descriptor_force_dervs[s] *
                                   struc2.descriptor_force_dervs[s].transpose();
 
-    Eigen::VectorXd struc_force_dot_1 = struc1.descriptor_force_dots[s];
-    Eigen::VectorXd struc_force_dot_2 = struc2.descriptor_force_dots[s];
+    Eigen::VectorXd struc_force_dot_1 = struc1.descriptor_force_dots[s] / n_descriptors_1 / n_descriptors_1;
+    Eigen::VectorXd struc_force_dot_2 = struc2.descriptor_force_dots[s] / n_descriptors_2 / n_descriptors_2;
 
     // Compute kernels.
     int n_struc1 = struc1.n_clusters_by_type[s];
@@ -280,7 +272,8 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
 
         double norm_j2 = norm_j * norm_j;
         double norm_j3 = norm_j2 * norm_j;
-        double norm_ij = norm_i * norm_j;
+        //double norm_ij = norm_i * norm_j;
+        double norm_ij = n_descriptors_1 * n_descriptors_2;
 
         // Energy/energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
@@ -309,10 +302,7 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
           for (int comp = 0; comp < 3; comp++) {
             int force_index = 3 * ind + comp;
             double f1 = force_dot_2(force_index, i) / norm_ij;
-            double f2 = dot_vals(i, j) * struc_force_dot_2(force_index) /
-                        (norm_i * norm_j3);
-            double f3 = f1 - f2;
-            double force_kern_val = sig_sq * c2 * f3;
+            double force_kern_val = sig_sq * c2 * f1;
 
             // Energy/force.
             kernel_matrix(0, 1 + 3 * neighbor_index + comp) -= force_kern_val;
@@ -337,10 +327,7 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
           for (int comp = 0; comp < 3; comp++) {
             int force_index = 3 * ind + comp;
             double f1 = force_dot_1(force_index, j) / norm_ij;
-            double f2 = dot_vals(i, j) * struc_force_dot_1(force_index) /
-                        (norm_j * norm_i3);
-            double f3 = f1 - f2;
-            double force_kern_val = sig_sq * c2 * f3;
+            double force_kern_val = sig_sq * c2 * f1;
 
             // Force/energy.
             kernel_matrix(1 + 3 * neighbor_index + comp, 0) -= force_kern_val;
@@ -369,21 +356,11 @@ DotProduct ::struc_struc(const DescriptorValues &struc1,
               int f_ind_1 = 3 * ind1 + m;
               for (int n = 0; n < 3; n++) {
                 int f_ind_2 = 3 * ind2 + n;
-                double v1 = force_dot_1(f_ind_1, j) / norm_ij -
-                            norm_dot * struc_force_dot_1(f_ind_1) / norm_i2;
-                double v2 = force_dot_2(f_ind_2, i) / norm_ij -
-                            norm_dot * struc_force_dot_2(f_ind_2) / norm_j2;
+                double v1 = force_dot_1(f_ind_1, j) / norm_ij;
+                double v2 = force_dot_2(f_ind_2, i) / norm_ij;
                 double v3 = force_force(f_ind_1, f_ind_2) / norm_ij;
-                double v4 = struc_force_dot_1(f_ind_1) *
-                            force_dot_2(f_ind_2, i) / (norm_i3 * norm_j);
-                double v5 = struc_force_dot_2(f_ind_2) *
-                            force_dot_1(f_ind_1, j) / (norm_i * norm_j3);
-                double v6 = struc_force_dot_1(f_ind_1) *
-                            struc_force_dot_2(f_ind_2) * norm_dot /
-                            (norm_i2 * norm_j2);
 
-                double kern_val =
-                    sig_sq * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
+                double kern_val = sig_sq * (c1 * v1 * v2 + c2 * v3);
 
                 // Force/force.
                 kernel_matrix(1 + c_ind_1 * 3 + m, 1 + c_ind_2 * 3 + n) +=
@@ -450,6 +427,8 @@ Eigen::VectorXd
 DotProduct ::self_kernel_struc(const DescriptorValues &struc,
                                          const Eigen::VectorXd &hyps) {
 
+  std::cout << "Warning: the DotProduct self_kernel_struc kernel is not fully tested." << std::endl; 
+
   double sig_sq = hyps(0) * hyps(0);
 
   int n_elements = 1 + 3 * struc.n_atoms + 6;
@@ -460,6 +439,8 @@ DotProduct ::self_kernel_struc(const DescriptorValues &struc,
   double vol_inv_sq = vol_inv * vol_inv;
   double empty_thresh = 1e-8;
 
+  int n_descriptors = struc.n_descriptors; 
+
   for (int s = 0; s < n_types; s++) {
     // Compute dot products. (Should be done in parallel with MKL.)
     Eigen::MatrixXd dot_vals =
@@ -469,7 +450,7 @@ DotProduct ::self_kernel_struc(const DescriptorValues &struc,
     Eigen::MatrixXd force_force = struc.descriptor_force_dervs[s] *
                                   struc.descriptor_force_dervs[s].transpose();
 
-    Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
+    Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s] / n_descriptors / n_descriptors;
 
     // Compute kernels.
     int n_struc = struc.n_clusters_by_type[s];
@@ -502,7 +483,7 @@ DotProduct ::self_kernel_struc(const DescriptorValues &struc,
 
         double norm_j2 = norm_j * norm_j;
         double norm_j3 = norm_j2 * norm_j;
-        double norm_ij = norm_i * norm_j;
+        double norm_ij = n_descriptors * n_descriptors;
 
         // Energy kernel.
         double norm_dot = dot_vals(i, j) / norm_ij;
@@ -535,20 +516,11 @@ DotProduct ::self_kernel_struc(const DescriptorValues &struc,
             for (int m = 0; m < 3; m++) {
               int f_ind_1 = 3 * ind1 + m;
               int f_ind_2 = 3 * ind2 + m;
-              double v1 = force_dot(f_ind_1, j) / norm_ij -
-                          norm_dot * struc_force_dot(f_ind_1) / norm_i2;
-              double v2 = force_dot(f_ind_2, i) / norm_ij -
-                          norm_dot * struc_force_dot(f_ind_2) / norm_j2;
+              double v1 = force_dot(f_ind_1, j) / norm_ij;
+              double v2 = force_dot(f_ind_2, i) / norm_ij;
               double v3 = force_force(f_ind_1, f_ind_2) / norm_ij;
-              double v4 = struc_force_dot(f_ind_1) * force_dot(f_ind_2, i) /
-                          (norm_i3 * norm_j);
-              double v5 = struc_force_dot(f_ind_2) * force_dot(f_ind_1, j) /
-                          (norm_i * norm_j3);
-              double v6 = struc_force_dot(f_ind_1) * struc_force_dot(f_ind_2) *
-                          norm_dot / (norm_i2 * norm_j2);
 
-              double kern_val =
-                  sig_sq * mult_fac * (c1 * v1 * v2 + c2 * (v3 - v4 - v5 + v6));
+              double kern_val = sig_sq * mult_fac * (c1 * v1 * v2 + c2 * v3);
 
               if (c_ind_1 == c_ind_2)
                 par_mat(i, 1 + c_ind_1 * 3 + m) += kern_val;
@@ -678,7 +650,7 @@ DotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
     for (int j = 0; j < n_types; j++) {
       Eigen::VectorXd p_current =
           gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
-      double p_norm =
+      double p_norm =  
           gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
       
       // Skip empty environments.
@@ -690,7 +662,7 @@ DotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
 
       // First loop over descriptor values.
       for (int k = 0; k < p_size; k++) {
-        double p_ik = p_current(k); // / p_norm;
+        double p_ik = p_current(k) / p_size;
         mapping_coeffs(i, beta_count) += sig2 * p_ik * alpha_val;
 
         beta_count++;
@@ -730,7 +702,7 @@ DotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
     for (int j = 0; j < n_types; j++) {
       Eigen::VectorXd p_current =
           gp_model.sparse_descriptors[kernel_index].descriptors[i].row(j);
-      double p_norm =
+      double p_norm = 
           gp_model.sparse_descriptors[kernel_index].descriptor_norms[i](j);
       
       // Skip empty environments.
@@ -742,11 +714,11 @@ DotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
 
       // First loop over descriptor values.
       for (int k = 0; k < p_size; k++) {
-        double p_ik = p_current(k); // / p_norm;
+        double p_ik = p_current(k) / p_size;
 
         // Second loop over descriptor values.
         for (int l = k; l < p_size; l++) {
-          double p_il = p_current(l); // / p_norm;
+          double p_il = p_current(l) / p_size;
           double beta_val = sig2 * p_ik * p_il * alpha_val;
 
           // Update beta vector.
@@ -834,11 +806,11 @@ Eigen::MatrixXd DotProduct ::compute_varmap_coefficients(
 
         // First loop over descriptor values.
         for (int k = 0; k < p_size; k++) {
-          double p_ik = pi_current(k);
+          double p_ik = pi_current(k) / p_size;
     
           // Second loop over descriptor values.
           for (int l = 0; l < p_size; l++){
-            double p_jl = pj_current(l);
+            double p_jl = pj_current(l) / p_size;
     
             // Update beta vector.
             double beta_val = sig2 * sig2 * p_ik * p_jl * (- Kuu_inv_ij_normed); // + Sigma_ij_normed); // To match the compute_cluster_uncertainty function
