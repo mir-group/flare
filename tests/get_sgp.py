@@ -78,7 +78,7 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     if multiple_cutoff:
         cutoff_matrix += np.eye(n_types) - 1
 
-    n_max = 3
+    n_max = 4
     l_max = 2
     descriptor_settings = [n_types, n_max, l_max]
     if d_embed > 0:
@@ -121,6 +121,7 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         bounds=bounds,
         max_iterations=max_iterations,
     )
+    empty_sgp.sparse_gp.Kuu_jitter = 1.0
 
     return empty_sgp
 
