@@ -76,9 +76,7 @@ public:
   std::vector<std::vector<int>>
   sort_clusters_by_uncertainty(const Structure &structure);
 
-  virtual void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1});
-
-  void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1}, double rel_e_noise = 1, double rel_f_noise = 1, double rel_s_noise = 1);
+  virtual void add_training_structure(const Structure &structure, const std::vector<int> atom_indices = {-1}, double rel_e_noise = 1, double rel_f_noise = 1, double rel_s_noise = 1);
 
   void update_Kuu(const std::vector<ClusterDescriptor> &cluster_descriptors);
   void update_Kuf(const std::vector<ClusterDescriptor> &cluster_descriptors);

@@ -194,6 +194,7 @@ class ParSGP_Wrapper(SGP_Wrapper):
         for k in range(len(self.descriptor_calculators)):
             self._training_sparse_indices[k].append(sparse_inds[k])
         self.atom_indices.append([-1])
+        self.rel_efs_noise.append([1, 1, 1])
 
         # build a new SGP
         if len(self.training_structures) == 1:

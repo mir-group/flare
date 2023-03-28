@@ -67,6 +67,7 @@ ParallelSGP ::~ParallelSGP() {
 }
 
 void ParallelSGP ::add_training_structure(const Structure &structure) {
+
   int n_energy = structure.energy.size();
   int n_force = structure.forces.size();
   int n_stress = structure.stresses.size();

@@ -243,9 +243,9 @@ TEST_F(StructureTest, LikeGradStable) {
   test_struc_2.stresses = stresses_2;
 
   sparse_gp.add_training_structure(test_struc, {-1}, 0.4, 0.2, 0.3);
-  sparse_gp.add_specific_environments(test_struc, {0, 1, 3}); 
+  sparse_gp.add_specific_environments(test_struc, {{0, 1, 3}});
   sparse_gp.add_training_structure(test_struc_2, {0, 1, 3, 5}, 0.64, 0.55, 0.45);
-  sparse_gp.add_specific_environments(test_struc_2, {2, 3, 4}); 
+  sparse_gp.add_specific_environments(test_struc_2, {{2, 3, 4}});
 
   EXPECT_EQ(sparse_gp.Sigma.rows(), 0);
   EXPECT_EQ(sparse_gp.Kuu_inverse.rows(), 0);
