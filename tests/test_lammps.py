@@ -7,10 +7,10 @@ from ase.io import read, write
 
 from .get_sgp import get_sgp_calc, get_random_atoms, get_isolated_atoms
 
-n_species_list = [1] #, 2]
-n_desc_types = [1] #, 2]
+n_species_list = [1, 2]
+n_desc_types = [1, 2]
 power_list = [1, 2]
-struc_list = ["random"] #["random", "isolated"]
+struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
 n_cpus_list = [1]  # [1, 2]
 
@@ -28,7 +28,7 @@ n_cpus_list = [1]  # [1, 2]
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-@pytest.mark.parametrize("kernel_type", ["DotProduct"]) #"NormalizedDotProduct", "DotProduct"])
+@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
 def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, kernel_type):
     """Test the flare pair style."""
 
@@ -87,7 +87,6 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
         specorder=species,
     )
 
-    # print("built lmp_calc")
     # Predict with LAMMPS.
     test_structure.calc = lmp_calc
     energy_lmp = test_structure.get_potential_energy()
@@ -102,11 +101,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
 
     thresh = 1e-6
     r_thresh = 1e-3
-    print(energy, energy_lmp, np.max(np.abs(energy - energy_lmp)))
-    print(forces, forces_lmp, np.max(np.abs(forces - forces_lmp)))
-    print(stress, stress_lmp, np.max(np.abs(stress - stress_lmp)))
     assert np.allclose(energy, energy_lmp, atol=thresh, rtol=r_thresh)
-    # print(forces, forces_lmp)
     assert np.allclose(forces, forces_lmp, atol=thresh, rtol=r_thresh)
     assert np.allclose(stress, stress_lmp, atol=thresh, rtol=r_thresh)
 
@@ -123,7 +118,6 @@ from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
 from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 
-
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
     reason=(
@@ -135,12 +129,12 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 )
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
-@pytest.mark.parametrize("use_map", [False]) #[False, True])
+@pytest.mark.parametrize("use_map", [False, True])
 @pytest.mark.parametrize("power", power_list)
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-@pytest.mark.parametrize("kernel_type", ["DotProduct"]) #"NormalizedDotProduct", "DotProduct"])
+@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
 def test_lammps_uncertainty(
     n_species, n_types, use_map, power, struc, multicut, n_cpus, kernel_type,
 ):
@@ -261,35 +255,47 @@ run 0
     test_atoms.calc.reset()
     sgp_stds = test_atoms.calc.get_uncertainties(test_atoms)
 
-    # For debugging
-    np.save("Kuu_inverse.npy", sgp_model.gp_model.sgp_var.Kuu_inverse)
-    np.save("sparse_desc.npy", sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptors[0])
-    np.save("test_desc.npy", test_struc.descriptors[0].descriptors[0])
-
     # Use QR
-    jitter_root = sgp_model.gp_model.sgp_var.Kuu_jitter ** 0.5
-    sigma = sgp_model.gp_model.sgp_var.kernels[0].sigma
-    sig2 = sigma ** 2
-    print("jitter root:", jitter_root, "sigma:", sigma)
-    sparse_descriptors = np.copy(sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptors[0])
-    n_envs, n_d = sparse_descriptors.shape
-    sparse_descriptors /= n_d
-    A = np.vstack((sparse_descriptors.T, jitter_root * np.eye(n_envs) / sigma)) # (n_d + n_envs, n_envs)
-    Q, R = np.linalg.qr(A)
-    Q1 = Q[0:n_d, 0:n_d]
-    test_desc = test_struc.descriptors[0].descriptors[0] / n_d
-    Q_desc = test_desc.dot(Q1) # (n_test_env, n_d)
-    self_kernel = sig2 * test_desc.dot(test_desc.T)
-    variance = self_kernel - sig2 * np.diag(Q_desc.dot(Q_desc.T))
-#    print(np.diag(variance), np.diag(self_kernel), sig2 * np.diag(Q_desc.dot(Q_desc.T)))
+    if use_map:
+        jitter_root = sgp_model.gp_model.sgp_var.Kuu_jitter ** 0.5
+        sigma = sgp_model.gp_model.sparse_gp.kernels[0].sigma
+        sig2 = sigma ** 2
+        qr_stds = []
+        for s in range(len(sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptors)):
+            sparse_descriptors = np.copy(sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptors[s])
+            n_envs, n_d = sparse_descriptors.shape
+            if kernel_type == "DotProduct":
+                sparse_descriptors /= n_d
+                test_desc = test_struc.descriptors[0].descriptors[s] / n_d
+            elif kernel_type == "NormalizedDotProduct":
+                sparse_desc_norm = sgp_model.gp_model.sgp_var.sparse_descriptors[0].descriptor_norms[s]
+                non_zero_indices = sparse_desc_norm > 1e-8
+                sparse_descriptors[non_zero_indices] /= sparse_desc_norm[non_zero_indices, None]
+                test_desc = np.copy(test_struc.descriptors[0].descriptors[s])
+                test_desc_norm = test_struc.descriptors[0].descriptor_norms[s]
+                non_zero_indices = test_desc_norm > 1e-8
+                test_desc[non_zero_indices] /= test_desc_norm[non_zero_indices, None]
+            A = np.vstack((sparse_descriptors.T, jitter_root * np.eye(n_envs) / sigma)) # (n_d + n_envs, n_envs)
+            Q, R = np.linalg.qr(A)
+            Q1 = Q[0:n_d, 0:n_d]
+            Q_desc = test_desc.dot(Q1) # (n_test_env, n_d)
+            self_kernel = sig2 * test_desc.dot(test_desc.T)
+            variance = self_kernel - sig2 * np.diag(Q_desc.dot(Q_desc.T))
+            qr_stds.append(np.diag(variance) ** 0.5 / sigma)
+        from flare.bffs.sgp.calculator import sort_variances
+        qr_stds = sort_variances(test_struc, np.hstack(qr_stds))
+        print("qr", qr_stds)
+        print(np.max(np.abs(sgp_stds[:, 0] - qr_stds)))
 
     print(sgp_stds[:, 0])
     print(lmp_stds.squeeze())
-    print(np.diag(variance) ** 0.5)
     # print(sgp_model.gp_model.hyps)
     print(np.max(np.abs(sgp_stds[:, 0] - lmp_stds.squeeze())))
 
-    assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), rtol=2e-3, atol=3e-3)
+    if use_map:
+        assert np.allclose(sgp_stds[:, 0], qr_stds, rtol=1e-3, atol=1e-5)
+    else:
+        assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), rtol=2e-3, atol=3e-3)
 
     os.chdir("..")
     os.system("rm -r tmp *.txt")
