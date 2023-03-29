@@ -8,15 +8,12 @@ from ase.calculators.lj import LennardJones
 from ase.build import make_supercell
 
 # Define kernel.
-sigma = 2.0
+sigma = np.random.rand() + 1.0
 power = 1.0
 dotprod_kernel = DotProduct(sigma, power)
 normdotprod_kernel = NormalizedDotProduct(sigma, power)
 
 # Define remaining parameters for the SGP wrapper.
-species_map = {6: 0, 8: 1}
-single_atom_energies = None
-#single_atom_energies = {0: -5, 1: -6}
 variance_type = "local"
 max_iterations = 20
 opt_method = "L-BFGS-B"
@@ -65,7 +62,6 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     elif kernel_type == "DotProduct":
         kernel = dotprod_kernel
 
-    kernel.sigma = 1 + np.random.rand()
     kernel.power = power
 
     # Define B2 calculator.
@@ -78,7 +74,7 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     if multiple_cutoff:
         cutoff_matrix += np.eye(n_types) - 1
 
-    n_max = 4
+    n_max = 3 
     l_max = 2
     descriptor_settings = [n_types, n_max, l_max]
     if d_embed > 0:
@@ -107,6 +103,13 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     sigma_s = np.random.rand() 
     print("Hyps", kernel.sigma, sigma_e, sigma_f, sigma_s)
 
+    if n_types == 1:
+        species_map = {6: 0}
+        single_atom_energies = {0: np.random.rand()}
+    elif n_types == 2:
+        species_map = {6: 0, 8: 1}
+        single_atom_energies = {0: np.random.rand(), 1: np.random.rand()}
+
     empty_sgp = SGP_Wrapper(
         [kernel],
         [b2_calc],
@@ -121,7 +124,6 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         bounds=bounds,
         max_iterations=max_iterations,
     )
-    empty_sgp.sparse_gp.Kuu_jitter = 1.0
 
     return empty_sgp
 
