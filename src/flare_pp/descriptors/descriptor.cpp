@@ -60,7 +60,7 @@ ClusterDescriptor::ClusterDescriptor(const DescriptorValues &structure,
 }
 
 void ClusterDescriptor ::initialize_cluster(int n_types, int n_descriptors) {
-  if (n_clusters != 0)
+  if (descriptors.size() > 0)
     return;
 
   this->n_types = n_types;
