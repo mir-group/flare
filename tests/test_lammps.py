@@ -129,12 +129,12 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 )
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
-@pytest.mark.parametrize("use_map", [True]) #[False, True])
+@pytest.mark.parametrize("use_map", [False, True])
 @pytest.mark.parametrize("power", power_list)
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-@pytest.mark.parametrize("kernel_type", ["DotProduct"]) #["NormalizedDotProduct", "DotProduct"])
+@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
 def test_lammps_uncertainty(
     n_species, n_types, use_map, power, struc, multicut, n_cpus, kernel_type,
 ):

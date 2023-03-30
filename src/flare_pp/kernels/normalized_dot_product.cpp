@@ -784,8 +784,8 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
   int beta_size = p_size * (p_size + 1) / 2;
   int n_species = gp_model.sparse_descriptors[kernel_index].n_types;
   int n_sparse = gp_model.sparse_descriptors[kernel_index].n_clusters;
-  //mapping_coeffs = Eigen::MatrixXd::Zero(n_species * n_species, p_size * p_size); // can be reduced by symmetry
   mapping_coeffs = Eigen::MatrixXd::Zero(n_species, p_size * p_size); // can be reduced by symmetry
+  double jitter_root = pow(gp_model.Kuu_jitter, 0.5);
 
   // Get alpha index.
   
@@ -797,58 +797,31 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
   // Loop over types.
   for (int s = 0; s < n_species; s++){
     int n_types = gp_model.sparse_descriptors[kernel_index].n_clusters_by_type[s];
-    int c_types =
-      gp_model.sparse_descriptors[kernel_index].cumulative_type_count[s];
-    int K_ind = alpha_ind + c_types;
-
+    Eigen::MatrixXd pi = gp_model.sparse_descriptors[kernel_index].descriptors[s];
     // Loop over clusters within each type.
     for (int i = 0; i < n_types; i++){
-      Eigen::VectorXd pi_current =
-        gp_model.sparse_descriptors[kernel_index].descriptors[s].row(i);
       double pi_norm =
         gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](i);
 
       // Skip empty environments.
       if (pi_norm < empty_thresh)
         continue;
+      pi.row(i) /= pi_norm; // normalize descriptor by norm
+    }
 
-      // TODO: include symmetry of i & j
-      // Loop over clusters within each type.
-      for (int j = 0; j < n_types; j++){
-        Eigen::VectorXd pj_current =
-          gp_model.sparse_descriptors[kernel_index].descriptors[s].row(j);
-        double pj_norm =
-          gp_model.sparse_descriptors[kernel_index].descriptor_norms[s](j);
-
-        // Skip empty environments.
-        if (pj_norm < empty_thresh)
-          continue;
-
-        double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
-        double Kuu_inv_ij_normed = Kuu_inv_ij / pi_norm / pj_norm;
-//        double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
-//        double Sigma_ij_normed = Sigma_ij / pi_norm / pj_norm;
-        int beta_count = 0;
-
-        // First loop over descriptor values.
-        for (int k = 0; k < p_size; k++) {
-          double p_ik = pi_current(k);
-    
-          // Second loop over descriptor values.
-          for (int l = 0; l < p_size; l++){
-            double p_jl = pj_current(l);
-    
-            // Update beta vector.
-            double beta_val = sig2 * sig2 * p_ik * p_jl * (- Kuu_inv_ij_normed); // + Sigma_ij_normed); // To match the compute_cluster_uncertainty function
-            mapping_coeffs(s, beta_count) += beta_val;
-
-            if (k == l && i == 0 && j == 0) {
-              mapping_coeffs(s, beta_count) += sig2; // the self kernel term
-            }
-    
-            beta_count++;
-          }
-        }
+    Eigen::MatrixXd A = Eigen::MatrixXd::Zero(p_size + n_types, n_types);
+    A.block(0, 0, p_size, n_types) = pi.transpose();
+    A.block(p_size, 0, n_types, n_types) = jitter_root * Eigen::MatrixXd::Identity(n_types, n_types) / sigma;
+    Eigen::HouseholderQR<Eigen::MatrixXd> qr(A);
+    Eigen::MatrixXd Q = qr.householderQ(); // (p_size + n_types, n_types)
+//    Eigen::Map does not work    
+//    Eigen::Map<Eigen::RowVectorXd> Q1(Q.block(0, 0, p_size, p_size).transpose().data(), p_size * p_size);
+//    mapping_coeffs.row(s) += Q1; // Row major of Q1 by transpose
+    int beta_count = 0;
+    for (int i = 0; i < p_size; i++) {
+      for (int j = 0; j < p_size; j++) {
+        if (j < n_types) mapping_coeffs(s, beta_count) += Q(i, j);
+        beta_count++;
       }
     }
   }

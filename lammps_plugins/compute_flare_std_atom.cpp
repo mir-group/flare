@@ -181,12 +181,15 @@ void ComputeFlareStdAtom::compute_peratom() {
 
     double size_norm = B2_vals.size() * B2_vals.size();
     if (use_map) {
-      Eigen::VectorXd Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_vals.size();
+      Eigen::VectorXd Q_desc;
       double K_self;
       if (normalized) {
         K_self = 1.0;
+        double B2_norm = pow(B2_norm_squared, 0.5);
+        Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_norm;
       } else {
         K_self = B2_norm_squared / size_norm; // only power 1 is supported
+        Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_vals.size();
       }
       variance = K_self - Q_desc.dot(Q_desc);
     } else {

@@ -14,11 +14,6 @@ dotprod_kernel = DotProduct(sigma, power)
 normdotprod_kernel = NormalizedDotProduct(sigma, power)
 
 # Define remaining parameters for the SGP wrapper.
-<<<<<<< HEAD
-species_map = {6: 0, 8: 1}
-single_atom_energies = {0: -5, 1: -6}
-=======
->>>>>>> d3b2c0f... pass tests with qr_stds match
 variance_type = "local"
 max_iterations = 20
 opt_method = "L-BFGS-B"
