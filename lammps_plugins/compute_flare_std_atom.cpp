@@ -181,12 +181,15 @@ void ComputeFlareStdAtom::compute_peratom() {
 
     double size_norm = B2_vals.size() * B2_vals.size();
     if (use_map) {
-      Eigen::VectorXd Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_vals.size();
+      Eigen::VectorXd Q_desc;
       double K_self;
       if (normalized) {
         K_self = 1.0;
+        double B2_norm = pow(B2_norm_squared, 0.5);
+        Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_norm;
       } else {
         K_self = B2_norm_squared / size_norm; // only power 1 is supported
+        Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_vals.size();
       }
       variance = K_self - Q_desc.dot(Q_desc);
     } else {
@@ -410,6 +413,7 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
   MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
+  MPI_Bcast(&kernel_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(kernel_string, kernel_string_length + 1, MPI_CHAR, 0, world);
@@ -430,13 +434,18 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   if (!strcmp(radial_string, "chebyshev")) {
     basis_function = chebyshev;
     radial_hyps = std::vector<double>{0, cutoff};
+  } else {
+    error->all(FLERR, "Please use chebyshev radial basis function.");
   }
 
   // Set the cutoff function.
-  if (!strcmp(cutoff_string, "quadratic"))
+  if (!strcmp(cutoff_string, "quadratic")) {
     cutoff_function = quadratic_cutoff;
-  else if (!strcmp(cutoff_string, "cosine"))
+  } else if (!strcmp(cutoff_string, "cosine")) {
     cutoff_function = cos_cutoff;
+  } else {
+    error->all(FLERR, "Please use quadratic or cosine cutoff function.");
+  }
 
   // Set the kernel
   if (!strcmp(kernel_string, "NormalizedDotProduct")) {
@@ -531,6 +540,7 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   MPI_Bcast(&l_max, 1, MPI_INT, 0, world);
   MPI_Bcast(&n_kernels, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
+  MPI_Bcast(&kernel_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
@@ -560,13 +570,18 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
   if (!strcmp(radial_string, "chebyshev")) {
     basis_function = chebyshev;
     radial_hyps = std::vector<double>{0, cutoff};
+  } else {
+    error->all(FLERR, "Please use chebyshev radial basis function.");
   }
 
   // Set the cutoff function.
-  if (!strcmp(cutoff_string, "quadratic"))
+  if (!strcmp(cutoff_string, "quadratic")) {
     cutoff_function = quadratic_cutoff;
-  else if (!strcmp(cutoff_string, "cosine"))
+  } else if (!strcmp(cutoff_string, "cosine")) {
     cutoff_function = cos_cutoff;
+  } else {
+    error->all(FLERR, "Please use quadratic or cosine cutoff function.");
+  }
 
   // Set the kernel
   if (!strcmp(kernel_string, "NormalizedDotProduct")) {

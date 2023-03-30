@@ -110,6 +110,18 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         species_map = {6: 0, 8: 1}
         single_atom_energies = {0: np.random.rand(), 1: np.random.rand()}
 
+    sigma_e = np.random.rand() 
+    sigma_f = np.random.rand() 
+    sigma_s = np.random.rand() 
+    print("Hyps", kernel.sigma, sigma_e, sigma_f, sigma_s)
+
+    if n_types == 1:
+        species_map = {6: 0}
+        single_atom_energies = {0: np.random.rand()}
+    elif n_types == 2:
+        species_map = {6: 0, 8: 1}
+        single_atom_energies = {0: np.random.rand(), 1: np.random.rand()}
+
     empty_sgp = SGP_Wrapper(
         [kernel],
         [b2_calc],

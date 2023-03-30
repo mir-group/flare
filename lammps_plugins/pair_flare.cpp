@@ -393,19 +393,28 @@ void PairFLARE::read_file(char *filename) {
   if (!strcmp(radial_string, "chebyshev")) {
     basis_function = chebyshev;
     radial_hyps = std::vector<double>{0, cutoff};
+  } else {
+    error->all(FLERR, "Please use chebyshev radial basis function.");
   }
 
   // Set the cutoff function.
-  if (!strcmp(cutoff_string, "quadratic"))
+  if (!strcmp(cutoff_string, "quadratic")) {
     cutoff_function = quadratic_cutoff;
-  else if (!strcmp(cutoff_string, "cosine"))
+  } else if (!strcmp(cutoff_string, "cosine")) {
     cutoff_function = cos_cutoff;
+  } else {
+    error->all(FLERR, "Please use quadratic or cosine cutoff function.");
+  }
 
   // Set the kernel
-  if (!strcmp(kernel_string, "NormalizedDotProduct")) {
+  if (strcmp(kernel_string, "NormalizedDotProduct") == 0) {
     normalized = true;
-  } else {
+  }
+  else if (strcmp(kernel_string, "DotProduct") == 0){
     normalized = false;
+  }
+  else {
+    error->all(FLERR, "Kernel string not recognized, expected <power> <kernel string>");
   }
 
   // Parse the beta vectors.
