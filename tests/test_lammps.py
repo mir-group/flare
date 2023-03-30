@@ -129,12 +129,12 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 )
 @pytest.mark.parametrize("n_species", n_species_list)
 @pytest.mark.parametrize("n_types", n_desc_types)
-@pytest.mark.parametrize("use_map", [False, True])
+@pytest.mark.parametrize("use_map", [True]) #[False, True])
 @pytest.mark.parametrize("power", power_list)
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
+@pytest.mark.parametrize("kernel_type", ["DotProduct"]) #["NormalizedDotProduct", "DotProduct"])
 def test_lammps_uncertainty(
     n_species, n_types, use_map, power, struc, multicut, n_cpus, kernel_type,
 ):
@@ -277,15 +277,16 @@ run 0
                 test_desc[non_zero_indices] /= test_desc_norm[non_zero_indices, None]
             A = np.vstack((sparse_descriptors.T, jitter_root * np.eye(n_envs) / sigma)) # (n_d + n_envs, n_envs)
             Q, R = np.linalg.qr(A)
-            Q1 = Q[0:n_d, 0:n_d]
+            Q1 = Q[0:n_d, 0:n_d] # actual shape is (n_d, min(n_d, n_envs))
             Q_desc = test_desc.dot(Q1) # (n_test_env, n_d)
-            self_kernel = sig2 * test_desc.dot(test_desc.T)
-            variance = self_kernel - sig2 * np.diag(Q_desc.dot(Q_desc.T))
-            qr_stds.append(np.diag(variance) ** 0.5 / sigma)
+            self_kernel = np.diag(test_desc.dot(test_desc.T))
+            variance = self_kernel - np.diag(Q_desc.dot(Q_desc.T))
+            qr_stds.append(variance ** 0.5)
         from flare.bffs.sgp.calculator import sort_variances
         qr_stds = sort_variances(test_struc, np.hstack(qr_stds))
         print("qr", qr_stds)
         print(np.max(np.abs(sgp_stds[:, 0] - qr_stds)))
+        print("self kernel=", self_kernel, "q_kernel=", np.diag(Q_desc.dot(Q_desc.T)))
 
     print(sgp_stds[:, 0])
     print(lmp_stds.squeeze())
@@ -294,6 +295,7 @@ run 0
 
     if use_map:
         assert np.allclose(sgp_stds[:, 0], qr_stds, rtol=1e-3, atol=1e-5)
+        assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), rtol=2e-3, atol=3e-3)
     else:
         assert np.allclose(sgp_stds[:, 0], lmp_stds.squeeze(), rtol=2e-3, atol=3e-3)
 

@@ -179,12 +179,16 @@ void ComputeFlareStdAtom::compute_peratom() {
     if (B2_norm_squared < empty_thresh)
       continue;
 
-    std::cout << "use_map=" << use_map << std::endl;
+    double size_norm = B2_vals.size() * B2_vals.size();
     if (use_map) {
-      int power = 2;
-      compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
-              n_species, n_max, l_max, beta_matrices[itype - 1], u, &variance, normalized);
-      variance /= sig2;
+      Eigen::VectorXd Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_vals.size();
+      double K_self;
+      if (normalized) {
+        K_self = 1.0;
+      } else {
+        K_self = B2_norm_squared / size_norm; // only power 1 is supported
+      }
+      variance = K_self - Q_desc.dot(Q_desc);
     } else {
       Eigen::VectorXd kernel_vec = Eigen::VectorXd::Zero(n_clusters);
       double K_self;
@@ -198,7 +202,6 @@ void ComputeFlareStdAtom::compute_peratom() {
             K_self = 1.0;
           } else {
             // the normed_sparse_descriptors is non-normalized in this case
-            double size_norm = B2_vals.size() * B2_vals.size();
             kernel_vec.segment(cum_types, n_clusters_by_type[s]) = (normed_sparse_descriptors[s] * B2_vals / size_norm).array().pow(power);
             K_self = pow(B2_norm_squared / size_norm, power);
           }
@@ -464,18 +467,14 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   int beta_count = 0;
   double beta_val;
   for (int k = 0; k < n_species; k++) {
-//    for (int l = 0; l < n_species; l++) {
-
-      beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
-      for (int i = 0; i < n_descriptors; i++) {
-        for (int j = 0; j < n_descriptors; j++) {
-          //beta_matrix(k * n_descriptors + i, l * n_descriptors + j) = beta[beta_count];
-          beta_matrix(i, j) = beta[beta_count];
-          beta_count++;
-        }
+    beta_matrix = Eigen::MatrixXd::Zero(n_descriptors, n_descriptors);
+    for (int i = 0; i < n_descriptors; i++) {
+      for (int j = 0; j < n_descriptors; j++) {
+        beta_matrix(i, j) = beta[beta_count];
+        beta_count++;
       }
-      beta_matrices.push_back(beta_matrix);
-//    }
+    }
+    beta_matrices.push_back(beta_matrix);
   }
 
 }

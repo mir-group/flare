@@ -259,7 +259,6 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
   int n_harmonics = (lmax + 1) * (lmax + 1);
 
   Eigen::VectorXd w;
-  std::cout << "normalized = " << normalized << " power = " << power << std::endl;
   if (normalized) {
     if (power == 1) {
       double B2_norm = pow(norm_squared, 0.5);
@@ -276,13 +275,9 @@ void compute_energy_and_u(Eigen::VectorXd &B2_vals,
       w = beta_matrix.col(0) / size_norm;
       *evdwl = B2_vals.dot(w);
     } else if (power == 2) { 
-      std::cout << "beta_matrix.row(0)=" << beta_matrix.row(0) << std::endl;
-      std::cout << "B2_vals=" << B2_vals << std::endl;
       Eigen::VectorXd beta_p = beta_matrix * B2_vals / size_norm;
-      std::cout << "beta_p=" << beta_p << std::endl;
       *evdwl = B2_vals.dot(beta_p) / size_norm;
       w = 2 * beta_p / size_norm;
-      std::cout << "evdwl = " << B2_vals.dot(beta_p) / size_norm << std::endl;
     }
   }
 
