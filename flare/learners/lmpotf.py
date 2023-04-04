@@ -3,6 +3,7 @@ import ase, os, numpy as np, sys
 from typing import Union, Optional, Callable, Any, List
 from flare.bffs.sgp._C_flare import Structure, SparseGP
 from flare.bffs.sgp.sparse_gp import optimize_hyperparameters
+from flare.bffs.sgp.calculator import sort_variances
 import logging
 import time
 
@@ -131,6 +132,8 @@ class LMPOTF:
         self.time_training = 0.0
         self.time_predict_uncertainties = 0.0
         self.time_prediction = 0.0
+        self.time_lammps = 0.0
+        self.t0 = time.time()
 
     def save(self, fname):
         self.sparse_gp.write_mapping_coefficients(fname, "LMPOTF", 0)
@@ -148,6 +151,7 @@ class LMPOTF:
             evflag given by LAMMPS, ignored.
         """
         try:
+            self.time_lammps += time.time() - self.t0
             lmp = lammps(ptr=lmpptr)
             natoms = lmp.get_natoms()
             x = lmp.gather_atoms("x", 1, 3)
@@ -174,9 +178,8 @@ class LMPOTF:
                 self.logger.info(f"Step {step}")
                 sigma = self.sparse_gp.hyperparameters[0]
                 t0 = time.time()
-                self.sparse_gp.predict_local_uncertainties(structure)
+                variances = sort_variances(structure, self.sparse_gp.compute_cluster_uncertainties(structure)[0])
                 self.time_predict_uncertainties += time.time() - t0
-                variances = structure.local_uncertainties[0]
                 stds = np.sqrt(np.abs(variances)) / sigma
                 if self.std_xyz_fname is not None:
                     frame = ase.Atoms(
@@ -255,6 +258,7 @@ class LMPOTF:
                     wandb_log["time_prediction"] = self.time_prediction
                     wandb_log["time_predict_uncertainties"] = self.time_predict_uncertainties
                     wandb_log["time_hyp_opt"] = self.time_hyp_opt
+                    wandb_log["time_lammps"] = self.time_lammps
                     if call_dft:
                         wandb_log["Funcertainties"] = self.wandb.Histogram(Fstd.ravel())
                         wandb_log["Ferror"] = self.wandb.Histogram(
@@ -264,6 +268,7 @@ class LMPOTF:
                             np.log10(np.abs(F - predF)/np.abs(F)).ravel()
                         )
                     self.wandb.log(wandb_log, step=step)
+                    self.t0 = time.time()
         except Exception as err:
             try:
                 self.logger.exception("LMPOTF ERROR")
