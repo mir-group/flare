@@ -178,8 +178,7 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
-    size = max(1, np.random.randint(len(training_structure)))
-    custom_range = np.random.choice(len(training_structure), size=size, replace=False).tolist()
+    custom_range = [0] 
     sgp.update_db(
         training_structure,
         forces,
