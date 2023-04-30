@@ -124,7 +124,6 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
 def test_embedding(multicut, n_cpus, kernel_type):
     """Test the flare pair style."""
 
-    pytest.skip()
     if ("kokkos" in os.environ.get("lmp")):
         pytest.skip()
 

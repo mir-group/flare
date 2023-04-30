@@ -385,13 +385,14 @@ void compute_energy_and_u_embed(Eigen::VectorXd &B2_vals,
       w = 2 * (beta_p - *evdwl * B2_vals) / norm_squared;
     }
   } else {
+    double size_norm = B2_vals.size();
     if (power == 1) {
-      w = beta_matrix.col(0);
+      w = beta_matrix.col(0) / size_norm;
       *evdwl = B2_vals.dot(w);
     } else if (power == 2) { 
-      Eigen::VectorXd beta_p = beta_matrix * B2_vals;
-      *evdwl = B2_vals.dot(beta_p);
-      w = 2 * beta_p;
+      Eigen::VectorXd beta_p = beta_matrix * B2_vals / size_norm;
+      *evdwl = B2_vals.dot(beta_p) / size_norm;
+      w = 2 * beta_p / size_norm;
     }
   }
 
