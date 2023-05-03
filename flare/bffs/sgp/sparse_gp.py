@@ -9,7 +9,7 @@ from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 
 try:
-    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2, DotProduct
+    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2, DotProduct, B2_Embed_Multilayer
 except Exception as e:
     warnings.warn(f"Cannot import _C_flare: {e.__class__.__name__}: {e}")
 
@@ -141,17 +141,32 @@ class SGP_Wrapper:
 
         # save descriptor_settings
         desc_calc = self.descriptor_calculators
-        assert (len(desc_calc) == 1) and (isinstance(desc_calc[0], B2))
+        assert len(desc_calc) == 1
         b2_calc = desc_calc[0]
-        b2_dict = {
-            "type": "B2",
-            "radial_basis": b2_calc.radial_basis,
-            "cutoff_function": b2_calc.cutoff_function,
-            "radial_hyps": b2_calc.radial_hyps,
-            "cutoff_hyps": b2_calc.cutoff_hyps,
-            "descriptor_settings": b2_calc.descriptor_settings,
-            "cutoffs": b2_calc.cutoffs,
-        }
+        if isinstance(desc_calc[0], B2):
+            b2_dict = {
+                "type": "B2",
+                "radial_basis": b2_calc.radial_basis,
+                "cutoff_function": b2_calc.cutoff_function,
+                "radial_hyps": b2_calc.radial_hyps,
+                "cutoff_hyps": b2_calc.cutoff_hyps,
+                "descriptor_settings": b2_calc.descriptor_settings,
+                "cutoffs": b2_calc.cutoffs,
+            }
+        elif isinstance(desc_calc[0], B2_Embed_Multilayer):
+            b2_dict = {
+                "type": "B2_Embed_Multilayer",
+                "radial_basis": b2_calc.radial_basis,
+                "cutoff_function": b2_calc.cutoff_function,
+                "radial_hyps": b2_calc.radial_hyps,
+                "cutoff_hyps": b2_calc.cutoff_hyps,
+                "descriptor_settings": b2_calc.descriptor_settings,
+                "cutoffs": b2_calc.cutoffs,
+                "embed_coeffs": b2_calc.embed_coeffs,
+            }
+        else:
+            raise NotImplementedError
+
         out_dict["descriptor_calculators"] = [b2_dict]
 
         # save hyps
@@ -234,15 +249,27 @@ class SGP_Wrapper:
         desc_calc = in_dict["descriptor_calculators"]
         assert len(desc_calc) == 1
         b2_dict = desc_calc[0]
-        assert b2_dict["type"] == "B2"
-        calc = B2(
-            b2_dict["radial_basis"],
-            b2_dict["cutoff_function"],
-            b2_dict["radial_hyps"],
-            b2_dict["cutoff_hyps"],
-            b2_dict["descriptor_settings"],
-            b2_dict["cutoffs"],
-        )
+        if b2_dict["type"] == "B2":
+            calc = B2(
+                b2_dict["radial_basis"],
+                b2_dict["cutoff_function"],
+                b2_dict["radial_hyps"],
+                b2_dict["cutoff_hyps"],
+                b2_dict["descriptor_settings"],
+                b2_dict["cutoffs"],
+            )
+        elif b2_dict["type"] == "B2_Embed_Multilayer":
+            calc = B2(
+                b2_dict["radial_basis"],
+                b2_dict["cutoff_function"],
+                b2_dict["radial_hyps"],
+                b2_dict["cutoff_hyps"],
+                b2_dict["descriptor_settings"],
+                b2_dict["cutoffs"],
+                b2_dict["embed_coeffs"],
+            )
+        else:
+            raise NotImplementedError
 
         # change the keys of single_atom_energies and species_map to int
         if in_dict["single_atom_energies"] is not None:

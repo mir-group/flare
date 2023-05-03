@@ -190,8 +190,8 @@ def get_sgp_calc(flare_config):
     """
     Return a SGP_Calculator with sgp from SparseGP
     """
-    from flare.bffs.sgp._C_flare import NormalizedDotProduct, SquaredExponential
-    from flare.bffs.sgp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody
+    from flare.bffs.sgp._C_flare import NormalizedDotProduct, SquaredExponential, DotProduct
+    from flare.bffs.sgp._C_flare import B2, B3, TwoBody, ThreeBody, FourBody, B2_Embed_Multilayer
     from flare.bffs.sgp import SGP_Wrapper
     from flare.bffs.sgp.calculator import SGP_Calculator
 
@@ -219,6 +219,8 @@ def get_sgp_calc(flare_config):
     for k in flare_config["kernels"]:
         if k["name"] == "NormalizedDotProduct":
             kernels.append(NormalizedDotProduct(k["sigma"], k["power"]))
+        elif k["name"] == "DotProduct":
+            kernels.append(DotProduct(k["sigma"], k["power"]))
         elif k["name"] == "SquaredExponential":
             kernels.append(SquaredExponential(k["sigma"], k["ls"]))
         else:
@@ -266,6 +268,38 @@ def get_sgp_calc(flare_config):
                 cutoff_hyps,
                 descriptor_settings,
             )
+        elif d["name"] == "B2_Embed_Multilayer":
+            # only support dot product kernel
+            desc_names = [desc["name"] for desc in flare_config["descriptors"]]
+            ind = desc_names.index(d["name"])
+            assert flare_config["kernels"][ind]["name"] == "DotProduct", "Embedding needs to be used with dot product kernel"
+            embed_coeffs = np.random.rand(2 * d["d_embed"], n_species * d["nmax"] * (d["lmax"] + 1)) 
+            radial_hyps = [0.0, cutoff]
+            cutoff_hyps = []
+            descriptor_settings = [n_species, d["nmax"], d["lmax"]]
+            if "cutoff_matrix" in d:  # multiple cutoffs
+                desc_calc = B2_Embed_Multilayer(
+                    d["radial_basis"],
+                    d["cutoff_function"],
+                    radial_hyps,
+                    cutoff_hyps,
+                    descriptor_settings,
+                    d["cutoff_matrix"],
+                    embed_coeffs,
+                )
+            else:
+                desc_calc = B2_Embed_Multilayer(
+                    d["radial_basis"],
+                    d["cutoff_function"],
+                    radial_hyps,
+                    cutoff_hyps,
+                    descriptor_settings,
+                    embed_coeffs,
+                )
+
+            # write embedding coefficients
+            from flare.utils import write_embed_coeffs 
+            write_embed_coeffs("embed_lmp.flare", embed_coeffs, n_species, d["nmax"], d["lmax"], "User")
 
         elif d["name"] == "TwoBody":
             desc_calc = TwoBody(cutoff, n_species, d["cutoff_function"], cutoff_hyps)
