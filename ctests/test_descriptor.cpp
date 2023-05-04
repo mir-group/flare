@@ -1,5 +1,4 @@
 #include "b2_embed.h"
-#include "b2_embed_contract.h"
 #include "b2_embed_multilayer.h"
 #include "b3.h"
 #include "descriptor.h"
