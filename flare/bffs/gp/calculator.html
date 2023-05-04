@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FLARE ASE Calculator &mdash; flare 1.3.4 documentation</title>
+  <title>FLARE ASE Calculator &mdash; flare 1.4.0 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -100,8 +100,53 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="flare-ase-calculator">
-<h1>FLARE ASE Calculator<a class="headerlink" href="#flare-ase-calculator" title="Permalink to this heading"></a></h1>
+  <section id="module-flare.bffs.gp.calculator">
+<span id="flare-ase-calculator"></span><h1>FLARE ASE Calculator<a class="headerlink" href="#module-flare.bffs.gp.calculator" title="Permalink to this heading"></a></h1>
+<p><a class="reference internal" href="#flare.bffs.gp.calculator.FLARE_Calculator" title="flare.bffs.gp.calculator.FLARE_Calculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">FLARE_Calculator</span></code></a> is a calculator compatible with <cite>ASE</cite>.
+You can build up <cite>ASE Atoms</cite> for your atomic structure, and use <cite>get_forces</cite>,
+<cite>get_potential_energy</cite> as general <cite>ASE Calculators</cite>, and use it in
+<cite>ASE Molecular Dynamics</cite> and our <cite>ASE OTF</cite> training module. For the usage
+users can refer to <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE Calculator module</a>
+and <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator">ASE Calculator tutorial</a>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="flare.bffs.gp.calculator.FLARE_Calculator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.calculator.</span></span><span class="sig-name descname"><span class="pre">FLARE_Calculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator" title="Permalink to this definition"></a></dt>
+<dd><p>Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
+Molecular Dynamics.
+:Parameters: * <strong>gp_model</strong> (<em>GaussianProcess</em>) – FLARE’s Gaussian process object</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>mgp_model</strong> (<em>MappedGaussianProcess</em>) – FLARE’s Mapped Gaussian Process
+object. <cite>None</cite> by default. MGP will only be used if <cite>use_mapping</cite>
+is set to True.</p></li>
+<li><p><strong>par</strong> (<em>Bool</em>) – set to <cite>True</cite> if parallelize the prediction. <cite>False</cite> by
+default.</p></li>
+<li><p><strong>use_mapping</strong> (<em>Bool</em>) – set to <cite>True</cite> if use MGP for prediction. <cite>False</cite>
+by default.</p></li>
+</ul>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.calculator.FLARE_Calculator.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ase.calculators.calculator.all_changes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator.calculate" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Calculate properties including: energy, local energies, forces,</dt><dd><p>stress, uncertainties.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>atoms</strong> (<em>FLARE_Atoms</em>) – FLARE_Atoms object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flare.bffs.gp.calculator.FLARE_Calculator.implemented_properties">
+<span class="sig-name descname"><span class="pre">implemented_properties</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['energy',</span> <span class="pre">'forces',</span> <span class="pre">'stress',</span> <span class="pre">'stds']</span></em><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator.implemented_properties" title="Permalink to this definition"></a></dt>
+<dd><p>Properties calculator can handle (energy, forces, …)</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
