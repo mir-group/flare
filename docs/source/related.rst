@@ -103,3 +103,9 @@ We will list the applications of FLARE here.
 .. figure:: https://www.linkpicture.com/q/Screenshot-2023-03-15-at-3.41.52-PM.png
     :figwidth: 80 %
     :align: center
+
+- Mike Pols, Victor Brouwers, Sofía Calero, Shuxia Tao. **How fast do defects migrate in halide perovskites: insights from on-the-fly machine-learned force fields.** Chemical Communications 59, no. 31 (2023): 4660-4663.
+
+.. figure:: https://www.linkpicture.com/q/Get.jpeg 
+    :figwidth: 80 %
+    :align: center
