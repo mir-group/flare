@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Output &mdash; flare 1.3.4 documentation</title>
+  <title>Output &mdash; flare 1.4.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -93,8 +93,224 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="output">
-<h1>Output<a class="headerlink" href="#output" title="Permalink to this heading"></a></h1>
+  <section id="module-flare.io.output">
+<span id="output"></span><h1>Output<a class="headerlink" href="#module-flare.io.output" title="Permalink to this heading"></a></h1>
+<p>Class which contains various methods to print the output of different
+ways of using FLARE, such as training a GP from an AIMD run,
+or running an MD simulation updated on-the-fly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="flare.io.output.Output">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.io.output.</span></span><span class="sig-name descname"><span class="pre">Output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'otf_run'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'INFO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_as_xyz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">always_flush</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output" title="Permalink to this definition"></a></dt>
+<dd><p>This is an I/O class that hosts the log files for OTF and Trajectories
+class. It is also used in get_neg_like_grad and get_neg_likelihood in
+gp_algebra to print intermediate results.</p>
+<p>It opens and print files with the basename prefix and different
+suffixes corresponding to different kinds of output data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>basename</strong> (<em>str</em><em>, </em><em>optional</em>) – Base output file name, suffixes will be added</p></li>
+<li><p><strong>verbose</strong> (<em>str</em><em>, </em><em>optional</em>) – print level. The same as logging level. It can be
+CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET</p></li>
+<li><p><strong>always_flush</strong> – Always write to file instantly</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.conclude_run">
+<span class="sig-name descname"><span class="pre">conclude_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extra_strings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.conclude_run" title="Permalink to this definition"></a></dt>
+<dd><p>destruction function that closes all files</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.open_new_log">
+<span class="sig-name descname"><span class="pre">open_new_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filetype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'info'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.open_new_log" title="Permalink to this definition"></a></dt>
+<dd><p>Open files.  If files with the same
+name are exist, they are backed up with a suffix “-bak”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filetype</strong> – the key name for logging</p></li>
+<li><p><strong>suffix</strong> – the suffix of the file to be opened</p></li>
+<li><p><strong>verbose</strong> – the verbose level for the logger</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.write_gp_dft_comparison">
+<span class="sig-name descname"><span class="pre">write_gp_dft_comparison</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curr_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dft_forces</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dft_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_energies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KE</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mgp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_gp_dft_comparison" title="Permalink to this definition"></a></dt>
+<dd><p>Write the comparison to logfile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>curr_step</strong> – current timestep</p></li>
+<li><p><strong>frame</strong> – FLARE_Atoms object that contains the current GP calculation
+results.</p></li>
+<li><p><strong>start_time</strong> – start time for time profiling</p></li>
+<li><p><strong>dft_forces</strong> – list of forces computed by DFT</p></li>
+<li><p><strong>dft_energy</strong> – total energy computed by DFT</p></li>
+<li><p><strong>error</strong> – list of force differences between DFT and GP prediction</p></li>
+<li><p><strong>local_energies</strong> – local atomic energy</p></li>
+<li><p><strong>KE</strong> – total kinetic energy</p></li>
+<li><p><strong>cell</strong> – print the unit cell of the structure</p></li>
+<li><p><strong>stress</strong> – print the stress acting on the cell</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.write_header">
+<span class="sig-name descname"><span class="pre">write_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gp_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_header" title="Permalink to this definition"></a></dt>
+<dd><p>TO DO: this should be replace by the string method of GP and OTF, GPFA</p>
+<p>Write header to the log function. Designed for Trajectory Trainer and
+OTF runs and can take flexible input for both.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gp_str</strong> – string representation of the GP</p></li>
+<li><p><strong>dt</strong> – timestep for OTF MD</p></li>
+<li><p><strong>Nsteps</strong> – total number of steps for OTF MD</p></li>
+<li><p><strong>structure</strong> – initial structure</p></li>
+<li><p><strong>std_tolerance</strong> – tolarence for active learning</p></li>
+<li><p><strong>optional</strong> – a dictionary of all the other parameters</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.write_hyps">
+<span class="sig-name descname"><span class="pre">write_hyps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyp_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">like</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">like_grad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_hyps" title="Permalink to this definition"></a></dt>
+<dd><p>write hyperparameters to logfile</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – </p></li>
+<li><p><strong>hyp_labels</strong> – labels for hyper-parameters. can be None</p></li>
+<li><p><strong>hyps</strong> – list of hyper-parameters</p></li>
+<li><p><strong>start_time</strong> – start time for time profiling</p></li>
+<li><p><strong>like</strong> – likelihood</p></li>
+<li><p><strong>like_grad</strong> – gradient of likelihood</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.write_md_config">
+<span class="sig-name descname"><span class="pre">write_md_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">KE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dft_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocities</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_md_config" title="Permalink to this definition"></a></dt>
+<dd><p>write md configuration in log file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> – timestemp of OTF MD</p></li>
+<li><p><strong>curr_step</strong> – current timestep of OTF MD</p></li>
+<li><p><strong>structure</strong> – atomic structure</p></li>
+<li><p><strong>temperature</strong> – current temperature</p></li>
+<li><p><strong>KE</strong> – current total kinetic energy</p></li>
+<li><p><strong>local_energies</strong> – local energy</p></li>
+<li><p><strong>start_time</strong> – starting time for time profiling</p></li>
+<li><p><strong>dft_step</strong> – # of DFT calls</p></li>
+<li><p><strong>velocities</strong> – list of velocities</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.write_to_log">
+<span class="sig-name descname"><span class="pre">write_to_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logstring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'log'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flush</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_to_log" title="Permalink to this definition"></a></dt>
+<dd><p>Write any string to logfile</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logstring</strong> – the string to write</p></li>
+<li><p><strong>name</strong> – the key name of the file to logger named ‘log’</p></li>
+<li><p><strong>flush</strong> – whether it should be flushed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.io.output.Output.write_xyz_config">
+<span class="sig-name descname"><span class="pre">write_xyz_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curr_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dft_forces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dft_energy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predict_energy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.Output.write_xyz_config" title="Permalink to this definition"></a></dt>
+<dd><p>write atomic configuration in xyz file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>curr_step</strong> – Int, number of frames to note in the comment line</p></li>
+<li><p><strong>structure</strong> – FLARE_Atoms, contain positions and forces</p></li>
+<li><p><strong>forces</strong> – Optional list of forces to xyz file</p></li>
+<li><p><strong>stds</strong> – Optional list of uncertanties to xyz file</p></li>
+<li><p><strong>dft_forces</strong> – Optional second list of forces (e.g. DFT forces)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.io.output.add_file">
+<span class="sig-prename descclassname"><span class="pre">flare.io.output.</span></span><span class="sig-name descname"><span class="pre">add_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'info'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.add_file" title="Permalink to this definition"></a></dt>
+<dd><p>set up file handler to the logger with handlers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logger</strong> – the logger</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – name of the logfile</p></li>
+<li><p><strong>verbose</strong> (<em>str</em>) – verbose level</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.io.output.add_stream">
+<span class="sig-prename descclassname"><span class="pre">flare.io.output.</span></span><span class="sig-name descname"><span class="pre">add_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'info'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.add_stream" title="Permalink to this definition"></a></dt>
+<dd><p>set up screen sctream handler to the logger with handlers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logger</strong> – the logger</p></li>
+<li><p><strong>verbose</strong> (<em>str</em>) – verbose level</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.io.output.set_logger">
+<span class="sig-prename descclassname"><span class="pre">flare.io.output.</span></span><span class="sig-name descname"><span class="pre">set_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fileout_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'info'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.io.output.set_logger" title="Permalink to this definition"></a></dt>
+<dd><p>set up a logger with handlers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – unique name of the logger in logging module</p></li>
+<li><p><strong>stream</strong> (<em>bool</em>) – if True, set up a screen output</p></li>
+<li><p><strong>fileout_name</strong> (<em>str</em>) – name for log file</p></li>
+<li><p><strong>verbose</strong> (<em>str</em>) – verbose level</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
