@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gaussian Process Force Fields &mdash; flare 1.4.0 documentation</title>
+  <title>Gaussian Process Force Fields &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -108,6 +108,367 @@
 <li class="toctree-l1"><a class="reference internal" href="calculator.html">FLARE ASE Calculator</a></li>
 </ul>
 </div>
+<span class="target" id="module-flare.bffs.gp.gp"></span><dl class="py class">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp.</span></span><span class="sig-name descname"><span class="pre">GaussianProcess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyp_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_algorithm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'L-BFGS-B'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxiter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_atom_par</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../io/output.html#flare.io.output.Output" title="flare.io.output.Output"><span class="pre">Output</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default_gp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_noise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess" title="Permalink to this definition"></a></dt>
+<dd><p>Gaussian process force field. Implementation is based on Algorithm 2.1
+(pg. 19) of “Gaussian Processes for Machine Learning” by Rasmussen and
+Williams.</p>
+<p>Methods within GaussianProcess allow you to make predictions on
+AtomicEnvironment objects (see env.py) generated from
+FLARE FLARE_Atoms (see ase/atoms.py), and after data points are added,
+optimize hyperparameters based on available training data (train method).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernels</strong> (<em>list, optional</em>) – Determine the type of kernels. Example:
+[‘twbody’, ‘threebody’], [‘2’, ‘3’, ‘mb’], [‘2’]. Defaults to [
+‘twboody’, ‘threebody’]</p></li>
+<li><p><strong>component</strong> (<em>str, optional</em>) – Determine single- (“sc”) or multi-
+component (“mc”) kernel to use. Defaults to “mc”</p></li>
+<li><p><strong>hyps</strong> (<em>np.ndarray, optional</em>) – Hyperparameters of the GP.</p></li>
+<li><p><strong>cutoffs</strong> (<em>Dict, optional</em>) – Cutoffs of the GP kernel. For simple hyper-
+parameter setups, formatted like {“twobody”:7, “threebody”:4.5},
+etc.</p></li>
+<li><p><strong>hyp_labels</strong> (<em>List, optional</em>) – List of hyperparameter labels. Defaults
+to None.</p></li>
+<li><p><strong>opt_algorithm</strong> (<em>str, optional</em>) – Hyperparameter optimization algorithm.
+Defaults to ‘L-BFGS-B’.</p></li>
+<li><p><strong>maxiter</strong> (<em>int, optional</em>) – Maximum number of iterations of the
+hyperparameter optimization algorithm. Defaults to 10.</p></li>
+<li><p><strong>parallel</strong> (<em>bool, optional</em>) – If True, the covariance matrix K of the GP is
+computed in parallel. Defaults to False.</p></li>
+<li><p><strong>n_cpus</strong> (<em>int, optional</em>) – Number of cpus used for parallel
+calculations. Defaults to 1 (serial)</p></li>
+<li><p><strong>n_sample</strong> (<em>int, optional</em>) – Size of submatrix to use when parallelizing
+predictions.</p></li>
+<li><p><strong>output</strong> (<em>Output, optional</em>) – Output object used to dump hyperparameters
+during optimization. Defaults to None.</p></li>
+<li><p><strong>hyps_mask</strong> (<em>dict, optional</em>) – hyps_mask can set up which hyper parameter
+is used for what interaction. Details see kernels/mc_sephyps.py</p></li>
+<li><p><strong>name</strong> (<em>str, optional</em>) – Name for the GP instance which dictates global
+memory access.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.add_one_env">
+<span class="sig-name descname"><span class="pre">add_one_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.add_one_env" title="Permalink to this definition"></a></dt>
+<dd><p>Add a single local environment to the training set of the GP.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<em>AtomicEnvironment</em>) – Local environment to be added to the
+training set of the GP.</p></li>
+<li><p><strong>force</strong> (<em>np.ndarray</em>) – Force on the central atom of the local
+environment in the form of a 3-component Numpy array
+containing the x, y, and z components.</p></li>
+<li><p><strong>train</strong> (<em>bool</em>) – If True, the GP is trained after the local
+environment is added.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.adjust_cutoffs">
+<span class="sig-name descname"><span class="pre">adjust_cutoffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_cutoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_L_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.adjust_cutoffs" title="Permalink to this definition"></a></dt>
+<dd><p>Loop through atomic environment objects stored in the training data,
+and re-compute cutoffs for each. Useful if you want to gauge the
+impact of cutoffs given a certain training set! Unless you know
+<em>exactly</em> what you are doing for some development or test purpose,
+it is <strong>highly</strong> suggested that you call set_L_alpha and
+re-optimize your hyperparameters afterwards as is default here.</p>
+<p>A helpful way to update the cutoffs and kernel for an extant
+GP is to perform the following commands:
+&gt;&gt; hyps_mask = pm.as_dict()
+&gt;&gt; hyps = hyps_mask[‘hyps’]
+&gt;&gt; cutoffs = hyps_mask[‘cutoffs’]
+&gt;&gt; kernels = hyps_mask[‘kernels’]
+&gt;&gt; gp_model.update_kernel(kernels, ‘mc’, hyps, cutoffs, hyps_mask)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reset_L_alpha</strong> – </p></li>
+<li><p><strong>train</strong> – </p></li>
+<li><p><strong>new_hyps_mask</strong> – </p></li>
+<li><p><strong>new_cutoffs</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.as_dict">
+<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.as_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Dictionary representation of the GP model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.backward_arguments">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backward_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.backward_arguments" title="Permalink to this definition"></a></dt>
+<dd><p>update the initialize arguments that were renamed</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.backward_attributes">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backward_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.backward_attributes" title="Permalink to this definition"></a></dt>
+<dd><p>add new attributes to old instance
+or update attribute types</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.check_L_alpha">
+<span class="sig-name descname"><span class="pre">check_L_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.check_L_alpha" title="Permalink to this definition"></a></dt>
+<dd><p>Check that the alpha vector is up to date with the training set. If
+not, update_L_alpha is called.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.check_instantiation">
+<span class="sig-name descname"><span class="pre">check_instantiation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.check_instantiation" title="Permalink to this definition"></a></dt>
+<dd><p>Runs a series of checks to ensure that the user has not supplied
+contradictory arguments which will result in undefined behavior
+with multiple hyperparameters.
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.compute_matrices">
+<span class="sig-name descname"><span class="pre">compute_matrices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.compute_matrices" title="Permalink to this definition"></a></dt>
+<dd><p>When covariance matrix is known, reconstruct other matrices.
+Used in re-loading large GPs.
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.from_dict">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.from_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Create GP object from dictionary representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.from_file">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.from_file" title="Permalink to this definition"></a></dt>
+<dd><p>One-line convenience method to load a GP from a file stored using
+write_file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – path to GP model</p></li>
+<li><p><strong>format</strong> (<em>str</em>) – json or pickle if format is not in filename</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.par">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par</span></span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.par" title="Permalink to this definition"></a></dt>
+<dd><p>Backwards compability attribute
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">[&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;]</span></span></span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Predict a force component of the central atom of a local environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Input local environment.</p></li>
+<li><p><strong>d</strong> (<em>int</em>) – Force component to be predicted (1 is x, 2 is y, and
+3 is z).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mean and epistemic variance of the prediction.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.predict_efs">
+<span class="sig-name descname"><span class="pre">predict_efs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_efs" title="Permalink to this definition"></a></dt>
+<dd><p>Predict the local energy, forces, and partial stresses of an
+atomic environment and their predictive variances.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.predict_force_xyz">
+<span class="sig-name descname"><span class="pre">predict_force_xyz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_force_xyz" title="Permalink to this definition"></a></dt>
+<dd><p>Simple wrapper to predict all three components of a force in one go.
+:param x_t:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.predict_local_energy">
+<span class="sig-name descname"><span class="pre">predict_local_energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_local_energy" title="Permalink to this definition"></a></dt>
+<dd><p>Predict the local energy of a local environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Input local environment.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Local energy predicted by the GP.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.predict_local_energy_and_var">
+<span class="sig-name descname"><span class="pre">predict_local_energy_and_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.predict_local_energy_and_var" title="Permalink to this definition"></a></dt>
+<dd><p>Predict the local energy of a local environment and its
+uncertainty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Input local environment.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mean and predictive variance predicted by the GP.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.remove_force_data">
+<span class="sig-name descname"><span class="pre">remove_force_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_matrices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">FLARE_Atoms</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.remove_force_data" title="Permalink to this definition"></a></dt>
+<dd><p>Remove force components from the model. Convenience function which
+deletes individual data points.</p>
+<p>Matrices should <em>always</em> be updated if you intend to use the GP to make
+predictions afterwards. This might be time consuming for large GPs,
+so, it is provided as an option, but, only do so with extreme caution.
+(Undefined behavior may result if you try to make predictions and/or
+add to the training set afterwards).</p>
+<p>Returns training data which was removed akin to a pop method, in order
+of lowest to highest index passed in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indexes</strong> – Indexes of envs in training data to remove.</p></li>
+<li><p><strong>update_matrices</strong> – If false, will not update the GP’s matrices
+afterwards (which can be time consuming for large models).
+This should essentially always be true except for niche development
+applications.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.set_L_alpha">
+<span class="sig-name descname"><span class="pre">set_L_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.set_L_alpha" title="Permalink to this definition"></a></dt>
+<dd><p>Invert the covariance matrix, setting L (a lower triangular
+matrix s.t. L L^T = (K + sig_n^2 I)) and alpha, the inverse
+covariance matrix multiplied by the vector of training labels.
+The forces and variances are later obtained using alpha.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.train" title="Permalink to this definition"></a></dt>
+<dd><p>Train Gaussian Process model on training data. Tunes the
+hyperparameters to maximize the likelihood, then computes L and alpha
+(related to the covariance matrix of the training set).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logger</strong> (<em>logging.logger</em>) – logger object specifying where to write the
+progress of the optimization.</p></li>
+<li><p><strong>custom_bounds</strong> (<em>np.ndarray</em>) – Custom bounds on the hyperparameters.</p></li>
+<li><p><strong>grad_tol</strong> (<em>float</em>) – Tolerance of the hyperparameter gradient that
+determines when hyperparameter optimization is terminated.</p></li>
+<li><p><strong>x_tol</strong> (<em>float</em>) – Tolerance on the x values used to decide when
+Nelder-Mead hyperparameter optimization is terminated.</p></li>
+<li><p><strong>line_steps</strong> (<em>int</em>) – Maximum number of line steps for L-BFGS
+hyperparameter optimization.
+:param logger_name:
+:param print_progress:</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.training_statistics">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">training_statistics</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.training_statistics" title="Permalink to this definition"></a></dt>
+<dd><p>Return a dictionary with statistics about the current training data.
+Useful for quickly summarizing info about the GP.
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.update_L_alpha">
+<span class="sig-name descname"><span class="pre">update_L_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.update_L_alpha" title="Permalink to this definition"></a></dt>
+<dd><p>Update the GP’s L matrix and alpha vector without recalculating
+the entire covariance matrix K.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.update_db">
+<span class="sig-name descname"><span class="pre">update_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">struc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FLARE_Atoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.update_db" title="Permalink to this definition"></a></dt>
+<dd><p>Given a structure and forces, add local environments from the
+structure to the training set of the GP. If energy is given, add the
+entire structure to the training set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>struc</strong> (<em>FLARE_Atoms</em>) – Input structure. Local environments of atoms
+in this structure will be added to the training set of the GP.</p></li>
+<li><p><strong>forces</strong> (<em>np.ndarray</em>) – Forces on atoms in the structure.</p></li>
+<li><p><strong>custom_range</strong> (<em>List[int]</em>) – Indices of atoms whose local
+environments will be added to the training set of the GP.</p></li>
+<li><p><strong>energy</strong> (<em>float</em>) – Energy of the structure.</p></li>
+<li><p><strong>stress</strong> (<em>np.ndarray</em>) – Stress tensor of the structure. The stress
+tensor components should be given in the following order:
+xx, xy, xz, yy, yz, zz.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp.GaussianProcess.write_model">
+<span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split_matrix_size_cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp.GaussianProcess.write_model" title="Permalink to this definition"></a></dt>
+<dd><p>Write model in a variety of formats to a file for later re-use.
+JSON files are open to visual inspection and are easier to use
+across different versions of FLARE or GP implementations. However,
+they are larger and loading them in takes longer (by setting up a
+new GP from the specifications). Pickled files can be faster to
+read &amp; write, and they take up less memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Output name.</p></li>
+<li><p><strong>format</strong> (<em>str</em>) – Output format.</p></li>
+<li><p><strong>split_matrix_size_cutoff</strong> (<em>int</em>) – If there are more than this</p></li>
+<li><p><strong>number of training points in the set, save the matrices seperately.</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ASE Calculator of Sparse GP &mdash; flare 1.4.0 documentation</title>
+  <title>ASE Calculator of Sparse GP &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -98,8 +98,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="ase-calculator-of-sparse-gp">
-<h1>ASE Calculator of Sparse GP<a class="headerlink" href="#ase-calculator-of-sparse-gp" title="Permalink to this heading"></a></h1>
+  <section id="module-flare.bffs.sgp.calculator">
+<span id="ase-calculator-of-sparse-gp"></span><h1>ASE Calculator of Sparse GP<a class="headerlink" href="#module-flare.bffs.sgp.calculator" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="flare.bffs.sgp.calculator.SGP_Calculator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.calculator.</span></span><span class="sig-name descname"><span class="pre">SGP_Calculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sgp_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.calculator.SGP_Calculator" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.sgp.calculator.SGP_Calculator.calculate">
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['positions',</span> <span class="pre">'numbers',</span> <span class="pre">'cell',</span> <span class="pre">'pbc',</span> <span class="pre">'initial_charges',</span> <span class="pre">'initial_magmoms']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.calculator.SGP_Calculator.calculate" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Calculate properties including: energy, local energies, forces,</dt><dd><p>stress, uncertainties.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="flare.bffs.sgp.calculator.SGP_Calculator.implemented_properties">
+<span class="sig-name descname"><span class="pre">implemented_properties</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['energy',</span> <span class="pre">'forces',</span> <span class="pre">'stress',</span> <span class="pre">'stds']</span></em><a class="headerlink" href="#flare.bffs.sgp.calculator.SGP_Calculator.implemented_properties" title="Permalink to this definition"></a></dt>
+<dd><p>Properties calculator can handle (energy, forces, …)</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

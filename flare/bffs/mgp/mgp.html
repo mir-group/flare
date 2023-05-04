@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapped Gaussian Process &mdash; flare 1.4.0 documentation</title>
+  <title>Mapped Gaussian Process &mdash; flare 1.3.4 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -111,6 +111,135 @@
 </li>
 </ul>
 </div>
+<span class="target" id="module-flare.bffs.mgp.mgp"></span><p><a class="reference internal" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="flare.bffs.mgp.mgp.MappedGaussianProcess"><code class="xref py py-class docutils literal notranslate"><span class="pre">MappedGaussianProcess</span></code></a> uses splines to build up interpolationfunction of the low-dimensional decomposition of Gaussian Process, with little loss of accuracy. Refer to <a class="reference external" href="https://arxiv.org/abs/2008.11796">Xie et al.</a>, <a class="reference external" href="https://www.nature.com/articles/s41524-020-0283-z">Vandermause et al.</a>, <a class="reference external" href="https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307">Glielmo et al.</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.mgp.mgp.</span></span><span class="sig-name descname"><span class="pre">MappedGaussianProcess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique_species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">GP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../gp/gp.html#flare.bffs.gp.gp.GaussianProcess" title="flare.bffs.gp.gp.GaussianProcess"><span class="pre">GaussianProcess</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lmp_file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lmp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="Permalink to this definition"></a></dt>
+<dd><p>Build Mapped Gaussian Process (MGP)
+and automatically save coefficients for LAMMPS pair style.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_params</strong> (<em>dict</em>) – Parameters for the mapping itself, such as
+grid size of spline fit, etc. As described below.</p></li>
+<li><p><strong>unique_species</strong> (<em>dict</em>) – List of all the (unique) species included during
+the training that need to be mapped</p></li>
+<li><p><strong>GP</strong> (<em>GaussianProcess</em>) – None or a GaussianProcess object. If a GP is input,
+and container_only is False, automatically build a mapping corresponding
+to the GaussianProcess.</p></li>
+<li><p><strong>var_map</strong> (<em>str</em>) – if None: only build mapping for mean (force). If ‘pca’, then
+use PCA to map the variance, based on <cite>grid_params[‘xxbody’][‘svd_rank’]</cite>.
+If ‘simple’, then only map the diagonal of covariance, and predict the
+upper bound of variance. The ‘pca’ mode is much heavier in terms of
+memory, but its prediction is much closer to GP variance.</p></li>
+<li><p><strong>container_only</strong> (<em>bool</em>) – if True: only build splines container
+(with no coefficients); if False: Attempt to build map immediately</p></li>
+<li><p><strong>lmp_file_name</strong> (<em>str</em>) – LAMMPS coefficient file name</p></li>
+<li><p><strong>n_cpus</strong> (<em>int</em>) – Default None. Set to the number of cores needed for
+parallelization. Used in the construction of the map.</p></li>
+<li><p><strong>n_sample</strong> (<em>int</em>) – Default 10. The batch size for building map. Not used now.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># build 2 + 3 body map</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">grid_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">]},</span>
+<span class="gp">... </span>               <span class="s1">&#39;threebody&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">]}}</span>
+</pre></div>
+</div>
+<p>For <cite>grid_params</cite>, the following keys and values are allowed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>‘twobody’</strong> (<em>dict, optional</em>) – if 2-body is present, set as a dictionary
+of parameters for 2-body mapping. Parameters see below.</p></li>
+<li><p><strong>‘threebody’</strong> (<em>dict, optional</em>) – if 3-body is present, set as a dictionary
+of parameters for 3-body mapping. Parameters see below.</p></li>
+<li><p><strong>‘load_grid’</strong> (<em>str, optional</em>) – Default None. the path to the directory
+where the previously generated grids (<code class="docutils literal notranslate"><span class="pre">grid_*.npy</span></code>) are stored.
+If no path is specified, MGP will construct grids from scratch.</p></li>
+<li><p><strong>‘lower_bound_relax’</strong> (<em>float, optional</em>) – Default 0.1. if ‘lower_bound’ is
+set to ‘auto’ this value will be used as a relaxation of lower
+bound. (see below the description of ‘lower_bound’)</p></li>
+</ul>
+</dd>
+</dl>
+<p>For two/three body parameter dictionary, the following keys and values are allowed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>‘grid_num’</strong> (<em>list</em>) – a list of integers, the number of grid points for
+interpolation. The larger the number, the better the approximation
+of MGP is compared with GP.</p></li>
+<li><p><strong>‘lower_bound’</strong> (<em>str or list, optional</em>) – Default ‘auto’, the lower bound
+of the spline interpolation will be searched. First, search the
+training set of GP and find the minimal interatomic distance r_min.
+Then, the <code class="docutils literal notranslate"><span class="pre">lower_bound</span> <span class="pre">=</span> <span class="pre">r_min</span> <span class="pre">-</span> <span class="pre">lower_bound_relax</span></code>. The user
+can set their own lower_bound, of the same shape as ‘grid_num’.
+E.g. for threebody, the customized lower bound can be set as
+[1.2, 1.2, 1.2].</p></li>
+<li><p><strong>‘upper_bound’</strong> (<em>str or list, optional</em>) – Default ‘auto’, the upper bound
+of the spline interpolation will be the cutoffs of GP. The user
+can set their own upper_bound, of the same shape as ‘grid_num’.
+E.g. for threebody, the customized lower bound can be set as
+[3.5, 3.5, 3.5].</p></li>
+<li><p><strong>‘svd_rank’</strong> (<em>int, optional</em>) – Default ‘auto’. If the variance mapping is
+needed, it is set as the rank of the mapping. ‘auto’ uses full
+rank, which is the smaller one between the total number of grid
+points and training set size. i.e.
+<code class="docutils literal notranslate"><span class="pre">full_rank</span> <span class="pre">=</span> <span class="pre">min(np.prod(grid_num),</span> <span class="pre">3</span> <span class="pre">*</span> <span class="pre">N_train)</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.as_dict">
+<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.as_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Dictionary representation of the MGP model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.from_dict">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#flare.bffs.mgp.mgp.MappedGaussianProcess" title="flare.bffs.mgp.mgp.MappedGaussianProcess"><span class="pre">MappedGaussianProcess</span></a></span></span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.from_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Create MGP object from dictionary representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom_env:</span> <span class="pre">~flare.descriptors.env.AtomicEnvironment)</span> <span class="pre">-&gt;</span> <span class="pre">('ndarray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'ndarray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">'ndarray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.predict" title="Permalink to this definition"></a></dt>
+<dd><p>predict force, variance, stress and local energy for given
+atomic environment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>atom_env</strong> – atomic environment (with a center atom and its neighbors)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>3d array of atomic force
+variance: 3d array of the predictive variance
+stress: 6d array of the virial stress
+energy: the local energy (atomic energy)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>force</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.write_lmp_file">
+<span class="sig-name descname"><span class="pre">write_lmp_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lammps_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_var</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.write_lmp_file" title="Permalink to this definition"></a></dt>
+<dd><p>write the coefficients to a file that can be used by lammps pair style</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.bffs.mgp.mgp.MappedGaussianProcess.write_model">
+<span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'json'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.mgp.mgp.MappedGaussianProcess.write_model" title="Permalink to this definition"></a></dt>
+<dd><p>Write everything necessary to re-load and re-use the model
+:param model_name:
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
