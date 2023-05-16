@@ -29,6 +29,12 @@ public:
      const std::vector<double> &cutoff_hyps,
      const std::vector<int> &descriptor_settings);
 
+  B3(const std::string &radial_basis, const std::string &cutoff_function,
+     const std::vector<double> &radial_hyps,
+     const std::vector<double> &cutoff_hyps,
+     const std::vector<int> &descriptor_settings,
+     const Eigen::MatrixXd &cutoffs);
+
   DescriptorValues compute_struc(Structure &structure);
 
   nlohmann::json return_json();

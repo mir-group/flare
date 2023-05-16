@@ -110,7 +110,17 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B1, Descriptor>(m, "B1")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-                    const std::vector<int> &>());
+                    const std::vector<int> &>())
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &,
+                    const Eigen::MatrixXd &>())
+      .def_readonly("radial_basis", &B1::radial_basis)
+      .def_readonly("cutoff_function", &B1::cutoff_function)
+      .def_readonly("radial_hyps", &B1::radial_hyps)
+      .def_readonly("cutoff_hyps", &B1::cutoff_hyps)
+      .def_readonly("cutoffs", &B1::cutoffs)
+      .def_readonly("descriptor_settings", &B1::descriptor_settings);
 
   py::class_<B2, Descriptor>(m, "B2")
       .def(py::init<const std::string &, const std::string &,
@@ -140,7 +150,21 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B3, Descriptor>(m, "B3")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
+<<<<<<< HEAD
                     const std::vector<int> &>());
+=======
+                    const std::vector<int> &>())
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &,
+                    const Eigen::MatrixXd &>())
+      .def_readonly("radial_basis", &B3::radial_basis)
+      .def_readonly("cutoff_function", &B3::cutoff_function)
+      .def_readonly("radial_hyps", &B3::radial_hyps)
+      .def_readonly("cutoff_hyps", &B3::cutoff_hyps)
+      .def_readonly("cutoffs", &B3::cutoffs)
+      .def_readonly("descriptor_settings", &B3::descriptor_settings);
+>>>>>>> f251f1db (add multiple cutoffs input to b1 and b3)
 
   // Kernel functions
   py::class_<Kernel>(m, "Kernel");
