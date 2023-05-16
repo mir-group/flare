@@ -88,7 +88,7 @@ DescriptorValues B3 ::compute_struc(Structure &structure) {
   complex_single_bond(single_bond_vals, force_dervs, neighbor_coords,
                       unique_neighbor_count, cumulative_neighbor_count,
                       descriptor_indices, radial_pointer, cutoff_pointer, nos,
-                      N, lmax, radial_hyps, cutoff_hyps, structure);
+                      N, lmax, radial_hyps, cutoff_hyps, structure, cutoffs);
 
   // Compute descriptor values.
   Eigen::MatrixXd B3_vals, B3_force_dervs;
@@ -281,7 +281,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   }
 }
 
-void complex_single_bond(
+void complex_single_bond_multiple_cutoffs(
     Eigen::MatrixXcd &single_bond_vals, Eigen::MatrixXcd &force_dervs,
     Eigen::MatrixXd &neighbor_coordinates, Eigen::VectorXi &neighbor_count,
     Eigen::VectorXi &cumulative_neighbor_count,
@@ -293,13 +293,11 @@ void complex_single_bond(
                        std::vector<double>)>
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const Structure &structure) {
+    const std::vector<double> &cutoff_hyps, const Structure &structure,
+    const Eigen::MatrixXd &cutoffs) {
 
   int n_atoms = structure.noa;
   int n_neighbors = structure.n_neighbors;
-
-  // TODO: Make rcut an attribute of the descriptor calculator.
-  double rcut = radial_hyps[1];
 
   // Count atoms inside the descriptor cutoff.
   neighbor_count = Eigen::VectorXi::Zero(n_atoms);
@@ -308,9 +306,12 @@ void complex_single_bond(
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
+    int central_species = structure.species[i];
     for (int j = 0; j < i_neighbors; j++) {
       int current_count = neighbor_count(i);
       int neigh_index = rel_index + j;
+      int neighbor_species = structure.neighbor_species(neigh_index);
+      double rcut = cutoffs(central_species, neighbor_species);
       double r = structure.relative_positions(neigh_index, 0);
       // Check that atom is within descriptor cutoff.
       if (r <= rcut) {
@@ -356,6 +357,10 @@ void complex_single_bond(
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     int neighbor_index = cumulative_neighbor_count(i);
+    int central_species = structure.species[i];
+
+    // Initialize radial hyperparameters.
+    std::vector<double> new_radial_hyps = radial_hyps;
 
     // Initialize radial and spherical harmonic vectors.
     std::vector<double> g = std::vector<double>(N, 0);
@@ -370,6 +375,8 @@ void complex_single_bond(
     int s, neigh_index, descriptor_counter, unique_ind;
     for (int j = 0; j < i_neighbors; j++) {
       neigh_index = rel_index + j;
+      int neighbor_species = structure.neighbor_species(neigh_index);
+      double rcut = cutoffs(central_species, neighbor_species);
       r = structure.relative_positions(neigh_index, 0);
       if (r > rcut)
         continue; // Skip if outside cutoff.
@@ -378,6 +385,9 @@ void complex_single_bond(
       z = structure.relative_positions(neigh_index, 3);
       s = structure.neighbor_species(neigh_index);
 
+      // Reset the endpoint of the radial basis set.
+      new_radial_hyps[1] = rcut;
+
       // Store neighbor coordinates.
       neighbor_coordinates(neighbor_index, 0) = x;
       neighbor_coordinates(neighbor_index, 1) = y;
@@ -385,7 +395,7 @@ void complex_single_bond(
 
       // Compute radial basis values and spherical harmonics.
       calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
-                       r, rcut, N, radial_hyps, cutoff_hyps);
+                       r, rcut, N, new_radial_hyps, cutoff_hyps);
       get_complex_Y(h, hx, hy, hz, x, y, z, lmax);
 
       // Store the products and their derivatives.
