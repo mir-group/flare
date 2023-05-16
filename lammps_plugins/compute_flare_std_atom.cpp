@@ -187,7 +187,7 @@ void ComputeFlareStdAtom::compute_peratom() {
         double B2_norm = pow(B2_norm_squared, 0.5);
         Q_desc = beta_matrices[itype - 1].transpose() * B2_vals / B2_norm;
       } else {
-        K_self = B2_norm_squared / size_norm; // only power 1 is supported
+        K_self = B2_norm_squared; // only power 1 is supported
         Q_desc = beta_matrices[itype - 1].transpose() * B2_vals;
       }
       variance = K_self - Q_desc.dot(Q_desc);
