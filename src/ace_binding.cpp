@@ -150,9 +150,6 @@ PYBIND11_MODULE(_C_flare, m) {
   py::class_<B3, Descriptor>(m, "B3")
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
-<<<<<<< HEAD
-                    const std::vector<int> &>());
-=======
                     const std::vector<int> &>())
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
@@ -164,7 +161,6 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readonly("cutoff_hyps", &B3::cutoff_hyps)
       .def_readonly("cutoffs", &B3::cutoffs)
       .def_readonly("descriptor_settings", &B3::descriptor_settings);
->>>>>>> f251f1db (add multiple cutoffs input to b1 and b3)
 
   // Kernel functions
   py::class_<Kernel>(m, "Kernel");
