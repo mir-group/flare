@@ -100,8 +100,319 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="helper-functions-for-gp">
-<h1>Helper functions for GP<a class="headerlink" href="#helper-functions-for-gp" title="Permalink to this heading"></a></h1>
+  <section id="module-flare.bffs.gp.gp_algebra">
+<span id="helper-functions-for-gp"></span><h1>Helper functions for GP<a class="headerlink" href="#module-flare.bffs.gp.gp_algebra" title="Permalink to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.efs_energy_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">efs_energy_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">efs_energy_kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.efs_energy_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Returns covariances between the local eneregy, force components, and
+partial stresses of a test environment and the total energy labels in the
+training set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.efs_force_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">efs_force_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">efs_force_kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.efs_force_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Returns covariances between the local eneregy, force components, and
+partial stresses of a test environment and the force labels in the
+training set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.energy_energy_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">energy_energy_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_energy_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Get a vector of covariances between the local energy of a test environment
+and the total energy labels in the training set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.energy_energy_vector_unit">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">energy_energy_vector_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_energy_vector_unit" title="Permalink to this definition"></a></dt>
+<dd><p>Gets part of the energy/energy vector.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.energy_force_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">energy_force_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_force_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Get the vector of covariances between the local energy of a test
+environment and the force labels in the training set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.energy_force_vector_unit">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">energy_force_vector_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.energy_force_vector_unit" title="Permalink to this definition"></a></dt>
+<dd><p>Gets part of the energy/force vector.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.force_energy_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">force_energy_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_energy_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Get a vector of covariances between a force component of a test environment
+and the total energy labels in the training set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.force_energy_vector_unit">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">force_energy_vector_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_energy_vector_unit" title="Permalink to this definition"></a></dt>
+<dd><p>Gets part of the force/energy vector.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.force_force_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">force_force_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_force_vector" title="Permalink to this definition"></a></dt>
+<dd><p>Get a vector of covariances between a force component of a test environment
+and the force labels in the training set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.force_force_vector_unit">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">force_force_vector_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.force_force_vector_unit" title="Permalink to this definition"></a></dt>
+<dd><p>Gets part of the force/force vector.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_distance_mat_pack">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_distance_mat_pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_distance_mat_pack" title="Permalink to this definition"></a></dt>
+<dd><p>Compute covariance matrix element between set1 and set2
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param same: whether the row and column are the same
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters
+:return: covariance matrix</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_force_block">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_force_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block" title="Permalink to this definition"></a></dt>
+<dd><p>parallel version of get_ky_mat
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>covariance matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_force_block_pack">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_force_block_pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_force_block_pack" title="Permalink to this definition"></a></dt>
+<dd><p>Compute covariance matrix element between set1 and set2
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param same: whether the row and column are the same
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>covariance matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_ky_and_hyp">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_ky_and_hyp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_grad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp" title="Permalink to this definition"></a></dt>
+<dd><p>parallel version of get_ky_and_hyp</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hyps</strong> – list of hyper-parameters</p></li>
+<li><p><strong>name</strong> – name of the gp instance.</p></li>
+<li><p><strong>kernel_grad</strong> – function object of the kernel gradient</p></li>
+<li><p><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</p></li>
+<li><p><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</p></li>
+<li><p><strong>n_cpus</strong> – number of cpus to use.</p></li>
+<li><p><strong>n_sample</strong> – the size of block for matrix to compute</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hyp_mat, ky_mat</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_ky_and_hyp_pack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_grad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_ky_and_hyp_pack" title="Permalink to this definition"></a></dt>
+<dd><p>computes a block of ky matrix and its derivative to hyper-parameter
+If the cpu set up is None, it uses as much as posible cpus</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hyps</strong> – list of hyper-parameters</p></li>
+<li><p><strong>name</strong> – name of the gp instance.</p></li>
+<li><p><strong>kernel_grad</strong> – function object of the kernel gradient</p></li>
+<li><p><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</p></li>
+<li><p><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hyp_mat, ky_mat</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_like_from_mats">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_like_from_mats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ky_mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_like_from_mats" title="Permalink to this definition"></a></dt>
+<dd><p>compute the likelihood from the covariance matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ky_mat</strong> – the covariance matrix</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float, likelihood</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_like_grad_from_mats">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_like_grad_from_mats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ky_mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyp_mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_like_grad_from_mats" title="Permalink to this definition"></a></dt>
+<dd><p>compute the gradient of likelihood to hyper-parameters
+from covariance matrix and its gradient</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ky_mat</strong> (<em>np.array</em>) – covariance matrix</p></li>
+<li><p><strong>hyp_mat</strong> (<em>np.array</em>) – dky/d(hyper parameter) matrix</p></li>
+<li><p><strong>name</strong> – name of the gp instance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float, list. the likelihood and its gradients</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_neg_like">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_neg_like</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like" title="Permalink to this definition"></a></dt>
+<dd><p>compute the log likelihood and its gradients
+:param hyps: list of hyper-parameters
+:type hyps: np.ndarray
+:param name: name of the gp instance.
+:param kernel_grad: function object of the kernel gradient
+:param output: Output object for dumping every hyper-parameter</p>
+<blockquote>
+<div><p>sets computed</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</p></li>
+<li><p><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</p></li>
+<li><p><strong>n_cpus</strong> – number of cpus to use.</p></li>
+<li><p><strong>n_sample</strong> – the size of block for matrix to compute</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float, np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.get_neg_like_grad">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">get_neg_like_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_grad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.get_neg_like_grad" title="Permalink to this definition"></a></dt>
+<dd><p>compute the log likelihood and its gradients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hyps</strong> (<em>np.ndarray</em>) – list of hyper-parameters</p></li>
+<li><p><strong>name</strong> – name of the gp instance.</p></li>
+<li><p><strong>kernel_grad</strong> – function object of the kernel gradient</p></li>
+<li><p><strong>logger_name</strong> (<em>str</em>) – name of logger object for dumping every hyper-parameter
+sets computed</p></li>
+<li><p><strong>cutoffs</strong> (<em>list of 2 float numbers</em>) – The cutoff values used for the atomic environments</p></li>
+<li><p><strong>hyps_mask</strong> – dictionary used for multi-group hyperparmeters</p></li>
+<li><p><strong>n_cpus</strong> – number of cpus to use.</p></li>
+<li><p><strong>n_sample</strong> – the size of block for matrix to compute</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>float, np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.kernel_distance_mat">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">kernel_distance_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.kernel_distance_mat" title="Permalink to this definition"></a></dt>
+<dd><p>parallel version of get_ky_mat
+:param hyps: list of hyper-parameters
+:param name: name of the gp instance.
+:param kernel: function object of the kernel
+:param cutoffs: The cutoff values used for the atomic environments
+:type cutoffs: list of 2 float numbers
+:param hyps_mask: dictionary used for multi-group hyperparmeters
+:return: covariance matrix</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.obtain_noise_len">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">obtain_noise_len</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps_mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.obtain_noise_len" title="Permalink to this definition"></a></dt>
+<dd><p>obtain the noise parameter from hyps and mask</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.partition_force_energy_block">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">partition_force_energy_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_force_energy_block" title="Permalink to this definition"></a></dt>
+<dd><p>Special partition method for the force/energy block. Because the number
+of environments in a structure can vary, we only split up the environment
+list, which has length size1.</p>
+<p>Note that two sizes need to be specified: the size of the envionment
+list and the size of the structure list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_sample</strong> (<em>int</em>) – Number of environments per processor.</p></li>
+<li><p><strong>size1</strong> (<em>int</em>) – Size of the environment list.</p></li>
+<li><p><strong>size2</strong> (<em>int</em>) – Size of the structure list.</p></li>
+<li><p><strong>n_cpus</strong> (<em>int</em>) – Number of cpus.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.partition_matrix">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">partition_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>partition the training data for matrix calculation
+the number of blocks are close to n_cpus
+since mp.Process does not allow to change the thread number</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.partition_matrix_custom">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">partition_matrix_custom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_matrix_custom" title="Permalink to this definition"></a></dt>
+<dd><p>Partition a specified portion of a matrix.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.partition_vector">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">partition_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cpus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.partition_vector" title="Permalink to this definition"></a></dt>
+<dd><p>partition the training data for vector calculation
+the number of blocks are the same as n_cpus
+since mp.Process does not allow to change the thread number</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.bffs.gp.gp_algebra.queue_wrapper">
+<span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.gp_algebra.</span></span><span class="sig-name descname"><span class="pre">queue_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.gp_algebra.queue_wrapper" title="Permalink to this definition"></a></dt>
+<dd><p>wrapper function for multiprocessing queue</p>
+</dd></dl>
+
 </section>
 
 

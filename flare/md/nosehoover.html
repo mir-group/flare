@@ -94,8 +94,46 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="nosehoover-nvt-ensemble">
-<h1>NoseHoover (NVT Ensemble)<a class="headerlink" href="#nosehoover-nvt-ensemble" title="Permalink to this heading"></a></h1>
+  <section id="module-flare.md.nosehoover">
+<span id="nosehoover-nvt-ensemble"></span><h1>NoseHoover (NVT Ensemble)<a class="headerlink" href="#module-flare.md.nosehoover" title="Permalink to this heading"></a></h1>
+<p>Custom Nose-Hoover NVT thermostat based on ASE.</p>
+<p>This code was originally written by Jonathan Mailoa based on these notes:</p>
+<blockquote>
+<div><p><a class="reference external" href="https://www2.ph.ed.ac.uk/~dmarendu/MVP/MVP03.pdf">https://www2.ph.ed.ac.uk/~dmarendu/MVP/MVP03.pdf</a></p>
+</div></blockquote>
+<p>It was then adapted by Simon Batzner to be used within ASE. Parts of the overall outline of the class are also based on the Langevin class in ASE.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="flare.md.nosehoover.NoseHoover">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.md.nosehoover.</span></span><span class="sig-name descname"><span class="pre">NoseHoover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.nosehoover.NoseHoover" title="Permalink to this definition"></a></dt>
+<dd><p>Nose-Hoover (constant N, V, T) molecular dynamics.</p>
+<p>Usage: NoseHoover(atoms, dt, temperature)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>atoms</strong> (<em>ASE Atoms</em>) – The list of atoms.</p></li>
+<li><p><strong>timestep</strong> (<em>float</em>) – The time step.</p></li>
+<li><p><strong>temperature</strong> (<em>float</em>) – Target temperature of the MD run in [K * units.kB]</p></li>
+<li><p><strong>nvt_q</strong> (<em>float</em>) – Q in the Nose-Hoover equations.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nvt_dyn</span> <span class="o">=</span> <span class="n">NoseHoover</span><span class="p">(</span>
+    <span class="n">atoms</span><span class="o">=</span><span class="n">atoms</span><span class="p">,</span>
+    <span class="n">timestep</span><span class="o">=</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">300.</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span>
+    <span class="n">nvt_q</span><span class="o">=</span><span class="mf">334.</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="flare.md.nosehoover.NoseHoover.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.nosehoover.NoseHoover.step" title="Permalink to this definition"></a></dt>
+<dd><p>Perform a MD step.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
