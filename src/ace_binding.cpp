@@ -111,6 +111,10 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &>())
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &,
+                    const Eigen::MatrixXd &>())
       .def_readonly("radial_basis", &B1::radial_basis)
       .def_readonly("cutoff_function", &B1::cutoff_function)
       .def_readonly("radial_hyps", &B1::radial_hyps)
@@ -147,6 +151,10 @@ PYBIND11_MODULE(_C_flare, m) {
       .def(py::init<const std::string &, const std::string &,
                     const std::vector<double> &, const std::vector<double> &,
                     const std::vector<int> &>())
+      .def(py::init<const std::string &, const std::string &,
+                    const std::vector<double> &, const std::vector<double> &,
+                    const std::vector<int> &,
+                    const Eigen::MatrixXd &>())
       .def_readonly("radial_basis", &B3::radial_basis)
       .def_readonly("cutoff_function", &B3::cutoff_function)
       .def_readonly("radial_hyps", &B3::radial_hyps)
