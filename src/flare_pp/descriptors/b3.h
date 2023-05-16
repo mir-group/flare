@@ -51,7 +51,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
                 const Eigen::VectorXi &descriptor_indices, int nos, int N,
                 int lmax, const Eigen::VectorXd &wigner3j_coeffs);
 
-void complex_single_bond(
+void complex_single_bond_multiple_cutoffs(
     Eigen::MatrixXcd &single_bond_vals, Eigen::MatrixXcd &force_dervs,
     Eigen::MatrixXd &neighbor_coordinates, Eigen::VectorXi &neighbor_count,
     Eigen::VectorXi &cumulative_neighbor_count,
@@ -63,6 +63,7 @@ void complex_single_bond(
                        std::vector<double>)>
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const Structure &structure);
+    const std::vector<double> &cutoff_hyps, const Structure &structure,
+    const Eigen::MatrixXd &cutoffs);
 
 #endif
