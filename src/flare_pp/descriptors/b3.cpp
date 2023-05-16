@@ -85,7 +85,7 @@ DescriptorValues B3 ::compute_struc(Structure &structure) {
   int N = descriptor_settings[1];
   int lmax = descriptor_settings[2];
 
-  complex_single_bond(single_bond_vals, force_dervs, neighbor_coords,
+  complex_single_bond_multiple_cutoffs(single_bond_vals, force_dervs, neighbor_coords,
                       unique_neighbor_count, cumulative_neighbor_count,
                       descriptor_indices, radial_pointer, cutoff_pointer, nos,
                       N, lmax, radial_hyps, cutoff_hyps, structure, cutoffs);
