@@ -104,52 +104,6 @@
 <li class="toctree-l1"><a class="reference internal" href="calculator.html">ASE Calculator of Sparse GP</a></li>
 </ul>
 </div>
-<span class="target" id="module-flare.bffs.sgp.sparse_gp"></span><dl class="py class">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.SGP_Wrapper">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">SGP_Wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">descriptor_calculators</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SOR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_atom_energies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">energy_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BFGS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper" title="Permalink to this definition"></a></dt>
-<dd><p>Wrapper class used to make the C++ sparse GP object compatible with
-OTF. Methods and properties are designed to mirror the GP class.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.from_dict" title="Permalink to this definition"></a></dt>
-<dd><p>Need an initialized GP</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model">
-<span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.SGP_Wrapper.write_model" title="Permalink to this definition"></a></dt>
-<dd><p>Write to .json file</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood">
-<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">compute_negative_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood" title="Permalink to this definition"></a></dt>
-<dd><p>Compute the negative log likelihood and gradient with respect to the
-hyperparameters.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">compute_negative_likelihood_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad" title="Permalink to this definition"></a></dt>
-<dd><p>Compute the negative log likelihood and gradient with respect to the
-hyperparameters.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable">
-<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">compute_negative_likelihood_grad_stable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precomputed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable" title="Permalink to this definition"></a></dt>
-<dd><p>Compute the negative log likelihood and gradient with respect to the
-hyperparameters.</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="flare.bffs.sgp.sparse_gp.optimize_hyperparameters">
-<span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.sparse_gp.</span></span><span class="sig-name descname"><span class="pre">optimize_hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sparse_gp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'BFGS'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.sparse_gp.optimize_hyperparameters" title="Permalink to this definition"></a></dt>
-<dd><p>Optimize the hyperparameters of a sparse GP model.</p>
-</dd></dl>
-
 </section>
 
 
