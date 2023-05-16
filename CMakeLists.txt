@@ -123,6 +123,7 @@ set(FLARE_SOURCES
     src/flare_pp/bffs/sparse_gp.cpp
     src/flare_pp/bffs/gp.cpp
     src/flare_pp/descriptors/descriptor.cpp
+    src/flare_pp/descriptors/b1.cpp
     src/flare_pp/descriptors/b2.cpp
     src/flare_pp/descriptors/b2_norm.cpp
     src/flare_pp/descriptors/b2_simple.cpp
