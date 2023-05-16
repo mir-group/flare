@@ -22,6 +22,8 @@ public:
 
   std::string descriptor_name = "B3";
 
+  Eigen::MatrixXd cutoffs;
+
   B3();
 
   B3(const std::string &radial_basis, const std::string &cutoff_function,
