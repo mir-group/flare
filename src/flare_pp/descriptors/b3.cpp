@@ -5,6 +5,8 @@
 #include "structure.h"
 #include "wigner3j.h"
 #include "y_grad.h"
+#include <fstream> // File operations
+#include <iomanip> // setprecision
 #include <iostream>
 
 B3 ::B3() {}
