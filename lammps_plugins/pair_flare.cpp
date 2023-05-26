@@ -195,7 +195,8 @@ void PairFLARE::allocate() {
 
   // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
   for (int i = 1; i <= n; i++)
-    setflag[i][i] = 1;
+    for(int j = 1; j <= n; j++)
+      setflag[i][j] = 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -210,7 +211,6 @@ void PairFLARE::settings(int narg, char ** /*arg*/) {
 
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs
-   read DYNAMO funcfl file
 ------------------------------------------------------------------------- */
 
 void PairFLARE::coeff(int narg, char **arg) {
