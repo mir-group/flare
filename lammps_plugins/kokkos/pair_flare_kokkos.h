@@ -35,7 +35,6 @@ struct Tagw{};
 struct Tagu{};
 struct TagF{};
 struct TagStoreF{};
-struct TagTransposeRY{};
 
 namespace LAMMPS_NS {
 
@@ -57,9 +56,6 @@ class PairFLAREKokkos : public PairFLARE {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagFindCurrType, const int) const;
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(TagTransposeRY, const MemberType) const;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(TagSingleBond, const MemberType) const;
@@ -140,7 +136,6 @@ class PairFLAREKokkos : public PairFLARE {
   View3D beta, single_bond, u, partial_forces;
   gYView4D g, Y;
   gYView4DRA g_ra, Y_ra;
-  View4D gT, YT;
   View5D single_bond_grad;
 
   int B2_chunk_size;
