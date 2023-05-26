@@ -349,9 +349,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         Kokkos::parallel_for("FLARE: partial forces",
             Kokkos::TeamPolicy<DeviceType, TagF>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
               0, Kokkos::PerTeam(u_size)
-            )/*.set_scratch_size(
+            ).set_scratch_size(
               0, Kokkos::PerThread(g_size + Y_size)
-            )*/,
+            ),
             *this
         );
 
@@ -440,20 +440,20 @@ void PairFLAREKokkos<DeviceType>::operator()(TagTransposeRY, const MemberType te
 
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 4*n_max), [&] (int nc){
+      int c = nc / n_max;
+      int n = nc - c*n_max;
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, jnum), [&] (int jj){
           //int n = nc / 4;
           //int c = nc -4*n;
-          int c = nc / n_max;
-          int n = nc - c*n_max;
           gscratch(c, n, jj) = g(ii, jj, n, c);
       });
   });
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 4*n_harmonics), [&] (int lmc){
+      int c = lmc / n_harmonics;
+      int lm = lmc - c*n_harmonics;
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, jnum), [&] (int jj){
           //int lm = lmc / 4;
           //int c = lmc - 4 * lm;
-          int c = lmc / n_harmonics;
-          int lm = lmc - c*n_harmonics;
           Yscratch(c, lm, jj) = Y(ii, jj, lm, c);
       });
   });
@@ -500,6 +500,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
           //int c = nc -4*n;
           // int c = nc / n_max;
           // int n = nc - c*n_max;
+          //gscratch(n) = gT(ii, jj, 0, n);
           gscratch(n) = g(ii, jj, n, 0);
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_harmonics), [&] (int lm){
@@ -507,6 +508,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
           //int c = lmc - 4 * lm;
           // int c = lmc / n_harmonics;
           // int lm = lmc - c*n_harmonics;
+          //Yscratch(lm) = YT(ii, jj, 0, lm);
           Yscratch(lm) = Y(ii, jj, lm, 0);
       });
 
@@ -659,8 +661,8 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
   const int i = ilist_curr_type[ii+startatom];
   const int jnum = d_numneigh_short(ii);
 
-  //ScratchView2D gscratch(team_member.thread_scratch(0), 4, n_max);
-  //ScratchView2D Yscratch(team_member.thread_scratch(0), 4, n_harmonics);
+  ScratchView2D gscratch(team_member.thread_scratch(0), 4, n_max);
+  ScratchView2D Yscratch(team_member.thread_scratch(0), 4, n_harmonics);
 
   ScratchView2D uscratch(team_member.team_scratch(0), n_radial, n_harmonics);
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_bond), [&] (int nlm){
@@ -670,31 +672,63 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
   });
   team_member.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 3*jnum), [&] (int &k){
-      int jj = k/3;
-      int c = k - 3*jj;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int &k){
+      int jj = k;
+      //int jj = k/3;
+      //int c = k - 3*jj;
 
       int j = d_neighbors_short(ii,jj);
       j &= NEIGHMASK;
       int s = type[j] - 1;
 
-      F_FLOAT tmp = 0.0;
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &tmp){
-          int n = nlm / n_harmonics;
-          int lm = nlm - n*n_harmonics;
-          int radial_index = s*n_max + n;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
+          //int n = nc / 4;
+          //int c = nc -4*n;
+          int c = nc / n_max;
+          int n = nc - c*n_max;
+          gscratch(c, n) = g(ii, jj, n, c);
+          //gscratch(c, n) = gT(ii, jj, c, n);
+      });
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
+          //int lm = lmc / 4;
+          //int c = lmc - 4 * lm;
+          int c = lmc / n_harmonics;
+          int lm = lmc - c*n_harmonics;
+          Yscratch(c, lm) = Y(ii, jj, lm, c);
+          //Yscratch(c, lm) = YT(ii, jj, c, lm);
+      });
 
-          double gval = g(ii, jj, n, 0);
-          double gg = g(ii, jj, n, c+1);
+      for (int c = 0; c < 3; c++) {
+        F_FLOAT tmp = 0.0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &tmp){
+            int n = nlm / n_harmonics;
+            int lm = nlm - n*n_harmonics;
+            int radial_index = s*n_max + n;
 
-          double Yval = Y(ii, jj, lm, 0);
-          double Yg = Y(ii, jj, lm, c+1);
+            double gval = gscratch(0, n);
+            double gg = gscratch(c+1, n);
 
-          tmp += (gg*Yval + gval*Yg) * uscratch(radial_index, lm);
+            double Yval = Yscratch(0, lm);
+            double Yg = Yscratch(c+1, lm);
 
-          // tmp += single_bond_grad(ii, jj, c, n, lm)*uscratch(radial_index, lm);
-      }, tmp);
-      partial_forces(ii,jj,c) = tmp;
+            // double gval = gT(ii, jj, 0, n);
+            // double gg = gT(ii, jj, c+1, n);
+
+            // double Yval = YT(ii, jj, 0, lm);
+            // double Yg = YT(ii, jj, c+1, lm);
+
+            // double gval = g(ii, jj, n, 0);
+            // double gg = g(ii, jj, n, c+1);
+
+            // double Yval = Y(ii, jj, lm, 0);
+            // double Yg = Y(ii, jj, lm, c+1);
+
+            tmp += (gg*Yval + gval*Yg) * uscratch(radial_index, lm);
+
+            // tmp += single_bond_grad(ii, jj, c, n, lm)*uscratch(radial_index, lm);
+        }, tmp);
+        partial_forces(ii,jj,c) = tmp;
+      }
   });
 }
 
