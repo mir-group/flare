@@ -59,9 +59,6 @@ class PairFLAREKokkos : public PairFLARE {
   void operator()(TagFindCurrType, const int) const;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagTransposeRY, const MemberType) const;
-
-  KOKKOS_INLINE_FUNCTION
   void operator()(TagSingleBond, const MemberType) const;
 
   KOKKOS_INLINE_FUNCTION
@@ -139,9 +136,6 @@ class PairFLAREKokkos : public PairFLARE {
   View2D B2, beta_B2, w, cutoff_matrix_k;
   View3D beta, single_bond, u, partial_forces;
   gYView4D g, Y;
-  gYView4DRA g_ra, Y_ra;
-  View4D gT, YT;
-  View5D single_bond_grad;
 
   int B2_chunk_size;
 

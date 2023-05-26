@@ -193,9 +193,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
           + 2 // evdwls, B2_norm2s
           + 0.5 // numneigh_short
           + max_neighs * (
-              n_max*4 // g and gT
-              + n_harmonics*4 // Y and YT
-              //+ n_max*n_harmonics*3 // single_bond_grad
+              n_max*4 // g
+              + n_harmonics*4 // Y
               + 3 // partial_forces
               + 0.5 // neighs_short
             )
@@ -255,15 +254,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         g = gYView4D(); Y = gYView4D();
         g = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), glayout);
         Y = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), Ylayout);
-        g_ra = g;
-        Y_ra = Y;
 
-        //gT = View4D(); YT = View4D();
-        //gT = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: gT"), batch_size, max_neighs, 4, n_max);
-        //YT = View4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: YT"), batch_size, max_neighs, 4, n_harmonics);
-
-        // single_bond_grad = View5D();
-        // single_bond_grad = View5D(Kokkos::ViewAllocateWithoutInitializing("FLARE: single_bond_grad"), batch_size, max_neighs, 3, n_max, n_harmonics);
         partial_forces = View3D();
         partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_neighs, 3);
 
@@ -281,22 +272,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
             *this
         );
 
-      // transpose R and Y for later use
-        int g_size = ScratchView3D::shmem_size(n_max, 4, max_neighs);
-        int Y_size = ScratchView3D::shmem_size(n_harmonics, 4, max_neighs);
-        /*
-        auto transpolicy = Kokkos::TeamPolicy<DeviceType, TagTransposeRY>(batch_size, SINGLE_BOND_TEAM_SIZE, vector_length).set_scratch_size(
-            0, Kokkos::PerTeam(g_size + Y_size));
-        Kokkos::parallel_for("FLARE: transpose R and Y",
-            transpolicy,
-            *this
-        );
-        */
-
-      // compute single bond and its gradient
-      // dnlm, dnlmj
-        g_size = ScratchView1D::shmem_size(n_max);
-        Y_size = ScratchView1D::shmem_size(n_harmonics);
+      // compute single bond dnlm = RjnYjlm
+        int g_size = ScratchView1D::shmem_size(n_max);
+        int Y_size = ScratchView1D::shmem_size(n_harmonics);
         auto policy = Kokkos::TeamPolicy<DeviceType, TagSingleBond>(batch_size, SINGLE_BOND_TEAM_SIZE, vector_length).set_scratch_size(
             0, Kokkos::PerThread(g_size + Y_size));
         Kokkos::deep_copy(single_bond, 0.0);
@@ -313,20 +291,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
             *this
         );
 
-        // compute beta*B2
-        if(n_species>0){
-          KokkosBlas::gemm("N", "T", 1.0, B2, Kokkos::subview(beta, curr_type, Kokkos::ALL(), Kokkos::ALL()), 0.0, beta_B2);
-        }
-        else{
-          B2_chunk_size = std::min(1000, n_descriptors);
-          int B2_size = ScratchView1D::shmem_size(B2_chunk_size);
-          Kokkos::parallel_for("FLARE: beta*B2",
-              Kokkos::TeamPolicy<DeviceType, TagBetaB2>(batch_size, TEAM_SIZE, vector_length).set_scratch_size(
-                0, Kokkos::PerTeam(B2_size)
-                ),
-              *this
-              );
-        }
+      // compute beta*B2
+        KokkosBlas::gemm("N", "T", 1.0, B2, Kokkos::subview(beta, curr_type, Kokkos::ALL(), Kokkos::ALL()), 0.0, beta_B2);
 
       // compute B2 squared norms and evdwls and w
         Kokkos::parallel_for("FLARE: B2 norm2 evdwl w",
@@ -430,56 +396,6 @@ void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::operator()(TagTransposeRY, const MemberType team_member) const{
-  int ii = team_member.league_rank();
-
-  const int jnum = d_numneigh_short(ii);
-
-  ScratchView3D gscratch(team_member.team_scratch(0), 4, n_max, max_neighs);
-  ScratchView3D Yscratch(team_member.team_scratch(0), 4, n_harmonics, max_neighs);
-
-
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 4*n_max), [&] (int nc){
-      int c = nc / n_max;
-      int n = nc - c*n_max;
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, jnum), [&] (int jj){
-          //int n = nc / 4;
-          //int c = nc -4*n;
-          gscratch(c, n, jj) = g(ii, jj, n, c);
-      });
-  });
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, 4*n_harmonics), [&] (int lmc){
-      int c = lmc / n_harmonics;
-      int lm = lmc - c*n_harmonics;
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, jnum), [&] (int jj){
-          //int lm = lmc / 4;
-          //int c = lmc - 4 * lm;
-          Yscratch(c, lm, jj) = Y(ii, jj, lm, c);
-      });
-  });
-  team_member.team_barrier();
-
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int jj){
-
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
-          //int n = nc / 4;
-          //int c = nc -4*n;
-          int c = nc / n_max;
-          int n = nc - c*n_max;
-          gT(ii, jj, c, n) = gscratch(c, n, jj);
-      });
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
-          //int lm = lmc / 4;
-          //int c = lmc - 4 * lm;
-          int c = lmc / n_harmonics;
-          int lm = lmc - c*n_harmonics;
-          YT(ii, jj, c, lm) = Yscratch(c, lm, jj);
-      });
-  });
-}
-
-template <class DeviceType>
-KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType team_member) const{
   int ii = team_member.league_rank();
 
@@ -494,21 +410,10 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
       j &= NEIGHMASK;
       int s = type[j] - 1;
 
-
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_max), [&] (int n){
-          //int n = nc / 4;
-          //int c = nc -4*n;
-          // int c = nc / n_max;
-          // int n = nc - c*n_max;
-          //gscratch(n) = gT(ii, jj, 0, n);
           gscratch(n) = g(ii, jj, n, 0);
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, n_harmonics), [&] (int lm){
-          //int lm = lmc / 4;
-          //int c = lmc - 4 * lm;
-          // int c = lmc / n_harmonics;
-          // int lm = lmc - c*n_harmonics;
-          //Yscratch(lm) = YT(ii, jj, 0, lm);
           Yscratch(lm) = Y(ii, jj, lm, 0);
       });
 
@@ -518,27 +423,14 @@ void PairFLAREKokkos<DeviceType>::operator()(TagSingleBond, const MemberType tea
 
           int radial_index = s*n_max + n;
           double g_val = gscratch(n);
-          // double gx_val = gscratch(1,n);
-          // double gy_val = gscratch(2,n);
-          // double gz_val = gscratch(3,n);
 
+          double Y_val = Yscratch(lm);
 
-          double h_val = Yscratch(lm);
-          // double hx_val = Yscratch(1,lm);
-          // double hy_val = Yscratch(2,lm);
-          // double hz_val = Yscratch(3,lm);
-
-          double bond = g_val * h_val;
-          // double bond_x = gx_val * h_val + g_val * hx_val;
-          // double bond_y = gy_val * h_val + g_val * hy_val;
-          // double bond_z = gz_val * h_val + g_val * hz_val;
+          double bond = g_val * Y_val;
 
           // Update single bond basis arrays.
-          Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: bad?
+          Kokkos::atomic_add(&single_bond(ii, radial_index, lm),bond); // TODO: reorder loops?
 
-          // single_bond_grad(ii,jj,0,n,lm) = bond_x;
-          // single_bond_grad(ii,jj,1,n,lm) = bond_y;
-          // single_bond_grad(ii,jj,2,n,lm) = bond_z;
       });
   });
 }
@@ -562,50 +454,8 @@ void PairFLAREKokkos<DeviceType>::operator()(TagB2, const int ii, const int nnl)
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::operator()(TagBetaB2, const MemberType team_member) const{
-  int ii = team_member.league_rank();
-  const int i = ilist_curr_type[ii+startatom];
-
-  const int itype = type[i] - 1;
-
-  ScratchView1D B2scratch(team_member.team_scratch(0), B2_chunk_size);
-
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int nnl){
-      beta_B2(ii,nnl) = 0.0;
-  });
-
-  // do mat-vec product in chunks to enable level 0 scratch
-  // even when descriptors are too big
-  for(int starti = 0; starti < n_descriptors; starti += B2_chunk_size){
-    int stopi = starti + B2_chunk_size;
-    stopi = n_descriptors < stopi ? n_descriptors : stopi;
-//        Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
-//            if(ii==0) printf("%d %d %d\n", n_descriptors, starti, stopi);
-//        });
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, stopi - starti), [&] (int nnl){
-        B2scratch(nnl) = B2(ii, nnl + starti);
-    });
-    team_member.team_barrier();
-
-    // TODO: team-wise GEMV?
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, n_descriptors), [&] (int x){
-        F_FLOAT tmp = 0.0;
-        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, stopi - starti), [&](int y, F_FLOAT &tmp){
-            tmp += beta(itype, x, y+starti)*B2scratch(y);
-        }, tmp);
-        Kokkos::single(Kokkos::PerThread(team_member), [&] () {
-            beta_B2(ii, x) += tmp;
-        });
-    });
-    team_member.team_barrier();
-  }
-}
-
-template <class DeviceType>
-KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_member) const{
   int ii = team_member.league_rank();
-  double empty_thresh = 1e-8;
 
   F_FLOAT tmp = 0.0;
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
@@ -640,7 +490,6 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(Tagu, const int ii, const int n1, const int lm) const{
   int l = sqrt(1.0*lm);
-  //int l = Kokkos::Experimental::sqrt(lm);
 
   F_FLOAT un1lm = 0.0;
   for(int n2 = 0; n2 < n_radial; n2++){
@@ -674,28 +523,21 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, jnum), [&] (int &k){
       int jj = k;
-      //int jj = k/3;
-      //int c = k - 3*jj;
 
       int j = d_neighbors_short(ii,jj);
       j &= NEIGHMASK;
       int s = type[j] - 1;
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_max), [&] (int nc){
-          //int n = nc / 4;
-          //int c = nc -4*n;
           int c = nc / n_max;
           int n = nc - c*n_max;
           gscratch(c, n) = g(ii, jj, n, c);
-          //gscratch(c, n) = gT(ii, jj, c, n);
+
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, 4*n_harmonics), [&] (int lmc){
-          //int lm = lmc / 4;
-          //int c = lmc - 4 * lm;
           int c = lmc / n_harmonics;
           int lm = lmc - c*n_harmonics;
           Yscratch(c, lm) = Y(ii, jj, lm, c);
-          //Yscratch(c, lm) = YT(ii, jj, c, lm);
       });
 
       for (int c = 0; c < 3; c++) {
@@ -711,21 +553,8 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
             double Yval = Yscratch(0, lm);
             double Yg = Yscratch(c+1, lm);
 
-            // double gval = gT(ii, jj, 0, n);
-            // double gg = gT(ii, jj, c+1, n);
-
-            // double Yval = YT(ii, jj, 0, lm);
-            // double Yg = YT(ii, jj, c+1, lm);
-
-            // double gval = g(ii, jj, n, 0);
-            // double gg = g(ii, jj, n, c+1);
-
-            // double Yval = Y(ii, jj, lm, 0);
-            // double Yg = Y(ii, jj, lm, c+1);
-
             tmp += (gg*Yval + gval*Yg) * uscratch(radial_index, lm);
 
-            // tmp += single_bond_grad(ii, jj, c, n, lm)*uscratch(radial_index, lm);
         }, tmp);
         partial_forces(ii,jj,c) = tmp;
       }
@@ -822,13 +651,8 @@ void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
 }
 
 
-/* ---------------------------------------------------------------------- */
-
-
-
-
 /* ----------------------------------------------------------------------
-   set coeffs for one or more type pairs
+   read coeff file with settings and beta matrix, copy to device
 ------------------------------------------------------------------------- */
 
 template<class DeviceType>
@@ -888,12 +712,12 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
   // always request a full neighbor list
 
-  if (neighflag != FULL) { // TODO: figure this out
+  if (neighflag != FULL) {
     error->all(FLERR,"Cannot use chosen neighbor list style with pair flare/kk");
   }
 
   // get available memory from environment variable,
-  // defaults to 16 GB set in the header file
+  // defaults to 12 GB set in the header file
   char *memstr = std::getenv("MAXMEM");
   if (memstr != NULL) {
     maxmem = std::atof(memstr) * 1.0e9;
