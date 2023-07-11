@@ -214,7 +214,7 @@ class Output:
         else:
             string += f"\n*-Frame: {curr_step} "
 
-        string += f"\nSimulation Time: {(dt * curr_step):10.3f} ps \n"
+        string += f"\nSimulation Time: {(dt * curr_step):10.4f} ps \n"
         return string
 
     def write_md_config(

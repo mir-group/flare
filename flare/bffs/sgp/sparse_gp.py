@@ -288,12 +288,18 @@ class SGP_Wrapper:
             rel_efs_noise = train_struc.info.get("rel_efs_noise", [1, 1, 1])
             rel_e_noise, rel_f_noise, rel_s_noise = rel_efs_noise
 
+            # check for stress training since ASE atoms assert stress arrays of length 6
+            if not in_dict["stress_training"]:
+                struc_stress = np.array(None)
+            else:
+                struc_stress = train_struc.stress
+
             gp.update_db(
                 train_struc,
                 train_struc.forces,
                 custom_range=custom_range,
                 energy=energy,
-                stress=train_struc.stress,
+                stress=struc_stress,
                 mode="specific",
                 sgp=None,
                 update_qr=False,
@@ -516,6 +522,7 @@ class SGP_Wrapper:
 
         n_kern = len(kernels)
         new_gp = SparseGP(kernels, hyps[n_kern], hyps[n_kern + 1], hyps[n_kern + 2])
+        new_gp.Kuu_jitter = self.sparse_gp.Kuu_jitter
 
         # add training data
         sparse_indices = self.sparse_gp.sparse_indices

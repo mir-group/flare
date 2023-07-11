@@ -1,4 +1,3 @@
-#include "b3.h"
 #include "descriptor.h"
 #include "test_structure.h"
 #include "gtest/gtest.h"
@@ -43,7 +42,7 @@ public:
   }
 };
 
-using DescTypes = ::testing::Types<B2, B3>;
+using DescTypes = ::testing::Types<B1, B2, B3>;
 TYPED_TEST_SUITE(DescTest, DescTypes);
 
 //TEST_P(DescRotTest, RotationTest) {

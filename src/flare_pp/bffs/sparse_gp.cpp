@@ -386,8 +386,8 @@ void SparseGP ::update_Kuu(
 
     // Update sparse count.
     this->n_sparse += n_envs;
-    }
   }
+}
 
 void SparseGP ::update_Kuf(
     const std::vector<ClusterDescriptor> &cluster_descriptors) {

@@ -1,3 +1,4 @@
+#include "b1.h"
 #include "b2.h"
 #include "b2_norm.h"
 #include "b2_simple.h"
