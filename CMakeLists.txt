@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.5)
+cmake_minimum_required(VERSION 3.15...3.26)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
@@ -30,13 +30,15 @@ include(FetchContent)
 # googletest
 ################################################################################
 
-FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.11.0
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
-    UPDATE_COMMAND ""
-)
-FetchContent_MakeAvailable(googletest)
+if(NOT DEFINED SKBUILD)
+    FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.11.0
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
+        UPDATE_COMMAND ""
+    )
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Json
 ################################################################################
@@ -212,4 +214,8 @@ add_dependencies(flare_module pybind11_project)
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
-add_subdirectory(ctests)
+if(NOT DEFINED SKBUILD)
+  add_subdirectory(ctests)
+endif()
+
+install(TARGETS flare_module LIBRARY DESTINATION flare/bffs/sgp)
