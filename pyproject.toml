@@ -1,0 +1,59 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "mir-flare"
+version = "1.4.0"
+description = "Fast Learning of Atomistic Rare Events"
+readme = "README.md"
+requires-python = ">=3.7"
+authors = [
+    { name = "Materials Intelligence Research", email = "mir@g.harvard.edu" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "ase",
+    "nptyping",
+    "numba",
+    "numpy >=1.18, <1.23",
+    "pyyaml",
+    "scipy",
+    "wandb",
+]
+
+[project.scripts]
+flare-otf = "flare.scripts.otf_train:main"
+
+[project.urls]
+Homepage = "https://github.com/mir-group/flare"
+
+[project.optional-dependencies]
+tests = [
+    "pytest-mock",
+    "pytest>=4.6",
+    "IPython",
+]
+dev = [
+    "jupyter",
+    "memory_profiler",
+]
+docs = [
+    "babel",
+    "docutils==0.17.1",
+    "nbconvert",
+    "nbsphinx",
+    "pygments==2.11.2",
+    "codecov",
+    "Sphinx",
+    "sphinx-rtd-theme",
+    "breathe"
+]
+
+[tool.scikit-build]
+wheel.packages = ["flare"]
