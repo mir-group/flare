@@ -49,6 +49,10 @@ docs = [
     "nbconvert",
     "nbsphinx",
     "pygments==2.11.2",
+    "codecov",
+    "Sphinx",
+    "sphinx-rtd-theme",
+    "breathe"
 ]
 
 [tool.scikit-build]
