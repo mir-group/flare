@@ -1,10 +1,10 @@
 [build-system]
-requires = ["scikit-build-core"]
+requires = ["scikit-build-core", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "mir-flare"
-version = "1.3.3"
+version = "1.4.0"
 description = "Fast Learning of Atomistic Rare Events"
 readme = "README.md"
 requires-python = ">=3.7"
