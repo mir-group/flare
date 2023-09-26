@@ -63,7 +63,9 @@ public:
                                                int kernel_index);
   Eigen::MatrixXd compute_varmap_coefficients(const SparseGP &gp_model,
                                               int kernel_index);
-  void write_info(snlohmann::json &j);
+  void write_info(nlohmann::json &j);
+
+  void write_info(std::ofstream &coeff_file);
 
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(NormalizedDotProduct,
     sigma, sig2, power, kernel_name, kernel_hyperparameters)

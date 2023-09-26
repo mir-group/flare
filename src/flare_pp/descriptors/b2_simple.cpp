@@ -41,6 +41,25 @@ void B2_Simple ::write_to_file(nlohmann::json &j, int coeff_size) {
   
 }
 
+void B2_Simple ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
+  // Report radial basis set.
+  coeff_file << radial_basis << "\n";
+
+  // Record number of species, nmax, lmax, and the cutoff.
+  int n_species = descriptor_settings[0];
+  int n_max = descriptor_settings[1];
+  int l_max = descriptor_settings[2];
+  double cutoff = radial_hyps[1];
+
+  coeff_file << n_species << " " << n_max << " " << l_max << " ";
+  coeff_file << coeff_size << "\n";
+  coeff_file << cutoff_function << "\n";
+
+  // Report cutoff to 2 decimal places.
+  coeff_file << std::fixed << std::setprecision(2);
+  coeff_file << cutoff << "\n";
+}
+
 DescriptorValues B2_Simple ::compute_struc(Structure &structure) {
 
   // Initialize descriptor values.

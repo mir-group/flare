@@ -50,6 +50,8 @@ public:
                                                        int kernel_index) = 0;
   virtual void write_info(nlohmann::json &j) = 0;
 
+  virtual void write_info(std::ofstream &coeff_file) = 0;
+
   virtual std::vector<Eigen::MatrixXd> Kuu_grad(const ClusterDescriptor &envs,
                                                 const Eigen::MatrixXd &Kuu,
                                                 const Eigen::VectorXd &hyps);

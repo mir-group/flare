@@ -259,7 +259,6 @@ void PairFLARE::read_file(char *filename) {
   int me = comm->me;
   char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], kernel_string[MAXLINE];
   int radial_string_length, cutoff_string_length, kernel_string_length;
-  FILE *fptr;
 
   // Check that the potential file can be opened.
   if (me == 0) {
@@ -376,7 +375,7 @@ void PairFLARE::read_file(char *filename) {
   // Parse the beta vectors.
   memory->create(beta, beta_size * n_species, "pair:beta");
   if (me == 0)
-    grab(fptr, beta_size * n_species, beta);
+    grab(jf["mapping"]["coefficients"], beta_size * n_species, beta);
   MPI_Bcast(beta, beta_size * n_species, MPI_DOUBLE, 0, world);
 
   // Fill in the beta matrix.

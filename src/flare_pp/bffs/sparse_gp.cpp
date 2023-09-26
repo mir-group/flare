@@ -1167,6 +1167,10 @@ void SparseGP::write_mapping_coefficients(std::string file_name,
                                           std::string contributor,
                                           int kernel_index) {
 
+  // Compute mapping coefficients.
+  Eigen::MatrixXd mapping_coeffs =
+      kernels[kernel_index]->compute_mapping_coefficients(*this, kernel_index);
+
   // Create json file using nlohmann json
   nlohmann::json jsonfile;
 
@@ -1193,10 +1197,6 @@ void SparseGP::write_mapping_coefficients(std::string file_name,
   training_structures[0].descriptor_calculators[kernel_index]->write_to_file(
       jsonfile, coeff_size);
 
-  // Compute mapping coefficients.
-  Eigen::MatrixXd mapping_coeffs =
-      kernels[kernel_index]->compute_mapping_coefficients(*this, kernel_index);
-
   // Record mapping coefficients
   int count = 0;
   for (int i = 0; i < mapping_coeffs.rows(); i++) {
@@ -1211,7 +1211,7 @@ void SparseGP::write_mapping_coefficients(std::string file_name,
   }
 
   // Return file
-  std::ofstream file(filename);
+  std::ofstream file(file_name);
   file << jsonfile;
 }
 

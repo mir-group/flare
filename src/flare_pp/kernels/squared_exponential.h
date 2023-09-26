@@ -47,6 +47,8 @@ public:
                                                int kernel_index);
   void write_info(nlohmann::json &j);
 
+  void write_info(std::ofstream &coeff_file);
+
   NLOHMANN_DEFINE_TYPE_INTRUSIVE(SquaredExponential, sigma, ls, sig2, ls2,
     kernel_name)
 

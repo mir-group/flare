@@ -49,25 +49,50 @@ B2 ::B2(const std::string &radial_basis, const std::string &cutoff_function,
   this->cutoffs = cutoffs;
 }
 
-void B2 ::write_to_file(nlohmann::json &j, int coeff_size) {
+void B2 ::write_to_file(nlohmann::json &jf, int coeff_size) {
   /// Record radial basis set.
-  j["descriptor"]["radial_basis"] = radial_basis;
+  jf["descriptor"]["radial_basis"] = radial_basis;
 
   // Record number of n_species, nmax, lmax, cutoff, cutoff_size, cutoff_function
-  j["descriptor"]["n_species"] = descriptor_settings[0];
-  j["descriptor"]["n_max"] = descriptor_settings[1];
-  j["descriptor"]["l_max"] = descriptor_settings[2];
-  j["descriptor"]["cutoff"]  = radial_hyps[1];
-  j["descriptor"]["coeff_size"] = coeff_size;
-  j["descriptor"]["cutoff_function"] = cutoff_function;
+  int n_species = descriptor_settings[0];
+  jf["descriptor"]["n_species"] = n_species;
+  jf["descriptor"]["n_max"] = descriptor_settings[1];
+  jf["descriptor"]["l_max"] = descriptor_settings[2];
+  jf["descriptor"]["cutoff"]  = radial_hyps[1];
+  jf["descriptor"]["coeff_size"] = coeff_size;
+  jf["descriptor"]["cutoff_function"] = cutoff_function;
 
   // Record cutoffs 
   for (int i = 0; i < n_species; i ++){
     for (int j = 0; j < n_species; j ++){
-      j["descriptor"]["cutoffs"].push_back(cutoffs(i, j));
+      jf["descriptor"]["cutoffs"].push_back(cutoffs(i, j));
     }
   }
 
+}
+
+void B2 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
+  // Report radial basis set.
+  coeff_file << radial_basis << "\n";
+
+  // Record number of species, nmax, lmax, and the cutoff.
+  int n_species = descriptor_settings[0];
+  int n_max = descriptor_settings[1];
+  int l_max = descriptor_settings[2];
+  double cutoff = radial_hyps[1];
+
+  coeff_file << n_species << " " << n_max << " " << l_max << " ";
+  coeff_file << coeff_size << "\n";
+  coeff_file << cutoff_function << "\n";
+
+  // Report cutoffs to 2 decimal places.
+  coeff_file << std::fixed << std::setprecision(2);
+  for (int i = 0; i < n_species; i ++){
+    for (int j = 0; j < n_species; j ++){
+      coeff_file << cutoffs(i, j) << " ";
+    }
+  }
+  coeff_file << "\n";
 }
 
 DescriptorValues B2 ::compute_struc(Structure &structure) {

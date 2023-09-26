@@ -8,6 +8,12 @@
 
 Descriptor::Descriptor() {}
 
+void Descriptor::write_to_file(nlohmann::json &j, int coeff_size) {
+  std::cout << "Mapping this descriptor is not implemented yet." << std::endl;
+  return;
+}
+
+
 void Descriptor::write_to_file(std::ofstream &coeff_file, int coeff_size) {
   std::cout << "Mapping this descriptor is not implemented yet." << std::endl;
   return;

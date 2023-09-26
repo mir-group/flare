@@ -21,6 +21,8 @@ public:
 
   virtual void write_to_file(nlohmann::json &j, int coeff_size);
 
+  virtual void write_to_file(std::ofstream &coeff_file, int coeff_size);
+
   virtual nlohmann::json return_json() = 0;
 };
 

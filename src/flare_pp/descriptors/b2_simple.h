@@ -30,7 +30,9 @@ public:
   DescriptorValues compute_struc(Structure &structure);
 
   void write_to_file(nlohmann::json &j, int coeff_size);
-  
+
+  void write_to_file(std::ofstream &coeff_file, int coeff_size);
+
   nlohmann::json return_json();
 };
 

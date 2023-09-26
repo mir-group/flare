@@ -862,6 +862,11 @@ void NormalizedDotProduct ::write_info(nlohmann::json &j) {
   j["kernel"]["power"] = power;
 }
 
+void NormalizedDotProduct ::write_info(std::ofstream &coeff_file) {
+  coeff_file << std::fixed << std::setprecision(0);
+  coeff_file << power << " NormalizedDotProduct\n";
+}
+
 nlohmann::json NormalizedDotProduct ::return_json(){
   nlohmann::json j;
   to_json(j, *this);

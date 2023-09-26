@@ -864,6 +864,11 @@ void DotProduct ::write_info(nlohmann::json &j) {
   j["kernel"]["power"] = power;
 }
 
+void DotProduct ::write_info(std::ofstream &coeff_file) {
+  coeff_file << std::fixed << std::setprecision(0);
+  coeff_file << power << " DotProduct\n";
+}
+
 nlohmann::json DotProduct ::return_json(){
   nlohmann::json j;
   to_json(j, *this);
