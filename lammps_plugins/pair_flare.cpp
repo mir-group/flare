@@ -263,31 +263,36 @@ void PairFLARE::read_file(char *filename) {
 
   // Check that the potential file can be opened.
   if (me == 0) {
-    fptr = utils::open_potential(filename,lmp,nullptr);
-    if (fptr == NULL) {
+    // Check if input file is valid JSON
+    std::ifstream ifs(filename);
+    if(!nlohmann::json::accept(ifs)) {
       char str[128];
       snprintf(str, 128, "Cannot open potential file %s", filename);
       error->one(FLERR, str);
     }
   }
 
+  ifs.clear(); // Reset eof state
+  ifs.seekg(0, std::ios::beg); // Seek to the begin of the file
+
+  nlohmann::json jf = nlohmann::json::parse(ifs); // parse JSON file
+
   int tmp, nwords;
   if (me == 0) {
-    fgets(line, MAXLINE, fptr); // Date and contributor
-
-    fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
-    sscanf(line, "%i %s", &power, &kernel_string);
+    
+    power = jf["kernel"]["power"]; // Power, use integer instead of double for simplicity
+    kernel_string = jf["kernel"]["name"];
     kernel_string_length = strlen(kernel_string);
 
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%s", radial_string); // Radial basis set
+    radial_string = jf["descriptor"]["radial_basis"];
     radial_string_length = strlen(radial_string);
 
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
+    n_species = jf["descriptor"]["n_species"];
+    n_max = jf["descriptor"]["n_max"];
+    l_max = jf["descriptor"]["l_max"];
+    beta_size = jf["descriptor"]["coeff_size"];
 
-    fgets(line, MAXLINE, fptr);
-    sscanf(line, "%s", cutoff_string); // Cutoff function
+    cutoff_string = jf["descriptor"]["cutoff_function"];
     cutoff_string_length = strlen(cutoff_string);
   }
 
@@ -308,7 +313,7 @@ void PairFLARE::read_file(char *filename) {
   int n_cutoffs = n_species * n_species;
   memory->create(cutoffs, n_cutoffs, "pair:cutoffs");
   if (me == 0)
-    grab(fptr, n_cutoffs, cutoffs);
+    grab(jf["kernel"]["cutoffs"], n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
 
   // Create cutsq array (used in pair.cpp)
@@ -426,5 +431,18 @@ void PairFLARE::grab(FILE *fptr, int n, double *list) {
     list[i++] = atof(ptr);
     while ((ptr = strtok(NULL, " \t\n\r\f")))
       list[i++] = atof(ptr);
+  }
+}
+
+/* ----------------------------------------------------------------------
+   grab n values from iterator to nlohmann::json array
+  and put them in list
+------------------------------------------------------------------------- */
+
+void PairFLARE::grab(auto it, int n, double *list) {
+
+  int i = 0;
+  while (i < n) {
+    list[i] = it[i++];
   }
 }

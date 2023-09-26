@@ -678,8 +678,10 @@ NormalizedDotProduct_ICM ::compute_varmap_coefficients(const SparseGP &gp_model,
   return empty_mat;
 }
 
-void NormalizedDotProduct_ICM ::write_info(std::ofstream &coeff_file) {
-  std::cout << "Not implemented." << std::endl;
+void NormalizedDotProduct_ICM ::write_info(nlohmann::json &j) {
+  // record name and power in metadata of json file
+  j["kernel"]["name"] = "NormalizedDotProduct_ICM";
+  j["kernel"]["power"] = power;
 }
 
 int get_icm_index(int s1, int s2, int n_types) {

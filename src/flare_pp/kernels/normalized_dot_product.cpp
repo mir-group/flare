@@ -856,9 +856,10 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
   return mapping_coeffs;
 }
 
-void NormalizedDotProduct ::write_info(std::ofstream &coeff_file) {
-  coeff_file << std::fixed << std::setprecision(0);
-  coeff_file << power << " NormalizedDotProduct\n";
+void NormalizedDotProduct ::write_info(nlohmann::json &j) {
+  // record name and power in metadata of json file
+  j["kernel"]["name"] = "NormalizedDotProduct";
+  j["kernel"]["power"] = power;
 }
 
 nlohmann::json NormalizedDotProduct ::return_json(){
