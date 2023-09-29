@@ -747,8 +747,8 @@ void SparseGP ::compute_likelihood_stable() {
   }
 
   complexity_penalty = (1. / 2.) * (noise_det + Kuu_inv_det + sigma_inv_det);
-  std::cout << "like comp data " << complexity_penalty << " " << data_fit << std::endl;
-  std::cout << "noise_det Kuu_inv_det sigma_inv_det " << noise_det << " " << Kuu_inv_det << " " << sigma_inv_det << std::endl;
+  //std::cout << "like comp data " << complexity_penalty << " " << data_fit << std::endl;
+  //std::cout << "noise_det Kuu_inv_det sigma_inv_det " << noise_det << " " << Kuu_inv_det << " " << sigma_inv_det << std::endl;
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
