@@ -587,7 +587,7 @@ def compute_negative_likelihood_grad(hyperparameters, sparse_gp, print_vals=Fals
 
 
 def compute_negative_likelihood_grad_stable(
-    hyperparameters, sparse_gp, precomputed=False
+    hyperparameters, sparse_gp, precomputed=False, print_vals=False, logger=None
 ):
     """Compute the negative log likelihood and gradient with respect to the
     hyperparameters."""
@@ -599,9 +599,12 @@ def compute_negative_likelihood_grad_stable(
     negative_likelihood = -sparse_gp.compute_likelihood_gradient_stable(precomputed)
     negative_likelihood_gradient = -sparse_gp.likelihood_gradient
 
-    print_hyps_and_grad(
-        hyperparameters, negative_likelihood_gradient, negative_likelihood
-    )
+    if print_vals:
+        print_hyps_and_grad(hyperparameters, negative_likelihood_gradient,
+                            negative_likelihood)
+    elif logger is not None:
+        log_hyps_and_grad(hyperparameters, negative_likelihood_gradient,
+                          negative_likelihood, logger)
 
     return negative_likelihood, negative_likelihood_gradient
 
@@ -612,6 +615,13 @@ def print_hyps(hyperparameters, neglike):
     print("Likelihood:")
     print(-neglike)
     print("\n")
+
+
+def log_hyps_and_grad(hyperparameters, neglike_grad, neglike, logger):
+    logger.debug("Hyperparameters: {}".format(hyperparameters))
+    logger.debug("Likelihood gradient: {}".format(-neglike_grad))
+    logger.debug("Likelihood: {}".format(-neglike))
+    logger.debug("==================================")
 
 
 def print_hyps_and_grad(hyperparameters, neglike_grad, neglike):
@@ -631,6 +641,8 @@ def optimize_hyperparameters(
     max_iterations=10,
     bounds=None,
     method="BFGS",
+    logger=None
+
 ):
     """Optimize the hyperparameters of a sparse GP model."""
 
@@ -642,16 +654,33 @@ def optimize_hyperparameters(
             break
     if precompute:
         tic = time()
-        print("Precomputing KnK for hyps optimization")
+        if display_results:
+            print('Precomputing KnK for hyps optimization')
+        elif logger is not None:
+            logger.debug('Precomputing KnK for hyps optimization')
         sparse_gp.precompute_KnK()
-        print("Done precomputing. Time:", time() - tic)
+        if display_results:
+            print('Done precomputing. Time:', time() - tic)
+        elif logger is not None:
+            logger.debug('Done precomputing. Time:{}'.format(time() - tic))
         arguments = (sparse_gp, precompute)
     else:
         arguments = (sparse_gp, precompute)
 
+    def cnlgs(hp, sgp, pc):
+        return compute_negative_likelihood_grad_stable(hp, sgp, pc,
+                                                       display_results, logger)
+
+    if logger is not None:
+        logger.info('Optimizing hyperparameters...')
+        init_nl, init_nlg = compute_negative_likelihood_grad_stable(initial_guess, sparse_gp, precompute)
+        logger.info('Initial hyperparameters: {}'.format(initial_guess))
+        logger.info('Initial likelihood gradient: {}'.format(-init_nlg))
+        logger.info('Initial likelihood: {}'.format(-init_nl))
+
     if method == "BFGS":
         optimization_result = minimize(
-            compute_negative_likelihood_grad_stable,
+            cnlgs,
             initial_guess,
             arguments,
             method="BFGS",
@@ -668,7 +697,7 @@ def optimize_hyperparameters(
 
     elif method == "L-BFGS-B":
         optimization_result = minimize(
-            compute_negative_likelihood_grad_stable,
+            cnlgs,
             initial_guess,
             arguments,
             method="L-BFGS-B",
@@ -699,6 +728,12 @@ def optimize_hyperparameters(
     # Set the hyperparameters to the optimal value.
     sparse_gp.set_hyperparameters(optimization_result.x)
     sparse_gp.log_marginal_likelihood = -optimization_result.fun
+
+    if logger is not None:
+        final_nl, final_nlg = compute_negative_likelihood_grad_stable(sparse_gp.hyperparameters, sparse_gp, precompute)
+        logger.info('Final hyperparameters: {}'.format(sparse_gp.hyperparameters))
+        logger.info('Final likelihood gradient: {}'.format(-final_nlg))
+        logger.info('Final likelihood: {}'.format(-final_nl))
 
     return optimization_result
 
