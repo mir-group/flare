@@ -30,6 +30,7 @@
 #include "atom_masks.h"
 #include "math_const.h"
 #include <KokkosBlas3_gemm.hpp>
+#include <stdint.h>
 
 #include <radial_kokkos.h>
 #include <y_grad_kokkos.h>
@@ -241,34 +242,81 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         d_numneigh_short = Kokkos::View<int*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::numneighs_short") ,batch_size);
       }
 
+      if(d_neighbors_short.extent(0) < batch_size || d_neighbors_short.extent(1) < max_neighs){
+        d_neighbors_short = decltype(d_neighbors_short)();
+        d_neighbors_short = Kokkos::View<int**,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::neighbors_short") ,batch_size,max_neighs);
+      }
+      // compute short neighbor list
+      int max_shortneighs;
+      int64_t nedges;
+      {
+        //auto ilist_curr_type = this->ilist_curr_type;
+        //auto x = this->x;
+        //auto type = this->type;
+        //auto d_numneigh = this->d_numneigh;
+        //auto d_neighbors = this->d_neighbors;
+        //auto cutoff_matrix_k = this->cutoff
+        Kokkos::parallel_reduce("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size),
+            KOKKOS_CLASS_LAMBDA(const int ii, int64_t& nedges, int& max_shortneighs){
+                const int i = ilist_curr_type[ii+startatom];
+                const X_FLOAT xtmp = x(i,0);
+                const X_FLOAT ytmp = x(i,1);
+                const X_FLOAT ztmp = x(i,2);
+
+                const int si = type[i] - 1;
+
+                const int jnum = d_numneigh[i];
+                int inside = 0;
+                for (int jj = 0; jj < jnum; jj++) {
+                  int j = d_neighbors(i,jj);
+                  j &= NEIGHMASK;
+
+                  const X_FLOAT delx = xtmp - x(j,0);
+                  const X_FLOAT dely = ytmp - x(j,1);
+                  const X_FLOAT delz = ztmp - x(j,2);
+                  const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
+
+                  const double paircut = cutoff_matrix_k(si, type[j]-1);
+
+                  if (rsq < paircut*paircut) {
+                    d_neighbors_short(ii,inside) = j;
+                    inside++;
+                  }
+                }
+                d_numneigh_short(ii) = inside;
+                nedges += d_numneigh_short(ii);
+                if (d_numneigh_short(ii) > max_shortneighs) max_shortneighs = d_numneigh_short(ii);
+            },
+            Kokkos::Sum<int64_t>(nedges),
+            Kokkos::Max<int>(max_shortneighs)
+        );
+      }
+
+
       // reallocate per-neighbor views
-      if(g.extent(0) < batch_size || g.extent(1) < max_neighs){
-        Kokkos::LayoutStride glayout(batch_size, max_neighs*n_max*4,
-                                     max_neighs, 1,
-                                     n_max, 4*max_neighs,
-                                     4, max_neighs);
-        Kokkos::LayoutStride Ylayout(batch_size, max_neighs*n_harmonics*4,
-                                     max_neighs, 1,
-                                     n_harmonics, 4*max_neighs,
-                                     4, max_neighs);
+      if(g.extent(0) < batch_size || g.extent(1) < max_shortneighs){
+        Kokkos::LayoutStride glayout(batch_size, max_shortneighs*n_max*4,
+                                     max_shortneighs, 1,
+                                     n_max, 4*max_shortneighs,
+                                     4, max_shortneighs);
+        Kokkos::LayoutStride Ylayout(batch_size, max_shortneighs*n_harmonics*4,
+                                     max_shortneighs, 1,
+                                     n_harmonics, 4*max_shortneighs,
+                                     4, max_shortneighs);
         g = gYView4D(); Y = gYView4D();
         g = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: g"), glayout);
         Y = gYView4D(Kokkos::ViewAllocateWithoutInitializing("FLARE: Y"), Ylayout);
 
         partial_forces = View3D();
-        partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_neighs, 3);
+        partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_shortneighs, 3);
 
-        d_neighbors_short = decltype(d_neighbors_short)();
-        d_neighbors_short = Kokkos::View<int**,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("FLARE::neighbors_short") ,batch_size,max_neighs);
       }
 
-      // compute short neighbor list
-        Kokkos::parallel_for("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size), *this);
 
       // compute basis functions Rn and Ylm
         Kokkos::parallel_for("FLARE: R and Y",
             Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-                            {0,0}, {batch_size, max_neighs}, {1,max_neighs}),
+                            {0,0}, {batch_size, max_shortneighs}, {1,max_shortneighs}),
             *this
         );
 
@@ -457,31 +505,40 @@ KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_member) const{
   int ii = team_member.league_rank();
 
-  F_FLOAT tmp = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
-      tmp += B2(ii, x) * B2(ii, x);
-  }, tmp);
-  B2_norm2s(ii) = tmp;
+  F_FLOAT tmp1 = 0.0;
+  F_FLOAT tmp2 = 0.0;
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp1, F_FLOAT &tmp2){
+      tmp1 += B2(ii, x) * B2(ii, x);
+      tmp2 += B2(ii, x) * beta_B2(ii, x);
+  }, tmp1, tmp2);
+  Kokkos::single(Kokkos::PerTeam(team_member), [&] () {
+    B2_norm2s(ii) = tmp1;
+    evdwls(ii) = tmp2/B2_norm2s(ii);
+    if (d_numneigh_short(ii) == 0)
+      evdwls(ii) = 0;
+    if (eflag_atom) {
+      const int i = ilist_curr_type[ii+startatom];
+      d_eatom[i] = evdwls(ii);
+    }
+  });
+  team_member.team_barrier();
 
+  /*
   tmp = 0.0;
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
       tmp += B2(ii, x) * beta_B2(ii, x);
   }, tmp);
   evdwls(ii) = tmp/B2_norm2s(ii);
+  */
 
   if (d_numneigh_short(ii) == 0) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x){
         w(ii, x) = 0;
     });
-    evdwls(ii) = 0;
   } else {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x){
         w(ii, x) = 2*(evdwls(ii) * B2(ii,x) - beta_B2(ii,x))/B2_norm2s(ii);
     });
-  }
-  if (eflag_atom){
-    const int i = ilist_curr_type[ii+startatom];
-    d_eatom[i] = evdwls(ii);
   }
 
 }
@@ -540,25 +597,34 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
           Yscratch(c, lm) = Y(ii, jj, lm, c);
       });
 
-      for (int c = 0; c < 3; c++) {
-        F_FLOAT tmp = 0.0;
-        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &tmp){
+      F_FLOAT fx = 0, fy = 0, fz = 0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &fx, F_FLOAT &fy, F_FLOAT &fz){
             int n = nlm / n_harmonics;
             int lm = nlm - n*n_harmonics;
             int radial_index = s*n_max + n;
 
+            double uval = uscratch(radial_index, lm);
+
             double gval = gscratch(0, n);
-            double gg = gscratch(c+1, n);
+            double gx = gscratch(1, n);
+            double gy = gscratch(2, n);
+            double gz = gscratch(3, n);
 
             double Yval = Yscratch(0, lm);
-            double Yg = Yscratch(c+1, lm);
+            double Yx = Yscratch(1, lm);
+            double Yy = Yscratch(2, lm);
+            double Yz = Yscratch(3, lm);
 
-            tmp += (gg*Yval + gval*Yg) * uscratch(radial_index, lm);
+            fx += (gx*Yval + gval*Yx) * uval;
+            fy += (gy*Yval + gval*Yy) * uval;
+            fz += (gz*Yval + gval*Yz) * uval;
 
-        }, tmp);
-        partial_forces(ii,jj,c) = tmp;
+        }, fx, fy,fz);
+        partial_forces(ii,jj,0) = fx;
+        partial_forces(ii,jj,1) = fy;
+        partial_forces(ii,jj,2) = fz;
       }
-  });
+  );
 }
 
 template <class DeviceType>
