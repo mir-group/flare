@@ -606,18 +606,20 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
             double uval = uscratch(radial_index, lm);
 
             double gval = gscratch(0, n);
-            double gx = gscratch(1, n);
-            double gy = gscratch(2, n);
-            double gz = gscratch(3, n);
-
             double Yval = Yscratch(0, lm);
-            double Yx = Yscratch(1, lm);
-            double Yy = Yscratch(2, lm);
-            double Yz = Yscratch(3, lm);
 
-            fx += (gx*Yval + gval*Yx) * uval;
-            fy += (gy*Yval + gval*Yy) * uval;
-            fz += (gz*Yval + gval*Yz) * uval;
+            double gg, Yg;
+            gg = gscratch(1, n);
+            Yg = Yscratch(1, lm);
+            fx += (gg*Yval + gval*Yg) * uval;
+
+            gg = gscratch(2, n);
+            Yg = Yscratch(3, lm);
+            fy += (gg*Yval + gval*Yg) * uval;
+
+            gg = gscratch(3, n);
+            Yg = Yscratch(3, lm);
+            fz += (gg*Yval + gval*Yg) * uval;
 
         }, fx, fy,fz);
         partial_forces(ii,jj,0) = fx;
