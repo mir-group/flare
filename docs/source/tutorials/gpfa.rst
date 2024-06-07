@@ -1,5 +1,11 @@
-Training a Gaussian Process from an AIMD Run 
-============================================
+Training a 2+3-body Gaussian Process from an AIMD Run 
+=====================================================
+
+This is a tutorial for using the GPFA (Gaussian process for AIMD) module with 
+2+3-body based GP model. A similar functionality is also supported in the offline 
+training with yaml configuration, which is shown in 
+`this colab tutorial <https://colab.research.google.com/drive/1rZ-p3kN5CJbPJgD8HuQHSc7ecmwZYse6#scrollTo=4_Offline_training_from_available_DFT_data>`_.
+
 Steven Torrisi (torrisi@g.harvard.edu), December 2019
 
 In this tutorial, we'll demonstrate how a previously existing Ab-Initio 

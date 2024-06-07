@@ -129,7 +129,7 @@ void PairFLARE::compute(int eflag, int vflag) {
                   single_bond_vals, n_species, n_max, l_max);
 
     compute_energy_and_u(B2_vals, B2_norm_squared, single_bond_vals, power,
-           n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl);
+           n_species, n_max, l_max, beta_matrices[itype - 1], u, &evdwl, normalized);
 
     // Continue if the environment is empty.
     if (B2_norm_squared < empty_thresh)
@@ -262,8 +262,8 @@ double PairFLARE::init_one(int i, int j) {
 
 void PairFLARE::read_file(char *filename) {
   int me = comm->me;
-  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE];
-  int radial_string_length, cutoff_string_length;
+  char line[MAXLINE], radial_string[MAXLINE], cutoff_string[MAXLINE], kernel_string[MAXLINE];
+  int radial_string_length, cutoff_string_length, kernel_string_length;
   FILE *fptr;
 
   // Check that the potential file can be opened.
@@ -281,7 +281,8 @@ void PairFLARE::read_file(char *filename) {
     fgets(line, MAXLINE, fptr); // Date and contributor
 
     fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
-    sscanf(line, "%i", &power);
+    sscanf(line, "%i %s", &power, &kernel_string);
+    kernel_string_length = strlen(kernel_string);
 
     fgets(line, MAXLINE, fptr);
     sscanf(line, "%s", radial_string); // Radial basis set
@@ -303,8 +304,10 @@ void PairFLARE::read_file(char *filename) {
   MPI_Bcast(&cutoff, 1, MPI_DOUBLE, 0, world);
   MPI_Bcast(&radial_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(&cutoff_string_length, 1, MPI_INT, 0, world);
+  MPI_Bcast(&kernel_string_length, 1, MPI_INT, 0, world);
   MPI_Bcast(radial_string, radial_string_length + 1, MPI_CHAR, 0, world);
   MPI_Bcast(cutoff_string, cutoff_string_length + 1, MPI_CHAR, 0, world);
+  MPI_Bcast(kernel_string, kernel_string_length + 1, MPI_CHAR, 0, world);
 
   // Parse the cutoffs.
   int n_cutoffs = n_species * n_species;
@@ -312,6 +315,10 @@ void PairFLARE::read_file(char *filename) {
   if (me == 0)
     grab(fptr, n_cutoffs, cutoffs);
   MPI_Bcast(cutoffs, n_cutoffs, MPI_DOUBLE, 0, world);
+
+  // Create cutsq array (used in pair.cpp)
+  memory->create(cutsq, n_species + 1, n_species + 1, "pair:cutsq");
+  memset(&cutsq[0][0], 0, (n_species + 1) * (n_species + 1) * sizeof(double));
 
   // Fill in the cutoff matrix.
   cutoff = -1;
@@ -321,6 +328,7 @@ void PairFLARE::read_file(char *filename) {
     for (int j = 0; j < n_species; j++){
       double cutoff_val = cutoffs[cutoff_count];
       cutoff_matrix(i, j) = cutoff_val;
+      cutsq[i + 1][j + 1] = cutoff_val * cutoff_val;
       if (cutoff_val > cutoff) cutoff = cutoff_val;
       cutoff_count ++;
     }
@@ -353,6 +361,17 @@ void PairFLARE::read_file(char *filename) {
     cutoff_function = quadratic_cutoff;
   else if (!strcmp(cutoff_string, "cosine"))
     cutoff_function = cos_cutoff;
+
+  // Set the kernel
+  if (strcmp(kernel_string, "NormalizedDotProduct") == 0) {
+    normalized = true;
+  }
+  else if (strcmp(kernel_string, "DotProduct") == 0){
+    normalized = false;
+  }
+  else {
+    error->all(FLERR, "Kernel string not recognized, expected <power> <kernel string>");
+  }
 
   // Parse the beta vectors.
   memory->create(beta, beta_size * n_species, "pair:beta");

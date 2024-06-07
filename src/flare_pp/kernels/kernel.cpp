@@ -5,6 +5,7 @@
 #include "normalized_dot_product.h"
 #include "norm_dot_icm.h"
 #include "squared_exponential.h"
+#include "dot_product.h"
 
 Kernel ::Kernel(){};
 Kernel ::Kernel(Eigen::VectorXd kernel_hyperparameters) {
@@ -115,6 +116,11 @@ void from_json(const nlohmann::json& j, std::vector<Kernel*> & kernels){
       SquaredExponential* sq_exp = new SquaredExponential;
       *sq_exp = j_kernel;
       kernels.push_back(sq_exp);
+    }
+    else if (kernel_name == "DotProduct"){
+      DotProduct* dotprod = new DotProduct;
+      *dotprod = j_kernel;
+      kernels.push_back(dotprod);
     }
     else{
       kernels.push_back(nullptr);

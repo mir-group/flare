@@ -15,6 +15,7 @@ SquaredExponential ::SquaredExponential(double sigma, double ls) {
   this->ls = ls;
   sig2 = sigma * sigma;
   ls2 = ls * ls;
+  kernel_name = "SquaredExponential";
 
   // Set kernel hyperparameters.
   Eigen::VectorXd hyps(2);

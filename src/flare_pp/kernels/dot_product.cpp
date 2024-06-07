@@ -1,4 +1,4 @@
-#include "normalized_dot_product.h"
+#include "dot_product.h"
 #include "descriptor.h"
 #include "sparse_gp.h"
 #include "structure.h"
@@ -10,14 +10,14 @@
 #include <iostream>
 #include <stdexcept>
 
-NormalizedDotProduct ::NormalizedDotProduct(){};
+DotProduct ::DotProduct(){};
 
-NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
+DotProduct ::DotProduct(double sigma, double power) {
 
   this->sigma = sigma;
   sig2 = sigma * sigma;
   this->power = power;
-  kernel_name = "NormalizedDotProduct";
+  kernel_name = "DotProduct";
 
   // Set kernel hyperparameters.
   Eigen::VectorXd hyps(1);
@@ -25,7 +25,7 @@ NormalizedDotProduct ::NormalizedDotProduct(double sigma, double power) {
   kernel_hyperparameters = hyps;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
+Eigen::MatrixXd DotProduct ::envs_envs(const ClusterDescriptor &envs1,
                                                  const ClusterDescriptor &envs2,
                                                  const Eigen::VectorXd &hyps) {
 
@@ -71,7 +71,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
 
       for (int j = 0; j < n_sparse_2; j++) {
         double norm_j = envs2.descriptor_norms[s](j);
-        double norm_ij = norm_i * norm_j;
+        //double norm_ij = norm_i * norm_j;
 
         // Continue if atom j has no neighbors.
         if (norm_j < empty_thresh)
@@ -79,7 +79,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
         int ind2 = c_sparse_2 + j;
 
         // Energy kernel.
-        double norm_dot = dot_vals(i, j) / norm_ij;
+        double norm_dot = dot_vals(i, j);
         kern_mat(ind1, ind2) += sig_sq * pow(norm_dot, power);
       }
     }
@@ -88,7 +88,7 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
 }
 
 std::vector<Eigen::MatrixXd>
-NormalizedDotProduct ::envs_envs_grad(const ClusterDescriptor &envs1,
+DotProduct ::envs_envs_grad(const ClusterDescriptor &envs1,
                                       const ClusterDescriptor &envs2,
                                       const Eigen::VectorXd &hyps) {
 
@@ -101,7 +101,7 @@ NormalizedDotProduct ::envs_envs_grad(const ClusterDescriptor &envs1,
 }
 
 std::vector<Eigen::MatrixXd>
-NormalizedDotProduct ::envs_struc_grad(const ClusterDescriptor &envs,
+DotProduct ::envs_struc_grad(const ClusterDescriptor &envs,
                                        const DescriptorValues &struc,
                                        const Eigen::VectorXd &hyps) {
 
@@ -113,7 +113,7 @@ NormalizedDotProduct ::envs_struc_grad(const ClusterDescriptor &envs,
   return grad_mats;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
+Eigen::MatrixXd DotProduct ::envs_struc(const ClusterDescriptor &envs,
                                                   const DescriptorValues &struc,
                                                   const Eigen::VectorXd &hyps) {
 
@@ -161,15 +161,15 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
 
       for (int j = 0; j < n_struc; j++) {
         double norm_j = struc.descriptor_norms[s](j);
-        double norm_ij = norm_i * norm_j;
-        double norm_ij3 = norm_ij * norm_j * norm_j;
+        //double norm_ij = norm_i * norm_j;
+        //double norm_ij3 = norm_ij * norm_j * norm_j;
 
         // Continue if atom j has no neighbors.
         if (norm_j < empty_thresh)
           continue;
 
         // Energy kernel.
-        double norm_dot = dot_vals(i, j) / norm_ij;
+        double norm_dot = dot_vals(i, j); // / norm_ij;
         double dval = power * pow(norm_dot, power - 1);
         kern_mat(sparse_index, 0) += sig_sq * pow(norm_dot, power);
 
@@ -185,10 +185,10 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
           for (int comp = 0; comp < 3; comp++) {
             int ind = c_neigh + k;
             int force_index = 3 * ind + comp;
-            double f1 = force_dot(i, force_index) / norm_ij;
-            double f2 =
-                dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
-            double f3 = f1 - f2;
+            double f1 = force_dot(i, force_index); // / norm_ij;
+            //double f2 =
+            //    dot_vals(i, j) * struc_force_dot(force_index) / norm_ij3;
+            double f3 = f1; // - f2;
             double force_kern_val = sig_sq * dval * f3;
 
             kern_mat(sparse_index, 1 + 3 * neighbor_index + comp) -=
@@ -211,10 +211,12 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
 }
 
 Eigen::MatrixXd
-NormalizedDotProduct ::struc_struc(const DescriptorValues &struc1,
+DotProduct ::struc_struc(const DescriptorValues &struc1,
                                    const DescriptorValues &struc2,
                                    const Eigen::VectorXd &hyps) {
-
+  
+  //throw std::logic_error("struc_struc kernel for DotProduct is not implemented");
+  
   // Set square of the signal variance.
   double sig_sq = hyps(0) * hyps(0);
 
@@ -445,7 +447,7 @@ NormalizedDotProduct ::struc_struc(const DescriptorValues &struc1,
 }
 
 Eigen::VectorXd
-NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
+DotProduct ::self_kernel_struc(const DescriptorValues &struc,
                                          const Eigen::VectorXd &hyps) {
 
   double sig_sq = hyps(0) * hyps(0);
@@ -583,7 +585,7 @@ NormalizedDotProduct ::self_kernel_struc(const DescriptorValues &struc,
 }
 
 std::vector<Eigen::MatrixXd>
-NormalizedDotProduct ::Kuu_grad(const ClusterDescriptor &envs,
+DotProduct ::Kuu_grad(const ClusterDescriptor &envs,
                                 const Eigen::MatrixXd &Kuu,
                                 const Eigen::VectorXd &new_hyps) {
 
@@ -601,7 +603,7 @@ NormalizedDotProduct ::Kuu_grad(const ClusterDescriptor &envs,
 }
 
 std::vector<Eigen::MatrixXd>
-NormalizedDotProduct ::Kuf_grad(const ClusterDescriptor &envs,
+DotProduct ::Kuf_grad(const ClusterDescriptor &envs,
                                 const std::vector<Structure> &strucs,
                                 int kernel_index, const Eigen::MatrixXd &Kuf,
                                 const Eigen::VectorXd &new_hyps) {
@@ -619,14 +621,14 @@ NormalizedDotProduct ::Kuf_grad(const ClusterDescriptor &envs,
   return kernel_gradients;
 }
 
-void NormalizedDotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {
+void DotProduct ::set_hyperparameters(Eigen::VectorXd new_hyps) {
   sigma = new_hyps(0);
   sig2 = sigma * sigma;
   kernel_hyperparameters = new_hyps;
 }
 
 Eigen::MatrixXd
-NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
+DotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
                                                     int kernel_index) {
 
   // Assumes there is at least one sparse environment stored in the sparse GP.
@@ -639,7 +641,7 @@ NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
     mapping_coeffs = compute_map_coeff_pow2(gp_model, kernel_index);
   } else { 
     std::cout
-        << "Mapping coefficients of the normalized dot product kernel are "
+        << "Mapping coefficients of the dot product kernel are "
            "implemented for power 2 only."
         << std::endl;
   }
@@ -648,7 +650,7 @@ NormalizedDotProduct ::compute_mapping_coefficients(const SparseGP &gp_model,
 }
 
 Eigen::MatrixXd
-NormalizedDotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
+DotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
                                               int kernel_index) {
 
   // Initialize beta vector.
@@ -688,7 +690,7 @@ NormalizedDotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
 
       // First loop over descriptor values.
       for (int k = 0; k < p_size; k++) {
-        double p_ik = p_current(k) / p_norm;
+        double p_ik = p_current(k); // / p_norm;
         mapping_coeffs(i, beta_count) += sig2 * p_ik * alpha_val;
 
         beta_count++;
@@ -700,7 +702,7 @@ NormalizedDotProduct ::compute_map_coeff_pow1(const SparseGP &gp_model,
 }
 
 Eigen::MatrixXd
-NormalizedDotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
+DotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
                                               int kernel_index) {
 
   // Initialize beta vector.
@@ -740,11 +742,11 @@ NormalizedDotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
 
       // First loop over descriptor values.
       for (int k = 0; k < p_size; k++) {
-        double p_ik = p_current(k) / p_norm;
+        double p_ik = p_current(k); // / p_norm;
 
         // Second loop over descriptor values.
         for (int l = k; l < p_size; l++) {
-          double p_il = p_current(l) / p_norm;
+          double p_il = p_current(l); // / p_norm;
           double beta_val = sig2 * p_ik * p_il * alpha_val;
 
           // Update beta vector.
@@ -763,7 +765,7 @@ NormalizedDotProduct ::compute_map_coeff_pow2(const SparseGP &gp_model,
   return mapping_coeffs;
 }
 
-Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
+Eigen::MatrixXd DotProduct ::compute_varmap_coefficients(
     const SparseGP &gp_model, int kernel_index){
 
   // Assumes there is at least one sparse environment stored in the sparse GP.
@@ -825,7 +827,7 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
           continue;
 
         double Kuu_inv_ij = gp_model.Kuu_inverse(K_ind + i, K_ind + j);
-        double Kuu_inv_ij_normed = Kuu_inv_ij / pi_norm / pj_norm;
+        double Kuu_inv_ij_normed = Kuu_inv_ij; // / pi_norm / pj_norm;
 //        double Sigma_ij = gp_model.Sigma(K_ind + i, K_ind + j);
 //        double Sigma_ij_normed = Sigma_ij / pi_norm / pj_norm;
         int beta_count = 0;
@@ -856,12 +858,12 @@ Eigen::MatrixXd NormalizedDotProduct ::compute_varmap_coefficients(
   return mapping_coeffs;
 }
 
-void NormalizedDotProduct ::write_info(std::ofstream &coeff_file) {
+void DotProduct ::write_info(std::ofstream &coeff_file) {
   coeff_file << std::fixed << std::setprecision(0);
-  coeff_file << power << " NormalizedDotProduct\n";
+  coeff_file << power << " DotProduct\n";
 }
 
-nlohmann::json NormalizedDotProduct ::return_json(){
+nlohmann::json DotProduct ::return_json(){
   nlohmann::json j;
   to_json(j, *this);
   return j;

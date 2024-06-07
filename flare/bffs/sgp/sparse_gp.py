@@ -4,11 +4,12 @@ import numpy as np
 from scipy.optimize import minimize
 from typing import List
 import warnings
+from ase import Atoms
 from flare.atoms import FLARE_Atoms
 from flare.utils import NumpyEncoder
 
 try:
-    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2
+    from ._C_flare import SparseGP, Structure, NormalizedDotProduct, B2, DotProduct
 except Exception as e:
     warnings.warn(f"Cannot import _C_flare: {e.__class__.__name__}: {e}")
 
@@ -50,6 +51,7 @@ class SGP_Wrapper:
         self.opt_method = opt_method
         self.bounds = bounds
         self.atom_indices = []
+        self.rel_efs_noise = []
 
         # Make placeholder hyperparameter labels.
         self.hyp_labels = []
@@ -59,7 +61,7 @@ class SGP_Wrapper:
         # prepare a new sGP for variance mapping
         self.sgp_var = None
         if isinstance(
-            kernels[0], NormalizedDotProduct
+            kernels[0], (NormalizedDotProduct, DotProduct)
         ):  # TODO: adapt this to multiple kernels
             if kernels[0].power == 1:
                 self.sgp_var_flag = "self"
@@ -161,6 +163,8 @@ class SGP_Wrapper:
         for kern in self.sparse_gp.kernels:
             if isinstance(kern, NormalizedDotProduct):
                 kernel_list.append(("NormalizedDotProduct", kern.sigma, kern.power))
+            elif isinstance(kern, DotProduct):
+                kernel_list.append(("DotProduct", kern.sigma, kern.power))
             else:
                 raise NotImplementedError
         out_dict["kernels"] = kernel_list
@@ -170,6 +174,8 @@ class SGP_Wrapper:
             for kern in self.sgp_var_kernels:
                 if isinstance(kern, NormalizedDotProduct):
                     kernel_list.append(("NormalizedDotProduct", kern.sigma, kern.power))
+                elif isinstance(kern, DotProduct):
+                    kernel_list.append(("DotProduct", kern.sigma, kern.power))
                 else:
                     raise NotImplementedError
             out_dict["sgp_var_kernels"] = kernel_list
@@ -191,6 +197,7 @@ class SGP_Wrapper:
             )
             train_struc.forces = struc_cpp.forces.reshape((struc_cpp.noa, 3))
             train_struc.stress = struc_cpp.stresses
+            train_struc.info["rel_efs_noise"] = np.array(self.rel_efs_noise[s])
 
             # Add back the single atom energies to dump the original energy
             single_atom_sum = 0
@@ -214,10 +221,13 @@ class SGP_Wrapper:
         kernel_list = in_dict["kernels"]
         assert len(kernel_list) == 1
         kernel_hyps = kernel_list[0]
-        assert kernel_hyps[0] == "NormalizedDotProduct"
+        assert kernel_hyps[0] in ["NormalizedDotProduct", "DotProduct"]
         sigma = float(kernel_hyps[1])
         power = int(kernel_hyps[2])
-        kernel = NormalizedDotProduct(sigma, power)
+        if kernel_hyps[0] == "NormalizedDotProduct":
+            kernel = NormalizedDotProduct(sigma, power)
+        elif kernel_hyps[0] == "DotProduct":
+            kernel = DotProduct(sigma, power)
         kernels = [kernel]
 
         # Recover descriptor from checkpoint.
@@ -275,6 +285,9 @@ class SGP_Wrapper:
             else:
                 energy = None
 
+            rel_efs_noise = train_struc.info.get("rel_efs_noise", [1, 1, 1])
+            rel_e_noise, rel_f_noise, rel_s_noise = rel_efs_noise
+
             gp.update_db(
                 train_struc,
                 train_struc.forces,
@@ -285,6 +298,9 @@ class SGP_Wrapper:
                 sgp=None,
                 update_qr=False,
                 atom_indices=atom_indices,
+                rel_e_noise=rel_e_noise,
+                rel_f_noise=rel_f_noise,
+                rel_s_noise=rel_s_noise,
             )
 
         gp.sparse_gp.update_matrices_QR()
@@ -307,10 +323,13 @@ class SGP_Wrapper:
         sgp=None,  # for creating sgp_var
         update_qr=True,
         atom_indices=[-1],
+        rel_e_noise: float = 1,
+        rel_f_noise: float = 1,
+        rel_s_noise: float = 1,
     ):
 
         # Convert coded species to 0, 1, 2, etc.
-        if isinstance(structure, FLARE_Atoms):
+        if isinstance(structure, (Atoms, FLARE_Atoms)):
             coded_species = []
             for spec in structure.numbers:
                 coded_species.append(self.species_map[spec])
@@ -351,7 +370,10 @@ class SGP_Wrapper:
             sgp = self.sparse_gp
             self.atom_indices.append(atom_indices)
 
-        sgp.add_training_structure(structure_descriptor, atom_indices)
+        sgp.add_training_structure(
+            structure_descriptor, atom_indices, rel_e_noise, rel_f_noise, rel_s_noise
+        )
+        self.rel_efs_noise.append([rel_e_noise, rel_f_noise, rel_s_noise])
         if mode == "all":
             if not custom_range:
                 sgp.add_all_environments(structure_descriptor)
@@ -406,10 +428,10 @@ class SGP_Wrapper:
         assert (len(old_kernels) == 1) and (
             kernel_idx == 0
         ), "Not support multiple kernels"
-        assert isinstance(old_kernels[0], NormalizedDotProduct)
+        assert isinstance(old_kernels[0], (NormalizedDotProduct, DotProduct))
 
         power = 1
-        new_kernels = [NormalizedDotProduct(old_kernels[0].sigma, power)]
+        new_kernels = [old_kernels[0].__class__(old_kernels[0].sigma, power)]
 
         # Build a power=1 SGP from scratch
         if self.sgp_var is None:
@@ -450,6 +472,10 @@ class SGP_Wrapper:
                     mode="specific",
                     sgp=self.sgp_var,
                     update_qr=False,
+                    atom_indices=self.atom_indices[s + n_sgp_var],
+                    rel_e_noise=self.rel_efs_noise[s + n_sgp_var][0],
+                    rel_f_noise=self.rel_efs_noise[s + n_sgp_var][1],
+                    rel_s_noise=self.rel_efs_noise[s + n_sgp_var][2],
                 )
 
             self.sgp_var.update_matrices_QR()
@@ -479,12 +505,12 @@ class SGP_Wrapper:
             assert len(hyps) == len(self.sparse_gp.kernels) + 3
             kernels = []
             for k, kern in enumerate(self.sparse_gp.kernels):
-                assert isinstance(kern, NormalizedDotProduct)
+                assert isinstance(kern, (NormalizedDotProduct, DotProduct))
                 if new_powers is not None:
                     power = new_powers[k]
                 else:
                     power = kern.power
-                kernels.append(NormalizedDotProduct(hyps[k], power))
+                kernels.append(kern.__class__(hyps[k], power))
         else:
             kernels = new_kernels
 
@@ -517,6 +543,10 @@ class SGP_Wrapper:
                 mode="specific",
                 sgp=new_gp,
                 update_qr=False,
+                atom_indices=self.atom_indices[s],
+                rel_e_noise=self.rel_efs_noise[s][0],
+                rel_f_noise=self.rel_efs_noise[s][1],
+                rel_s_noise=self.rel_efs_noise[s][2],
             )
 
         new_gp.update_matrices_QR()
@@ -607,7 +637,7 @@ def optimize_hyperparameters(
     initial_guess = sparse_gp.hyperparameters
     precompute = True
     for kern in sparse_gp.kernels:
-        if not isinstance(kern, NormalizedDotProduct):
+        if not isinstance(kern, (NormalizedDotProduct, DotProduct)):
             precompute = False
             break
     if precompute:

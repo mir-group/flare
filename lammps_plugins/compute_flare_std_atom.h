@@ -56,7 +56,7 @@ protected:
   Eigen::VectorXd hyperparameters;
   std::vector<Eigen::MatrixXd> L_inv_blocks, normed_sparse_descriptors;
   int n_hyps, n_clusters, n_kernels, n_types;
-  bool use_map = false;
+  bool use_map = false, normalized;
   int power = 2;
   int* n_clusters_by_type;
 

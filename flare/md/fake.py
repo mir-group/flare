@@ -40,6 +40,11 @@ class FakeMD(MolecularDynamics):
         all_data = []
         for fn in filenames:
             trj = read(fn, format=format, index=":", **io_kwargs)
+
+            # preprocessing: remove "step" keyword from trj
+            for frame in trj:
+                frame.info.pop("step", None)
+
             self.stat_num.append(len(trj))
             all_data += trj
         write("All_Data.xyz", all_data)

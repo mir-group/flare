@@ -721,6 +721,12 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
 {
   PairFLARE::coeff(narg,arg);
 
+  if(!normalized)
+    error->all(FLERR, "for now, pair flare/kk only supports the normalized kernel");
+  if(power != 2)
+    error->all(FLERR, "for now, pair flare/kk only supports the power-2 kernel");
+  //TODO check chebyshev and quadratic
+
   n_harmonics = (l_max+1)*(l_max+1);
   n_radial = n_species * n_max;
   n_bond = n_radial * n_harmonics;
@@ -777,7 +783,7 @@ void PairFLAREKokkos<DeviceType>::init_style()
   if (memstr != NULL) {
     maxmem = std::atof(memstr) * 1.0e9;
   }
-  printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
+  if(comm->me==0 || comm->me==comm->nprocs-1) printf("FLARE will use up to %.2f GB of device memory, controlled by MAXMEM environment variable\n", maxmem/1.0e9);
 }
 
 

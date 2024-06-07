@@ -105,6 +105,8 @@ class FLARE_Atoms(Atoms):
     def stress(self, stress_array):
         if (stress_array is None) or (len(stress_array) == 6):
             self.label_setter("stress", stress_array)
+        elif len(stress_array) == 0:
+            self.label_setter("stress", None)
         else:
             raise ValueError("stress_array should be None or array of length 6")
 
