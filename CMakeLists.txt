@@ -84,7 +84,7 @@ include_directories(${SOURCE_DIR})
 
 # pybind11
 ###############################################################################
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+set(PYBIND11_FINDPYTHON ON)
 FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11
