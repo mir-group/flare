@@ -5,5 +5,6 @@ Bayesian Active Learning
    :maxdepth: 2
 
    otf
+   lmpotf
    gp_from_aimd
    utils

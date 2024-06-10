@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cutoff Functions &mdash; flare 1.4.0 documentation</title>
+  <title>On-the-Fly Training in LAMMPS &mdash; flare 1.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
 
@@ -22,8 +22,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Helper Functions" href="helper.html" />
-    <link rel="prev" title="Multi-element Kernels (Separate Parameters)" href="mc_sephyps.html" /> 
+    <link rel="next" title="GP From AIMD" href="gp_from_aimd.html" />
+    <link rel="prev" title="On-the-Fly Training" href="otf.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,17 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="../../tutorials/tutorials.html">Tutorials</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../flare.html">Python Code Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../bffs/bffs.html">Bayesian Force Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../learners/learners.html">Bayesian Active Learning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="kernels.html">Kernels</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="sc.html">Single-element Kernels</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mc_simple.html">Multi-element Kernels (simple)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mc_sephyps.html">Multi-element Kernels (Separate Parameters)</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Cutoff Functions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="helper.html">Helper Functions</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="learners.html">Bayesian Active Learning</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="otf.html">On-the-Fly Training</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">On-the-Fly Training in LAMMPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp_from_aimd.html">GP From AIMD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html">Conditions to add training data</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../md/md.html">ASE MD Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../descriptors/descriptors.html">Descriptors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kernels/kernels.html">Kernels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../io/io.html">File Input and Output</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../utils/utils.html">Utility</a></li>
 </ul>
@@ -87,10 +86,10 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../flare.html">Python Code Documentation</a></li>
-          <li class="breadcrumb-item"><a href="kernels.html">Kernels</a></li>
-      <li class="breadcrumb-item active">Cutoff Functions</li>
+          <li class="breadcrumb-item"><a href="learners.html">Bayesian Active Learning</a></li>
+      <li class="breadcrumb-item active">On-the-Fly Training in LAMMPS</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/flare/kernels/cutoffs.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/flare/learners/lmpotf.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -98,16 +97,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="cutoff-functions">
-<h1>Cutoff Functions<a class="headerlink" href="#cutoff-functions" title="Permalink to this heading"></a></h1>
+  <section id="on-the-fly-training-in-lammps">
+<h1>On-the-Fly Training in LAMMPS<a class="headerlink" href="#on-the-fly-training-in-lammps" title="Permalink to this heading"></a></h1>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="mc_sephyps.html" class="btn btn-neutral float-left" title="Multi-element Kernels (Separate Parameters)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="helper.html" class="btn btn-neutral float-right" title="Helper Functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="otf.html" class="btn btn-neutral float-left" title="On-the-Fly Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gp_from_aimd.html" class="btn btn-neutral float-right" title="GP From AIMD" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
