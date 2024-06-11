@@ -8,7 +8,7 @@
   <img width="527" height="242" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
 </p>
 
-FLARE is an open-source Python package for creating fast and accurate interatomic potentials. 
+FLARE is an open-source Python package for creating fast and accurate interatomic potentials.
 
 ## Major Features
 
@@ -20,7 +20,7 @@ Note:
 
 We implement Sparse GP, all the kernels and descriptors in C++ with Python interface.
 
-We implement Full GP, Mapped GP, RBCM, Squared Exponential kernel and 2+3-body descriptors in Python. 
+We implement Full GP, Mapped GP, RBCM, Squared Exponential kernel and 2+3-body descriptors in Python.
 
 Please do NOT mix them.
 
@@ -35,20 +35,16 @@ Documentation of the code can be accessed here: https://mir-group.github.io/flar
 [FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/1rZ-p3kN5CJbPJgD8HuQHSc7ecmwZYse6).
 The tutorial shows how to run flare with ACE and SGP on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. All the trainings use yaml files for configuration.
 
+[FLARE (LAMMPS active learning)](https://bit.ly/flarelmpotf)
+This tutorial demonstrates new functionality for running active learning all within LAMMPS, with LAMMPS running the dynamics to allow arbitrarily complex molecular dynamics workflows while maintaining a simple interface. This also demonstrates how to use the C++ API directly from Python through `pybind11`. Finally, there's a simple demonstration of phonon calculations with FLARE using `phonopy`.
+
 [FLARE (ACE descriptors + sparse GP) with LAMMPS](https://colab.research.google.com/drive/1qgGlfu1BlXQgSrnolS4c4AYeZ-2TaX5Y).
 The tutorial shows how to compile LAMMPS with FLARE pair style and uncertainty compute code, and use LAMMPS for Bayesian active learning and uncertainty-aware molecular dynamics.
-
-[FLARE (ACE descriptors + sparse GP) Python API](https://colab.research.google.com/drive/18_pTcWM19AUiksaRyCgg9BCpVyw744xv). 
-The tutorial shows how to do the offline and online trainings with python scripts.
-A video walkthrough of the tutorial, including detailed discussion of expected outputs, is available [here](https://youtu.be/-FH_VqRQrso).
-
-[FLARE (2+3-body + GP)](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
-The tutorial shows how to use flare 2+3 body descriptors and squared exponential kernel to train a Gaussian Process force field on-the-fly.
 
 [Compute thermal conductivity from FLARE and Boltzmann transport equations](https://phoebe.readthedocs.io/en/develop/tutorials/mlPhononTransport.html).
 The tutorial shows how to use FLARE (LAMMPS) potential to compute lattice thermal conductivity from Boltzmann transport equation method, with [Phono3py](https://phonopy.github.io/phono3py/) for force constants calculations and [Phoebe](https://mir-group.github.io/phoebe/) for thermal conductivities.
 
-[Using your own customized descriptors with FLARE](https://colab.research.google.com/drive/1VzbIPmx1z-uygKstOYTj2Nqr53AMC5NL?usp=sharing). 
+[Using your own customized descriptors with FLARE](https://colab.research.google.com/drive/1VzbIPmx1z-uygKstOYTj2Nqr53AMC5NL?usp=sharing).
 The tutorial shows how to attach your own descriptors with FLARE sparse GP model and do training and testing.
 
 All the tutorials take a few minutes to run on a normal desktop computer or laptop (excluding installation time).
@@ -82,7 +78,7 @@ flare++ is tested on a Linux operating system (Ubuntu 20.04.3), but should also 
 
 ### Hardware requirements
 There are no non-standard hardware requirements to download the software and train simple models&mdash;the introductory tutorial can be run on a single cpu. To train large models (10k+ sparse environments), we recommend using a compute node with at least 100GB of RAM.
-    
+
 ## Tests
 We recommend running unit tests to confirm that FLARE is running properly on your machine. We have implemented our tests using the pytest suite. You can call `pytest` from the command line in the tests directory.
 
@@ -94,11 +90,10 @@ pytest
 ```
 
 ## References
-  
 If you use FLARE++ including B2 descriptors, NormalizedDotProduct kernel and Sparse GP, please cite the following paper:
 
   > [1] Vandermause, J., Xie, Y., Lim, J.S., Owen, C.J. and Kozinsky, B., 2021. *Active learning of reactive Bayesian force fields: Application to heterogeneous hydrogen-platinum catalysis dynamics.* Nature Communications 13.1 (2022): 5183. https://www.nature.com/articles/s41467-022-32294-0
-  
+
 If you use FLARE active learning workflow, full Gaussian process or 2-body/3-body kernel in your research, please cite the following paper:
 
   > [2] Vandermause, J., Torrisi, S. B., Batzner, S., Xie, Y., Sun, L., Kolpak, A. M. & Kozinsky, B. *On-the-fly active learning of interpretable Bayesian force fields for atomistic rare events.* npj Comput Mater 6, 20 (2020). https://doi.org/10.1038/s41524-020-0283-z

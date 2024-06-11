@@ -261,7 +261,6 @@ def test_lmp_calc():
     param_dict = {
         "pair_style": "lj/cut 2.5",
         "pair_coeff": ["* * 1 1"],
-        "compute": ["1 all pair/local dist", "2 all reduce max c_1"],
         "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
         "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
         "dump_period": 1,

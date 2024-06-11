@@ -116,7 +116,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
-        
+
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
@@ -127,11 +127,12 @@ jobs:
 
     - name: Run Sphinx
       run: |
+        export PYTHONPATH=$PYTHONPATH:$PWD/lammps/python
         cd docs
         pwd
         ls
         make html
-        
+
     - name: Publish the docs
       uses: peaceiris/actions-gh-pages@v3
       with:
