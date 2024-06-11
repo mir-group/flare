@@ -614,7 +614,7 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
             fx += (gg*Yval + gval*Yg) * uval;
 
             gg = gscratch(2, n);
-            Yg = Yscratch(3, lm);
+            Yg = Yscratch(2, lm);
             fy += (gg*Yval + gval*Yg) * uval;
 
             gg = gscratch(3, n);
