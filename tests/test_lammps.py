@@ -12,7 +12,7 @@ n_desc_types = [1, 2]
 power_list = [1, 2]
 struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
-n_cpus_list = [1]  # [1, 2]
+n_cpus_list = [1, 2]
 
 
 @pytest.mark.skipif(
@@ -67,7 +67,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
 
     # Set up LAMMPS calculator.
     lmp_command = os.environ.get("lmp")
-    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+    if (n_cpus > 1) and ("mpirun" not in lmp_command):
         lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
 
     print(lmp_command)
@@ -149,7 +149,7 @@ def test_lammps_uncertainty(
     os.chdir(rootdir)
     # Set up LAMMPS calculator.
     lmp_command = os.environ.get("lmp")
-    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+    if (n_cpus > 1) and ("mpirun" not in lmp_command):
         lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
     print(lmp_command)
 
