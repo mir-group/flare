@@ -130,8 +130,7 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   // build short neighbor list
 
   max_neighs = d_neighbors.extent(1);
-  // TODO: check inum/ignum here
-  int n_atoms = neighflag == FULL ? inum : inum;
+  int n_atoms = inum;
 
 
 #ifdef LMP_KOKKOS_GPU
@@ -174,11 +173,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       );
 
       auto ilist_curr_type_idx = this->ilist_curr_type_idx;
-      //Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int ii){
-      //      printf("curr_type_idx = %d\n", ilist_curr_type_idx(0));
-      //    });
-
-      //printf("\n%d %d\n\n", ilist_curr_type_idx, n_atoms_curr_type);
     }
 
 
@@ -209,13 +203,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
       n_batches = std::ceil(1.0*n_atoms_curr_type / approx_batch_size);
       approx_batch_size = n_atoms_curr_type / n_batches;
-
-      //printf("maxmem = %g | betamem = %g | neighmem = %g | lmp_atom_mem = %g  | mem_per_atom = %g | approx_batch_size = %d | n_batches = %d | remainder = %d\n", maxmem, beta_mem, neigh_mem, lmp_atom_mem, mem_per_atom, approx_batch_size, n_batches, n_atoms -n_batches* approx_batch_size);
-
     }
     int remainder = n_atoms_curr_type - n_batches*approx_batch_size;
-
-
 
     startatom = 0;
     for(int batch_idx = 0; batch_idx < n_batches; batch_idx++){
@@ -248,16 +237,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
       }
       // compute short neighbor list
       int max_shortneighs;
-      int64_t nedges;
       {
-        //auto ilist_curr_type = this->ilist_curr_type;
-        //auto x = this->x;
-        //auto type = this->type;
-        //auto d_numneigh = this->d_numneigh;
-        //auto d_neighbors = this->d_neighbors;
-        //auto cutoff_matrix_k = this->cutoff
         Kokkos::parallel_reduce("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size),
-            KOKKOS_CLASS_LAMBDA(const int ii, int64_t& nedges, int& max_shortneighs){
+            KOKKOS_CLASS_LAMBDA(const int ii, int& max_shortneighs){
                 const int i = ilist_curr_type[ii+startatom];
                 const X_FLOAT xtmp = x(i,0);
                 const X_FLOAT ytmp = x(i,1);
@@ -284,10 +266,8 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
                   }
                 }
                 d_numneigh_short(ii) = inside;
-                nedges += d_numneigh_short(ii);
                 if (d_numneigh_short(ii) > max_shortneighs) max_shortneighs = d_numneigh_short(ii);
             },
-            Kokkos::Sum<int64_t>(nedges),
             Kokkos::Max<int>(max_shortneighs)
         );
       }
@@ -311,7 +291,6 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         partial_forces = View3D(Kokkos::ViewAllocateWithoutInitializing("FLARE: partial forces"), batch_size, max_shortneighs, 3);
 
       }
-
 
       // compute basis functions Rn and Ylm
         Kokkos::parallel_for("FLARE: R and Y",
@@ -398,15 +377,11 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 
 
   if (eflag_atom) {
-    // if (need_dup)
-    //   Kokkos::Experimental::contribute(d_eatom, dup_eatom);
     k_eatom.template modify<DeviceType>();
     k_eatom.template sync<LMPHostType>();
   }
 
   if (vflag_atom) {
-    //if (need_dup)
-      //Kokkos::Experimental::contribute(d_vatom, dup_vatom);
     k_vatom.template modify<DeviceType>();
     k_vatom.template sync<LMPHostType>();
   }
@@ -433,13 +408,6 @@ void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
 
   calculate_radial_kokkos(ii, jj, g, delx, dely, delz, sqrt(rsq), cutoff_matrix_k(type[i]-1, type[j]-1), n_max);
   get_Y_kokkos(ii, jj, Y, delx, dely, delz, l_max);
-  /*
-  printf("i = %d, j = %d, Y =", i, j);
-  for(int h = 0; h < n_harmonics; h++){
-    printf(" %g", Y(jj, h, 0));
-  }
-  printf("\n");
-  */
 }
 
 template <class DeviceType>
@@ -522,14 +490,6 @@ void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_mem
     }
   });
   team_member.team_barrier();
-
-  /*
-  tmp = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp){
-      tmp += B2(ii, x) * beta_B2(ii, x);
-  }, tmp);
-  evdwls(ii) = tmp/B2_norm2s(ii);
-  */
 
   if (d_numneigh_short(ii) == 0) {
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x){
@@ -661,8 +621,6 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
       const X_FLOAT dely = ytmp - x(j,1);
       const X_FLOAT delz = ztmp - x(j,2);
 
-      //printf("i = %d, j = %d, f = %g %g %g\n", i, j, fx, fy, fz);
-
       if (vflag_either) v_tally(fvtmp.v,i,j,fx,fy,fz,delx,dely,delz);
   }, fvsum);
   team_member.team_barrier();
@@ -680,7 +638,6 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
         ev.v[4] += fvsum.v[4];
         ev.v[5] += fvsum.v[5];
       }
-      //printf("i = %d, Fsum = %g %g %g\n", i, fsum.x, fsum.y, fsum.z);
   });
 }
 
