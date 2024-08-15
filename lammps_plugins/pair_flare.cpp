@@ -215,7 +215,6 @@ void PairFLARE::settings(int narg, char ** /*arg*/) {
 
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs
-   read DYNAMO funcfl file
 ------------------------------------------------------------------------- */
 
 void PairFLARE::coeff(int narg, char **arg) {

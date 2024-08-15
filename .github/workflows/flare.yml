@@ -38,7 +38,7 @@ jobs:
 
     - name: Build
       run: |
-        sudo apt install liblapacke liblapacke-dev
+        sudo apt install liblapacke liblapacke-dev libopenmpi-dev
         mkdir ${BUILD_DIR}
         cd ${BUILD_DIR}
 

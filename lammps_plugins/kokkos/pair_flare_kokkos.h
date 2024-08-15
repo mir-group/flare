@@ -35,6 +35,7 @@ struct Tagw{};
 struct Tagu{};
 struct TagF{};
 struct TagStoreF{};
+struct TagTransposeRY{};
 
 namespace LAMMPS_NS {
 
@@ -135,8 +136,6 @@ class PairFLAREKokkos : public PairFLARE {
   View2D B2, beta_B2, w, cutoff_matrix_k;
   View3D beta, single_bond, u, partial_forces;
   gYView4D g, Y;
-  gYView4DRA g_ra, Y_ra;
-  View5D single_bond_grad;
 
   int B2_chunk_size;
 
