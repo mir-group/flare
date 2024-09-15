@@ -26,8 +26,8 @@ flare_calc:
         - 14
         - 6
     single_atom_energies:
-        - 0
-        - 0
+        - -7.4
+        - -8.9
     cutoff: 4.0
     variance_type: local
     max_iterations: 1
