@@ -196,7 +196,7 @@ class Parameters:
 
                 # check mask has the right dimension and values
                 mask = param_dict[f"{kernel}_mask"]
-                param_dict[f"{kernel}_mask"] = nparray(mask, dtype=np.int)
+                param_dict[f"{kernel}_mask"] = nparray(mask, dtype=np.int8)
 
                 assert npmax(mask) < n
                 dim = Parameters.ndim[kernel]
