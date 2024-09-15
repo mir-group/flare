@@ -102,7 +102,7 @@ jobs:
 
     - name: Run tests
       run: |
-        # export lmp=$(pwd)/lammps/build/lmp
+        export lmp=$(pwd)/lammps/build/lmp
         cd tests
         pytest
 
