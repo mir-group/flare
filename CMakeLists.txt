@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_OSX_ARCHITECTURES "x86_64")
+
 set(FLARE_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling modules")
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -88,6 +90,7 @@ set(PYBIND11_FINDPYTHON ON)
 FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11
+    GIT_TAG v2.13.0
 )
 FetchContent_MakeAvailable(pybind11)
 ###############################################################################
