@@ -1,7 +1,5 @@
 [![Build Status](https://github.com/mir-group/flare/actions/workflows/flare.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
 
-***NOTE: This is the latest release [1.3.3](https://github.com/mir-group/flare/releases/tag/1.3.3) which includes significant changes compared to the previous version [0.2.4](https://github.com/mir-group/flare/releases/tag/0.2.4). Please check the updated tutorials and documentations from the links below.***
-
 # FLARE: Fast Learning of Atomistic Rare Events
 
 <p align="center">
@@ -16,24 +14,16 @@ FLARE is an open-source Python package for creating fast and accurate interatomi
   <img src="https://github.com/mir-group/flare/blob/development/docs/images/Flare_features.jpg?raw=true">
 </p>
 
-Note:
-
-We implement Sparse GP, all the kernels and descriptors in C++ with Python interface.
-
-We implement Full GP, Mapped GP, RBCM, Squared Exponential kernel and 2+3-body descriptors in Python.
-
-Please do NOT mix them.
-
 ## Documentations and Tutorials
 
 Documentation of the code can be accessed here: https://mir-group.github.io/flare
 
 [Applications using FLARE and gallery](https://mir-group.github.io/flare/related.html)
 
-### Google Colab Tutorials
+### Tutorials
 
-[FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/1QcHf5FVU_juZOvQ49FliJVzhon8MJ6PO)
-The tutorial shows how to run flare with ACE and SGP on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
+[FLARE (ACE descriptors + sparse GP)](https://github.com/mir-group/flare/blob/notebooks/tutorials/sparse_gp_tutorial.ipynb)
+This tutorial shows how to run flare with a sparse Gaussian process model trained on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
 
 [FLARE (LAMMPS active learning)](https://bit.ly/flarelmpotf)
 This tutorial demonstrates new functionality for running active learning all within LAMMPS, with LAMMPS running the dynamics to allow arbitrarily complex molecular dynamics workflows while maintaining a simple interface. This also demonstrates how to use the C++ API directly from Python through `pybind11`. Finally, there's a simple demonstration of phonon calculations with FLARE using `phonopy`.
