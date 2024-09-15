@@ -32,8 +32,8 @@ Documentation of the code can be accessed here: https://mir-group.github.io/flar
 
 ### Google Colab Tutorials
 
-[FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/1QcHf5FVU_juZOvQ49FliJVzhon8MJ6PO)
-The tutorial shows how to run flare with ACE and SGP on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
+[FLARE (ACE descriptors + sparse GP)](https://github.com/mir-group/flare/blob/notebooks/tutorials/sparse_gp_tutorial.ipynb)
+This tutorial shows how to run flare with a sparse Gaussian process model trained on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
 
 [FLARE (LAMMPS active learning)](https://bit.ly/flarelmpotf)
 This tutorial demonstrates new functionality for running active learning all within LAMMPS, with LAMMPS running the dynamics to allow arbitrarily complex molecular dynamics workflows while maintaining a simple interface. This also demonstrates how to use the C++ API directly from Python through `pybind11`. Finally, there's a simple demonstration of phonon calculations with FLARE using `phonopy`.
