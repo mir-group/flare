@@ -32,7 +32,7 @@ Documentation of the code can be accessed here: https://mir-group.github.io/flar
 
 ### Google Colab Tutorials
 
-[FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/1rZ-p3kN5CJbPJgD8HuQHSc7ecmwZYse6).
+[FLARE (ACE descriptors + sparse GP)](https://colab.research.google.com/drive/1QcHf5FVU_juZOvQ49FliJVzhon8MJ6PO)
 The tutorial shows how to run flare with ACE and SGP on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field. All the trainings use yaml files for configuration.
 
 [FLARE (LAMMPS active learning)](https://bit.ly/flarelmpotf)
