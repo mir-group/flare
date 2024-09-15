@@ -16,21 +16,13 @@ FLARE is an open-source Python package for creating fast and accurate interatomi
   <img src="https://github.com/mir-group/flare/blob/development/docs/images/Flare_features.jpg?raw=true">
 </p>
 
-Note:
-
-We implement Sparse GP, all the kernels and descriptors in C++ with Python interface.
-
-We implement Full GP, Mapped GP, RBCM, Squared Exponential kernel and 2+3-body descriptors in Python.
-
-Please do NOT mix them.
-
 ## Documentations and Tutorials
 
 Documentation of the code can be accessed here: https://mir-group.github.io/flare
 
 [Applications using FLARE and gallery](https://mir-group.github.io/flare/related.html)
 
-### Google Colab Tutorials
+### Tutorials
 
 [FLARE (ACE descriptors + sparse GP)](https://github.com/mir-group/flare/blob/notebooks/tutorials/sparse_gp_tutorial.ipynb)
 This tutorial shows how to run flare with a sparse Gaussian process model trained on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
