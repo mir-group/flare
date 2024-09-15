@@ -247,7 +247,7 @@ class Parameters:
 
             # Ensure typed correctly as numpy array
             param_dict["original_hyps"] = nparray(
-                param_dict["original_hyps"], dtype=np.float
+                param_dict["original_hyps"], dtype=np.float64
             )
             if (len(param_dict["original_hyps"]) - 1) not in param_dict["map"]:
                 assert (
