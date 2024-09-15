@@ -22,7 +22,7 @@ Documentation of the code can be accessed here: https://mir-group.github.io/flar
 
 ### Tutorials
 
-[FLARE (ACE descriptors + sparse GP)](https://github.com/mir-group/flare/blob/notebooks/tutorials/sparse_gp_tutorial.ipynb)
+[FLARE (ACE descriptors + sparse GP)](https://github.com/mir-group/flare/blob/master/tutorials/sparse_gp_tutorial.ipynb)
 This tutorial shows how to run flare with a sparse Gaussian process model trained on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
 
 [FLARE (LAMMPS active learning)](https://bit.ly/flarelmpotf)
