@@ -63,32 +63,32 @@ jobs:
         cd ctests
         ./tests
 
-    # - name: Install LAMMPS
-    #   run: |
-    #     git clone --depth 1 https://github.com/lammps/lammps.git lammps
+    - name: Install LAMMPS
+      run: |
+        git clone --depth 1 https://github.com/lammps/lammps.git lammps
 
-    #     cd lammps/src
-    #     cp pair_hybrid.* pair_lj_cut.* ..
-    #     rm pair_*.cpp pair_*.h
-    #     mv ../pair_hybrid.* ../pair_lj_cut.* .
-    #     cp MANYBODY/pair_tersoff.* .
-    #     rm MANYBODY/pair_*.*
-    #     rm MANYBODY/fix_*.*
-    #     mv pair_tersoff.* MANYBODY/
-    #     cp KOKKOS/pair_kokkos.* .
-    #     rm KOKKOS/pair_*.*
-    #     mv pair_kokkos.* KOKKOS/
-    #     cd ../..
+        cd lammps/src
+        cp pair_hybrid.* pair_lj_cut.* ..
+        rm pair_*.cpp pair_*.h
+        mv ../pair_hybrid.* ../pair_lj_cut.* .
+        cp MANYBODY/pair_tersoff.* .
+        rm MANYBODY/pair_*.*
+        rm MANYBODY/fix_*.*
+        mv pair_tersoff.* MANYBODY/
+        cp KOKKOS/pair_kokkos.* .
+        rm KOKKOS/pair_*.*
+        mv pair_kokkos.* KOKKOS/
+        cd ../..
 
-    #     cd lammps_plugins
-    #     ./install.sh $(pwd)/../lammps
-    #     cd ..
-    #     sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
-    #     cd lammps
-    #     mkdir build
-    #     cd build
-    #     cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DPKG_MANYBODY=ON
-    #     make -j4
+        cd lammps_plugins
+        ./install.sh $(pwd)/../lammps
+        cd ..
+        sudo cp -r ${BUILD_DIR}/External/Eigen3/Eigen /usr/include
+        cd lammps
+        mkdir build
+        cd build
+        cmake ../cmake -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DPKG_MANYBODY=ON
+        make -j4
 
     - name: Pip install
       run: |
@@ -100,17 +100,17 @@ jobs:
         ase_file="$(dirname $(python3 -c 'import ase; print(ase.__file__)'))/calculators/lammpsrun.py"
         sed -i 's/line.startswith(_custom_thermo_mark)/line.strip\(\).startswith\("Step"\)/g' $ase_file
 
-    # - name: Run tests
-    #   run: |
-    #     # export lmp=$(pwd)/lammps/build/lmp
-    #     cd tests
-    #     pytest
+    - name: Run tests
+      run: |
+        # export lmp=$(pwd)/lammps/build/lmp
+        cd tests
+        pytest
 
-    # - name: Run LAMMPS tests with Kokkos
-    #   run: |
-    #     export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
-    #     cd tests
-    #     pytest test_lammps.py
+    - name: Run LAMMPS tests with Kokkos
+      run: |
+        export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
+        cd tests
+        pytest test_lammps.py
 
     - name: Run tutorial
       run: |
@@ -124,32 +124,32 @@ jobs:
         python tutorial.py
         rm Al* aluminum.txt aspirin.txt md17_aspirin.npz tutorial.ipynb tutorial.py
 
-    # - name: Install Sphinx and Breathe
-    #   run: |
-    #     sudo apt-get update
-    #     sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
+    - name: Install Sphinx and Breathe
+      run: |
+        sudo apt-get update
+        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
 
-    # - name: Run Doxygen
-    #   uses: mattnotmitt/doxygen-action@v1.1.0
-    #   with:
-    #     # Path to Doxyfile
-    #     doxyfile-path: "./Doxyfile" # default is ./Doxyfile
-    #     # Working directory
-    #     working-directory: "./docs" # default is .
+    - name: Run Doxygen
+      uses: mattnotmitt/doxygen-action@v1.1.0
+      with:
+        # Path to Doxyfile
+        doxyfile-path: "./Doxyfile" # default is ./Doxyfile
+        # Working directory
+        working-directory: "./docs" # default is .
 
-    # - name: Run Sphinx
-    #   run: |
-    #     export PYTHONPATH=$PYTHONPATH:$PWD/lammps/python
-    #     cd docs
-    #     pwd
-    #     ls
-    #     make html
+    - name: Run Sphinx
+      run: |
+        export PYTHONPATH=$PYTHONPATH:$PWD/lammps/python
+        cd docs
+        pwd
+        ls
+        make html
 
-    # - name: Publish the docs
-    #   uses: peaceiris/actions-gh-pages@v3
-    #   with:
-    #     github_token: ${{ secrets.GITHUB_TOKEN }}
-    #     # Default Doxyfile build documentation to html directory.
-    #     # Change the directory if changes in Doxyfile
-    #     publish_dir: ./docs/build/html
-    #   if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
+    - name: Publish the docs
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        # Default Doxyfile build documentation to html directory.
+        # Change the directory if changes in Doxyfile
+        publish_dir: ./docs/build/html
+      if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
