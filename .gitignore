@@ -73,3 +73,7 @@ _C_flare*
 **/xml
 **/dist
 **egg-info
+tutorials/Al*
+tutorials/*.txt
+tutorials/*.npz
+tutorials/*checkpoint*
