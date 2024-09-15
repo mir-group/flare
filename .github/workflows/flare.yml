@@ -115,7 +115,7 @@ jobs:
     - name: Run tutorial
       run: |
         pip install -U jupyter nbconvert
-        cp ../tutorials/sparse_gp_tutorial.ipynb tutorial.ipynb
+        cp tutorials/sparse_gp_tutorial.ipynb tutorial.ipynb
         jupyter nbconvert --to script tutorial.ipynb
         sed -i '/^get_ipython()/s/^/# /' tutorial.py
         sed -i '/^plt/s/^/# /' tutorial.py
