@@ -97,57 +97,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-flare.learners.lmpotf">
-<span id="on-the-fly-training-in-lammps"></span><h1>On-the-Fly Training in LAMMPS<a class="headerlink" href="#module-flare.learners.lmpotf" title="Permalink to this heading"></a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="flare.learners.lmpotf.LMPOTF">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.learners.lmpotf.</span></span><span class="sig-name descname"><span class="pre">LMPOTF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">sparse_gp:</span> <span class="pre">~flare.bffs.sgp._C_flare.SparseGP,</span> <span class="pre">descriptors:</span> <span class="pre">~typing.List,</span> <span class="pre">rcut:</span> <span class="pre">float,</span> <span class="pre">type2number:</span> <span class="pre">~typing.Union[int,</span> <span class="pre">~typing.List[int]],</span> <span class="pre">dftcalc:</span> <span class="pre">object,</span> <span class="pre">energy_correction:</span> <span class="pre">~typing.List[float]</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">force_training=True,</span> <span class="pre">energy_training=True,</span> <span class="pre">stress_training=True,</span> <span class="pre">dft_call_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.005,</span> <span class="pre">dft_add_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0025,</span> <span class="pre">dft_xyz_fname:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">std_xyz_fname:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">model_fname:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'otf.flare',</span> <span class="pre">hyperparameter_optimization:</span> <span class="pre">~typing.Callable[[~flare.learners.lmpotf.LMPOTF,</span> <span class="pre">object,</span> <span class="pre">int],</span> <span class="pre">bool]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">LMPOTF.&lt;lambda&gt;&gt;,</span> <span class="pre">opt_bounds:</span> <span class="pre">~typing.Optional[~typing.List[float]]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">opt_method:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">'L-BFGS-B',</span> <span class="pre">opt_iterations:</span> <span class="pre">~typing.Optional[int]</span> <span class="pre">=</span> <span class="pre">50,</span> <span class="pre">post_dft_callback:</span> <span class="pre">~typing.Callable[[~flare.learners.lmpotf.LMPOTF,</span> <span class="pre">int],</span> <span class="pre">None]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">LMPOTF.&lt;lambda&gt;&gt;,</span> <span class="pre">wandb:</span> <span class="pre">~typing.Optional[object]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">log_fname:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'otf.log'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.lmpotf.LMPOTF" title="Permalink to this definition"></a></dt>
-<dd><p>Module for performing On-The-Fly (OTF) training, also known as active learning,
-entirely within LAMMPS.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sparse_gp</strong> – The <a class="reference internal" href="../../flare_pp/bffs.html#_CPPv48SparseGP" title="SparseGP"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">SparseGP</span></code></a> object to train.</p></li>
-<li><p><strong>descriptors</strong> – A list of descriptor objects, or a single descriptor (most common), e.g. <a class="reference internal" href="../../flare_pp/descriptors.html#_CPPv42B2" title="B2"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">B2</span></code></a>.</p></li>
-<li><p><strong>rcut</strong> – The interaction cut-off radius.</p></li>
-<li><p><strong>type2number</strong> – The atomic numbers of all LAMMPS types.</p></li>
-<li><p><strong>dftcalc</strong> – An ASE calculator, e.g. Espresso.</p></li>
-<li><p><strong>energy_correction</strong> – Per-type corrections to the DFT potential energy.</p></li>
-<li><p><strong>dft_call_threshold</strong> – Uncertainty threshold for whether to call DFT.</p></li>
-<li><p><strong>dft_add_threshold</strong> – Uncertainty threshold for whether to add an atom to the training set.</p></li>
-<li><p><strong>dft_xyz_fname</strong> – Name of the file in which to save the DFT results.
-Should contain ‘*’, which will be replaced with the current step.</p></li>
-<li><p><strong>std_xyz_fname</strong> – Name of the file in which to save ASE Atoms with per-atom uncertainties as charges.
-Should contain ‘*’, which will be replaced with the current step.</p></li>
-<li><p><strong>model_fname</strong> – Name of the saved model, must correspond to <cite>pair_coeff</cite>.</p></li>
-<li><p><strong>hyperparameter_optimization</strong> – Boolean function that determines whether to run hyperparameter optimization, as a function of this LMPOTF
-object, the LAMMPS instance and the current step.</p></li>
-<li><p><strong>opt_bounds</strong> – Bounds for the hyperparameter optimization.</p></li>
-<li><p><strong>opt_method</strong> – Algorithm for the hyperparameter optimization.</p></li>
-<li><p><strong>opt_iterations</strong> – Max number of iterations for the hyperparameter optimization.</p></li>
-<li><p><strong>post_dft_callback</strong> – A function that is called after every DFT call. Receives this LMPOTF object and the current step.</p></li>
-<li><p><strong>wandb</strong> – The wandb object, which should already be initialized.</p></li>
-<li><p><strong>log_fname</strong> – An output file to which logging info is written.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="flare.learners.lmpotf.LMPOTF.step">
-<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lmpptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evflag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.lmpotf.LMPOTF.step" title="Permalink to this definition"></a></dt>
-<dd><p>Function called by LAMMPS at every step.
-This is the function that must be called by <cite>fix python/invoke</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>lmpptr</strong> (<em>ptr</em>) – Pointer to running LAMMPS instance.</p></li>
-<li><p><strong>evflag</strong> (<em>int</em>) – evflag given by LAMMPS, ignored.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
+  <section id="on-the-fly-training-in-lammps">
+<h1>On-the-Fly Training in LAMMPS<a class="headerlink" href="#on-the-fly-training-in-lammps" title="Permalink to this heading"></a></h1>
 </section>
 
 
