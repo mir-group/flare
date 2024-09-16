@@ -192,7 +192,7 @@ class AtomicEnvironment:
                     self.cut3b_mask = cutoffs_mask.get("cut3b_mask", None)
                     if "threebody_cutoff_list" in cutoffs_mask:
                         self.threebody_cutoff_list = np.array(
-                            cutoffs_mask["threebody_cutoff_list"], dtype=np.float
+                            cutoffs_mask["threebody_cutoff_list"], dtype=np.float64
                         )
 
     def compute_env(self):
