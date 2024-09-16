@@ -48,6 +48,7 @@ docs = [
     "docutils==0.17.1",
     "nbconvert",
     "nbsphinx",
+    "pandoc",
     "pygments==2.11.2",
     "codecov",
     "Sphinx",
