@@ -5,6 +5,8 @@
 #include "structure.h"
 #include "wigner3j.h"
 #include "y_grad.h"
+#include <fstream> // File operations
+#include <iomanip> // setprecision
 #include <iostream>
 
 B3 ::B3() {}
@@ -24,7 +26,56 @@ B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
 
   set_radial_basis(radial_basis, this->radial_pointer);
   set_cutoff(cutoff_function, this->cutoff_pointer);
+
+  // Create cutoff matrix.
+  int n_species = descriptor_settings[0];
+  double cutoff_val = radial_hyps[1];
+  cutoffs = Eigen::MatrixXd::Constant(n_species, n_species, cutoff_val);
 }
+
+B3 ::B3(const std::string &radial_basis, const std::string &cutoff_function,
+        const std::vector<double> &radial_hyps,
+        const std::vector<double> &cutoff_hyps,
+        const std::vector<int> &descriptor_settings,
+        const Eigen::MatrixXd &cutoffs) {
+
+  this->radial_basis = radial_basis;
+  this->cutoff_function = cutoff_function;
+  this->radial_hyps = radial_hyps;
+  this->cutoff_hyps = cutoff_hyps;
+  this->descriptor_settings = descriptor_settings;
+
+  set_radial_basis(radial_basis, this->radial_pointer);
+  set_cutoff(cutoff_function, this->cutoff_pointer);
+
+  // Assign cutoff matrix.
+  this->cutoffs = cutoffs;
+}
+
+void B3 ::write_to_file(std::ofstream &coeff_file, int coeff_size) {
+  // Report radial basis set.
+  coeff_file << radial_basis << "\n";
+
+  // Record number of species, nmax, lmax, and the cutoff.
+  int n_species = descriptor_settings[0];
+  int n_max = descriptor_settings[1];
+  int l_max = descriptor_settings[2];
+  double cutoff = radial_hyps[1];
+
+  coeff_file << n_species << " " << n_max << " " << l_max << " ";
+  coeff_file << coeff_size << "\n";
+  coeff_file << cutoff_function << "\n";
+
+  // Report cutoffs to 2 decimal places.
+  coeff_file << std::fixed << std::setprecision(2);
+  for (int i = 0; i < n_species; i ++){
+    for (int j = 0; j < n_species; j ++){
+      coeff_file << cutoffs(i, j) << " ";
+    }
+  }
+  coeff_file << "\n";
+}
+
 
 DescriptorValues B3 ::compute_struc(Structure &structure) {
 
@@ -41,10 +92,10 @@ DescriptorValues B3 ::compute_struc(Structure &structure) {
   int N = descriptor_settings[1];
   int lmax = descriptor_settings[2];
 
-  complex_single_bond(single_bond_vals, force_dervs, neighbor_coords,
+  complex_single_bond_multiple_cutoffs(single_bond_vals, force_dervs, neighbor_coords,
                       unique_neighbor_count, cumulative_neighbor_count,
                       descriptor_indices, radial_pointer, cutoff_pointer, nos,
-                      N, lmax, radial_hyps, cutoff_hyps, structure);
+                      N, lmax, radial_hyps, cutoff_hyps, structure, cutoffs);
 
   // Compute descriptor values.
   Eigen::MatrixXd B3_vals, B3_force_dervs;
@@ -237,7 +288,7 @@ void compute_B3(Eigen::MatrixXd &B3_vals, Eigen::MatrixXd &B3_force_dervs,
   }
 }
 
-void complex_single_bond(
+void complex_single_bond_multiple_cutoffs(
     Eigen::MatrixXcd &single_bond_vals, Eigen::MatrixXcd &force_dervs,
     Eigen::MatrixXd &neighbor_coordinates, Eigen::VectorXi &neighbor_count,
     Eigen::VectorXi &cumulative_neighbor_count,
@@ -249,13 +300,11 @@ void complex_single_bond(
                        std::vector<double>)>
         cutoff_function,
     int nos, int N, int lmax, const std::vector<double> &radial_hyps,
-    const std::vector<double> &cutoff_hyps, const Structure &structure) {
+    const std::vector<double> &cutoff_hyps, const Structure &structure,
+    const Eigen::MatrixXd &cutoffs) {
 
   int n_atoms = structure.noa;
   int n_neighbors = structure.n_neighbors;
-
-  // TODO: Make rcut an attribute of the descriptor calculator.
-  double rcut = radial_hyps[1];
 
   // Count atoms inside the descriptor cutoff.
   neighbor_count = Eigen::VectorXi::Zero(n_atoms);
@@ -264,9 +313,12 @@ void complex_single_bond(
   for (int i = 0; i < n_atoms; i++) {
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
+    int central_species = structure.species[i];
     for (int j = 0; j < i_neighbors; j++) {
       int current_count = neighbor_count(i);
       int neigh_index = rel_index + j;
+      int neighbor_species = structure.neighbor_species(neigh_index);
+      double rcut = cutoffs(central_species, neighbor_species);
       double r = structure.relative_positions(neigh_index, 0);
       // Check that atom is within descriptor cutoff.
       if (r <= rcut) {
@@ -312,6 +364,10 @@ void complex_single_bond(
     int i_neighbors = structure.neighbor_count(i);
     int rel_index = structure.cumulative_neighbor_count(i);
     int neighbor_index = cumulative_neighbor_count(i);
+    int central_species = structure.species[i];
+
+    // Initialize radial hyperparameters.
+    std::vector<double> new_radial_hyps = radial_hyps;
 
     // Initialize radial and spherical harmonic vectors.
     std::vector<double> g = std::vector<double>(N, 0);
@@ -326,6 +382,8 @@ void complex_single_bond(
     int s, neigh_index, descriptor_counter, unique_ind;
     for (int j = 0; j < i_neighbors; j++) {
       neigh_index = rel_index + j;
+      int neighbor_species = structure.neighbor_species(neigh_index);
+      double rcut = cutoffs(central_species, neighbor_species);
       r = structure.relative_positions(neigh_index, 0);
       if (r > rcut)
         continue; // Skip if outside cutoff.
@@ -334,6 +392,9 @@ void complex_single_bond(
       z = structure.relative_positions(neigh_index, 3);
       s = structure.neighbor_species(neigh_index);
 
+      // Reset the endpoint of the radial basis set.
+      new_radial_hyps[1] = rcut;
+
       // Store neighbor coordinates.
       neighbor_coordinates(neighbor_index, 0) = x;
       neighbor_coordinates(neighbor_index, 1) = y;
@@ -341,7 +402,7 @@ void complex_single_bond(
 
       // Compute radial basis values and spherical harmonics.
       calculate_radial(g, gx, gy, gz, radial_function, cutoff_function, x, y, z,
-                       r, rcut, N, radial_hyps, cutoff_hyps);
+                       r, rcut, N, new_radial_hyps, cutoff_hyps);
       get_complex_Y(h, hx, hy, hz, x, y, z, lmax);
 
       // Store the products and their derivatives.
