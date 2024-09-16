@@ -164,8 +164,7 @@ class FakeDFT(Calculator):
 
         step = atoms.info.get("step", 0)
 
-        fake_trajectory = read("All_Data.xyz", index=":", format="extxyz")
-        fake_frame = fake_trajectory[step]
+        fake_frame = read("All_Data.xyz", index=step, format="extxyz")
         assert np.allclose(atoms.positions, fake_frame.positions), (
             atoms.positions[0],
             fake_frame.positions[0],

@@ -30,15 +30,15 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Build
       run: |
-        sudo apt install liblapacke liblapacke-dev
+        sudo apt install liblapacke liblapacke-dev libopenmpi-dev
         mkdir ${BUILD_DIR}
         cd ${BUILD_DIR}
 
@@ -112,13 +112,25 @@ jobs:
         cd tests
         pytest test_lammps.py
 
+    - name: Run tutorial
+      run: |
+        pip install -U jupyter nbconvert
+        cp tutorials/sparse_gp_tutorial.ipynb tutorial.ipynb
+        jupyter nbconvert --to script tutorial.ipynb
+        sed -i '/^get_ipython()/s/^/# /' tutorial.py
+        sed -i '/^plt/s/^/# /' tutorial.py
+        wget http://quantum-machine.org/gdml/data/npz/md17_aspirin.npz
+        wget https://www.ctcms.nist.gov/potentials/Download/1999--Mishin-Y-Farkas-D-Mehl-M-J-Papaconstantopoulos-D-A--Al/2/Al99.eam.alloy
+        python tutorial.py
+        rm Al* aluminum.txt aspirin.txt md17_aspirin.npz tutorial.ipynb tutorial.py
+
     - name: Install Sphinx and Breathe
       run: |
         sudo apt-get update
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
-        
+
     - name: Run Doxygen
-      uses: mattnotmitt/doxygen-action@v1.1.0
+      uses: mattnotmitt/doxygen-action@v1.9.8
       with:
         # Path to Doxyfile
         doxyfile-path: "./Doxyfile" # default is ./Doxyfile
@@ -127,36 +139,17 @@ jobs:
 
     - name: Run Sphinx
       run: |
+        export PYTHONPATH=$PYTHONPATH:$PWD/lammps/python
         cd docs
         pwd
         ls
         make html
-        
+
     - name: Publish the docs
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         # Default Doxyfile build documentation to html directory.
         # Change the directory if changes in Doxyfile
         publish_dir: ./docs/build/html
       if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
-
-#     - name: Run tutorial
-#       run: |
-#         cd tests
-#         # Download colab notebook
-#         export fileid="18_pTcWM19AUiksaRyCgg9BCpVyw744xv"
-#         wget -O tutorial.ipynb 'https://docs.google.com/uc?export=download&id='${fileid}
-#         # Convert notebook into python script
-#         pip install -U jupyter nbconvert
-#         jupyter nbconvert --to script tutorial.ipynb
-#         # Remove bash commands in the notebook
-#         sed '/!/d' tutorial.txt > tutorial.py
-#         cat test_tutorial.py tutorial.py > tuttest.py
-#         # Download datasets needed for the tutorial
-#         wget http://quantum-machine.org/gdml/data/npz/aspirin_dft.npz
-#         wget https://www.ctcms.nist.gov/potentials/Download/1999--Mishin-Y-Farkas-D-Mehl-M-J-Papaconstantopoulos-D-A--Al/2/Al99.eam.alloy
-#         # Run script
-#         pytest -s tuttest.py
-#         # Remove output files
-#         rm Al* aspirin_dft.npz tutorial.ipynb tuttest.py tutorial.py tutorial.txt

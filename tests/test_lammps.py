@@ -12,7 +12,7 @@ n_desc_types = [1, 2]
 power_list = [1, 2]
 struc_list = ["random", "isolated"]
 rootdir = os.getcwd()
-n_cpus_list = [1]  # [1, 2]
+n_cpus_list = [1, 2]
 
 
 @pytest.mark.skipif(
@@ -68,7 +68,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
 
     # Set up LAMMPS calculator.
     lmp_command = os.environ.get("lmp")
-    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+    if (n_cpus > 1) and ("mpirun" not in lmp_command):
         lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
 
     print(lmp_command)
@@ -135,7 +135,7 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 @pytest.mark.parametrize("power", power_list)
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
-@pytest.mark.parametrize("n_cpus", n_cpus_list)
+@pytest.mark.parametrize("n_cpus", [1])
 @pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
 def test_lammps_uncertainty(
     n_species, n_types, use_map, power, struc, multicut, n_cpus, kernel_type,
@@ -149,7 +149,7 @@ def test_lammps_uncertainty(
     os.chdir(rootdir)
     # Set up LAMMPS calculator.
     lmp_command = os.environ.get("lmp")
-    if (n_cpus > 1) and ("mpirun" not in lmp_command) and ("kokkos" not in lmp_command):
+    if (n_cpus > 1) and ("mpirun" not in lmp_command):
         lmp_command = f"mpirun -np {n_cpus} {lmp_command}"
     print(lmp_command)
 
@@ -261,7 +261,6 @@ def test_lmp_calc():
     param_dict = {
         "pair_style": "lj/cut 2.5",
         "pair_coeff": ["* * 1 1"],
-        "compute": ["1 all pair/local dist", "2 all reduce max c_1"],
         "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
         "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
         "dump_period": 1,

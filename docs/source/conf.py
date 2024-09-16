@@ -55,6 +55,8 @@ extensions = [
 breathe_projects = {"flare_pp": "xml"}
 breathe_default_project = "flare_pp"
 breathe_default_members = ("members", "undoc-members")
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
 napoleon_use_param = False
 
 # Add any paths that contain templates here, relative to this directory.
