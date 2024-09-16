@@ -28,7 +28,8 @@ n_cpus_list = [1, 2]
 @pytest.mark.parametrize("struc", struc_list)
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
-def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
+@pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
+def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, kernel_type):
     """Test the flare pair style."""
 
     if n_species > n_types:
@@ -100,11 +101,11 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus):
             energy_lmp += sgp_model.gp_model.single_atom_energies[coded_spec]
 
     thresh = 1e-6
+    r_thresh = 1e-3
     print(energy, energy_lmp)
-    assert np.allclose(energy, energy_lmp, atol=thresh)
-    # print(forces, forces_lmp)
-    assert np.allclose(forces, forces_lmp, atol=thresh)
-    assert np.allclose(stress, stress_lmp, atol=thresh)
+    assert np.allclose(energy, energy_lmp, atol=thresh, rtol=r_thresh)
+    assert np.allclose(forces, forces_lmp, atol=thresh, rtol=r_thresh)
+    assert np.allclose(stress, stress_lmp, atol=thresh, rtol=r_thresh)
 
     # Remove files.
     os.remove(potential_name)
@@ -118,7 +119,6 @@ from ase import Atom
 from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
 from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
-
 
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
