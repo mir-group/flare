@@ -158,7 +158,7 @@ FetchContent_MakeAvailable(pybind11)
 pybind11_add_module(flare_module ${PYBIND_SOURCES})
 target_link_libraries(flare_module PUBLIC flare)
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
-install(TARGETS flare_module DESTINATION ./flare/bffs/sgp)
+install(TARGETS flare_module LIBRARY DESTINATION ./flare/bffs/sgp)
 
 # Add test directory.
 if(NOT DEFINED SKBUILD)
