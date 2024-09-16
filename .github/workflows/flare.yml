@@ -16,7 +16,7 @@ jobs:
       matrix:
         omp: [OFF, ON]
         lapack: [OFF, ON]
-        python-version: ["3.7", "3.9"]
+        python-version: ["3.7", "3.10"]
     name: "(OpenMP, Lapack, Python) ="
 
     # The type of runner that the job will run on
