@@ -55,7 +55,7 @@ jobs:
 
         cmake ..
         cmake --build . -j4
-        cp _C_flare* ../flare/bffs/sgp
+        # cp _C_flare* ../flare/bffs/sgp
         cd ctests 
         ./tests
 
@@ -89,6 +89,7 @@ jobs:
     - name: Pip install
       run: |
           pip install -v -C cmake.define.CMAKE_PREFIX_PATH=$CONDA_PREFIX .[docs,tests]
+          pip show mir-flare
 
     - name: Patch ASE
       run: |
