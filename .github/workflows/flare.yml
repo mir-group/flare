@@ -130,7 +130,7 @@ jobs:
         sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
 
     - name: Run Doxygen
-      uses: mattnotmitt/doxygen-action@v1.1.0
+      uses: mattnotmitt/doxygen-action@v1.9.8
       with:
         # Path to Doxyfile
         doxyfile-path: "./Doxyfile" # default is ./Doxyfile
