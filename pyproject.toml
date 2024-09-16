@@ -18,10 +18,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "ase",
+    "ase == 3.22",
     "nptyping",
     "numba",
-    "numpy >=1.18, <1.23",
+    "numpy",
     "pyyaml",
     "scipy",
     "wandb",
