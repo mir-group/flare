@@ -15,6 +15,6 @@ wandb
 docutils==0.17.1
 alabaster==0.7.12
 babel
-pygments==2.11.2
+pygments==2.15.0
 nptyping
 nbsphinx
