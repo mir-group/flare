@@ -18,6 +18,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -103,8 +104,8 @@
 <ol class="arabic simple">
 <li><p>Create a new conda environment to install flare</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create --name flare <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
-conda activate flare
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>flare<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
+conda<span class="w"> </span>activate<span class="w"> </span>flare
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
@@ -113,48 +114,48 @@ conda activate flare
 <ul class="simple">
 <li><p>Option 1: You can load modules if your machine have already installed them (with mkl)</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module load cmake/3.17.3 gcc/9.3.0 intel-mkl/2017.2.174
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module<span class="w"> </span>load<span class="w"> </span>cmake/3.17.3<span class="w"> </span>gcc/9.3.0<span class="w"> </span>intel-mkl/2017.2.174
 </pre></div>
 </div>
 <ul class="simple">
 <li><p>Option 2: If you want to install flare with mkl</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -y gcc gxx cmake mkl-devel mkl-service mkl_fft openmp -c conda-forge
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>gcc<span class="w"> </span>gxx<span class="w"> </span>cmake<span class="w"> </span>mkl-devel<span class="w"> </span>mkl-service<span class="w"> </span>mkl_fft<span class="w"> </span>openmp<span class="w"> </span>-c<span class="w"> </span>conda-forge
 </pre></div>
 </div>
 <ul class="simple">
 <li><p>Option 3: If you want to install flare with openblas + lapacke</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -y gcc gxx cmake openmp liblapacke openblas -c conda-forge
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>gcc<span class="w"> </span>gxx<span class="w"> </span>cmake<span class="w"> </span>openmp<span class="w"> </span>liblapacke<span class="w"> </span>openblas<span class="w"> </span>-c<span class="w"> </span>conda-forge
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
 <li><p>Download flare code from github repo and pip install</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone -b development https://github.com/mir-group/flare.git
-<span class="nb">cd</span> flare
-pip install .
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>-b<span class="w"> </span>development<span class="w"> </span>https://github.com/mir-group/flare.git
+<span class="nb">cd</span><span class="w"> </span>flare
+pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
 </div>
 </section>
 <section id="developer-s-installation-guide">
 <h2>Developer’s installation guide<a class="headerlink" href="#developer-s-installation-guide" title="Permalink to this heading"></a></h2>
 <p>After loading modules as above, we use <code class="docutils literal notranslate"><span class="pre">cmake</span></code> to compile the c++ code</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:mir-group/flare.git
-<span class="nb">cd</span> flare
-mkdir build
-<span class="nb">cd</span> build
-cmake ..
-make -j
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mir-group/flare.git
+<span class="nb">cd</span><span class="w"> </span>flare
+mkdir<span class="w"> </span>build
+<span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..
+make<span class="w"> </span>-j
 </pre></div>
 </div>
 <p>Then copy the c-library file into the python code folder to make it importable through python</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp _C_flare*.so ../flare/bffs/sgp
-<span class="nb">cd</span> ..
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>_C_flare*.so<span class="w"> </span>../flare/bffs/sgp
+<span class="nb">cd</span><span class="w"> </span>..
 </pre></div>
 </div>
 <p>Finally, add the path of <code class="docutils literal notranslate"><span class="pre">flare</span></code> to <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code>, such that you can <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">flare</span></code> in python.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PYTHONPATH</span><span class="o">=</span><span class="si">${</span><span class="nv">PYTHONPATH</span><span class="si">}</span>:&lt;current_dir&gt;
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="si">${</span><span class="nv">PYTHONPATH</span><span class="si">}</span>:&lt;current_dir&gt;
 </pre></div>
 </div>
 <p>An alternative way is setting <code class="docutils literal notranslate"><span class="pre">sys.path.append(&lt;flare</span> <span class="pre">path&gt;)</span></code> in your python script.</p>
@@ -169,7 +170,7 @@ make -j
 </pre></div>
 </div>
 <p>You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ldd /xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/bffs/sgp/_C_flare.*.so
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ldd<span class="w"> </span>/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/bffs/sgp/_C_flare.*.so
 </pre></div>
 </div>
 <p>where it is expected to show libmkl (or libopenblas), libgomp etc.</p>
@@ -189,7 +190,7 @@ make -j
 </li>
 <li><p>If you encounter <cite>Intel MKL FATAL ERROR</cite> when running flare (after the compilation has done), this is likely a static library linkage issue. You can set up the environmental variable</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libmkl_core.so:<span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libmkl_intel_thread.so:<span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libiomp5.so
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libmkl_core.so:<span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libmkl_intel_thread.so:<span class="si">${</span><span class="nv">CONDA_PREFIX</span><span class="si">}</span>/lib/libiomp5.so
 </pre></div>
 </div>
 <p>as instructed in <a class="reference external" href="https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/mkl-fails-to-load/m-p/1155538">this discussion</a>.</p>
@@ -199,7 +200,7 @@ make -j
 <section id="sparse-gaussian-process-model">
 <h3>Sparse Gaussian Process model<a class="headerlink" href="#sparse-gaussian-process-model" title="Permalink to this heading"></a></h3>
 <p>We use OpenMP for parallelization, so please set</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">OMP_NUM_THREADS</span><span class="o">=</span>&lt;number of CPUs on a node&gt;
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">OMP_NUM_THREADS</span><span class="o">=</span>&lt;number<span class="w"> </span>of<span class="w"> </span>CPUs<span class="w"> </span>on<span class="w"> </span>a<span class="w"> </span>node&gt;
 </pre></div>
 </div>
 <p>such that the model parallelized into <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> threads.</p>
@@ -211,7 +212,7 @@ make -j
 The acceleration can be significant when the GP training data is large.
 This can be done in the following steps.</p>
 <p>First, make sure the <a href="#id1"><span class="problematic" id="id2">Numpy_</span></a> library is linked with <a class="reference external" href="https://software.intel.com/en-us/mkl">MKL</a> or <a class="reference external" href="https://www.openblas.net/">Openblas</a> and <a class="reference external" href="http://www.netlib.org/lapack/">Lapack</a>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ python -c <span class="s2">&quot;import numpy as np; print(np.__config__.show())&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import numpy as np; print(np.__config__.show())&quot;</span>
 </pre></div>
 </div>
 <p>If no libraries are linked, <a href="#id3"><span class="problematic" id="id4">Numpy_</span></a> should be reinstalled. Detailed steps can be found in Conda <a class="reference external" href="https://docs.anaconda.com/mkl-optimizations/">manual</a>.</p>
@@ -221,8 +222,8 @@ This can be done in the following steps.</p>
 </pre></div>
 </div>
 <p>Third, set the number of threads for MKL before running your python script.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">2</span>
-python training.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">2</span>
+python<span class="w"> </span>training.py
 </pre></div>
 </div>
 <div class="admonition note">

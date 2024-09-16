@@ -3,7 +3,7 @@ FLARE: Active Learning Bayesian Force Fields
 
 We have a few tutorial notebooks that you can check out and play with.
 
-`FLARE (ACE descriptors + sparse GP) <https://github.com/mir-group/flare/blob/notebooks/tutorials/sparse_gp_tutorial.ipynb>`_.
+`FLARE (ACE descriptors + sparse GP) <https://github.com/mir-group/flare/blob/master/tutorials/sparse_gp_tutorial.ipynb>`_.
 This tutorial shows how to run flare with a sparse Gaussian process model trained on energy and force data, demoing "offline" training on the MD17 dataset and "online" on-the-fly training of a simple aluminum force field.
 
 `FLARE (ACE descriptors + sparse GP) with LAMMPS <https://colab.research.google.com/drive/1qgGlfu1BlXQgSrnolS4c4AYeZ-2TaX5Y>`_.

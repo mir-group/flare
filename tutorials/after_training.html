@@ -19,6 +19,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -229,7 +230,7 @@ pair_coeff * * &lt;lmp_file_name&gt; &lt;chemical_symbols&gt; yes/no yes/no
 <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;command&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lmp&#39;</span><span class="p">),</span> <span class="c1"># set up executable for ASE</span>
               <span class="s1">&#39;newton&#39;</span><span class="p">:</span> <span class="s1">&#39;off&#39;</span><span class="p">,</span>
               <span class="s1">&#39;pair_style&#39;</span><span class="p">:</span> <span class="s1">&#39;mgp&#39;</span><span class="p">,</span>
-              <span class="s1">&#39;pair_coeff&#39;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;* * </span><span class="si">{</span><span class="n">lammps_location</span> <span class="o">+</span> <span class="s2">&quot;.mgp&quot;</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">specie_symbol_list</span><span class="si">}</span><span class="s1"> yes yes&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;pair_coeff&#39;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;* * </span><span class="si">{</span><span class="n">lammps_location</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;.mgp&quot;</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">specie_symbol_list</span><span class="si">}</span><span class="s1"> yes yes&#39;</span><span class="p">],</span>
               <span class="s1">&#39;mass&#39;</span><span class="p">:</span> <span class="n">masses</span><span class="p">}</span>
 <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">lammps_location</span> <span class="o">+</span> <span class="s2">&quot;.mgp&quot;</span><span class="p">]</span>
 
