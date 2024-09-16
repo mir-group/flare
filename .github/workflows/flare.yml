@@ -119,6 +119,11 @@ jobs:
         python tutorial.py
         rm Al* aluminum.txt aspirin.txt md17_aspirin.npz tutorial.ipynb tutorial.py
 
+    - name: Install Sphinx and Breathe
+      run: |
+        sudo apt-get update
+        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
+
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.9.8
       with:
