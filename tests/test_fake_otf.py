@@ -37,6 +37,7 @@ def test_traj_with_varying_sizes(md_engine):
         "direct*",
         "*.json",
         "*.tersoff",
+        "restart*.dat",
     ]:
         for f in glob.glob(tmpfile):
             os.remove(f)
@@ -106,6 +107,7 @@ def test_otf_md(md_engine):
     assert len(dft_traj) == len(otf_traj.dft_frames)
     for i in range(len(dft_traj)):
         md_traj[otf_traj.dft_frames[i]] = dft_traj[i]
+
     write("fake_dft.xyz", md_traj)
     print("Done making dft data")
 
@@ -204,6 +206,7 @@ def test_otf_parser(md_engine):
         "*.json",
         "*.tersoff",
         "*.xyz",
+        "restart*.dat",
     ]:
         for f in glob.glob(tmpfile):
             os.remove(f)

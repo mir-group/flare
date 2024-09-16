@@ -193,9 +193,14 @@ void PairFLARE::allocate() {
 
   memory->create(setflag, n + 1, n + 1, "pair:setflag");
 
-  // Set the diagonal of setflag to 1 (otherwise pair.cpp will throw an error)
+  // Set the entire setflag to 1 (otherwise pair.cpp will throw an error)
+  // off-diagonal needed for hybrid/overlay (note: we only support pair_coeff * *)
   for (int i = 1; i <= n; i++)
-    setflag[i][i] = 1;
+    for (int j = 1; j <= n; j++)
+      setflag[i][j] = 1;
+
+  // Create cutsq array (used in pair.cpp)
+  memory->create(cutsq, n + 1, n + 1, "pair:cutsq");
 }
 
 /* ----------------------------------------------------------------------
@@ -210,7 +215,6 @@ void PairFLARE::settings(int narg, char ** /*arg*/) {
 
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs
-   read DYNAMO funcfl file
 ------------------------------------------------------------------------- */
 
 void PairFLARE::coeff(int narg, char **arg) {
@@ -349,13 +353,18 @@ void PairFLARE::read_file(char *filename) {
   if (!strcmp(radial_string, "chebyshev")) {
     basis_function = chebyshev;
     radial_hyps = std::vector<double>{0, cutoff};
+  } else {
+    error->all(FLERR, "Please use chebyshev radial basis function.");
   }
 
   // Set the cutoff function.
-  if (!strcmp(cutoff_string, "quadratic"))
+  if (!strcmp(cutoff_string, "quadratic")) {
     cutoff_function = quadratic_cutoff;
-  else if (!strcmp(cutoff_string, "cosine"))
+  } else if (!strcmp(cutoff_string, "cosine")) {
     cutoff_function = cos_cutoff;
+  } else {
+    error->all(FLERR, "Please use quadratic or cosine cutoff function.");
+  }
 
   // Set the kernel
   if (strcmp(kernel_string, "NormalizedDotProduct") == 0) {

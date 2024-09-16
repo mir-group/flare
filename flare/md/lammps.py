@@ -236,11 +236,18 @@ class LAMMPS_MD(MolecularDynamics):
         elif self.params["pair_style"] == "flare":
             self.uncertainty_file = "L_inv_lmp.flare sparse_desc_lmp.flare"
 
-        self.params["model_post"] += [f"reset_timestep {self.nsteps}"]
+        #self.params["model_post"] += [f"reset_timestep {self.nsteps}"]
         self.params["run"] = (
             f"{N_steps} upto every {self.params['dump_period']} "
-            f"\"if '$(c_MaxUnc) > {std_tolerance}' then quit\""
+            f"\"if '$(c_MaxUnc) > {std_tolerance}' then 'write_restart restart_*.dat' quit\""
+            f"\nwrite_restart restart_*.dat"
         )
+
+        print("lammps nsteps =", self.nsteps)
+        if self.nsteps > 0:
+            restart_file = f"restart_{self.nsteps}.dat"
+        else:
+            restart_file = None
 
         lmp_calc, params = get_flare_lammps_calc(
             pair_style="flare",
@@ -253,6 +260,7 @@ class LAMMPS_MD(MolecularDynamics):
             compute_uncertainty=True,
             thermo_file=self.thermo_file,
             params=self.params,
+            restart=restart_file,
         )
 
         atoms = deepcopy(self.curr_atoms)
@@ -387,6 +395,7 @@ def get_flare_lammps_calc(
     compute_uncertainty=False,
     thermo_file=None,
     params={},
+    restart=None,
 ):
 
     params.setdefault("compute", [])
@@ -437,6 +446,22 @@ def get_flare_lammps_calc(
                 f'thermoprint all print {dump_period} "$(step) $(temp) $(ke) $(pe) $(etotal) $(pxx) $(pyy) $(pzz) $(pyz) $(pxz) $(pxy) $(c_MaxUnc)" append {tmp_dir}/{thermo_file}'
             ]
 
+    if restart is not None:
+        params["model_post"] = [f"""
+clear
+atom_style atomic
+units metal
+boundary p p p
+atom_modify sort 0 0.0
+newton {params["newton"]}
+
+read_restart {restart}
+
+### interactions
+pair_style {params["pair_style"]}
+pair_coeff {params["pair_coeff"][0]}
+"""] + params["model_post"]
+
     # Run lammps with the customized parameters
     if command is None:
         command = os.environ.get("lmp")
@@ -466,6 +491,12 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     lmp_forces = atoms.forces
     lmp_stress = atoms.stress
     lmp_stds = atoms.get_array("c_unc")
+
+    # Add back single atom energies
+    if sgp_calc.gp_model.single_atom_energies is not None:
+        for spec in atoms.numbers:
+            coded_spec = sgp_calc.gp_model.species_map[spec]
+            lmp_energy += sgp_calc.gp_model.single_atom_energies[coded_spec]
 
     # subtract the pressure from temperature
     kinetic_stress = get_kinetic_stress(atoms)

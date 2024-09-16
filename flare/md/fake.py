@@ -101,12 +101,21 @@ class FakeMD(MolecularDynamics):
         ]
 
         self.atoms.calc.reset()
-        gp_energy = self.atoms.get_potential_energy()
         gp_forces = self.atoms.get_forces()
-        gp_stress = self.atoms.get_stress()
-        self.dft_energy = new_atoms.get_potential_energy()
-        self.dft_forces = new_atoms.get_forces()
-        self.dft_stress = new_atoms.get_stress()
+        try:
+            self.dft_energy = new_atoms.get_potential_energy()
+        except:
+            self.dft_energy = None
+
+        try:
+            self.dft_forces = new_atoms.get_forces()
+        except:
+            self.dft_forces = None
+
+        try:
+            self.dft_stress = new_atoms.get_stress()
+        except:
+            self.dft_stress = None
 
         self.curr_step += 1
         self.atoms.info["step"] = self.curr_step
@@ -155,8 +164,7 @@ class FakeDFT(Calculator):
 
         step = atoms.info.get("step", 0)
 
-        fake_trajectory = read("All_Data.xyz", index=":", format="extxyz")
-        fake_frame = fake_trajectory[step]
+        fake_frame = read("All_Data.xyz", index=step, format="extxyz")
         assert np.allclose(atoms.positions, fake_frame.positions), (
             atoms.positions[0],
             fake_frame.positions[0],

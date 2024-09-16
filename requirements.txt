@@ -2,7 +2,7 @@ numpy >=1.18, <1.23
 scipy
 memory_profiler
 numba
-ase
+ase==3.22
 IPython
 pytest>=4.6
 pytest-mock
