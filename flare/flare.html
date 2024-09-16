@@ -99,52 +99,255 @@
 <li class="toctree-l3"><a class="reference internal" href="bffs/gp/predict.html">Predict</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bffs/gp/gp_algebra.html">Helper functions for GP</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bffs/gp/calculator.html">FLARE ASE Calculator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/gp/gp.html#flare.bffs.gp.gp.GaussianProcess"><code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/gp/gp.html#flare.bffs.gp.gp.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="bffs/mgp/mgp.html">Mapped Gaussian Process</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="bffs/mgp/splines_methods.html">Splines Methods</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bffs/mgp/formulas.html">Formulation of Mapped Gaussian Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/mgp/mgp.html#flare.bffs.mgp.mgp.MappedGaussianProcess"><code class="docutils literal notranslate"><span class="pre">MappedGaussianProcess</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="bffs/sgp/sgp.html">Sparse Gaussian Process Force Fields</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="bffs/sgp/calculator.html">ASE Calculator of Sparse GP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/sgp/sgp.html#flare.bffs.sgp.sparse_gp.SGP_Wrapper"><code class="docutils literal notranslate"><span class="pre">SGP_Wrapper</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/sgp/sgp.html#flare.bffs.sgp.sparse_gp.compute_negative_likelihood"><code class="docutils literal notranslate"><span class="pre">compute_negative_likelihood()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/sgp/sgp.html#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad"><code class="docutils literal notranslate"><span class="pre">compute_negative_likelihood_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/sgp/sgp.html#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad_stable"><code class="docutils literal notranslate"><span class="pre">compute_negative_likelihood_grad_stable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bffs/sgp/sgp.html#flare.bffs.sgp.sparse_gp.optimize_hyperparameters"><code class="docutils literal notranslate"><span class="pre">optimize_hyperparameters()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="learners/learners.html">Bayesian Active Learning</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="learners/otf.html">On-the-Fly Training</a></li>
-<li class="toctree-l2"><a class="reference internal" href="learners/lmpotf.html">On-the-Fly Training in LAMMPS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="learners/gp_from_aimd.html">GP From AIMD</a></li>
-<li class="toctree-l2"><a class="reference internal" href="learners/utils.html">Conditions to add training data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="learners/otf.html">On-the-Fly Training</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="learners/otf.html#flare.learners.otf.OTF"><code class="docutils literal notranslate"><span class="pre">OTF</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="learners/lmpotf.html">On-the-Fly Training in LAMMPS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="learners/lmpotf.html#flare.learners.lmpotf.LMPOTF"><code class="docutils literal notranslate"><span class="pre">LMPOTF</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="learners/gp_from_aimd.html">GP From AIMD</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="learners/gp_from_aimd.html#seed-frames">Seed frames</a></li>
+<li class="toctree-l3"><a class="reference internal" href="learners/gp_from_aimd.html#flare.learners.gp_from_aimd.parse_trajectory_trainer_output"><code class="docutils literal notranslate"><span class="pre">parse_trajectory_trainer_output()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="learners/gp_from_aimd.html#flare.learners.gp_from_aimd.structures_from_gpfa_output"><code class="docutils literal notranslate"><span class="pre">structures_from_gpfa_output()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="learners/utils.html">Conditions to add training data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="learners/utils.html#flare.learners.utils.get_max_cutoff"><code class="docutils literal notranslate"><span class="pre">get_max_cutoff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="learners/utils.html#flare.learners.utils.is_force_in_bound_per_species"><code class="docutils literal notranslate"><span class="pre">is_force_in_bound_per_species()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="learners/utils.html#flare.learners.utils.is_std_in_bound"><code class="docutils literal notranslate"><span class="pre">is_std_in_bound()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="learners/utils.html#flare.learners.utils.is_std_in_bound_per_species"><code class="docutils literal notranslate"><span class="pre">is_std_in_bound_per_species()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="learners/utils.html#flare.learners.utils.subset_of_frame_by_element"><code class="docutils literal notranslate"><span class="pre">subset_of_frame_by_element()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="md/md.html">ASE MD Engine</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="md/fake.html">Fake MD</a></li>
-<li class="toctree-l2"><a class="reference internal" href="md/lammps.html">LAMMPS Calculator and MD</a></li>
-<li class="toctree-l2"><a class="reference internal" href="md/nosehoover.html">NoseHoover (NVT Ensemble)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="md/fake.html">Fake MD</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="md/fake.html#flare.md.fake.FakeDFT"><code class="docutils literal notranslate"><span class="pre">FakeDFT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="md/fake.html#flare.md.fake.FakeMD"><code class="docutils literal notranslate"><span class="pre">FakeMD</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="md/lammps.html">LAMMPS Calculator and MD</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="md/lammps.html#flare.md.lammps.LAMMPS_MD"><code class="docutils literal notranslate"><span class="pre">LAMMPS_MD</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="md/lammps.html#flare.md.lammps.LAMMPS_MOD"><code class="docutils literal notranslate"><span class="pre">LAMMPS_MOD</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="md/lammps.html#flare.md.lammps.check_sgp_match"><code class="docutils literal notranslate"><span class="pre">check_sgp_match()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="md/lammps.html#flare.md.lammps.get_kinetic_stress"><code class="docutils literal notranslate"><span class="pre">get_kinetic_stress()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="md/nosehoover.html">NoseHoover (NVT Ensemble)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="md/nosehoover.html#flare.md.nosehoover.NoseHoover"><code class="docutils literal notranslate"><span class="pre">NoseHoover</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="descriptors/descriptors.html">Descriptors</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="descriptors/env.html">Atomic Environments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="descriptors/env.html">Atomic Environments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="descriptors/env.html#flare.descriptors.env.AtomicEnvironment"><code class="docutils literal notranslate"><span class="pre">AtomicEnvironment</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="kernels/kernels.html">Kernels</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="kernels/sc.html">Single-element Kernels</a></li>
-<li class="toctree-l2"><a class="reference internal" href="kernels/mc_simple.html">Multi-element Kernels (simple)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="kernels/mc_sephyps.html">Multi-element Kernels (Separate Parameters)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="kernels/cutoffs.html">Cutoff Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="kernels/helper.html">Helper Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kernels/sc.html">Single-element Kernels</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body"><code class="docutils literal notranslate"><span class="pre">many_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_en"><code class="docutils literal notranslate"><span class="pre">many_body_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_en_jit"><code class="docutils literal notranslate"><span class="pre">many_body_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_force_en"><code class="docutils literal notranslate"><span class="pre">many_body_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_force_en_jit"><code class="docutils literal notranslate"><span class="pre">many_body_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_grad"><code class="docutils literal notranslate"><span class="pre">many_body_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_grad_jit"><code class="docutils literal notranslate"><span class="pre">many_body_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.many_body_jit"><code class="docutils literal notranslate"><span class="pre">many_body_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body"><code class="docutils literal notranslate"><span class="pre">three_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_en"><code class="docutils literal notranslate"><span class="pre">three_body_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_en_jit"><code class="docutils literal notranslate"><span class="pre">three_body_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_force_en"><code class="docutils literal notranslate"><span class="pre">three_body_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_force_en_jit"><code class="docutils literal notranslate"><span class="pre">three_body_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_grad"><code class="docutils literal notranslate"><span class="pre">three_body_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_grad_jit"><code class="docutils literal notranslate"><span class="pre">three_body_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.three_body_jit"><code class="docutils literal notranslate"><span class="pre">three_body_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body"><code class="docutils literal notranslate"><span class="pre">two_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_en"><code class="docutils literal notranslate"><span class="pre">two_body_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_force_en"><code class="docutils literal notranslate"><span class="pre">two_body_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_force_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_grad"><code class="docutils literal notranslate"><span class="pre">two_body_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_grad_jit"><code class="docutils literal notranslate"><span class="pre">two_body_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_body_jit"><code class="docutils literal notranslate"><span class="pre">two_body_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_many_body"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_many_body_en"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_many_body_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_many_body_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_body"><code class="docutils literal notranslate"><span class="pre">two_plus_three_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_body_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_three_body_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_plus_many_body"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_plus_many_body_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_plus_many_body_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/sc.html#flare.kernels.sc.two_plus_three_plus_many_body_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_grad()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kernels/mc_simple.html">Multi-element Kernels (simple)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc"><code class="docutils literal notranslate"><span class="pre">many_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_en"><code class="docutils literal notranslate"><span class="pre">many_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_en_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">many_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_force_en_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">many_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_grad_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.many_body_mc_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc"><code class="docutils literal notranslate"><span class="pre">three_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_en"><code class="docutils literal notranslate"><span class="pre">three_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_en_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">three_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_force_en_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">three_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_grad_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_mc_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_se_jit"><code class="docutils literal notranslate"><span class="pre">three_body_se_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_sf_jit"><code class="docutils literal notranslate"><span class="pre">three_body_sf_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.three_body_ss_jit"><code class="docutils literal notranslate"><span class="pre">three_body_ss_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc"><code class="docutils literal notranslate"><span class="pre">two_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_en"><code class="docutils literal notranslate"><span class="pre">two_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_force_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_grad_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_stress_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_stress_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_stress_force_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_stress_force_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_body_mc_stress_stress_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_stress_stress_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_many_body_mc"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_many_body_mc_en"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_many_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_many_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_many_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_body_mc"><code class="docutils literal notranslate"><span class="pre">two_plus_three_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_three_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_mc_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_simple.html#flare.kernels.mc_simple.two_plus_three_plus_many_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_three_plus_many_body_mc_grad()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kernels/mc_sephyps.html">Multi-element Kernels (Separate Parameters)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.many_body_mc"><code class="docutils literal notranslate"><span class="pre">many_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.many_body_mc_en"><code class="docutils literal notranslate"><span class="pre">many_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.many_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">many_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.many_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">many_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.three_body_mc"><code class="docutils literal notranslate"><span class="pre">three_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.three_body_mc_en"><code class="docutils literal notranslate"><span class="pre">three_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.three_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">three_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.three_body_mc_force_en_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.three_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">three_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.three_body_mc_grad_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc"><code class="docutils literal notranslate"><span class="pre">two_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_en"><code class="docutils literal notranslate"><span class="pre">two_body_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_body_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_force_en_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_force_en_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_grad_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_grad_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_body_mc_jit"><code class="docutils literal notranslate"><span class="pre">two_body_mc_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_plus_three_body_mc"><code class="docutils literal notranslate"><span class="pre">two_plus_three_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_plus_three_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_plus_three_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_plus_three_mc_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_plus_three_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_plus_three_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_three_many_body_mc"><code class="docutils literal notranslate"><span class="pre">two_three_many_body_mc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_three_many_body_mc_grad"><code class="docutils literal notranslate"><span class="pre">two_three_many_body_mc_grad()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_three_many_mc_en"><code class="docutils literal notranslate"><span class="pre">two_three_many_mc_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_sephyps.two_three_many_mc_force_en"><code class="docutils literal notranslate"><span class="pre">two_three_many_mc_force_en()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_3b_sepcut.three_body_mc_force_en_sepcut_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_force_en_sepcut_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_3b_sepcut.three_body_mc_grad_sepcut_jit"><code class="docutils literal notranslate"><span class="pre">three_body_mc_grad_sepcut_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_mb_sepcut.many_body_mc_en_sepcut_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_en_sepcut_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_mb_sepcut.many_body_mc_force_en_sepcut_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_force_en_sepcut_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_mb_sepcut.many_body_mc_grad_sepcut_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_grad_sepcut_jit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/mc_sephyps.html#flare.kernels.mc_mb_sepcut.many_body_mc_sepcut_jit"><code class="docutils literal notranslate"><span class="pre">many_body_mc_sepcut_jit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kernels/cutoffs.html">Cutoff Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kernels/cutoffs.html#flare.kernels.cutoffs.cosine_cutoff"><code class="docutils literal notranslate"><span class="pre">cosine_cutoff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/cutoffs.html#flare.kernels.cutoffs.cubic_cutoff"><code class="docutils literal notranslate"><span class="pre">cubic_cutoff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/cutoffs.html#flare.kernels.cutoffs.hard_cutoff"><code class="docutils literal notranslate"><span class="pre">hard_cutoff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/cutoffs.html#flare.kernels.cutoffs.quadratic_cutoff"><code class="docutils literal notranslate"><span class="pre">quadratic_cutoff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/cutoffs.html#flare.kernels.cutoffs.quadratic_cutoff_bound"><code class="docutils literal notranslate"><span class="pre">quadratic_cutoff_bound()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kernels/helper.html">Helper Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.coordination_number"><code class="docutils literal notranslate"><span class="pre">coordination_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.force_helper"><code class="docutils literal notranslate"><span class="pre">force_helper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.k_sq_exp_dev"><code class="docutils literal notranslate"><span class="pre">k_sq_exp_dev()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.k_sq_exp_double_dev"><code class="docutils literal notranslate"><span class="pre">k_sq_exp_double_dev()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.mb_grad_helper_ls"><code class="docutils literal notranslate"><span class="pre">mb_grad_helper_ls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.mb_grad_helper_ls_"><code class="docutils literal notranslate"><span class="pre">mb_grad_helper_ls_()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.q_value"><code class="docutils literal notranslate"><span class="pre">q_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kernels/helper.html#flare.kernels.kernels.q_value_mc"><code class="docutils literal notranslate"><span class="pre">q_value_mc()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="io/io.html">File Input and Output</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="io/output.html">Output</a></li>
-<li class="toctree-l2"><a class="reference internal" href="io/otf_parser.html">OTF Parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="io/output.html">Output</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="io/output.html#flare.io.output.Output"><code class="docutils literal notranslate"><span class="pre">Output</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/output.html#flare.io.output.add_file"><code class="docutils literal notranslate"><span class="pre">add_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/output.html#flare.io.output.add_stream"><code class="docutils literal notranslate"><span class="pre">add_stream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/output.html#flare.io.output.set_logger"><code class="docutils literal notranslate"><span class="pre">set_logger()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="io/otf_parser.html">OTF Parser</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.OtfAnalysis"><code class="docutils literal notranslate"><span class="pre">OtfAnalysis</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.append_atom_lists"><code class="docutils literal notranslate"><span class="pre">append_atom_lists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.extract_gp_info"><code class="docutils literal notranslate"><span class="pre">extract_gp_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.parse_frame_line"><code class="docutils literal notranslate"><span class="pre">parse_frame_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.parse_header_information"><code class="docutils literal notranslate"><span class="pre">parse_header_information()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.parse_snapshot"><code class="docutils literal notranslate"><span class="pre">parse_snapshot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="io/otf_parser.html#flare.io.otf_parser.strip_and_split"><code class="docutils literal notranslate"><span class="pre">strip_and_split()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils/utils.html">Utility</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="utils/mask_helper.html">Advanced Hyperparameters Set Up</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils/env_getarray.html">Construct Atomic Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils/mask_helper.html">Advanced Hyperparameters Set Up</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="utils/mask_helper.html#flare.utils.parameter_helper.ParameterHelper"><code class="docutils literal notranslate"><span class="pre">ParameterHelper</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/mask_helper.html#flare.utils.parameter_helper.nprandom"><code class="docutils literal notranslate"><span class="pre">nprandom()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/mask_helper.html#flare.utils.parameters.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="utils/env_getarray.html">Construct Atomic Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="utils/env_getarray.html#flare.utils.env_getarray.get_2_body_arrays"><code class="docutils literal notranslate"><span class="pre">get_2_body_arrays()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/env_getarray.html#flare.utils.env_getarray.get_3_body_arrays"><code class="docutils literal notranslate"><span class="pre">get_3_body_arrays()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/env_getarray.html#flare.utils.env_getarray.get_m2_body_arrays"><code class="docutils literal notranslate"><span class="pre">get_m2_body_arrays()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/env_getarray.html#flare.utils.env_getarray.get_m3_body_arrays"><code class="docutils literal notranslate"><span class="pre">get_m3_body_arrays()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/env_getarray.html#flare.utils.env_getarray.q3_value_mc"><code class="docutils literal notranslate"><span class="pre">q3_value_mc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="utils/utils.html#flare.utils.NumpyEncoder"><code class="docutils literal notranslate"><span class="pre">NumpyEncoder</span></code></a></li>
 </ul>
 </li>
 </ul>
