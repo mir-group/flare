@@ -8,21 +8,16 @@ from ase.calculators.lj import LennardJones
 from ase.build import make_supercell
 
 # Define kernel.
-sigma = 2.0
+sigma = np.random.rand() + 1.0
 power = 1.0
 dotprod_kernel = DotProduct(sigma, power)
 normdotprod_kernel = NormalizedDotProduct(sigma, power)
 
 # Define remaining parameters for the SGP wrapper.
-sigma_e = 0.3
-sigma_f = 0.2
-sigma_s = 0.1
-species_map = {6: 0, 8: 1}
-single_atom_energies = {0: -5, 1: -6}
 variance_type = "local"
 max_iterations = 20
 opt_method = "L-BFGS-B"
-bounds = [(None, None), (sigma_e, None), (None, None), (None, None)]
+bounds = [(None, None), (None, None), (None, None), (None, None)]
 
 
 def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8], set_seed: int = None):
@@ -89,6 +84,18 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         cutoff_matrix,
     )
 
+    sigma_e = np.random.rand() 
+    sigma_f = np.random.rand() 
+    sigma_s = np.random.rand() 
+    print("Hyps", kernel.sigma, sigma_e, sigma_f, sigma_s)
+
+    if n_types == 1:
+        species_map = {6: 0}
+        single_atom_energies = {0: np.random.rand()}
+    elif n_types == 2:
+        species_map = {6: 0, 8: 1}
+        single_atom_energies = {0: np.random.rand(), 1: np.random.rand()}
+
     empty_sgp = SGP_Wrapper(
         [kernel],
         [b2_calc],
@@ -123,16 +130,18 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
+    size = max(1, np.random.randint(len(training_structure)))
+    custom_range = np.random.choice(len(training_structure), size=size, replace=False).tolist()
     sgp.update_db(
         training_structure,
         forces,
-        custom_range=(1, 2, 3, 4, 5),
+        custom_range=custom_range,
         energy=energy,
         stress=stress,
         mode="specific",
-        rel_e_noise=0.1,
-        rel_f_noise=0.2,
-        rel_s_noise=0.1,
+        rel_e_noise=np.random.rand(),
+        rel_f_noise=np.random.rand(),
+        rel_s_noise=np.random.rand(),
     )
 
     # add an isolated atom to the training data
