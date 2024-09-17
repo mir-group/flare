@@ -159,22 +159,15 @@ if(NOT DEFINED ENV{NO_LAPACK})
   endif()
 endif()
 
-option(NO_PYTHON "Do not build Python module." OFF)
-if(NOT NO_PYTHON)
-    set(PYBIND11_NEWPYTHON ON)
-    FetchContent_Declare(pybind11
-        GIT_REPOSITORY https://github.com/pybind/pybind11
-    )
-    FetchContent_MakeAvailable(pybind11)
-    #find_package(pybind11 CONFIG REQUIRED)
-
-    # Greatly reduces the code bloat
-    # target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
-    pybind11_add_module(flare_module ${PYBIND_SOURCES})
-    target_link_libraries(flare_module PUBLIC flare)
-    set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
-    install(TARGETS flare_module LIBRARY DESTINATION flare/bffs/sgp)
-endif()
+set(PYBIND11_FINDPYTHON ON)
+FetchContent_Declare(pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11
+)
+FetchContent_MakeAvailable(pybind11)
+pybind11_add_module(flare_module ${PYBIND_SOURCES})
+target_link_libraries(flare_module PUBLIC flare)
+set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
+install(TARGETS flare_module LIBRARY DESTINATION flare/bffs/sgp)
 
 # Add test directory.
 if(NOT DEFINED SKBUILD)
