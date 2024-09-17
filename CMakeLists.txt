@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.5)
+cmake_minimum_required(VERSION 3.18...3.26)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
@@ -15,8 +15,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_OSX_ARCHITECTURES "x86_64")
 
-set(FLARE_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling modules")
-
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "[flare] CMAKE_BUILD_TYPE not specified, setting it to "
                  "Release. Use `-DCMAKE_BUILD_TYPE=...` to overwrite.")
@@ -32,13 +30,15 @@ include(FetchContent)
 # googletest
 ################################################################################
 
-FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.11.0
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
-    UPDATE_COMMAND ""
-)
-FetchContent_MakeAvailable(googletest)
+if(NOT DEFINED SKBUILD)
+    FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.11.0
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
+        UPDATE_COMMAND ""
+    )
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Json
 ################################################################################
@@ -52,19 +52,6 @@ FetchContent_GetProperties(json)
 FetchContent_Populate(json)
 add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
 include_directories(${json_SOURCE_DIR})
-
-# Kokkos
-################################################################################
-
-#FetchContent_Declare(kokkos
-#    GIT_REPOSITORY https://github.com/kokkos/kokkos
-#    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/kokkos
-#    UPDATE_COMMAND ""
-#)
-#FetchContent_GetProperties(kokkos)
-#FetchContent_Populate(kokkos)
-#add_subdirectory(${kokkos_SOURCE_DIR} ${kokkos_BINARY_DIR})
-#include_directories(${Kokkos_SOURCE_DIR})
 
 
 # Eigen3
@@ -140,37 +127,24 @@ add_dependencies(flare eigen_project)
 # Link to json.
 target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
 
-# Add conda include directories
-if (DEFINED ENV{CONDA_PREFIX})
-  message(STATUS "Adding conda include directories.")
-  include_directories($ENV{CONDA_PREFIX}/include)
-endif()
-
 # Link to OpenMP.
-if (DEFINED ENV{OMP_LOC})
-    target_link_libraries(flare PUBLIC $ENV{OMP_LOC})
-    message(STATUS "Linking to user-specified OpenMP library.")
-elseif(DEFINED ENV{NO_OMP})
-    message(STATUS "Building without OpenMP.")
-else()
+if(NOT DEFINED ENV{NO_OMP})
     find_package(OpenMP)
     if(OpenMP_CXX_FOUND)
         target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
     endif()
 endif()
 
-# Check for user-specified MKL package.
-if (DEFINED ENV{MKL_INCLUDE} AND DEFINED ENV{MKL_LIBS})
-  message(STATUS "Linking Eigen to user-specified MKL libraries.")
-  include_directories($ENV{MKL_INCLUDE})
-  target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
-  target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
-# Give the option to do a "bare-bones" build without Lapack/Lapacke.
-elseif(DEFINED ENV{NO_LAPACK})
-  message(STATUS "Building without Lapack.")
-else()
+# Add conda include directories TODO: MKL issue if not
+if(DEFINED ENV{CONDA_PREFIX})
+  message(STATUS "Adding conda include directories.")
+  include_directories($ENV{CONDA_PREFIX}/include)
+endif()
+
+
+if(NOT DEFINED ENV{NO_LAPACK})
   find_package(LAPACK REQUIRED)
-  target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
+  target_link_libraries(flare PUBLIC LAPACK::LAPACK)
 
   if (LAPACK_LIBRARIES MATCHES mkl)
     message(STATUS "Linking Eigen to MKL.")
@@ -179,16 +153,30 @@ else()
     find_package(LAPACKE)
     if(LAPACKE_FOUND)
       target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
+      message(STATUS "Linking Eigen to LAPACKE.")
+      target_compile_definitions(flare PUBLIC EIGEN_USE_LAPACKE=1)
     endif()
-    message(STATUS "Linking Eigen to LAPACKE.")
-    target_compile_definitions(flare PUBLIC EIGEN_USE_LAPACKE=1)
   endif()
 endif()
 
-# Create pybind module.
-pybind11_add_module(flare_module ${PYBIND_SOURCES})
-target_link_libraries(flare_module PUBLIC flare)
-set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
+option(NO_PYTHON "Do not build Python module." OFF)
+if(NOT NO_PYTHON)
+    set(PYBIND11_NEWPYTHON ON)
+    FetchContent_Declare(pybind11
+        GIT_REPOSITORY https://github.com/pybind/pybind11
+    )
+    FetchContent_MakeAvailable(pybind11)
+    #find_package(pybind11 CONFIG REQUIRED)
+
+    # Greatly reduces the code bloat
+    # target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
+    pybind11_add_module(flare_module ${PYBIND_SOURCES})
+    target_link_libraries(flare_module PUBLIC flare)
+    set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
+    install(TARGETS flare_module LIBRARY DESTINATION flare/bffs/sgp)
+endif()
 
 # Add test directory.
-add_subdirectory(ctests)
+if(NOT DEFINED SKBUILD)
+  add_subdirectory(ctests)
+endif()
