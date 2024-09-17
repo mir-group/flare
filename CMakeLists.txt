@@ -159,13 +159,6 @@ if(NOT DEFINED ENV{NO_LAPACK})
   endif()
 endif()
 
-set(PYBIND11_FINDPYTHON ON)
-FetchContent_Declare(
-    pybind11
-    GIT_REPOSITORY https://github.com/pybind/pybind11
-    GIT_TAG v2.13.0
-)
-FetchContent_MakeAvailable(pybind11)
 pybind11_add_module(flare_module ${PYBIND_SOURCES})
 target_link_libraries(flare_module PUBLIC flare)
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")

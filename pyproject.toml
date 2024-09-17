@@ -18,10 +18,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "ase",
+    "ase==3.22",
     "nptyping",
     "numba",
-    "numpy >=1.18, <1.23",
+    "numpy",
     "pyyaml",
     "scipy",
     "wandb",
@@ -48,7 +48,8 @@ docs = [
     "docutils==0.17.1",
     "nbconvert",
     "nbsphinx",
-    "pygments==2.11.2",
+    "pandoc",
+    "pygments==2.15.0",
     "codecov",
     "Sphinx",
     "sphinx-rtd-theme",
