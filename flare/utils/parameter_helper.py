@@ -839,7 +839,7 @@ class ParameterHelper:
                 for ele in self.groups["specie"][idt]:
                     atom_n = atomic_numbers[ele]
                     if atom_n >= len(self.species_mask):
-                        new_mask = np.ones(atom_n, dtype=np.int) * (nspecie - 1)
+                        new_mask = np.ones(atom_n, dtype=np.int8) * (nspecie - 1)
                         new_mask[: len(self.species_mask)] = self.species_mask
                         self.species_mask = new_mask
                     self.species_mask[atom_n] = idt
