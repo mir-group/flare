@@ -3,12 +3,8 @@
 
 name: flare
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on: [push, pull_request]
 
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
@@ -59,7 +55,6 @@ jobs:
 
         cmake ..
         cmake --build . -j4
-        cp _C_flare* ../flare/bffs/sgp
         cd ctests
         ./tests
 
@@ -92,8 +87,7 @@ jobs:
 
     - name: Pip install
       run: |
-        pip install -U codecov pytest pytest-cov pytest_mock Sphinx sphinx-rtd-theme breathe nbsphinx
-        pip install -r requirements.txt
+          pip install -e .[docs,tests]
 
     - name: Patch ASE
       run: |
@@ -124,11 +118,6 @@ jobs:
         python tutorial.py
         rm Al* aluminum.txt aspirin.txt md17_aspirin.npz tutorial.ipynb tutorial.py
 
-    - name: Install Sphinx and Breathe
-      run: |
-        sudo apt-get update
-        sudo apt-get install python3-sphinx python3-sphinx-rtd-theme python3-breathe python3-nbsphinx
-
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.9.8
       with:
@@ -139,6 +128,7 @@ jobs:
 
     - name: Run Sphinx
       run: |
+        sudo apt-get install pandoc
         export PYTHONPATH=$PYTHONPATH:$PWD/lammps/python
         cd docs
         pwd
