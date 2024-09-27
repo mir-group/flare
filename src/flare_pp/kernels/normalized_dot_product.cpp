@@ -51,8 +51,9 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_envs(const ClusterDescriptor &envs1,
       // Why not do envs1.descriptors[s] / envs1.descriptor_norms[s]
       // and then multiply them to get norm_dot matrix directly??
     // Compute dot products. (Should be done in parallel with MKL.)
-    Eigen::MatrixXd dot_vals =
-        envs1.descriptors[s] * envs2.descriptors[s].transpose();
+    Eigen::MatrixXd dot_vals;
+    if ((envs1.descriptors[s].rows() != 0) && (envs1.descriptors[s].cols() != 0))
+        dot_vals = envs1.descriptors[s] * envs2.descriptors[s].transpose();
 
     // Compute kernels.
     int n_sparse_1 = envs1.n_clusters_by_type[s];
@@ -138,10 +139,12 @@ Eigen::MatrixXd NormalizedDotProduct ::envs_struc(const ClusterDescriptor &envs,
 
   for (int s = 0; s < n_types; s++) {
     // Compute dot products. (Should be done in parallel with MKL.)
-    Eigen::MatrixXd dot_vals =
-        envs.descriptors[s] * struc.descriptors[s].transpose();
-    Eigen::MatrixXd force_dot =
-        envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
+    Eigen::MatrixXd dot_vals;
+    Eigen::MatrixXd force_dot;
+    if ((envs.descriptors[s].rows() != 0) && (envs.descriptors[s].cols() != 0)) {
+        dot_vals = envs.descriptors[s] * struc.descriptors[s].transpose();
+        force_dot = envs.descriptors[s] * struc.descriptor_force_dervs[s].transpose();
+    }
 
     Eigen::VectorXd struc_force_dot = struc.descriptor_force_dots[s];
 
