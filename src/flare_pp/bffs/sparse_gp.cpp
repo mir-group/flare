@@ -626,7 +626,7 @@ void SparseGP ::update_matrices_QR() {
                        .triangularView<Eigen::Upper>()
                        .solve(Kuu_eye);
   R_inv_diag = R_inv.diagonal();
-  alpha = R_inv * Q_b;
+  alpha = R_inv * Q_b.head( R_inv.cols() ); 
   Sigma = R_inv * R_inv.transpose();
 }
 
