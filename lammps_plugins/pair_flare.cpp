@@ -239,7 +239,7 @@ void PairFLARE::coeff(int narg, char **arg) {
 void PairFLARE::init_style() {
   // Require newton on.
   if (force->newton_pair == 0)
-    error->all(FLERR, "Pair style requires newton pair on");
+    error->all(FLERR, "Pair style flare requires newton pair on");
 
   // Request a full neighbor list.
   neighbor->add_request(this, NeighConst::REQ_FULL);

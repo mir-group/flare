@@ -737,7 +737,7 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
   // always request a full neighbor list
 
-  if (neighflag != FULL) {
+  if (neighflag != HALF) {
     error->all(FLERR,"Cannot use chosen neighbor list style with pair flare/kk");
   }
 
