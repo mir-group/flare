@@ -61,7 +61,7 @@ jobs:
 
     - name: Install LAMMPS
       run: |
-        git clone --depth 1 https://github.com/lammps/lammps.git lammps
+        git clone --depth 1 --branch release https://github.com/lammps/lammps.git lammps
 
         cd lammps/src
         cp pair_hybrid.* pair_lj_cut.* ..
