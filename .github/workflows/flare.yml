@@ -103,7 +103,7 @@ jobs:
 
     - name: Run LAMMPS tests with Kokkos
       run: |
-        export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
+        export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh half"
         cd tests
         pytest test_lammps.py
 

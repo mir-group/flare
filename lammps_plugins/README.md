@@ -41,7 +41,7 @@ where `Si.txt` should be replaced by the name of your mapped model. Then run `lm
 ### Running on a GPU with Kokkos
 See the [LAMMPS documentation](https://docs.lammps.org/Speed_kokkos.html). In general, run
 ```
-lmp -k on g 1 -sf kk -pk kokkos newton on neigh full -in in.script
+lmp -k on g 1 -sf kk -pk kokkos newton on neigh half -in in.script
 ```
 When running with MPI, replace `g 1` with the number of GPUs *per node*.
 
