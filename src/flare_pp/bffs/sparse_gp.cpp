@@ -94,6 +94,12 @@ std::vector<Eigen::VectorXd>
 SparseGP ::compute_cluster_uncertainties(const Structure &structure) {
   // TODO: this only computes the energy-energy variance, and the Sigma matrix is not considered?
 
+  if (L_inv.rows() != Kuu.rows()) {
+    throw std::runtime_error(
+        "L_inv must be up to date to evaluate uncertainties. Please call update_matrices_QR and try again."
+    );
+  }
+
   // Create cluster descriptors.
   std::vector<ClusterDescriptor> cluster_descriptors;
   for (int i = 0; i < structure.descriptors.size(); i++) {
@@ -632,6 +638,12 @@ void SparseGP ::update_matrices_QR() {
 
 void SparseGP ::predict_mean(Structure &test_structure) {
 
+  if (L_inv.rows() != Kuu.rows()) {
+    throw std::runtime_error(
+        "L_inv must be up to date to make predictions. Please call update_matrices_QR and try again."
+    );
+  }
+
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
 
@@ -649,6 +661,12 @@ void SparseGP ::predict_mean(Structure &test_structure) {
 }
 
 void SparseGP ::predict_SOR(Structure &test_structure) {
+
+  if (L_inv.rows() != Kuu.rows()) {
+    throw std::runtime_error(
+        "L_inv must be up to date to make predictions. Please call update_matrices_QR and try again."
+    );
+  }
 
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
@@ -670,6 +688,12 @@ void SparseGP ::predict_SOR(Structure &test_structure) {
 }
 
 void SparseGP ::predict_DTC(Structure &test_structure) {
+
+  if (L_inv.rows() != Kuu.rows()) {
+    throw std::runtime_error(
+        "L_inv must be up to date to make predictions. Please call update_matrices_QR and try again."
+    );
+  }
 
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
@@ -701,6 +725,12 @@ void SparseGP ::predict_DTC(Structure &test_structure) {
 }
 
 void SparseGP ::predict_local_uncertainties(Structure &test_structure) {
+  if (L_inv.rows() != Kuu.rows()) {
+    throw std::runtime_error(
+        "L_inv must be up to date to make predictions. Please call update_matrices_QR and try again."
+    );
+  }
+
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
 
