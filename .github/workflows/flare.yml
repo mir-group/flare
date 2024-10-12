@@ -61,7 +61,7 @@ jobs:
 
     - name: Install LAMMPS
       run: |
-        git clone --depth 1 https://github.com/lammps/lammps.git lammps
+        git clone --depth 1 --branch release https://github.com/lammps/lammps.git lammps
 
         cd lammps/src
         cp pair_hybrid.* pair_lj_cut.* ..
@@ -103,7 +103,7 @@ jobs:
 
     - name: Run LAMMPS tests with Kokkos
       run: |
-        export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh full"
+        export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh half"
         cd tests
         pytest test_lammps.py
 
