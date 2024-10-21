@@ -72,7 +72,7 @@ There are no non-standard hardware requirements to download the software and tra
 ## Tests
 We recommend running unit tests to confirm that FLARE is running properly on your machine. We have implemented our tests using the pytest suite. You can call `pytest` from the command line in the tests directory.
 
-Instructions (either DFT package will suffice):
+Instructions:
 ```
 pip install pytest
 cd tests
