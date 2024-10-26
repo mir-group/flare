@@ -139,6 +139,9 @@ endif()
 if(DEFINED ENV{CONDA_PREFIX})
   message(STATUS "Adding conda include directories.")
   include_directories($ENV{CONDA_PREFIX}/include)
+  set(CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+  set(CMAKE_LIBRARY_PATH "$ENV{CONDA_PREFIX}/lib")
+  set(CMAKE_INCLUDE_PATH "$ENV{CONDA_PREFIX}/include")
 endif()
 
 
