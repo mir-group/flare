@@ -191,6 +191,8 @@ void SparseGP ::add_specific_environments(const Structure &structure,
 void SparseGP ::add_uncertain_environments(const Structure &structure,
                                            const std::vector<int> &n_added) {
 
+  assert(n_added.size() == n_kernels && "n_added must have the same size as the number of kernels");
+
   initialize_sparse_descriptors(structure);
   // Compute cluster uncertainties.
   std::vector<std::vector<int>> sorted_indices =
