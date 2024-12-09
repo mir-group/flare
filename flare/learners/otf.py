@@ -602,10 +602,11 @@ class OTF:
                 to_copy = [target_files]
             else:
                 to_copy = target_files
+            new_folder = os.path.join(dest, str(self.curr_step))
+            os.makedirs(new_folder, exist_ok=True) 
             for ofile in to_copy:
-                # if the file is in a subdirectory like dft/OUTCAR, then copy it out
                 filename = ofile.split("/")[-1]
-                copyfile(ofile, dest + "/" + dt_string + filename)
+                copyfile(ofile, os.path.join(new_folder, filename))
         self.dft_frames.append(self.curr_step)
         self.output.write_wall_time(tic, task="Run DFT")
 
