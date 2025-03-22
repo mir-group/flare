@@ -28,7 +28,7 @@ This tutorial shows how to run flare with a sparse Gaussian process model traine
 [FLARE (LAMMPS active learning)](https://bit.ly/flarelmpotf)
 This tutorial demonstrates new functionality for running active learning all within LAMMPS, with LAMMPS running the dynamics to allow arbitrarily complex molecular dynamics workflows while maintaining a simple interface. This also demonstrates how to use the C++ API directly from Python through `pybind11`. Finally, there's a simple demonstration of phonon calculations with FLARE using `phonopy`.
 
-[FLARE (ACE descriptors + sparse GP) with LAMMPS](https://colab.research.google.com/drive/1qgGlfu1BlXQgSrnolS4c4AYeZ-2TaX5Y).
+[FLARE (ACE descriptors + sparse GP) with LAMMPS](https://drive.google.com/file/d/1TVBAwzDZYjyO2wYGCE89sfqg79t_4y_j/view?usp=sharing).
 The tutorial shows how to compile LAMMPS with FLARE pair style and uncertainty compute code, and use LAMMPS for Bayesian active learning and uncertainty-aware molecular dynamics.
 
 [Compute thermal conductivity from FLARE and Boltzmann transport equations](https://phoebe.readthedocs.io/en/develop/tutorials/mlPhononTransport.html).
