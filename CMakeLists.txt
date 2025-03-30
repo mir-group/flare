@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.5)
+cmake_minimum_required(VERSION 3.18...3.26)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(FLARE_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling modules")
+set(CMAKE_OSX_ARCHITECTURES "x86_64")
 
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "[flare] CMAKE_BUILD_TYPE not specified, setting it to "
@@ -30,13 +30,15 @@ include(FetchContent)
 # googletest
 ################################################################################
 
-FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.11.0
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
-    UPDATE_COMMAND ""
-)
-FetchContent_MakeAvailable(googletest)
+if(NOT DEFINED SKBUILD)
+    FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.11.0
+        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
+        UPDATE_COMMAND ""
+    )
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Json
 ################################################################################
@@ -50,19 +52,6 @@ FetchContent_GetProperties(json)
 FetchContent_Populate(json)
 add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
 include_directories(${json_SOURCE_DIR})
-
-# Kokkos
-################################################################################
-
-#FetchContent_Declare(kokkos
-#    GIT_REPOSITORY https://github.com/kokkos/kokkos
-#    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/kokkos
-#    UPDATE_COMMAND ""
-#)
-#FetchContent_GetProperties(kokkos)
-#FetchContent_Populate(kokkos)
-#add_subdirectory(${kokkos_SOURCE_DIR} ${kokkos_BINARY_DIR})
-#include_directories(${Kokkos_SOURCE_DIR})
 
 
 # Eigen3
@@ -84,34 +73,13 @@ include_directories(${SOURCE_DIR})
 
 # pybind11
 ###############################################################################
-ExternalProject_Add(
-    pybind11_project
-    SOURCE_DIR "${CMAKE_BINARY_DIR}/External/pybind11"
-    URL "https://github.com/pybind/pybind11/archive/v2.3.0.tar.gz"
-    URL_HASH MD5=e2120c5b0e3c20a93f2dfcdc55026ba8
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
+set(PYBIND11_FINDPYTHON ON)
+FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11
+    GIT_TAG v2.13.0
 )
-if (NOT FLARE_PYTHON_VERSION)
-    set(Python_ADDITIONAL_VERSIONS 3.8 3.7 3.6 3.5)
-endif()
-find_package(PythonLibsNew ${FLARE_PYTHON_VERSION} REQUIRED)
-
-add_library(pybind11 INTERFACE)
-ExternalProject_Get_Property(pybind11_project SOURCE_DIR)
-target_include_directories(pybind11 SYSTEM INTERFACE ${SOURCE_DIR}/include)
-target_include_directories(pybind11 SYSTEM INTERFACE ${PYTHON_INCLUDE_DIRS})
-
-if(APPLE)
-      TARGET_LINK_LIBRARIES(pybind11 INTERFACE "-undefined dynamic_lookup")
-      message(STATUS "Building in conda environment on MAC")
-else()
-      target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
-endif()
-
-# Greatly reduces the code bloat
-target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
+FetchContent_MakeAvailable(pybind11)
 ###############################################################################
 
 # Specify source files.
@@ -123,6 +91,7 @@ set(FLARE_SOURCES
     src/flare_pp/bffs/sparse_gp.cpp
     src/flare_pp/bffs/gp.cpp
     src/flare_pp/descriptors/descriptor.cpp
+    #    src/flare_pp/descriptors/b1.cpp
     src/flare_pp/descriptors/b2.cpp
     src/flare_pp/descriptors/b2_norm.cpp
     src/flare_pp/descriptors/b2_simple.cpp
@@ -158,37 +127,27 @@ add_dependencies(flare eigen_project)
 # Link to json.
 target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
 
-# Add conda include directories
-if (DEFINED ENV{CONDA_PREFIX})
-  message(STATUS "Adding conda include directories.")
-  include_directories($ENV{CONDA_PREFIX}/include)
-endif()
-
 # Link to OpenMP.
-if (DEFINED ENV{OMP_LOC})
-    target_link_libraries(flare PUBLIC $ENV{OMP_LOC})
-    message(STATUS "Linking to user-specified OpenMP library.")
-elseif(DEFINED ENV{NO_OMP})
-    message(STATUS "Building without OpenMP.")
-else()
+if(NOT DEFINED ENV{NO_OMP})
     find_package(OpenMP)
     if(OpenMP_CXX_FOUND)
         target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
     endif()
 endif()
 
-# Check for user-specified MKL package.
-if (DEFINED ENV{MKL_INCLUDE} AND DEFINED ENV{MKL_LIBS})
-  message(STATUS "Linking Eigen to user-specified MKL libraries.")
-  include_directories($ENV{MKL_INCLUDE})
-  target_link_libraries(flare PUBLIC $ENV{MKL_LIBS})
-  target_compile_definitions(flare PUBLIC EIGEN_USE_MKL_ALL=1)
-# Give the option to do a "bare-bones" build without Lapack/Lapacke.
-elseif(DEFINED ENV{NO_LAPACK})
-  message(STATUS "Building without Lapack.")
-else()
+# Add conda include directories TODO: MKL issue if not
+if(DEFINED ENV{CONDA_PREFIX})
+  message(STATUS "Adding conda include directories.")
+  include_directories($ENV{CONDA_PREFIX}/include)
+  set(CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+  set(CMAKE_LIBRARY_PATH "$ENV{CONDA_PREFIX}/lib")
+  set(CMAKE_INCLUDE_PATH "$ENV{CONDA_PREFIX}/include")
+endif()
+
+
+if(NOT DEFINED ENV{NO_LAPACK})
   find_package(LAPACK REQUIRED)
-  target_link_libraries(flare PUBLIC ${LAPACK_LIBRARIES})
+  target_link_libraries(flare PUBLIC LAPACK::LAPACK)
 
   if (LAPACK_LIBRARIES MATCHES mkl)
     message(STATUS "Linking Eigen to MKL.")
@@ -197,19 +156,18 @@ else()
     find_package(LAPACKE)
     if(LAPACKE_FOUND)
       target_link_libraries(flare PUBLIC ${LAPACKE_LIBRARIES})
+      message(STATUS "Linking Eigen to LAPACKE.")
+      target_compile_definitions(flare PUBLIC EIGEN_USE_LAPACKE=1)
     endif()
-    message(STATUS "Linking Eigen to LAPACKE.")
-    target_compile_definitions(flare PUBLIC EIGEN_USE_LAPACKE=1)
   endif()
 endif()
 
-# Create pybind module.
-add_library(flare_module SHARED ${PYBIND_SOURCES})
-target_link_libraries(flare_module PUBLIC flare pybind11)
-set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                              SUFFIX "${PYTHON_MODULE_EXTENSION}")
-add_dependencies(flare_module pybind11_project)
+pybind11_add_module(flare_module ${PYBIND_SOURCES})
+target_link_libraries(flare_module PUBLIC flare)
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
+install(TARGETS flare_module LIBRARY DESTINATION flare/bffs/sgp)
 
 # Add test directory.
-add_subdirectory(ctests)
+if(NOT DEFINED SKBUILD)
+  add_subdirectory(ctests)
+endif()
