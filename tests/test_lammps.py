@@ -2,6 +2,7 @@ import pytest
 import os, shutil
 import numpy as np
 from flare.atoms import FLARE_Atoms
+from flare.md.lammps import add_single_atom_energies
 from ase.calculators.lammpsrun import LAMMPS
 from ase.io import read, write
 
@@ -51,9 +52,11 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
     if n_species == 1:
         numbers = [6, 6]
         species = ["C"]
+        sgp_model.gp_model.single_atom_energies = None
     elif n_species == 2:
         numbers = [6, 8]
         species = ["C", "O"]
+        sgp_model.gp_model.single_atom_energies = {0: -5.0, 1: -7.0}
 
     if struc == "random":
         test_structure = get_random_atoms(a=2.0, sc_size=2, numbers=numbers)
@@ -90,15 +93,20 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
     print("built lmp_calc")
     # Predict with LAMMPS.
     test_structure.calc = lmp_calc
-    energy_lmp = test_structure.get_potential_energy()
+    raw_energy_lmp = test_structure.get_potential_energy()
     forces_lmp = test_structure.get_forces()
     stress_lmp = test_structure.get_stress()
 
-    # add back single_atom_energies to lammps energy
-    if sgp_model.gp_model.single_atom_energies is not None:
-        for spec in test_structure.numbers:
-            coded_spec = sgp_model.gp_model.species_map[spec]
-            energy_lmp += sgp_model.gp_model.single_atom_energies[coded_spec]
+    # Add back single_atom_energies to lammps energy
+    corrected_energy = add_single_atom_energies(
+        raw_energy_lmp,
+        test_structure,
+        sgp_model.gp_model.single_atom_energies,
+        sgp_model.gp_model.species_map
+    )
+
+    # Store the corrected energy for comparison with SGP
+    energy_lmp = corrected_energy
 
     thresh = 1e-6
     r_thresh = 1e-3
