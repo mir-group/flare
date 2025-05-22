@@ -498,6 +498,10 @@ def add_single_atom_energies(lmp_energy, atoms, single_atom_energies, species_ma
     Returns:
         float: Energy with single atom contributions added
     """
+    # Return the original energy if no corrections are needed
+    if single_atom_energies is None:
+        return lmp_energy
+    
     for spec in atoms.numbers:
         coded_spec = species_map[spec]
         lmp_energy += single_atom_energies[coded_spec]
@@ -517,13 +521,12 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     lmp_stds = atoms.get_array("c_unc")
 
     # Add back single atom energies to lammps energy
-    if sgp_calc.gp_model.single_atom_energies is not None:
-        lmp_energy = add_single_atom_energies(
-            lmp_energy,
-            atoms,
-            sgp_calc.gp_model.single_atom_energies,
-            sgp_calc.gp_model.species_map,
-        )
+    lmp_energy = add_single_atom_energies(
+        lmp_energy,
+        atoms,
+        sgp_calc.gp_model.single_atom_energies,
+        sgp_calc.gp_model.species_map,
+    )
 
     # subtract the pressure from temperature
     kinetic_stress = get_kinetic_stress(atoms)
@@ -572,13 +575,12 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         lmp_energy = lmp_calc.results["energy"]
         
         # Add back single atom energies to lammps energy
-        if sgp_calc.gp_model.single_atom_energies is not None:
-            lmp_energy = add_single_atom_energies(
-                lmp_energy,
-                atoms,
-                sgp_calc.gp_model.single_atom_energies,
-                sgp_calc.gp_model.species_map,
-            )
+        lmp_energy = add_single_atom_energies(
+            lmp_energy,
+            atoms,
+            sgp_calc.gp_model.single_atom_energies,
+            sgp_calc.gp_model.species_map,
+        )
                 
         lmp_forces = lmp_calc.results["forces"]
         lmp_stress = lmp_calc.results["stress"]
