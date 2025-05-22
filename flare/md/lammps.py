@@ -480,6 +480,30 @@ pair_coeff {params["pair_coeff"][0]}
     return lmp_calc, params
 
 
+def add_single_atom_energies(lmp_energy, atoms, single_atom_energies, species_map):
+    """
+    Add single atom energy correction to LAMMPS_MOD calculated energies.
+    
+    IMPORTANT: If your single_atom_energies in flare_calc is non-zero,
+    when using LAMMPS with 'pair_style flare', the potential energy 
+    reported by LAMMPS does NOT include single atom energy contributions. 
+    Use this function to correct LAMMPS energies to match SGP predictions.
+    
+    Args:
+        lmp_energy (float): The LAMMPS calculated energy to correct
+        atoms (ase.Atoms): Atoms object containing atomic numbers
+        single_atom_energies (dict): Dictionary mapping atom numbers to their energies correction
+        species_map (dict): Mapping from atomic numbers to SGP model coded species
+        
+    Returns:
+        float: Energy with single atom contributions added
+    """
+    for spec in atoms.numbers:
+        coded_spec = species_map[spec]
+        lmp_energy += single_atom_energies[coded_spec]
+    return lmp_energy
+
+
 def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     """
     Check if the lammps trajectory or calculator matches the SGP predictions
@@ -492,11 +516,14 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     lmp_stress = atoms.stress
     lmp_stds = atoms.get_array("c_unc")
 
-    # Add back single atom energies
+    # Add back single atom energies to lammps energy
     if sgp_calc.gp_model.single_atom_energies is not None:
-        for spec in atoms.numbers:
-            coded_spec = sgp_calc.gp_model.species_map[spec]
-            lmp_energy += sgp_calc.gp_model.single_atom_energies[coded_spec]
+        lmp_energy = add_single_atom_energies(
+            lmp_energy,
+            atoms,
+            sgp_calc.gp_model.single_atom_energies,
+            sgp_calc.gp_model.species_map,
+        )
 
     # subtract the pressure from temperature
     kinetic_stress = get_kinetic_stress(atoms)
@@ -543,6 +570,16 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
 
         lmp_calc.calculate(atoms, set_atoms=True)
         lmp_energy = lmp_calc.results["energy"]
+        
+        # Add back single atom energies to lammps energy
+        if sgp_calc.gp_model.single_atom_energies is not None:
+            lmp_energy = add_single_atom_energies(
+                lmp_energy,
+                atoms,
+                sgp_calc.gp_model.single_atom_energies,
+                sgp_calc.gp_model.species_map,
+            )
+                
         lmp_forces = lmp_calc.results["forces"]
         lmp_stress = lmp_calc.results["stress"]
         lmp_atoms = read(
