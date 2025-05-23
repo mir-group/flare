@@ -76,7 +76,7 @@ class LMPOTF:
         rcut: float,
         type2number: Union[(int, List[int])],
         dftcalc: object,
-        energy_correction: List[float] = 0.0,
+        energy_correction: Union[(float, List[float])] = 0.0,
         force_training=True,
         energy_training=True,
         stress_training=True,

@@ -737,8 +737,8 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
   // always request a full neighbor list
 
-  if (neighflag != FULL) {
-    error->all(FLERR,"Cannot use chosen neighbor list style with pair flare/kk");
+  if (neighflag == FULL) {
+    error->all(FLERR,"pair flare/kk requires 'newton on neigh half'");
   }
 
   // get available memory from environment variable,
