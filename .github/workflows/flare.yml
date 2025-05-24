@@ -120,7 +120,7 @@ jobs:
         rm Al* aluminum.txt aspirin.txt md17_aspirin.npz tutorial.ipynb tutorial.py
 
     - name: Run Doxygen
-      uses: mattnotmitt/doxygen-action@v1.9.8
+      uses: mattnotmitt/doxygen-action@v1.12.0
       with:
         doxyfile-path: "./Doxyfile"
         working-directory: "./docs"
