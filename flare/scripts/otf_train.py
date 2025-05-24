@@ -22,33 +22,37 @@ from ase.symbols import symbols2numbers
 import yaml
 
 # ---------------------------------------------------------------------------
-# Compatibility patch for CPython 3.12: make pyclbr treat
-#   `import numpy` inside a package as an *absolute* import
-#   instead of trying "pkg.numpy" (which does not exist).
-# Remove this once you are on a Python version where
-# https://github.com/python/cpython/issues/118557 is fixed.
+# Monkey-patch for CPython 3.12 pyclbr regression
+# Keeps absolute imports, ignores relative ones.
+# Remove once the bug is fixed upstream.
 # ---------------------------------------------------------------------------
 import pyclbr
 
+# ---------- 1. absolute   "import numpy"  -------------------------------
 def _visit_Import_abs(self, node):
-    """
-    Replacement for pyclbr._ModuleBrowser.visit_Import that restores the
-    ≤ 3.11 behaviour (top-level imports are analysed as absolute).
-    """
-    if node.col_offset:          # skip indented `import …`
+    if node.col_offset:              # skip indented imports
         return
-
-    for alias in node.names:     # alias.name is the thing imported
+    for alias in node.names:         # alias.name == "numpy"
         try:
-            # NOTE: crucial difference – we *do not* pass self.inpackage
-            pyclbr._readmodule(alias.name, self.path)
+            pyclbr._readmodule(alias.name, self.path)   # NO inpackage arg
         except ImportError:
-            # Keep walking even if the module cannot be analysed
             pass
 
-# Install the patch (Python automatically turns the function into a method)
-pyclbr._ModuleBrowser.visit_Import = _visit_Import_abs
+# ---------- 2. absolute   "from numpy import array"  --------------------
+def _visit_ImportFrom_abs(self, node):
+    if node.col_offset:
+        return
+    if node.level:                   # skip "from .something import …"
+        return
+    if node.module:                  # e.g. "numpy"
+        try:
+            pyclbr._readmodule(node.module, self.path)  # NO inpackage arg
+        except ImportError:
+            pass
 
+# ---------- install the patches -----------------------------------------
+pyclbr._ModuleBrowser.visit_Import      = _visit_Import_abs
+pyclbr._ModuleBrowser.visit_ImportFrom  = _visit_ImportFrom_abs
 
 def get_super_cell(atoms_config):
     """
