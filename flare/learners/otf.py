@@ -821,7 +821,7 @@ class OTF:
 
     def record_dft_data(self, structure, target_atoms):
         structure.info["target_atoms"] = np.array(target_atoms)
-        write(self.dft_xyz, structure, append=True)
+        write(self.dft_xyz, structure, append=True, write_results=False)
 
     def as_dict(self):
         # DFT module and Trajectory are not picklable
