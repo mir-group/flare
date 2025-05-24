@@ -1,7 +1,7 @@
 import time, os, shutil, glob, subprocess, sys, json
 from copy import deepcopy
 import pytest
-import pkgutil, pyclbr
+import pkgutil
 import importlib
 import inspect
 import numpy as np
@@ -21,6 +21,38 @@ from ase.symbols import symbols2numbers
 
 import yaml
 
+# ---------------------------------------------------------------------------
+# Monkey-patch for CPython 3.12 pyclbr regression
+# Keeps absolute imports, ignores relative ones.
+# Remove once the bug is fixed upstream.
+# ---------------------------------------------------------------------------
+import pyclbr
+
+# ---------- 1. absolute   "import numpy"  -------------------------------
+def _visit_Import_abs(self, node):
+    if node.col_offset:              # skip indented imports
+        return
+    for alias in node.names:         # alias.name == "numpy"
+        try:
+            pyclbr._readmodule(alias.name, self.path)   # NO inpackage arg
+        except ImportError:
+            pass
+
+# ---------- 2. absolute   "from numpy import array"  --------------------
+def _visit_ImportFrom_abs(self, node):
+    if node.col_offset:
+        return
+    if node.level:                   # skip "from .something import …"
+        return
+    if node.module:                  # e.g. "numpy"
+        try:
+            pyclbr._readmodule(node.module, self.path)  # NO inpackage arg
+        except ImportError:
+            pass
+
+# ---------- install the patches -----------------------------------------
+pyclbr._ModuleBrowser.visit_Import      = _visit_Import_abs
+pyclbr._ModuleBrowser.visit_ImportFrom  = _visit_ImportFrom_abs
 
 def get_super_cell(atoms_config):
     """

@@ -104,9 +104,9 @@ def all_lmp():
                 label=label,
                 keep_tmp_files=True,
                 tmp_dir="./tmp/",
-                parameters=parameters,
                 files=files,
                 specorder=species,
+                **parameters,
             )
             all_lmp_dict[f"{bodies}{multihyps}"] = lmp_calc
 

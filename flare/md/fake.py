@@ -88,7 +88,8 @@ class FakeMD(MolecularDynamics):
         for key in self.atoms.info:
             self.atoms.info[key] = new_atoms.info.get(key, None)
 
-        self.atoms.arrays.pop("forces")
+        for key in ("forces", "force"):
+            self.atoms.arrays.pop(key, None)
         self.atoms.info.pop("free_energy", None)
         self.atoms.info.pop("stress", None)
 
