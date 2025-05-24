@@ -1,7 +1,7 @@
 import time, os, shutil, glob, subprocess, sys, json
 from copy import deepcopy
 import pytest
-import pkgutil, pyclbr
+import pkgutil
 import importlib
 import inspect
 import numpy as np
@@ -20,6 +20,34 @@ from ase import io
 from ase.symbols import symbols2numbers
 
 import yaml
+
+# ---------------------------------------------------------------------------
+# Compatibility patch for CPython 3.12: make pyclbr treat
+#   `import numpy` inside a package as an *absolute* import
+#   instead of trying "pkg.numpy" (which does not exist).
+# Remove this once you are on a Python version where
+# https://github.com/python/cpython/issues/118557 is fixed.
+# ---------------------------------------------------------------------------
+import pyclbr
+
+def _visit_Import_abs(self, node):
+    """
+    Replacement for pyclbr._ModuleBrowser.visit_Import that restores the
+    ≤ 3.11 behaviour (top-level imports are analysed as absolute).
+    """
+    if node.col_offset:          # skip indented `import …`
+        return
+
+    for alias in node.names:     # alias.name is the thing imported
+        try:
+            # NOTE: crucial difference – we *do not* pass self.inpackage
+            pyclbr._readmodule(alias.name, self.path)
+        except ImportError:
+            # Keep walking even if the module cannot be analysed
+            pass
+
+# Install the patch (Python automatically turns the function into a method)
+pyclbr._ModuleBrowser.visit_Import = _visit_Import_abs
 
 
 def get_super_cell(atoms_config):
