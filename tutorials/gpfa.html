@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Training a 2+3-body Gaussian Process from an AIMD Run &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -95,7 +92,7 @@
            <div itemprop="articleBody">
              
   <section id="training-a-2-3-body-gaussian-process-from-an-aimd-run">
-<h1>Training a 2+3-body Gaussian Process from an AIMD Run<a class="headerlink" href="#training-a-2-3-body-gaussian-process-from-an-aimd-run" title="Permalink to this heading"></a></h1>
+<h1>Training a 2+3-body Gaussian Process from an AIMD Run<a class="headerlink" href="#training-a-2-3-body-gaussian-process-from-an-aimd-run" title="Link to this heading"></a></h1>
 <p>This is a tutorial for using the GPFA (Gaussian process for AIMD) module with
 2+3-body based GP model. A similar functionality is also supported in the offline
 training with yaml configuration, which is shown in
@@ -108,14 +105,14 @@ included in the test files in order to demonstrate how to set up and run the cod
 The trajectory this tutorial focuses on  involves a few frames of the
 molecule Methanol vibrating about its equilibrium configuration ran in VASP.</p>
 <section id="roadmap-figure">
-<h2>Roadmap Figure<a class="headerlink" href="#roadmap-figure" title="Permalink to this heading"></a></h2>
+<h2>Roadmap Figure<a class="headerlink" href="#roadmap-figure" title="Link to this heading"></a></h2>
 <p>In this tutorial, we will walk through the first two steps contained in the below figure. the GP from AIMD module is designed to give you the tools necessary to extract FLARE structures from a previously existing molecular dynamics run.</p>
 <figure class="align-center">
 <img alt="../_images/GPFA_tutorial.png" src="../_images/GPFA_tutorial.png" />
 </figure>
 </section>
 <section id="step-1-setting-up-a-gaussian-process-object">
-<h2>Step 1: Setting up a Gaussian Process Object<a class="headerlink" href="#step-1-setting-up-a-gaussian-process-object" title="Permalink to this heading"></a></h2>
+<h2>Step 1: Setting up a Gaussian Process Object<a class="headerlink" href="#step-1-setting-up-a-gaussian-process-object" title="Link to this heading"></a></h2>
 <p>Our goal is to train a GP, which first must be instantiated with a set of parameters.</p>
 <p>For the sake of this example, which is a molecule, we will use a two-plus-three body kernel.
 We must provide the kernel name to the GP, “two-plus-three-mc” or “2+3mc’.
@@ -124,7 +121,7 @@ The hyperparameter labels are included below for later output.
 The system contains a small number of atoms, so we choose a relatively
 smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of which will completely contain the molecule.</p>
 <p>At the header of a file, include the following imports:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flare.bffs.gp</span> <span class="kn">import</span> <span class="n">GaussianProcess</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare.bffs.gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcess</span>
 </pre></div>
 </div>
 <p>We will then set up the <code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code> object.</p>
@@ -172,25 +169,25 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 </div>
 </section>
 <section id="step-2-optional-extracting-the-frames-from-a-previous-aimd-run">
-<h2>Step 2 (Optional): Extracting the Frames from a previous AIMD Run<a class="headerlink" href="#step-2-optional-extracting-the-frames-from-a-previous-aimd-run" title="Permalink to this heading"></a></h2>
+<h2>Step 2 (Optional): Extracting the Frames from a previous AIMD Run<a class="headerlink" href="#step-2-optional-extracting-the-frames-from-a-previous-aimd-run" title="Link to this heading"></a></h2>
 <p>FLARE uses ASE IO (<a class="reference external" href="https://databases.fysik.dtu.dk/ase/ase/io/io.html">https://databases.fysik.dtu.dk/ase/ase/io/io.html</a>) to parse the trajectory
 including format such as xyz, VASP/QE/LAMMPS output. Then a list of ASE Atoms will be returned.
 We then need to convert the list of ASE Atoms into FLARE_Atoms.</p>
 <p>You can run it simply by calling the function on a file like so:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span>
-    <span class="kn">from</span> <span class="nn">flare.atoms</span> <span class="kn">import</span> <span class="n">FLARE_Atoms</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">flare.atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLARE_Atoms</span>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;path-to-traj-file&#39;</span><span class="p">)</span>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">FLARE_Atoms</span><span class="o">.</span><span class="n">from_ase_atoms</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">trajectory</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>
 <section id="step-3-training-your-gaussian-process">
-<h2>Step 3: Training your Gaussian Process<a class="headerlink" href="#step-3-training-your-gaussian-process" title="Permalink to this heading"></a></h2>
+<h2>Step 3: Training your Gaussian Process<a class="headerlink" href="#step-3-training-your-gaussian-process" title="Link to this heading"></a></h2>
 <p>If you don’t have a previously existing Vasprun, you can also use the one
 available in the test_files directory, which is <code class="docutils literal notranslate"><span class="pre">methanol_frames.json</span></code>.
 You can open it via the command</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">json</span> <span class="kn">import</span> <span class="n">loads</span>
-<span class="kn">from</span> <span class="nn">flare.atoms</span> <span class="kn">import</span> <span class="n">FLARE_Atoms</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="kn">import</span> <span class="n">loads</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flare.atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLARE_Atoms</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;path-to-methanol-frames&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">loaded_dicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">FLARE_Atoms</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">loaded_dicts</span><span class="p">]</span>
@@ -248,7 +245,7 @@ trained. Here, we will pass in the following:</p>
 </ul>
 </section>
 <section id="pre-training-arguments">
-<h2>Pre-Training arguments<a class="headerlink" href="#pre-training-arguments" title="Permalink to this heading"></a></h2>
+<h2>Pre-Training arguments<a class="headerlink" href="#pre-training-arguments" title="Link to this heading"></a></h2>
 <p>When the training set contains a low diversity of
 atomic configurations relative to what you expect to see at test time, the
 hyperparameters may not be representative; furthermore, the training process
@@ -270,7 +267,7 @@ to use a more selective subset of atoms for large unit cells.</p>
 </div>
 </li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flare.learners.gp_from_aimd</span> <span class="kn">import</span> <span class="n">TrajectoryTrainer</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare.learners.gp_from_aimd</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrajectoryTrainer</span>
 <span class="n">TT</span> <span class="o">=</span> <span class="n">TrajectoryTrainer</span><span class="p">(</span><span class="n">frames</span><span class="o">=</span><span class="n">trajectory</span><span class="p">,</span>
                     <span class="n">gp</span> <span class="o">=</span> <span class="n">gp</span><span class="p">,</span>
                     <span class="n">rel_std_tolerance</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>

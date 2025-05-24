@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Installation of FLARE &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -98,9 +95,9 @@
            <div itemprop="articleBody">
              
   <section id="installation-of-flare">
-<h1>Installation of FLARE<a class="headerlink" href="#installation-of-flare" title="Permalink to this heading"></a></h1>
+<h1>Installation of FLARE<a class="headerlink" href="#installation-of-flare" title="Link to this heading"></a></h1>
 <section id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Create a new conda environment to install flare</p></li>
 </ol>
@@ -139,7 +136,7 @@ pip<span class="w"> </span>install<span class="w"> </span>.
 </div>
 </section>
 <section id="developer-s-installation-guide">
-<h2>Developer’s installation guide<a class="headerlink" href="#developer-s-installation-guide" title="Permalink to this heading"></a></h2>
+<h2>Developer’s installation guide<a class="headerlink" href="#developer-s-installation-guide" title="Link to this heading"></a></h2>
 <p>After loading modules as above, we use <code class="docutils literal notranslate"><span class="pre">cmake</span></code> to compile the c++ code</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:mir-group/flare.git
 <span class="nb">cd</span><span class="w"> </span>flare
@@ -161,12 +158,12 @@ make<span class="w"> </span>-j
 <p>An alternative way is setting <code class="docutils literal notranslate"><span class="pre">sys.path.append(&lt;flare</span> <span class="pre">path&gt;)</span></code> in your python script.</p>
 </section>
 <section id="test-flare-installation">
-<h2>Test FLARE installation<a class="headerlink" href="#test-flare-installation" title="Permalink to this heading"></a></h2>
+<h2>Test FLARE installation<a class="headerlink" href="#test-flare-installation" title="Link to this heading"></a></h2>
 <p>After the installation is done, you can leave the current folder and in the python console, try</p>
-<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">flare</span>
+<div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">flare</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">flare</span><span class="o">.</span><span class="vm">__file__</span>
 <span class="s1">&#39;/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py&#39;</span>
-<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">flare.bffs.sgp</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">flare.bffs.sgp</span>
 </pre></div>
 </div>
 <p>You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by</p>
@@ -176,7 +173,7 @@ make<span class="w"> </span>-j
 <p>where it is expected to show libmkl (or libopenblas), libgomp etc.</p>
 </section>
 <section id="trouble-shooting">
-<h2>Trouble shooting<a class="headerlink" href="#trouble-shooting" title="Permalink to this heading"></a></h2>
+<h2>Trouble shooting<a class="headerlink" href="#trouble-shooting" title="Link to this heading"></a></h2>
 <ul>
 <li><p>If it fails to build mir-flare during pip install, check whether you have done <cite>conda install cxx-compiler</cite>, then it sometimes does not find the correct g++, i.e. <cite>which gcc</cite> gives the conda’s gcc, while <cite>which g++</cite> still gives the local one. In such case, try <cite>conda uninstall cxx-compiler gxx</cite>, and then redo <cite>conda install gxx -c conda-forge</cite></p></li>
 <li><p>If you get the error that <cite>mkl.h</cite> is not found during pip install, first check <cite>conda list</cite> that <cite>mkl-include</cite> is installed in the current environment. You can also use your own mkl headers by setting environment variable <cite>MKL_INCLUDE</cite> to the directory</p></li>
@@ -196,9 +193,9 @@ make<span class="w"> </span>-j
 <p>as instructed in <a class="reference external" href="https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/mkl-fails-to-load/m-p/1155538">this discussion</a>.</p>
 </section>
 <section id="acceleration-with-multiprocessing-and-mkl">
-<h2>Acceleration with multiprocessing and MKL<a class="headerlink" href="#acceleration-with-multiprocessing-and-mkl" title="Permalink to this heading"></a></h2>
+<h2>Acceleration with multiprocessing and MKL<a class="headerlink" href="#acceleration-with-multiprocessing-and-mkl" title="Link to this heading"></a></h2>
 <section id="sparse-gaussian-process-model">
-<h3>Sparse Gaussian Process model<a class="headerlink" href="#sparse-gaussian-process-model" title="Permalink to this heading"></a></h3>
+<h3>Sparse Gaussian Process model<a class="headerlink" href="#sparse-gaussian-process-model" title="Link to this heading"></a></h3>
 <p>We use OpenMP for parallelization, so please set</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">OMP_NUM_THREADS</span><span class="o">=</span>&lt;number<span class="w"> </span>of<span class="w"> </span>CPUs<span class="w"> </span>on<span class="w"> </span>a<span class="w"> </span>node&gt;
 </pre></div>
@@ -206,7 +203,7 @@ make<span class="w"> </span>-j
 <p>such that the model parallelized into <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS</span></code> threads.</p>
 </section>
 <section id="full-gaussian-process-model">
-<h3>Full Gaussian Process model<a class="headerlink" href="#full-gaussian-process-model" title="Permalink to this heading"></a></h3>
+<h3>Full Gaussian Process model<a class="headerlink" href="#full-gaussian-process-model" title="Link to this heading"></a></h3>
 <p>If users have access to high-performance computers, we recommend
 <a class="reference external" href="https://docs.python.org/2/library/multiprocessing.html">Multiprocessing</a> and <a class="reference external" href="https://software.intel.com/en-us/mkl">MKL</a> library set up to accelerate the training and prediction.
 The acceleration can be significant when the GP training data is large.

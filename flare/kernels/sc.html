@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Single-element Kernels &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -138,7 +135,7 @@
            <div itemprop="articleBody">
              
   <section id="module-flare.kernels.sc">
-<span id="single-element-kernels"></span><h1>Single-element Kernels<a class="headerlink" href="#module-flare.kernels.sc" title="Permalink to this heading"></a></h1>
+<span id="single-element-kernels"></span><h1>Single-element Kernels<a class="headerlink" href="#module-flare.kernels.sc" title="Link to this heading"></a></h1>
 <p>Single element 2-, 3-, and 2+3-body kernels.
 The kernel functions to choose:</p>
 <ul>
@@ -200,10 +197,10 @@ The kernel functions to choose:</p>
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element kernel between two forces.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -215,10 +212,10 @@ many-body cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body force/force kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -226,10 +223,10 @@ many-body cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_en" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element kernel between two local energies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -239,10 +236,10 @@ many-body cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body energy/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -250,11 +247,11 @@ many-body cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_en_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_en_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_en_jit" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element energy kernel between accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>q_array_1</strong> (<em>np.ndarray</em>) – coordination number of the 1st local
 environment.</p></li>
@@ -264,10 +261,10 @@ environment.</p></li>
 <li><p><strong>ls</strong> (<em>float</em>) – many-body length scale hyperparameter.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -275,10 +272,10 @@ environment.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_force_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_force_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_force_en" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element kernel between two local energies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -288,10 +285,10 @@ many-body cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -299,11 +296,11 @@ many-body cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_force_en_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_force_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_force_en_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_force_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_force_en_jit" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element kernel between force and energy components accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – many-body bond array of the first local
 environment.</p></li>
@@ -320,10 +317,10 @@ local environment</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -331,11 +328,11 @@ local environment</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_grad" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_grad" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element kernel between two force components and its
 gradient with respect to the hyperparameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -347,14 +344,14 @@ many-body cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
 <dt>Value of the many-body kernel and its gradient</dt><dd><p>with respect to the hyperparameters.</p>
 </dd>
 </dl>
 </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(float, np.ndarray)</p>
 </dd>
 </dl>
@@ -362,11 +359,11 @@ many-body cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_grad_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_grad_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_grad_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_grad_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_grad_jit" title="Link to this definition"></a></dt>
 <dd><p>gradient of many-body single-element kernel between two force components
 w.r.t. the hyperparameters, accelerated with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – many-body bond array of the first local
 environment.</p></li>
@@ -388,10 +385,10 @@ local environment</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body kernel and its gradient w.r.t. sig and ls</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>array</p>
 </dd>
 </dl>
@@ -399,11 +396,11 @@ local environment</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.many_body_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">many_body_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_neigh_grads_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.many_body_jit" title="Link to this definition"></a></dt>
 <dd><p>many-body single-element kernel between two force components accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – many-body bond array of the first local
 environment.</p></li>
@@ -425,10 +422,10 @@ local environment</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -436,10 +433,10 @@ local environment</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -451,10 +448,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -462,10 +459,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_en" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between two local energies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -475,10 +472,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -486,11 +483,11 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_en_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_en_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_en_jit" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between two local energies accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
 environment.</p></li>
@@ -524,10 +521,10 @@ within a distance r_cut of atom m.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body local energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -535,11 +532,11 @@ within a distance r_cut of atom m.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_force_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_force_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_force_en" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between a force component and a local
 energy.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
 force component.</p></li>
@@ -552,10 +549,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -563,11 +560,11 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_force_en_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_force_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_force_en_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_force_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_force_en_jit" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between a force component and a local
 energy accelerated with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
 environment.</p></li>
@@ -602,10 +599,10 @@ within a distance r_cut of atom m.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -613,11 +610,11 @@ within a distance r_cut of atom m.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_grad" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_grad" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between two force components and its
 gradient with respect to the hyperparameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -629,14 +626,14 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
 <dt>Value of the 3-body kernel and its gradient</dt><dd><p>with respect to the hyperparameters.</p>
 </dd>
 </dl>
 </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(float, np.ndarray)</p>
 </dd>
 </dl>
@@ -644,11 +641,11 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_grad_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_grad_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_grad_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_grad_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_grad_jit" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between two force components and its
 gradient with respect to the hyperparameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
 environment.</p></li>
@@ -684,11 +681,11 @@ within a distance r_cut of atom m.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body kernel and its gradient with respect to the
 hyperparameters.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(float, float)</p>
 </dd>
 </dl>
@@ -696,11 +693,11 @@ hyperparameters.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.three_body_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">three_body_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_inds_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cross_bond_dists_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triplets_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.three_body_jit" title="Link to this definition"></a></dt>
 <dd><p>3-body single-element kernel between two force components accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 3-body bond array of the first local
 environment.</p></li>
@@ -736,10 +733,10 @@ within a distance r_cut of atom m.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 3-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -747,10 +744,10 @@ within a distance r_cut of atom m.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -762,10 +759,10 @@ cutoff.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -773,10 +770,10 @@ cutoff.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_en" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between two local energies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -786,10 +783,10 @@ cutoff.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -797,11 +794,11 @@ cutoff.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_en_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_en_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_en_jit" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between two local energies accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
 environment.</p></li>
@@ -813,10 +810,10 @@ environment.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body local energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -824,11 +821,11 @@ environment.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_force_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_force_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_force_en" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between a force component and a local
 energy.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
 force component.</p></li>
@@ -841,10 +838,10 @@ cutoff.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -852,11 +849,11 @@ cutoff.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_force_en_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_force_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_force_en_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_force_en_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_force_en_jit" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between a force component and a local
 energy accelerated with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
 environment.</p></li>
@@ -869,10 +866,10 @@ environment.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -880,11 +877,11 @@ environment.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_grad" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_grad" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between two force components and its
 gradient with respect to the hyperparameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -896,14 +893,14 @@ cutoff.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
 <dt>Value of the 2-body kernel and its gradient</dt><dd><p>with respect to the hyperparameters.</p>
 </dd>
 </dl>
 </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(float, np.ndarray)</p>
 </dd>
 </dl>
@@ -911,11 +908,11 @@ cutoff.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_grad_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_grad_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_grad_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_grad_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_grad_jit" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between two force components and its
 gradient with respect to the hyperparameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
 environment.</p></li>
@@ -929,11 +926,11 @@ environment.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body kernel and its gradient with respect to the
 hyperparameters.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(float, float)</p>
 </dd>
 </dl>
@@ -941,11 +938,11 @@ hyperparameters.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_body_jit">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_jit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_body_jit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bond_array_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_array_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_body_jit" title="Link to this definition"></a></dt>
 <dd><p>2-body single-element kernel between two force components accelerated
 with Numba.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>bond_array_1</strong> (<em>np.ndarray</em>) – 2-body bond array of the first local
 environment.</p></li>
@@ -959,10 +956,10 @@ environment.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -970,10 +967,10 @@ environment.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_many_body">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body" title="Link to this definition"></a></dt>
 <dd><p>2+many-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -986,10 +983,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -997,10 +994,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_many_body_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body_en" title="Link to this definition"></a></dt>
 <dd><p>2+3+many-body single-element energy kernel.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1011,10 +1008,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1022,10 +1019,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_many_body_force_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body_force_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body_force_en" title="Link to this definition"></a></dt>
 <dd><p>2+3+many-body single-element kernel between two force and energy components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1037,10 +1034,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1048,10 +1045,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_many_body_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body_grad" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_many_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_many_body_grad" title="Link to this definition"></a></dt>
 <dd><p>2+many-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1064,10 +1061,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1075,10 +1072,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_body">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_body" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_body" title="Link to this definition"></a></dt>
 <dd><p>2+3-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1091,10 +1088,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1102,11 +1099,11 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_body_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_body_grad" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_body_grad" title="Link to this definition"></a></dt>
 <dd><p>2+3-body single-element kernel between two force components and its
 gradient with respect to the hyperparameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1119,14 +1116,14 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
 <dt>Value of the 2+3-body kernel and its gradient</dt><dd><p>with respect to the hyperparameters.</p>
 </dd>
 </dl>
 </p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>(float, np.ndarray)</p>
 </dd>
 </dl>
@@ -1134,10 +1131,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_en" title="Link to this definition"></a></dt>
 <dd><p>2+3-body single-element kernel between two local energies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1148,10 +1145,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1159,11 +1156,11 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_force_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_force_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_force_en" title="Link to this definition"></a></dt>
 <dd><p>2+3-body single-element kernel between a force component and a local
 energy.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – Local environment associated with the
 force component.</p></li>
@@ -1177,10 +1174,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3-body force/energy kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1188,10 +1185,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_plus_many_body">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body" title="Link to this definition"></a></dt>
 <dd><p>2+3-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1204,10 +1201,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1215,10 +1212,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_plus_many_body_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body_en" title="Link to this definition"></a></dt>
 <dd><p>2+3+many-body single-element energy kernel.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1229,10 +1226,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1240,10 +1237,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_plus_many_body_force_en">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body_force_en" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body_force_en</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body_force_en" title="Link to this definition"></a></dt>
 <dd><p>2+3+many-body single-element kernel between two force and energy components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1255,10 +1252,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -1266,10 +1263,10 @@ cutoffs.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.sc.two_plus_three_plus_many_body_grad">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body_grad" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.sc.</span></span><span class="sig-name descname"><span class="pre">two_plus_three_plus_many_body_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">env2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../descriptors/env.html#flare.descriptors.env.AtomicEnvironment" title="flare.descriptors.env.AtomicEnvironment"><span class="pre">AtomicEnvironment</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">d1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoffs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.sc.two_plus_three_plus_many_body_grad" title="Link to this definition"></a></dt>
 <dd><p>2+3+many-body single-element kernel between two force components.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>env1</strong> (<em>AtomicEnvironment</em>) – First local environment.</p></li>
 <li><p><strong>env2</strong> (<em>AtomicEnvironment</em>) – Second local environment.</p></li>
@@ -1282,10 +1279,10 @@ cutoffs.</p></li>
 <li><p><strong>cutoff_func</strong> (<em>Callable</em>) – Cutoff function of the kernel.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Value of the 2+3+many-body kernel.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>

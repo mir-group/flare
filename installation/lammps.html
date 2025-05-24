@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compile LAMMPS with FLARE &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -98,10 +95,10 @@
            <div itemprop="articleBody">
              
   <section id="compile-lammps-with-flare">
-<h1>Compile LAMMPS with FLARE<a class="headerlink" href="#compile-lammps-with-flare" title="Permalink to this heading"></a></h1>
+<h1>Compile LAMMPS with FLARE<a class="headerlink" href="#compile-lammps-with-flare" title="Link to this heading"></a></h1>
 <p>Anders Johansson</p>
 <section id="compilation-with-cmake">
-<h2>Compilation with CMake<a class="headerlink" href="#compilation-with-cmake" title="Permalink to this heading"></a></h2>
+<h2>Compilation with CMake<a class="headerlink" href="#compilation-with-cmake" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Download LAMMPS, e.g.</p></li>
 </ol>
@@ -126,7 +123,7 @@ This needs to be found by the compiler. Specifically, the <code class="docutils 
 <li><p>If you are using LAMMPS version &gt; 17Feb22, then you can set <code class="docutils literal notranslate"><span class="pre">-DPKG_MACHDYN=yes</span> <span class="pre">-DDOWNLOAD_EIGEN3=yes</span></code> for cmake, and Eigen3 will be downloaded and compiled automatically.</p></li>
 </ol>
 <section id="compilation-for-gpu-with-kokkos">
-<h3>Compilation for GPU with Kokkos<a class="headerlink" href="#compilation-for-gpu-with-kokkos" title="Permalink to this heading"></a></h3>
+<h3>Compilation for GPU with Kokkos<a class="headerlink" href="#compilation-for-gpu-with-kokkos" title="Link to this heading"></a></h3>
 <p>Run the above steps, follow LAMMPS’s compilation instructions with Kokkos (<a class="reference external" href="https://docs.lammps.org/Build_extras.html#kokkos">https://docs.lammps.org/Build_extras.html#kokkos</a>). Typically</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>lammps
 mkdir<span class="w"> </span>build
@@ -140,7 +137,7 @@ make<span class="w"> </span>-j&lt;n_cpus&gt;
 </section>
 </section>
 <section id="basic-usage">
-<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Permalink to this heading"></a></h2>
+<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h2>
 <p>For the model with B2 descriptors and NormalizedDotProduct kernel, the LAMMPS input script:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>newton<span class="w"> </span>on
 pair_style<span class="w">  </span>flare
@@ -150,7 +147,7 @@ pair_coeff<span class="w">  </span>*<span class="w"> </span>*<span class="w"> </
 <p>where <code class="docutils literal notranslate"><span class="pre">Si.txt</span></code> should be replaced by the name of your mapped model. Then run <code class="docutils literal notranslate"><span class="pre">lmp</span> <span class="pre">-in</span> <span class="pre">in.script</span></code> as usual.</p>
 <p>For the model with 2+3 body descriptors, the LAMMPS non-Kokkos version uses <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">off</span></code>, while the Kokkos version uses <code class="docutils literal notranslate"><span class="pre">newton</span> <span class="pre">on</span></code>.</p>
 <section id="running-on-a-gpu-with-kokkos">
-<h3>Running on a GPU with Kokkos<a class="headerlink" href="#running-on-a-gpu-with-kokkos" title="Permalink to this heading"></a></h3>
+<h3>Running on a GPU with Kokkos<a class="headerlink" href="#running-on-a-gpu-with-kokkos" title="Link to this heading"></a></h3>
 <p>See the LAMMPS documentation (<a class="reference external" href="https://docs.lammps.org/Speed_kokkos.html">https://docs.lammps.org/Speed_kokkos.html</a>). In general, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lmp<span class="w"> </span>-k<span class="w"> </span>on<span class="w"> </span>g<span class="w"> </span><span class="m">1</span><span class="w"> </span>-sf<span class="w"> </span>kk<span class="w"> </span>-pk<span class="w"> </span>kokkos<span class="w"> </span>newton<span class="w"> </span>on<span class="w"> </span>neigh<span class="w"> </span>full<span class="w"> </span>-in<span class="w"> </span><span class="k">in</span>.script
 </pre></div>
@@ -182,7 +179,7 @@ mpirun<span class="w"> </span>-np<span class="w"> </span><span class="nv">$SLURM
 </section>
 </section>
 <section id="notes-on-newton-only-relevant-with-kokkos">
-<h2>Notes on Newton (only relevant with Kokkos)<a class="headerlink" href="#notes-on-newton-only-relevant-with-kokkos" title="Permalink to this heading"></a></h2>
+<h2>Notes on Newton (only relevant with Kokkos)<a class="headerlink" href="#notes-on-newton-only-relevant-with-kokkos" title="Link to this heading"></a></h2>
 <p>There are defaults which will kick in if you don’t specify anything in the input
 script and/or skip the <code class="docutils literal notranslate"><span class="pre">-package</span> <span class="pre">kokkos</span> <span class="pre">newton</span> <span class="pre">...</span> <span class="pre">neigh</span> <span class="pre">...</span></code> flag.
 You can try these at your own risk, but it is safest to specify everything.

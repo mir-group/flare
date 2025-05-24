@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Git Workflow &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -93,10 +90,10 @@
            <div itemprop="articleBody">
              
   <section id="git-workflow">
-<h1>Git Workflow<a class="headerlink" href="#git-workflow" title="Permalink to this heading"></a></h1>
+<h1>Git Workflow<a class="headerlink" href="#git-workflow" title="Link to this heading"></a></h1>
 <p>To contribute to the FLARE source code, please follow the guidelines in this section. If any of the git commands are unfamiliar, check out Chapters 3-5 of the <a class="reference external" href="https://git-scm.com/book/en/v2">Pro Git book</a>.</p>
 <section id="general-workflow">
-<h2>General workflow<a class="headerlink" href="#general-workflow" title="Permalink to this heading"></a></h2>
+<h2>General workflow<a class="headerlink" href="#general-workflow" title="Link to this heading"></a></h2>
 <p>Development should follow this pattern:</p>
 <ol class="arabic simple">
 <li><p>Create an issue on Github describing what you want to contribute.</p></li>
@@ -105,7 +102,7 @@
 </ol>
 </section>
 <section id="master-development-and-topic-branches">
-<h2>Master, development, and topic branches<a class="headerlink" href="#master-development-and-topic-branches" title="Permalink to this heading"></a></h2>
+<h2>Master, development, and topic branches<a class="headerlink" href="#master-development-and-topic-branches" title="Link to this heading"></a></h2>
 <p>The FLARE repository has a three-tiered structure: there is the master branch, which is only for battle-tested code that is both documented and unit tested; the development branch, which is used to push new features; and topic branches, which focus on specific issues and are deleted once the issue is addressed.</p>
 <p>You can create local copies of branches from the remote repository as follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git checkout -b &lt;local branch name&gt; origin/&lt;remote branch name&gt;
@@ -113,7 +110,7 @@
 </div>
 </section>
 <section id="pushing-changes-to-the-mir-repo-directly">
-<h2>Pushing changes to the MIR repo directly<a class="headerlink" href="#pushing-changes-to-the-mir-repo-directly" title="Permalink to this heading"></a></h2>
+<h2>Pushing changes to the MIR repo directly<a class="headerlink" href="#pushing-changes-to-the-mir-repo-directly" title="Link to this heading"></a></h2>
 <p>If you have write access to the MIR version of FLARE, you can make edits directly to the source code. Here are the steps you should follow:</p>
 <ol class="arabic">
 <li><p>Go into the development branch.</p></li>
@@ -131,7 +128,7 @@
 </ol>
 </section>
 <section id="pushing-changes-from-a-forked-repo">
-<h2>Pushing changes from a forked repo<a class="headerlink" href="#pushing-changes-from-a-forked-repo" title="Permalink to this heading"></a></h2>
+<h2>Pushing changes from a forked repo<a class="headerlink" href="#pushing-changes-from-a-forked-repo" title="Link to this heading"></a></h2>
 <ol class="arabic">
 <li><p>Fork the <a class="reference external" href="https://github.com/mir-group/flare">FLARE repository</a>.</p></li>
 <li><p>Set FLARE as an upstream remote:</p>

@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Code Standards &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -92,21 +89,21 @@
            <div itemprop="articleBody">
              
   <section id="code-standards">
-<h1>Code Standards<a class="headerlink" href="#code-standards" title="Permalink to this heading"></a></h1>
+<h1>Code Standards<a class="headerlink" href="#code-standards" title="Link to this heading"></a></h1>
 <p>Before pushing code to the development branch, please make sure your changes respect the following code standards.</p>
 <section id="pep-8">
-<h2>PEP 8<a class="headerlink" href="#pep-8" title="Permalink to this heading"></a></h2>
+<h2>PEP 8<a class="headerlink" href="#pep-8" title="Link to this heading"></a></h2>
 <p>Run your code through pylint to check that you’re in compliance with <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pylint &lt;file name&gt;
 </pre></div>
 </div>
 </section>
 <section id="docstrings">
-<h2>Docstrings<a class="headerlink" href="#docstrings" title="Permalink to this heading"></a></h2>
+<h2>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading"></a></h2>
 <p>All new modules, classes, and methods should have <a class="reference external" href="https://pythonhosted.org/an_example_pypi_project/sphinx.html">Sphinx style docstrings</a> describing what the code does and what its inputs are. These docstrings are used to automatically generate FLARE’s documentation, so please make sure they’re clear and descriptive.</p>
 </section>
 <section id="tests">
-<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this heading"></a></h2>
+<h2>Tests<a class="headerlink" href="#tests" title="Link to this heading"></a></h2>
 <p>New features must be accompanied by unit and integration tests written using <a class="reference external" href="https://docs.pytest.org/en/latest/">pytest</a>. This helps ensure the code works properly and makes the code as a whole easier to maintain.</p>
 </section>
 </section>

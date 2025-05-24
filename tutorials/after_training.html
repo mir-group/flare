@@ -1,26 +1,23 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Build 2+3-body Mapped GP &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -95,7 +92,7 @@
            <div itemprop="articleBody">
              
   <section id="Build-2+3-body-Mapped-GP">
-<h1>Build 2+3-body Mapped GP<a class="headerlink" href="#Build-2+3-body-Mapped-GP" title="Permalink to this heading"></a></h1>
+<h1>Build 2+3-body Mapped GP<a class="headerlink" href="#Build-2+3-body-Mapped-GP" title="Link to this heading"></a></h1>
 <p>After the on-the-fly training is complete, we can play with the force field we obtained. We are going to do the following things:</p>
 <ol class="arabic simple">
 <li><p>Parse the on-the-fly training trajectory to collect training data</p></li>
@@ -104,14 +101,14 @@
 <li><p>Use LAMMPS to run fast simulation using MGP pair style</p></li>
 </ol>
 <section id="Parse-OTF-log-file">
-<h2>Parse OTF log file<a class="headerlink" href="#Parse-OTF-log-file" title="Permalink to this heading"></a></h2>
+<h2>Parse OTF log file<a class="headerlink" href="#Parse-OTF-log-file" title="Link to this heading"></a></h2>
 <p>After the on-the-fly training is complete, we have a log file and can use the <code class="docutils literal notranslate"><span class="pre">otf_parser</span></code> module to parse the trajectory.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">flare</span> <span class="kn">import</span> <span class="n">otf_parser</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flare</span><span class="w"> </span><span class="kn">import</span> <span class="n">otf_parser</span>
 
 <span class="n">logdir</span> <span class="o">=</span> <span class="s1">&#39;../../../tests/test_files&#39;</span>
 <span class="n">file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">logdir</span><span class="si">}</span><span class="s1">/AgI_snippet.out&#39;</span>
@@ -122,7 +119,7 @@
 </div>
 </section>
 <section id="Construct-GP-model-from-log-file">
-<h2>Construct GP model from log file<a class="headerlink" href="#Construct-GP-model-from-log-file" title="Permalink to this heading"></a></h2>
+<h2>Construct GP model from log file<a class="headerlink" href="#Construct-GP-model-from-log-file" title="Link to this heading"></a></h2>
 <p>We can reconstruct GP model from the parsed log file (the on-the-fly training trajectory). Here we build up the GP model with 2+3 body kernel from the on-the-fly log file.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -142,7 +139,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flare.gp</span> <span class="kn">import</span> <span class="n">GaussianProcess</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare.gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcess</span>
 
 <span class="n">gp_model</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;AgI.gp.json&#39;</span><span class="p">)</span>
 </pre></div>
@@ -150,13 +147,13 @@
 </div>
 </section>
 <section id="Map-the-GP-force-field-&amp;-Dump-LAMMPS-coefficient-file">
-<h2>Map the GP force field &amp; Dump LAMMPS coefficient file<a class="headerlink" href="#Map-the-GP-force-field-&-Dump-LAMMPS-coefficient-file" title="Permalink to this heading"></a></h2>
+<h2>Map the GP force field &amp; Dump LAMMPS coefficient file<a class="headerlink" href="#Map-the-GP-force-field-&-Dump-LAMMPS-coefficient-file" title="Link to this heading"></a></h2>
 <p>To use the trained force field with accelerated version MGP, or in LAMMPS, we need to build MGP from GP model. Since 2-body and 3-body are both included, we need to set up the number of grid points for 2-body and 3-body in <code class="docutils literal notranslate"><span class="pre">grid_params</span></code>. We build up energy mapping, thus set <code class="docutils literal notranslate"><span class="pre">map_force=False</span></code>. See <a class="reference external" href="https://flare.readthedocs.io/en/latest/tutorials/mgp.html">MGP tutorial</a> for more explanation of the MGP settings.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flare.mgp</span> <span class="kn">import</span> <span class="n">MappedGaussianProcess</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare.mgp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedGaussianProcess</span>
 
 <span class="n">grid_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">]},</span>
                <span class="s1">&#39;threebody&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">]}}</span>
@@ -186,7 +183,7 @@
 <p>The coefficient file for LAMMPS mgp pair_style is automatically saved once the mapping is done. Saved as <code class="docutils literal notranslate"><span class="pre">lmp_file_name</span></code>.</p>
 </section>
 <section id="Run-LAMMPS-with-MGP-pair-style">
-<h2>Run LAMMPS with MGP pair style<a class="headerlink" href="#Run-LAMMPS-with-MGP-pair-style" title="Permalink to this heading"></a></h2>
+<h2>Run LAMMPS with MGP pair style<a class="headerlink" href="#Run-LAMMPS-with-MGP-pair-style" title="Link to this heading"></a></h2>
 <p>With the above coefficient file, we can run LAMMPS simulation with the mgp pair style. First download our mgp pair style files, compile your lammps executable with mgp pair style following our <a class="reference external" href="https://flare.readthedocs.io/en/latest/installation/lammps.html">instruction</a> in the <em>Installation</em> section.</p>
 <ol class="arabic simple">
 <li><p>One way to use it is running <code class="docutils literal notranslate"><span class="pre">lmp_executable</span> <span class="pre">&lt;</span> <span class="pre">in.lammps</span> <span class="pre">&gt;</span> <span class="pre">log.lammps</span></code> with the executable provided in our repository. When creating the input file, please note to set</p></li>
@@ -207,12 +204,12 @@ pair_coeff * * &lt;lmp_file_name&gt; &lt;chemical_symbols&gt; yes/no yes/no
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">flare.utils.element_coder</span> <span class="kn">import</span> <span class="n">_Z_to_mass</span><span class="p">,</span> <span class="n">_element_to_Z</span>
-<span class="kn">from</span> <span class="nn">flare.ase.calculator</span> <span class="kn">import</span> <span class="n">FLARE_Calculator</span>
-<span class="kn">from</span> <span class="nn">ase.calculators.lammpsrun</span> <span class="kn">import</span> <span class="n">LAMMPS</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flare.utils.element_coder</span><span class="w"> </span><span class="kn">import</span> <span class="n">_Z_to_mass</span><span class="p">,</span> <span class="n">_element_to_Z</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flare.ase.calculator</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLARE_Calculator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.calculators.lammpsrun</span><span class="w"> </span><span class="kn">import</span> <span class="n">LAMMPS</span>
 
-<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase</span><span class="w"> </span><span class="kn">import</span> <span class="n">Atoms</span>
 
 <span class="c1"># create test structure</span>
 <span class="n">species</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">gp_species_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -264,8 +261,8 @@ Please use LAMMPSRUN.set().
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flare</span> <span class="kn">import</span> <span class="n">struc</span>
-<span class="kn">from</span> <span class="nn">flare.lammps</span> <span class="kn">import</span> <span class="n">lammps_calculator</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare</span><span class="w"> </span><span class="kn">import</span> <span class="n">struc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flare.lammps</span><span class="w"> </span><span class="kn">import</span> <span class="n">lammps_calculator</span>
 
 <span class="c1"># lmp coef file is automatically written now every time MGP is constructed</span>
 

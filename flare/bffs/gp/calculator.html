@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FLARE ASE Calculator &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-        <script src="../../../_static/jquery.js"></script>
-        <script src="../../../_static/underscore.js"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -56,7 +53,6 @@
 <li class="toctree-l4"><a class="reference internal" href="gp_algebra.html">Helper functions for GP</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">FLARE ASE Calculator</a></li>
 <li class="toctree-l4"><a class="reference internal" href="gp.html#flare.bffs.gp.gp.GaussianProcess"><code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="gp.html#flare.bffs.gp.gp.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../mgp/mgp.html">Mapped Gaussian Process</a></li>
@@ -106,7 +102,7 @@
            <div itemprop="articleBody">
              
   <section id="module-flare.bffs.gp.calculator">
-<span id="flare-ase-calculator"></span><h1>FLARE ASE Calculator<a class="headerlink" href="#module-flare.bffs.gp.calculator" title="Permalink to this heading"></a></h1>
+<span id="flare-ase-calculator"></span><h1>FLARE ASE Calculator<a class="headerlink" href="#module-flare.bffs.gp.calculator" title="Link to this heading"></a></h1>
 <p><a class="reference internal" href="#flare.bffs.gp.calculator.FLARE_Calculator" title="flare.bffs.gp.calculator.FLARE_Calculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">FLARE_Calculator</span></code></a> is a calculator compatible with <cite>ASE</cite>.
 You can build up <cite>ASE Atoms</cite> for your atomic structure, and use <cite>get_forces</cite>,
 <cite>get_potential_energy</cite> as general <cite>ASE Calculators</cite>, and use it in
@@ -115,7 +111,7 @@ users can refer to <a class="reference external" href="https://wiki.fysik.dtu.dk
 and <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator">ASE Calculator tutorial</a>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="flare.bffs.gp.calculator.FLARE_Calculator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.calculator.</span></span><span class="sig-name descname"><span class="pre">FLARE_Calculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">flare.bffs.gp.calculator.</span></span><span class="sig-name descname"><span class="pre">FLARE_Calculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator" title="Link to this definition"></a></dt>
 <dd><p>Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
 Molecular Dynamics.
 :Parameters: * <strong>gp_model</strong> (<em>GaussianProcess</em>) – FLARE’s Gaussian process object</p>
@@ -132,22 +128,16 @@ by default.</p></li>
 </div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="flare.bffs.gp.calculator.FLARE_Calculator.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ase.calculators.calculator.all_changes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator.calculate" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ase.calculators.calculator.all_changes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator.calculate" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Calculate properties including: energy, local energies, forces,</dt><dd><p>stress, uncertainties.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>atoms</strong> (<em>FLARE_Atoms</em>) – FLARE_Atoms object</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="flare.bffs.gp.calculator.FLARE_Calculator.implemented_properties">
-<span class="sig-name descname"><span class="pre">implemented_properties</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['energy',</span> <span class="pre">'forces',</span> <span class="pre">'stress',</span> <span class="pre">'stds']</span></em><a class="headerlink" href="#flare.bffs.gp.calculator.FLARE_Calculator.implemented_properties" title="Permalink to this definition"></a></dt>
-<dd><p>Properties calculator can handle (energy, forces, …)</p>
 </dd></dl>
 
 </dd></dl>

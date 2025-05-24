@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FLARE: Fast Learning of Atomistic Rare Events &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=02f2166e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -81,12 +78,12 @@
            <div itemprop="articleBody">
              
   <section id="flare-fast-learning-of-atomistic-rare-events">
-<h1>FLARE: Fast Learning of Atomistic Rare Events<a class="headerlink" href="#flare-fast-learning-of-atomistic-rare-events" title="Permalink to this heading"></a></h1>
+<h1>FLARE: Fast Learning of Atomistic Rare Events<a class="headerlink" href="#flare-fast-learning-of-atomistic-rare-events" title="Link to this heading"></a></h1>
 <figure class="align-center" style="width: 50%">
 <img alt="_images/Flare_logo.png" src="_images/Flare_logo.png" />
 </figure>
 <section id="contents">
-<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this heading"></a></h2>
+<h2>Contents<a class="headerlink" href="#contents" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation/installation.html">Installation</a><ul>
@@ -142,7 +139,6 @@
 <li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/gp_algebra.html">Helper functions for GP</a></li>
 <li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/calculator.html">FLARE ASE Calculator</a></li>
 <li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/gp.html#flare.bffs.gp.gp.GaussianProcess"><code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="flare/bffs/gp/gp.html#flare.bffs.gp.gp.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="flare/bffs/mgp/mgp.html">Mapped Gaussian Process</a><ul>
@@ -196,7 +192,6 @@
 <li class="toctree-l3"><a class="reference internal" href="flare/md/lammps.html">LAMMPS Calculator and MD</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="flare/md/lammps.html#flare.md.lammps.LAMMPS_MD"><code class="docutils literal notranslate"><span class="pre">LAMMPS_MD</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flare/md/lammps.html#flare.md.lammps.LAMMPS_MOD"><code class="docutils literal notranslate"><span class="pre">LAMMPS_MOD</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="flare/md/lammps.html#flare.md.lammps.add_single_atom_energies"><code class="docutils literal notranslate"><span class="pre">add_single_atom_energies()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flare/md/lammps.html#flare.md.lammps.check_sgp_match"><code class="docutils literal notranslate"><span class="pre">check_sgp_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flare/md/lammps.html#flare.md.lammps.get_kinetic_stress"><code class="docutils literal notranslate"><span class="pre">get_kinetic_stress()</span></code></a></li>
 </ul>
@@ -379,7 +374,6 @@
 <li class="toctree-l3"><a class="reference internal" href="flare/utils/mask_helper.html">Advanced Hyperparameters Set Up</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="flare/utils/mask_helper.html#flare.utils.parameter_helper.ParameterHelper"><code class="docutils literal notranslate"><span class="pre">ParameterHelper</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="flare/utils/mask_helper.html#flare.utils.parameter_helper.nprandom"><code class="docutils literal notranslate"><span class="pre">nprandom()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="flare/utils/mask_helper.html#flare.utils.parameters.random"><code class="docutils literal notranslate"><span class="pre">random()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="flare/utils/env_getarray.html">Construct Atomic Environment</a><ul>
@@ -396,10 +390,252 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="flare_pp/flare_pp.html">C++ Code Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="flare_pp/structure.html">Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="flare_pp/bffs.html">Bayesian force fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="flare_pp/descriptors.html">Descriptors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="flare_pp/kernels.html">Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/structure.html">Structures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/structure.html#_CPPv49Structure"><code class="docutils literal notranslate"><span class="pre">Structure</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure14neighbor_countE"><code class="docutils literal notranslate"><span class="pre">neighbor_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure25cumulative_neighbor_countE"><code class="docutils literal notranslate"><span class="pre">cumulative_neighbor_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure16neighbor_speciesE"><code class="docutils literal notranslate"><span class="pre">neighbor_species</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure17structure_indicesE"><code class="docutils literal notranslate"><span class="pre">structure_indices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure4cellE"><code class="docutils literal notranslate"><span class="pre">cell</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure14cell_transposeE"><code class="docutils literal notranslate"><span class="pre">cell_transpose</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure22cell_transpose_inverseE"><code class="docutils literal notranslate"><span class="pre">cell_transpose_inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure8cell_dotE"><code class="docutils literal notranslate"><span class="pre">cell_dot</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure16cell_dot_inverseE"><code class="docutils literal notranslate"><span class="pre">cell_dot_inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure9positionsE"><code class="docutils literal notranslate"><span class="pre">positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure17wrapped_positionsE"><code class="docutils literal notranslate"><span class="pre">wrapped_positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure18relative_positionsE"><code class="docutils literal notranslate"><span class="pre">relative_positions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure22descriptor_calculatorsE"><code class="docutils literal notranslate"><span class="pre">descriptor_calculators</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure11descriptorsE"><code class="docutils literal notranslate"><span class="pre">descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure6energyE"><code class="docutils literal notranslate"><span class="pre">energy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure6forcesE"><code class="docutils literal notranslate"><span class="pre">forces</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure8stressesE"><code class="docutils literal notranslate"><span class="pre">stresses</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure8mean_efsE"><code class="docutils literal notranslate"><span class="pre">mean_efs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure12variance_efsE"><code class="docutils literal notranslate"><span class="pre">variance_efs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure18mean_contributionsE"><code class="docutils literal notranslate"><span class="pre">mean_contributions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure19local_uncertaintiesE"><code class="docutils literal notranslate"><span class="pre">local_uncertainties</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure9StructureEv"><code class="docutils literal notranslate"><span class="pre">Structure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure9StructureERKN5Eigen8MatrixXdERKNSt6vectorIiEERKN5Eigen8MatrixXdE"><code class="docutils literal notranslate"><span class="pre">Structure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure9StructureERKN5Eigen8MatrixXdERKNSt6vectorIiEERKN5Eigen8MatrixXdEdNSt6vectorIP10DescriptorEE"><code class="docutils literal notranslate"><span class="pre">Structure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure14wrap_positionsEv"><code class="docutils literal notranslate"><span class="pre">wrap_positions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure23get_single_sweep_cutoffEv"><code class="docutils literal notranslate"><span class="pre">get_single_sweep_cutoff()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure17compute_neighborsEv"><code class="docutils literal notranslate"><span class="pre">compute_neighbors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure19compute_descriptorsEv"><code class="docutils literal notranslate"><span class="pre">compute_descriptors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure6cutoffE"><code class="docutils literal notranslate"><span class="pre">cutoff</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure19single_sweep_cutoffE"><code class="docutils literal notranslate"><span class="pre">single_sweep_cutoff</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure6volumeE"><code class="docutils literal notranslate"><span class="pre">volume</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure5sweepE"><code class="docutils literal notranslate"><span class="pre">sweep</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure11n_neighborsE"><code class="docutils literal notranslate"><span class="pre">n_neighbors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure7speciesE"><code class="docutils literal notranslate"><span class="pre">species</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/structure.html#_CPPv4N9Structure3noaE"><code class="docutils literal notranslate"><span class="pre">noa</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/bffs.html">Bayesian force fields</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/bffs.html#_CPPv48SparseGP"><code class="docutils literal notranslate"><span class="pre">SparseGP</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP8SparseGPEv"><code class="docutils literal notranslate"><span class="pre">SparseGP()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP8SparseGPENSt6vectorIP6KernelEEddd"><code class="docutils literal notranslate"><span class="pre">SparseGP()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP29initialize_sparse_descriptorsERK9Structure"><code class="docutils literal notranslate"><span class="pre">initialize_sparse_descriptors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP20add_all_environmentsERK9Structure"><code class="docutils literal notranslate"><span class="pre">add_all_environments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP25add_specific_environmentsERK9StructureKNSt6vectorIiEE"><code class="docutils literal notranslate"><span class="pre">add_specific_environments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP23add_random_environmentsERK9StructureRKNSt6vectorIiEE"><code class="docutils literal notranslate"><span class="pre">add_random_environments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP26add_uncertain_environmentsERK9StructureRKNSt6vectorIiEE"><code class="docutils literal notranslate"><span class="pre">add_uncertain_environments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP29compute_cluster_uncertaintiesERK9Structure"><code class="docutils literal notranslate"><span class="pre">compute_cluster_uncertainties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP28sort_clusters_by_uncertaintyERK9Structure"><code class="docutils literal notranslate"><span class="pre">sort_clusters_by_uncertainty()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP22add_training_structureERK9StructureKNSt6vectorIiEEddd"><code class="docutils literal notranslate"><span class="pre">add_training_structure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP10update_KuuERKNSt6vectorI17ClusterDescriptorEE"><code class="docutils literal notranslate"><span class="pre">update_Kuu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP10update_KufERKNSt6vectorI17ClusterDescriptorEE"><code class="docutils literal notranslate"><span class="pre">update_Kuf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP9stack_KuuEv"><code class="docutils literal notranslate"><span class="pre">stack_Kuu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP9stack_KufEv"><code class="docutils literal notranslate"><span class="pre">stack_Kuf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP18update_matrices_QREv"><code class="docutils literal notranslate"><span class="pre">update_matrices_QR()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP12predict_meanER9Structure"><code class="docutils literal notranslate"><span class="pre">predict_mean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11predict_SORER9Structure"><code class="docutils literal notranslate"><span class="pre">predict_SOR()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11predict_DTCER9Structure"><code class="docutils literal notranslate"><span class="pre">predict_DTC()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP27predict_local_uncertaintiesER9Structure"><code class="docutils literal notranslate"><span class="pre">predict_local_uncertainties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP25compute_likelihood_stableEv"><code class="docutils literal notranslate"><span class="pre">compute_likelihood_stable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP34compute_likelihood_gradient_stableEb"><code class="docutils literal notranslate"><span class="pre">compute_likelihood_gradient_stable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP14precompute_KnKEv"><code class="docutils literal notranslate"><span class="pre">precompute_KnK()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11compute_KnKEb"><code class="docutils literal notranslate"><span class="pre">compute_KnK()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP12compute_dKnKEi"><code class="docutils literal notranslate"><span class="pre">compute_dKnK()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP18compute_likelihoodEv"><code class="docutils literal notranslate"><span class="pre">compute_likelihood()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP27compute_likelihood_gradientERKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">compute_likelihood_gradient()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP19set_hyperparametersEN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">set_hyperparameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP26write_mapping_coefficientsENSt6stringENSt6stringEi"><code class="docutils literal notranslate"><span class="pre">write_mapping_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP25write_varmap_coefficientsENSt6stringENSt6stringEi"><code class="docutils literal notranslate"><span class="pre">write_varmap_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP24write_sparse_descriptorsENSt6stringENSt6stringE"><code class="docutils literal notranslate"><span class="pre">write_sparse_descriptors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15write_L_inverseENSt6stringENSt6stringE"><code class="docutils literal notranslate"><span class="pre">write_L_inverse()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15hyperparametersE"><code class="docutils literal notranslate"><span class="pre">hyperparameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP7kernelsE"><code class="docutils literal notranslate"><span class="pre">kernels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11Kuu_kernelsE"><code class="docutils literal notranslate"><span class="pre">Kuu_kernels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11Kuf_kernelsE"><code class="docutils literal notranslate"><span class="pre">Kuf_kernels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP3KuuE"><code class="docutils literal notranslate"><span class="pre">Kuu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP3KufE"><code class="docutils literal notranslate"><span class="pre">Kuf</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15Kuf_e_noise_KfuE"><code class="docutils literal notranslate"><span class="pre">Kuf_e_noise_Kfu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15Kuf_f_noise_KfuE"><code class="docutils literal notranslate"><span class="pre">Kuf_f_noise_Kfu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15Kuf_s_noise_KfuE"><code class="docutils literal notranslate"><span class="pre">Kuf_s_noise_Kfu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5KnK_eE"><code class="docutils literal notranslate"><span class="pre">KnK_e</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5KnK_fE"><code class="docutils literal notranslate"><span class="pre">KnK_f</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5KnK_sE"><code class="docutils literal notranslate"><span class="pre">KnK_s</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP9n_kernelsE"><code class="docutils literal notranslate"><span class="pre">n_kernels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP10Kuu_jitterE"><code class="docutils literal notranslate"><span class="pre">Kuu_jitter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5SigmaE"><code class="docutils literal notranslate"><span class="pre">Sigma</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11Kuu_inverseE"><code class="docutils literal notranslate"><span class="pre">Kuu_inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5R_invE"><code class="docutils literal notranslate"><span class="pre">R_inv</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5L_invE"><code class="docutils literal notranslate"><span class="pre">L_inv</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP5alphaE"><code class="docutils literal notranslate"><span class="pre">alpha</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP10R_inv_diagE"><code class="docutils literal notranslate"><span class="pre">R_inv_diag</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP6L_diagE"><code class="docutils literal notranslate"><span class="pre">L_diag</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP18sparse_descriptorsE"><code class="docutils literal notranslate"><span class="pre">sparse_descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP19training_structuresE"><code class="docutils literal notranslate"><span class="pre">training_structures</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP14sparse_indicesE"><code class="docutils literal notranslate"><span class="pre">sparse_indices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP21training_atom_indicesE"><code class="docutils literal notranslate"><span class="pre">training_atom_indices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP12noise_vectorE"><code class="docutils literal notranslate"><span class="pre">noise_vector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP1yE"><code class="docutils literal notranslate"><span class="pre">y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11label_countE"><code class="docutils literal notranslate"><span class="pre">label_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11e_noise_oneE"><code class="docutils literal notranslate"><span class="pre">e_noise_one</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11f_noise_oneE"><code class="docutils literal notranslate"><span class="pre">f_noise_one</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11s_noise_oneE"><code class="docutils literal notranslate"><span class="pre">s_noise_one</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15inv_e_noise_oneE"><code class="docutils literal notranslate"><span class="pre">inv_e_noise_one</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15inv_f_noise_oneE"><code class="docutils literal notranslate"><span class="pre">inv_f_noise_one</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15inv_s_noise_oneE"><code class="docutils literal notranslate"><span class="pre">inv_s_noise_one</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15n_energy_labelsE"><code class="docutils literal notranslate"><span class="pre">n_energy_labels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP14n_force_labelsE"><code class="docutils literal notranslate"><span class="pre">n_force_labels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP15n_stress_labelsE"><code class="docutils literal notranslate"><span class="pre">n_stress_labels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP8n_sparseE"><code class="docutils literal notranslate"><span class="pre">n_sparse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP8n_labelsE"><code class="docutils literal notranslate"><span class="pre">n_labels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP8n_strucsE"><code class="docutils literal notranslate"><span class="pre">n_strucs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP12energy_noiseE"><code class="docutils literal notranslate"><span class="pre">energy_noise</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP11force_noiseE"><code class="docutils literal notranslate"><span class="pre">force_noise</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP12stress_noiseE"><code class="docutils literal notranslate"><span class="pre">stress_noise</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP23log_marginal_likelihoodE"><code class="docutils literal notranslate"><span class="pre">log_marginal_likelihood</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP8data_fitE"><code class="docutils literal notranslate"><span class="pre">data_fit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP18complexity_penaltyE"><code class="docutils literal notranslate"><span class="pre">complexity_penalty</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP10trace_termE"><code class="docutils literal notranslate"><span class="pre">trace_term</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP13constant_termE"><code class="docutils literal notranslate"><span class="pre">constant_term</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP19likelihood_gradientE"><code class="docutils literal notranslate"><span class="pre">likelihood_gradient</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/bffs.html#_CPPv4N8SparseGP13varmap_coeffsE"><code class="docutils literal notranslate"><span class="pre">varmap_coeffs</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/descriptors.html">Descriptors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv410Descriptor"><code class="docutils literal notranslate"><span class="pre">Descriptor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N10Descriptor10DescriptorEv"><code class="docutils literal notranslate"><span class="pre">Descriptor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N10Descriptor13compute_strucER9Structure"><code class="docutils literal notranslate"><span class="pre">compute_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N10DescriptorD0Ev"><code class="docutils literal notranslate"><span class="pre">~Descriptor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N10Descriptor13write_to_fileERNSt8ofstreamEi"><code class="docutils literal notranslate"><span class="pre">write_to_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N10Descriptor11return_jsonEv"><code class="docutils literal notranslate"><span class="pre">return_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N10Descriptor15descriptor_nameE"><code class="docutils literal notranslate"><span class="pre">descriptor_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv416DescriptorValues"><code class="docutils literal notranslate"><span class="pre">DescriptorValues</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues16DescriptorValuesEv"><code class="docutils literal notranslate"><span class="pre">DescriptorValues()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues13n_descriptorsE"><code class="docutils literal notranslate"><span class="pre">n_descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues7n_typesE"><code class="docutils literal notranslate"><span class="pre">n_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues7n_atomsE"><code class="docutils literal notranslate"><span class="pre">n_atoms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues6volumeE"><code class="docutils literal notranslate"><span class="pre">volume</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues11descriptorsE"><code class="docutils literal notranslate"><span class="pre">descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues22descriptor_force_dervsE"><code class="docutils literal notranslate"><span class="pre">descriptor_force_dervs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues20neighbor_coordinatesE"><code class="docutils literal notranslate"><span class="pre">neighbor_coordinates</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues16descriptor_normsE"><code class="docutils literal notranslate"><span class="pre">descriptor_norms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues21descriptor_force_dotsE"><code class="docutils literal notranslate"><span class="pre">descriptor_force_dots</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues13cutoff_valuesE"><code class="docutils literal notranslate"><span class="pre">cutoff_values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues12cutoff_dervsE"><code class="docutils literal notranslate"><span class="pre">cutoff_dervs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues15neighbor_countsE"><code class="docutils literal notranslate"><span class="pre">neighbor_counts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues26cumulative_neighbor_countsE"><code class="docutils literal notranslate"><span class="pre">cumulative_neighbor_counts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues12atom_indicesE"><code class="docutils literal notranslate"><span class="pre">atom_indices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues16neighbor_indicesE"><code class="docutils literal notranslate"><span class="pre">neighbor_indices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues10n_clustersE"><code class="docutils literal notranslate"><span class="pre">n_clusters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues18n_clusters_by_typeE"><code class="docutils literal notranslate"><span class="pre">n_clusters_by_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues21cumulative_type_countE"><code class="docutils literal notranslate"><span class="pre">cumulative_type_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N16DescriptorValues19n_neighbors_by_typeE"><code class="docutils literal notranslate"><span class="pre">n_neighbors_by_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv417ClusterDescriptor"><code class="docutils literal notranslate"><span class="pre">ClusterDescriptor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor17ClusterDescriptorEv"><code class="docutils literal notranslate"><span class="pre">ClusterDescriptor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor17ClusterDescriptorERK16DescriptorValues"><code class="docutils literal notranslate"><span class="pre">ClusterDescriptor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor17ClusterDescriptorERK16DescriptorValuesRKNSt6vectorINSt6vectorIiEEEE"><code class="docutils literal notranslate"><span class="pre">ClusterDescriptor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor17ClusterDescriptorERK16DescriptorValuesRKNSt6vectorIiEE"><code class="docutils literal notranslate"><span class="pre">ClusterDescriptor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor18initialize_clusterEii"><code class="docutils literal notranslate"><span class="pre">initialize_cluster()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor20add_clusters_by_typeERK16DescriptorValuesRKNSt6vectorINSt6vectorIiEEEE"><code class="docutils literal notranslate"><span class="pre">add_clusters_by_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor12add_clustersERK16DescriptorValuesRKNSt6vectorIiEE"><code class="docutils literal notranslate"><span class="pre">add_clusters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor16add_all_clustersERK16DescriptorValues"><code class="docutils literal notranslate"><span class="pre">add_all_clusters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor11descriptorsE"><code class="docutils literal notranslate"><span class="pre">descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor16descriptor_normsE"><code class="docutils literal notranslate"><span class="pre">descriptor_norms</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor13cutoff_valuesE"><code class="docutils literal notranslate"><span class="pre">cutoff_values</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor18n_clusters_by_typeE"><code class="docutils literal notranslate"><span class="pre">n_clusters_by_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor21cumulative_type_countE"><code class="docutils literal notranslate"><span class="pre">cumulative_type_count</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor13n_descriptorsE"><code class="docutils literal notranslate"><span class="pre">n_descriptors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor7n_typesE"><code class="docutils literal notranslate"><span class="pre">n_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N17ClusterDescriptor10n_clustersE"><code class="docutils literal notranslate"><span class="pre">n_clusters</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv42B2"><code class="docutils literal notranslate"><span class="pre">B2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B22B2Ev"><code class="docutils literal notranslate"><span class="pre">B2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B22B2ERKNSt6stringERKNSt6stringERKNSt6vectorIdEERKNSt6vectorIdEERKNSt6vectorIiEE"><code class="docutils literal notranslate"><span class="pre">B2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B22B2ERKNSt6stringERKNSt6stringERKNSt6vectorIdEERKNSt6vectorIdEERKNSt6vectorIiEERKN5Eigen8MatrixXdE"><code class="docutils literal notranslate"><span class="pre">B2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B213compute_strucER9Structure"><code class="docutils literal notranslate"><span class="pre">compute_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B213write_to_fileERNSt8ofstreamEi"><code class="docutils literal notranslate"><span class="pre">write_to_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B211return_jsonEv"><code class="docutils literal notranslate"><span class="pre">return_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B214radial_pointerE"><code class="docutils literal notranslate"><span class="pre">radial_pointer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B214cutoff_pointerE"><code class="docutils literal notranslate"><span class="pre">cutoff_pointer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B212radial_basisE"><code class="docutils literal notranslate"><span class="pre">radial_basis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B215cutoff_functionE"><code class="docutils literal notranslate"><span class="pre">cutoff_function</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B211radial_hypsE"><code class="docutils literal notranslate"><span class="pre">radial_hyps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B211cutoff_hypsE"><code class="docutils literal notranslate"><span class="pre">cutoff_hyps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B219descriptor_settingsE"><code class="docutils literal notranslate"><span class="pre">descriptor_settings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B215descriptor_nameE"><code class="docutils literal notranslate"><span class="pre">descriptor_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/descriptors.html#_CPPv4N2B27cutoffsE"><code class="docutils literal notranslate"><span class="pre">cutoffs</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare_pp/kernels.html">Kernels</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/kernels.html#_CPPv46Kernel"><code class="docutils literal notranslate"><span class="pre">Kernel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel6KernelEv"><code class="docutils literal notranslate"><span class="pre">Kernel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel6KernelEN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">Kernel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel9envs_envsERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_envs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel14envs_envs_gradERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_envs_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel10envs_strucERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel15envs_struc_gradERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_struc_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel17self_kernel_strucERK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">self_kernel_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel11struc_strucERK16DescriptorValuesRK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">struc_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel28compute_mapping_coefficientsERK8SparseGPi"><code class="docutils literal notranslate"><span class="pre">compute_mapping_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel27compute_varmap_coefficientsERK8SparseGPi"><code class="docutils literal notranslate"><span class="pre">compute_varmap_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel10write_infoERNSt8ofstreamE"><code class="docutils literal notranslate"><span class="pre">write_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel8Kuu_gradERK17ClusterDescriptorRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">Kuu_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel8Kuf_gradERK17ClusterDescriptorRKNSt6vectorI9StructureEEiRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">Kuf_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel19set_hyperparametersEN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">set_hyperparameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6KernelD0Ev"><code class="docutils literal notranslate"><span class="pre">~Kernel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel11return_jsonEv"><code class="docutils literal notranslate"><span class="pre">return_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel22kernel_hyperparametersE"><code class="docutils literal notranslate"><span class="pre">kernel_hyperparameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N6Kernel11kernel_nameE"><code class="docutils literal notranslate"><span class="pre">kernel_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="flare_pp/kernels.html#_CPPv420NormalizedDotProduct"><code class="docutils literal notranslate"><span class="pre">NormalizedDotProduct</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct20NormalizedDotProductEv"><code class="docutils literal notranslate"><span class="pre">NormalizedDotProduct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct20NormalizedDotProductEdd"><code class="docutils literal notranslate"><span class="pre">NormalizedDotProduct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct9envs_envsERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_envs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct14envs_envs_gradERK17ClusterDescriptorRK17ClusterDescriptorRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_envs_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct10envs_strucERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct15envs_struc_gradERK17ClusterDescriptorRK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">envs_struc_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct17self_kernel_strucERK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">self_kernel_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct11struc_strucERK16DescriptorValuesRK16DescriptorValuesRKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">struc_struc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct8Kuu_gradERK17ClusterDescriptorRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">Kuu_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct8Kuf_gradERK17ClusterDescriptorRKNSt6vectorI9StructureEEiRKN5Eigen8MatrixXdERKN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">Kuf_grad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct19set_hyperparametersEN5Eigen8VectorXdE"><code class="docutils literal notranslate"><span class="pre">set_hyperparameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct22compute_map_coeff_pow1ERK8SparseGPi"><code class="docutils literal notranslate"><span class="pre">compute_map_coeff_pow1()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct22compute_map_coeff_pow2ERK8SparseGPi"><code class="docutils literal notranslate"><span class="pre">compute_map_coeff_pow2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct28compute_mapping_coefficientsERK8SparseGPi"><code class="docutils literal notranslate"><span class="pre">compute_mapping_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct27compute_varmap_coefficientsERK8SparseGPi"><code class="docutils literal notranslate"><span class="pre">compute_varmap_coefficients()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct10write_infoERNSt8ofstreamE"><code class="docutils literal notranslate"><span class="pre">write_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct5sigmaE"><code class="docutils literal notranslate"><span class="pre">sigma</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct4sig2E"><code class="docutils literal notranslate"><span class="pre">sig2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="flare_pp/kernels.html#_CPPv4N20NormalizedDotProduct5powerE"><code class="docutils literal notranslate"><span class="pre">power</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="faqs.html">Frequently Asked Questions</a><ul>

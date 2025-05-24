@@ -1,25 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Helper Functions &mdash; flare 1.4.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=02f2166e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -110,16 +107,16 @@
            <div itemprop="articleBody">
              
   <section id="module-flare.kernels.kernels">
-<span id="helper-functions"></span><h1>Helper Functions<a class="headerlink" href="#module-flare.kernels.kernels" title="Permalink to this heading"></a></h1>
+<span id="helper-functions"></span><h1>Helper Functions<a class="headerlink" href="#module-flare.kernels.kernels" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.coordination_number">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">coordination_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rij</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cij</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.coordination_number" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">coordination_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rij</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cij</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.coordination_number" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Pairwise contribution to many-body descriptor based on number of</dt><dd><p>atoms in the environment</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>rij</strong> (<em>float</em>) – distance between atoms i and j</p></li>
 <li><p><strong>cij</strong> (<em>float</em>) – Component of versor of rij along given direction</p></li>
@@ -127,12 +124,12 @@
 <li><p><strong>cutoff_func</strong> (<em>callable</em>) – cutoff function</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the value of the pairwise many-body contribution
 float: the value of the derivative of the pairwise many-body
 contribution w.r.t. the central atom displacement</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -140,20 +137,20 @@ contribution w.r.t. the central atom displacement</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.force_helper">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">force_helper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.force_helper" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">force_helper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.force_helper" title="Link to this definition"></a></dt>
 <dd><p>Helper function for computing the force/force kernel between two
 pairs or triplets of atoms of the same type.</p>
 <p>See Table IV of the SI of the FLARE paper for definitions of intermediate
 quantities.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><dl class="simple">
 <dt>Force/force kernel between two pairs or triplets of atoms of</dt><dd><p>the same type.</p>
 </dd>
 </dl>
 </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>float</p>
 </dd>
 </dl>
@@ -161,10 +158,10 @@ quantities.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.k_sq_exp_dev">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">k_sq_exp_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.k_sq_exp_dev" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">k_sq_exp_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.k_sq_exp_dev" title="Link to this definition"></a></dt>
 <dd><p>First Gradient of generic squared exponential kernel on two many body functions</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>q1</strong> (<em>float</em>) – the many body descriptor of the first local environment</p></li>
 <li><p><strong>q2</strong> (<em>float</em>) – the many body descriptor of the second local environment</p></li>
@@ -172,10 +169,10 @@ quantities.</p>
 <li><p><strong>ls2</strong> (<em>float</em>) – squared lenghtscale hyperparameter</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the value of the derivative of the squared exponential kernel</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -183,10 +180,10 @@ quantities.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.k_sq_exp_double_dev">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">k_sq_exp_double_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.k_sq_exp_double_dev" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">k_sq_exp_double_dev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.k_sq_exp_double_dev" title="Link to this definition"></a></dt>
 <dd><p>Second Gradient of generic squared exponential kernel on two many body functions</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>q1</strong> (<em>float</em>) – the many body descriptor of the first local environment</p></li>
 <li><p><strong>q2</strong> (<em>float</em>) – the many body descriptor of the second local environment</p></li>
@@ -194,10 +191,10 @@ quantities.</p>
 <li><p><strong>ls2</strong> (<em>float</em>) – squared lenghtscale hyperparameter</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the value of the double derivative of the squared exponential kernel</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -205,24 +202,24 @@ quantities.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.mb_grad_helper_ls">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">mb_grad_helper_ls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.mb_grad_helper_ls" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">mb_grad_helper_ls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.mb_grad_helper_ls" title="Link to this definition"></a></dt>
 <dd><p>Helper function for many body gradient collecting all the derivatives
 of the force-force many body kernel w.r.t. ls</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.mb_grad_helper_ls_">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">mb_grad_helper_ls_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qdiffsq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.mb_grad_helper_ls_" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">mb_grad_helper_ls_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qdiffsq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.mb_grad_helper_ls_" title="Link to this definition"></a></dt>
 <dd><p>Derivative of a many body force-force kernel w.r.t. ls</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.q_value">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">q_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.q_value" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">q_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.q_value" title="Link to this definition"></a></dt>
 <dd><p>Compute value of many-body descriptor based on distances of atoms
 in the local many-body environment.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</p></li>
 <li><p><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</p></li>
@@ -230,10 +227,10 @@ in the local many-body environment.</p>
 <li><p><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the value of the many-body descriptor</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
@@ -241,11 +238,11 @@ in the local many-body environment.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.kernels.kernels.q_value_mc">
-<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">q_value_mc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.q_value_mc" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.kernels.kernels.</span></span><span class="sig-name descname"><span class="pre">q_value_mc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_cut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">numba.njit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.kernels.q_value_mc" title="Link to this definition"></a></dt>
 <dd><p>Compute value of many-body many components descriptor based
 on distances of atoms in the local many-body environment.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>distances</strong> (<em>np.ndarray</em>) – distances between atoms i and j</p></li>
 <li><p><strong>r_cut</strong> (<em>float</em>) – cutoff hyperparameter</p></li>
@@ -255,10 +252,10 @@ on distances of atoms in the local many-body environment.</p>
 <li><p><strong>q_func</strong> (<em>callable</em>) – many-body pairwise descrptor function</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the value of the many-body descriptor</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
