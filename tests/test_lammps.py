@@ -82,9 +82,9 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
 
     lmp_calc = LAMMPS(
         tmp_dir="./tmp/",
-        parameters=parameters,
         files=[potential_name],
         specorder=species,
+        **parameters,
     )
 
     print("built lmp_calc")
