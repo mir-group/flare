@@ -25,6 +25,8 @@ dependencies = [
     "pyyaml",
     "scipy",
     "wandb",
+    "torch",
+    "e3nn",
 ]
 
 [project.scripts]
