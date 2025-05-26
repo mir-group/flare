@@ -1,5 +1,5 @@
-"""Cubic spline functions used for interpolation. 
-"""
+"""Cubic spline functions used for interpolation."""
+
 import numpy as np
 import numpy
 from .cubic_splines_numba import *
@@ -65,7 +65,6 @@ class PCASplines:
 
 
 class CubicSpline:
-
     """
     Forked from Github repository: https://github.com/EconForge/interpolation.py.\
     High-level API for cubic splines. \

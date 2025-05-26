@@ -1,5 +1,6 @@
 """Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
 variance hyperparameters to a single value."""
+
 import numpy as np
 from numba import njit
 from math import exp

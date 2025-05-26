@@ -28,31 +28,35 @@ import yaml
 # ---------------------------------------------------------------------------
 import pyclbr
 
+
 # ---------- 1. absolute   "import numpy"  -------------------------------
 def _visit_Import_abs(self, node):
-    if node.col_offset:              # skip indented imports
+    if node.col_offset:  # skip indented imports
         return
-    for alias in node.names:         # alias.name == "numpy"
+    for alias in node.names:  # alias.name == "numpy"
         try:
-            pyclbr._readmodule(alias.name, self.path)   # NO inpackage arg
+            pyclbr._readmodule(alias.name, self.path)  # NO inpackage arg
         except ImportError:
             pass
+
 
 # ---------- 2. absolute   "from numpy import array"  --------------------
 def _visit_ImportFrom_abs(self, node):
     if node.col_offset:
         return
-    if node.level:                   # skip "from .something import …"
+    if node.level:  # skip "from .something import …"
         return
-    if node.module:                  # e.g. "numpy"
+    if node.module:  # e.g. "numpy"
         try:
             pyclbr._readmodule(node.module, self.path)  # NO inpackage arg
         except ImportError:
             pass
 
+
 # ---------- install the patches -----------------------------------------
-pyclbr._ModuleBrowser.visit_Import      = _visit_Import_abs
-pyclbr._ModuleBrowser.visit_ImportFrom  = _visit_ImportFrom_abs
+pyclbr._ModuleBrowser.visit_Import = _visit_Import_abs
+pyclbr._ModuleBrowser.visit_ImportFrom = _visit_ImportFrom_abs
+
 
 def get_super_cell(atoms_config):
     """
@@ -262,8 +266,9 @@ def get_sgp_calc(flare_config):
     descriptors = []
     for d in flare_config["descriptors"]:
         if "cutoff_matrix" in d:  # multiple cutoffs
-            assert np.allclose(np.array(d["cutoff_matrix"]).shape, (n_species, n_species)),\
-                "cutoff_matrix needs to be of shape (n_species, n_species)"
+            assert np.allclose(
+                np.array(d["cutoff_matrix"]).shape, (n_species, n_species)
+            ), "cutoff_matrix needs to be of shape (n_species, n_species)"
 
         if d["name"] == "B2":
             radial_hyps = [0.0, cutoff]

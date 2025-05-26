@@ -3,7 +3,8 @@ You can build up `ASE Atoms` for your atomic structure, and use `get_forces`,
 `get_potential_energy` as general `ASE Calculators`, and use it in
 `ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage
 users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_
-and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator>`_."""
+and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator>`_.
+"""
 
 import warnings
 import numpy as np

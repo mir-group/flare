@@ -30,7 +30,9 @@ n_cpus_list = [1, 2]
 @pytest.mark.parametrize("multicut", [False, True])
 @pytest.mark.parametrize("n_cpus", n_cpus_list)
 @pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
-def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, kernel_type):
+def test_write_potential(
+    n_species, n_types, power, struc, multicut, n_cpus, kernel_type
+):
     """Test the flare pair style."""
 
     if n_species > n_types:
@@ -102,7 +104,7 @@ def test_write_potential(n_species, n_types, power, struc, multicut, n_cpus, ker
         raw_energy_lmp,
         test_structure,
         sgp_model.gp_model.single_atom_energies,
-        sgp_model.gp_model.species_map
+        sgp_model.gp_model.species_map,
     )
 
     # Store the corrected energy for comparison with SGP
@@ -128,6 +130,7 @@ from ase.build import bulk
 from ase.calculators.lammpsrun import LAMMPS
 from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 
+
 @pytest.mark.skipif(
     not os.environ.get("lmp", False),
     reason=(
@@ -146,12 +149,21 @@ from flare.md.lammps import LAMMPS_MOD, LAMMPS_MD, get_kinetic_stress
 @pytest.mark.parametrize("n_cpus", [1])
 @pytest.mark.parametrize("kernel_type", ["NormalizedDotProduct", "DotProduct"])
 def test_lammps_uncertainty(
-    n_species, n_types, use_map, power, struc, multicut, n_cpus, kernel_type,
+    n_species,
+    n_types,
+    use_map,
+    power,
+    struc,
+    multicut,
+    n_cpus,
+    kernel_type,
 ):
     if n_species > n_types:
         pytest.skip()
 
-    if (power == 1 or kernel_type=="DotProduct") and ("kokkos" in os.environ.get("lmp")):
+    if (power == 1 or kernel_type == "DotProduct") and (
+        "kokkos" in os.environ.get("lmp")
+    ):
         pytest.skip()
 
     os.chdir(rootdir)

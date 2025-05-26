@@ -1,6 +1,7 @@
 """
 Utility functions for various tasks.
 """
+
 from warnings import warn
 from json import JSONEncoder
 from typing import List

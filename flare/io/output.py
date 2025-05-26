@@ -3,6 +3,7 @@ Class which contains various methods to print the output of different
 ways of using FLARE, such as training a GP from an AIMD run,
 or running an MD simulation updated on-the-fly.
 """
+
 import datetime
 import logging
 import time

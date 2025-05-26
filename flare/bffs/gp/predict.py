@@ -3,6 +3,7 @@ Helper functions which obtain forces and energies
 corresponding to atoms in structures. These functions automatically
 cast atoms into their respective atomic environments.
 """
+
 import numpy as np
 import multiprocessing as mp
 
@@ -15,7 +16,7 @@ from math import nan
 
 
 def predict_on_atom(
-    param: Tuple[FLARE_Atoms, int, GaussianProcess]
+    param: Tuple[FLARE_Atoms, int, GaussianProcess],
 ) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
@@ -42,7 +43,7 @@ def predict_on_atom(
 
 
 def predict_on_atom_en(
-    param: Tuple[FLARE_Atoms, int, GaussianProcess]
+    param: Tuple[FLARE_Atoms, int, GaussianProcess],
 ) -> ("np.ndarray", "np.ndarray", float):
     """
     Return the forces/std. dev. uncertainty / energy associated with an
@@ -157,7 +158,6 @@ def predict_on_structure_par(
     selective_atoms: List[int] = None,
     skipped_atom_value=0,
 ) -> ("np.ndarray", "np.ndarray"):
-
     """
     Return the forces/std. dev. uncertainty associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -410,9 +410,7 @@ def write_efs_to_structure(
     )
 
     # Record stress uncertainties.
-    stress_stds = (
-        np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) / current_volume
-    )
+    stress_stds = np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) / current_volume
     structure.stress_stds = np.array(
         [
             stress_stds[0],

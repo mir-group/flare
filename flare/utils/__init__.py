@@ -1,6 +1,7 @@
 """
 Utility functions for various tasks.
 """
+
 from json import JSONEncoder
 import numpy as np
 

@@ -95,9 +95,7 @@ class LMPOTF:
         wandb: object = None,
         log_fname: str = "otf.log",
     ) -> object:
-        """
-
-        """
+        """ """
         self.sparse_gp = sparse_gp
         self.descriptors = np.atleast_1d(descriptors)
         self.rcut = rcut
@@ -170,7 +168,7 @@ class LMPOTF:
                 pe, F = self.run_dft(cell, x, types, step, structure)
                 t0 = time.time()
                 self.sparse_gp.add_training_structure(structure)
-                self.sparse_gp.add_random_environments(structure, [int(natoms/4)])
+                self.sparse_gp.add_random_environments(structure, [int(natoms / 4)])
                 self.sparse_gp.update_matrices_QR()
                 self.time_training += time.time() - t0
                 self.save(self.model_fname)
@@ -178,7 +176,10 @@ class LMPOTF:
                 self.logger.info(f"Step {step}")
                 sigma = self.sparse_gp.hyperparameters[0]
                 t0 = time.time()
-                variances = sort_variances(structure, self.sparse_gp.compute_cluster_uncertainties(structure)[0])
+                variances = sort_variances(
+                    structure,
+                    self.sparse_gp.compute_cluster_uncertainties(structure)[0],
+                )
                 self.time_predict_uncertainties += time.time() - t0
                 stds = np.sqrt(np.abs(variances)) / sigma
                 if self.std_xyz_fname is not None:
@@ -189,7 +190,11 @@ class LMPOTF:
                         pbc=True,
                     )
                     frame.set_array("charges", stds)
-                    ase.io.write(self.std_xyz_fname.replace("*", str(step)), frame, format="extxyz")
+                    ase.io.write(
+                        self.std_xyz_fname.replace("*", str(step)),
+                        frame,
+                        format="extxyz",
+                    )
                 wandb_log = {"max_uncertainty": np.amax(stds)}
                 self.logger.info(f"Max uncertainty: {np.amax(stds)}")
                 call_dft = np.any(stds > self.dft_call_threshold)
@@ -256,7 +261,9 @@ class LMPOTF:
                     wandb_log["time_dft"] = self.time_dft
                     wandb_log["time_training"] = self.time_training
                     wandb_log["time_prediction"] = self.time_prediction
-                    wandb_log["time_predict_uncertainties"] = self.time_predict_uncertainties
+                    wandb_log["time_predict_uncertainties"] = (
+                        self.time_predict_uncertainties
+                    )
                     wandb_log["time_hyp_opt"] = self.time_hyp_opt
                     wandb_log["time_lammps"] = self.time_lammps
                     if call_dft:
@@ -265,7 +272,7 @@ class LMPOTF:
                             np.abs(F - predF).ravel()
                         )
                         wandb_log["logrelFerror"] = self.wandb.Histogram(
-                            np.log10(np.abs(F - predF)/np.abs(F)).ravel()
+                            np.log10(np.abs(F - predF) / np.abs(F)).ravel()
                         )
                     self.wandb.log(wandb_log, step=step)
                     self.t0 = time.time()
@@ -292,7 +299,9 @@ class LMPOTF:
         F = frame.get_forces()
         stress = frame.get_stress(voigt=False)
         if self.dft_xyz_fname is not None:
-            ase.io.write(self.dft_xyz_fname.replace("*", str(step)), frame, format="extxyz")
+            ase.io.write(
+                self.dft_xyz_fname.replace("*", str(step)), frame, format="extxyz"
+            )
         if self.force_training:
             structure.forces = F.reshape(-1)
         if self.energy_training:

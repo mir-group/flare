@@ -1,7 +1,8 @@
 """
-:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
-It needs to be used adjointly with ASE MD engine. 
+:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine.
+It needs to be used adjointly with ASE MD engine.
 """
+
 import os
 import sys
 import pickle

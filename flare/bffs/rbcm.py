@@ -781,12 +781,12 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             _global_training_data[f"{self.name}_{expert_id}"] = self.training_data[
                 expert_id
             ]
-            _global_training_labels[
-                f"{self.name}_{expert_id}"
-            ] = self.training_labels_np[expert_id]
-            _global_training_structures[
-                f"{self.name}_{expert_id}"
-            ] = self.training_structures[expert_id]
+            _global_training_labels[f"{self.name}_{expert_id}"] = (
+                self.training_labels_np[expert_id]
+            )
+            _global_training_structures[f"{self.name}_{expert_id}"] = (
+                self.training_structures[expert_id]
+            )
             _global_energy_labels[f"{self.name}_{expert_id}"] = self.energy_labels_np[
                 expert_id
             ]

@@ -128,7 +128,7 @@ class OtfAnalysis:
             gp_model = init_gp
             gp_model.hyps = hyps
 
-        for (positions, forces, atoms, species) in zip(
+        for positions, forces, atoms, species in zip(
             self.gp_position_list[:call_no],
             self.gp_force_list[:call_no],
             self.gp_atom_list[:call_no],
@@ -412,7 +412,6 @@ def append_atom_lists(
     dft_call: bool,
     noh: int,
 ) -> None:
-
     """Update lists containing atom information at each snapshot."""
 
     if lines[0].startswith("---"):

@@ -1057,9 +1057,9 @@ class ParameterHelper:
             if self.n.get(cutoff_name, 0) >= 1:
                 hyps_mask["n" + cutoff_name] = self.n[cutoff_name]
                 hyps_mask[cutoff_name + "_mask"] = self.mask[cutoff_name]
-                hyps_mask[
-                    self.cutoff_types[cutoff_name] + "_cutoff_list"
-                ] = self.cutoff_list[cutoff_name]
+                hyps_mask[self.cutoff_types[cutoff_name] + "_cutoff_list"] = (
+                    self.cutoff_list[cutoff_name]
+                )
 
         hyps_mask["train_noise"] = self.opt["noise"]
         hyps_mask["energy_noise"] = self.energy_noise

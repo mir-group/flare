@@ -2,6 +2,7 @@
 The cutoffs module gives a few different options for smoothly sending the GP
 kernel to zero near the boundary of the cutoff sphere.
 """
+
 from math import cos, sin, pi
 from numba import njit
 

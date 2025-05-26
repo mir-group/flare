@@ -160,6 +160,13 @@ def test_otf_parser(md_engine):
         for f in glob.glob(tmpdir):
             shutil.rmtree(f)
 
-    for tmpfile in ["*.flare", "log.*", md_engine + "*", "*SiC.tersoff", "*HHe.json", "restart*.dat"]:
+    for tmpfile in [
+        "*.flare",
+        "log.*",
+        md_engine + "*",
+        "*SiC.tersoff",
+        "*HHe.json",
+        "restart*.dat",
+    ]:
         for f in glob.glob(tmpfile):
             os.remove(f)

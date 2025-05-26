@@ -32,6 +32,7 @@ atoms of a given species which are added in. You can also limit the number
 of atoms which are added from a given seed frame.
 
 """
+
 import json as json
 import logging
 import numpy as np
@@ -233,9 +234,9 @@ class TrajectoryTrainer:
         if self.pre_train_env_per_species:
             pre_train_species = list(self.pre_train_env_per_species.keys())
             for key in pre_train_species:
-                self.pre_train_env_per_species[
-                    atomic_numbers[key]
-                ] = self.pre_train_env_per_species[key]
+                self.pre_train_env_per_species[atomic_numbers[key]] = (
+                    self.pre_train_env_per_species[key]
+                )
 
         # Output parameters
         self.output = Output(

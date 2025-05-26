@@ -21,7 +21,6 @@ bounds = [(None, None), (None, None), (None, None), (None, None)]
 
 
 def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8], set_seed: int = None):
-
     """Create a random structure."""
 
     if set_seed:
@@ -39,7 +38,6 @@ def get_random_atoms(a=2.0, sc_size=2, numbers=[6, 8], set_seed: int = None):
 
 
 def get_isolated_atoms(numbers=[6, 8]):
-
     """Create a random structure."""
 
     a = 30.0
@@ -56,7 +54,9 @@ def get_isolated_atoms(numbers=[6, 8]):
     return flare_atoms
 
 
-def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+def get_empty_sgp(
+    n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"
+):
     if kernel_type == "NormalizedDotProduct":
         kernel = normdotprod_kernel
     elif kernel_type == "DotProduct":
@@ -84,9 +84,9 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
         cutoff_matrix,
     )
 
-    sigma_e = np.random.rand() 
-    sigma_f = np.random.rand() 
-    sigma_s = np.random.rand() 
+    sigma_e = np.random.rand()
+    sigma_f = np.random.rand()
+    sigma_s = np.random.rand()
     print("Hyps", kernel.sigma, sigma_e, sigma_f, sigma_s)
 
     if n_types == 1:
@@ -114,7 +114,9 @@ def get_empty_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Normal
     return empty_sgp
 
 
-def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+def get_updated_sgp(
+    n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"
+):
     if n_types == 1:
         numbers = [6, 6]
     elif n_types == 2:
@@ -131,7 +133,9 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     stress = training_structure.get_stress()
 
     size = max(1, np.random.randint(len(training_structure)))
-    custom_range = np.random.choice(len(training_structure), size=size, replace=False).tolist()
+    custom_range = np.random.choice(
+        len(training_structure), size=size, replace=False
+    ).tolist()
     sgp.update_db(
         training_structure,
         forces,
@@ -152,7 +156,7 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     energy = training_structure.get_potential_energy()
     stress = training_structure.get_stress()
 
-    custom_range = [0] 
+    custom_range = [0]
     sgp.update_db(
         training_structure,
         forces,
@@ -167,7 +171,9 @@ def get_updated_sgp(n_types=2, power=2, multiple_cutoff=False, kernel_type="Norm
     return sgp
 
 
-def get_sgp_calc(n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"):
+def get_sgp_calc(
+    n_types=2, power=2, multiple_cutoff=False, kernel_type="NormalizedDotProduct"
+):
     sgp = get_updated_sgp(n_types, power, multiple_cutoff, kernel_type)
     sgp_calc = SGP_Calculator(sgp)
 

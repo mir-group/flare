@@ -3,6 +3,7 @@ Helper functions which obtain forces and energies
 corresponding to atoms in structures. These functions automatically
 cast atoms into their respective atomic environments.
 """
+
 import numpy as np
 from flare.bffs.gp import GaussianProcess
 from flare.atoms import FLARE_Atoms
