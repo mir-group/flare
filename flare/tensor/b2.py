@@ -131,8 +131,47 @@ def compute_radial_basis(
     """
     if basis_type == "bessel":
         return bessel_radial(edge_dist, n_radial, cutoff, cutoff_type)
+    elif basis_type == "chebyshev":
+        return chebyshev_radial(edge_dist, n_radial, cutoff, cutoff_type=cutoff_type)
     else:
         raise ValueError(f"Unsupported basis type: {basis_type}")
+
+
+def chebyshev_radial(
+    edge_dist: torch.Tensor,
+    n_radial: int,
+    cutoff: float,
+    cutoff_type: str = "quadratic",
+    r_min: float = 0.0,
+) -> torch.Tensor:
+    """
+    Compute Chebyshev radial basis functions of the first kind, scaled to [r_min, cutoff],
+    and modulated by a cutoff envelope.
+
+    Args:
+        edge_dist (torch.Tensor): Tensor of shape (N_edges,) with pairwise distances.
+        n_radial (int): Number of Chebyshev basis functions.
+        cutoff (float): Cutoff radius.
+        cutoff_type (str): Type of cutoff envelope ("quadratic" or "cosine").
+        r_min (float): Lower bound for basis support interval (default: 0.0).
+
+    Returns:
+        torch.Tensor: Shape (N_edges, n_radial), radial basis values for each distance.
+    """
+    # Clamp input and scale to [-1, 1]
+    x = ((edge_dist - r_min) / (cutoff - r_min)) * 2 - 1
+    x = x.clamp(-1 + 1e-7, 1 - 1e-7)  # for numerical stability inside arccos
+
+    # Compute Chebyshev basis values using cosine formula
+    theta = torch.acos(x)  # (N_edges,)
+    n = torch.arange(
+        n_radial, device=edge_dist.device, dtype=edge_dist.dtype
+    )  # (n_radial,)
+    cheb_vals = torch.cos(theta.unsqueeze(-1) * n)  # (N_edges, n_radial)
+
+    # Apply cutoff envelope
+    envelope = compute_cutoff(edge_dist, cutoff, cutoff_type)  # (N_edges, 1)
+    return cheb_vals * envelope
 
 
 def bessel_radial(
@@ -238,9 +277,17 @@ if __name__ == "__main__":
     pbc = True
     n_radial = 8
     lmax = 3
+    basis_type = "chebyshev"
 
     b2_flat, init_pos, strain_tensor = compute_b2(
-        positions, cell, numbers_coded, cutoff, pbc, n_radial, lmax
+        positions,
+        cell,
+        numbers_coded,
+        cutoff,
+        pbc,
+        n_radial,
+        lmax,
+        basis_type,
     )
 
     print(b2_flat.shape)
