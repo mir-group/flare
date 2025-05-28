@@ -14,6 +14,8 @@ def compute_b2(
     pbc: bool = True,
     n_radial=8,
     lmax=3,
+    basis_type="bessel",
+    cutoff_type="quadratic",
 ):
     # make tensors
     strain_tensor = torch.eye(3, dtype=torch.float32, requires_grad=True)
@@ -43,7 +45,13 @@ def compute_b2(
     num_2 = numbers[second_index]
 
     # compute radial basis functions
-    radial_vals = bessel_radial(edge_dist, n_radial, cutoff)
+    radial_vals = compute_radial_basis(
+        edge_dist,
+        n_radial,
+        cutoff,
+        basis_type,
+        cutoff_type,
+    )
 
     # add species index
     n_species = len(set(numbers_coded))
@@ -88,6 +96,43 @@ def compute_b2(
     b2_flat = b2_norm.reshape(n_atoms, -1)
 
     return b2_flat, init_pos, strain_tensor
+
+
+def compute_radial_basis(
+    edge_dist: torch.Tensor,
+    n_radial: int,
+    cutoff: float,
+    basis_type: str = "bessel",
+    cutoff_type: str = "quadratic",
+) -> torch.Tensor:
+    """
+    Compute radial basis functions with a specified basis type and cutoff envelope.
+
+    This function computes a set of radial basis values for each interatomic distance
+    using a specified basis function (e.g., Bessel or Gaussian) and modulates them
+    with a cutoff function (e.g., quadratic or cosine) to smoothly vanish at the cutoff.
+
+    Args:
+        edge_dist (torch.Tensor): Tensor of shape (N_edges,) containing pairwise distances.
+        n_radial (int): Number of radial basis functions to compute.
+        cutoff (float): Cutoff radius beyond which interactions are suppressed.
+        basis_type (str): Type of radial basis function to use. Options:
+            - "bessel": sin(nπr / Rc) / r scaled with envelope.
+        cutoff_type (str): Type of cutoff function to apply. Options:
+            - "quadratic": (cutoff - r)^2
+            - "cosine": 0.5 * (cos(πr / cutoff) + 1)
+
+    Returns:
+        torch.Tensor: Tensor of shape (N_edges, n_radial), where each row contains
+                      the radial basis expansion for a single pairwise distance.
+
+    Raises:
+        ValueError: If `basis_type` or `cutoff_type` is not recognized.
+    """
+    if basis_type == "bessel":
+        return bessel_radial(edge_dist, n_radial, cutoff, cutoff_type)
+    else:
+        raise ValueError(f"Unsupported basis type: {basis_type}")
 
 
 def bessel_radial(
