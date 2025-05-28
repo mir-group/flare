@@ -91,7 +91,10 @@ def compute_b2(
 
 
 def bessel_radial(
-    edge_dist: torch.Tensor, n_radial: int, cutoff: float
+    edge_dist: torch.Tensor,
+    n_radial: int,
+    cutoff: float,
+    cutoff_type: str = "quadratic",
 ) -> torch.Tensor:
     """
     Compute radial basis functions using sine-weighted Bessel functions modulated
@@ -110,12 +113,47 @@ def bessel_radial(
     bessel_num = torch.sin(bessel_weights * edge_dist.unsqueeze(-1) / cutoff)
     bessel_prefactor = 2 / cutoff
     bessel_vals = bessel_prefactor * (bessel_num / edge_dist.unsqueeze(-1))
-    cutoff_vals = (cutoff - edge_dist.unsqueeze(-1)) ** 2
-    radial_vals = bessel_vals * cutoff_vals
-    return radial_vals
+    envelope = compute_cutoff(edge_dist, cutoff, cutoff_type)
+    return bessel_vals * envelope
 
 
-def reduce_lm(lm_tensor: torch.tensor) -> torch.tensor:
+def compute_cutoff(
+    edge_dist: torch.Tensor,
+    cutoff: float,
+    cutoff_type: str = "quadratic",
+) -> torch.Tensor:
+    """
+    Dispatch to appropriate cutoff function.
+
+    Args:
+        edge_dist (torch.Tensor): Tensor of distances (N_edges,).
+        cutoff (float): Cutoff distance.
+        cutoff_type (str): Type of cutoff ("quadratic", "cosine").
+
+    Returns:
+        torch.Tensor: Envelope values of shape (N_edges, 1).
+    """
+    if cutoff_type == "quadratic":
+        return quadratic_cutoff(edge_dist, cutoff).unsqueeze(-1)
+    elif cutoff_type == "cosine":
+        return cosine_cutoff(edge_dist, cutoff).unsqueeze(-1)
+    else:
+        raise ValueError(f"Unsupported cutoff type: {cutoff_type}")
+
+
+def quadratic_cutoff(edge_dist: torch.Tensor, cutoff: float) -> torch.Tensor:
+    """Quadratic envelope: (cutoff - r)^2"""
+    return (cutoff - edge_dist).clamp(min=0.0) ** 2
+
+
+def cosine_cutoff(edge_dist: torch.Tensor, cutoff: float) -> torch.Tensor:
+    """Cosine envelope: 0.5 * (cos(pi * r / cutoff) + 1)"""
+    result = 0.5 * (torch.cos(math.pi * edge_dist / cutoff) + 1.0)
+    result[edge_dist > cutoff] = 0.0
+    return result
+
+
+def reduce_lm(lm_tensor: torch.Tensor) -> torch.Tensor:
     """
     Reduce tensor with l and m indices to a rotationally invariant tensor
     with only l indices.
@@ -146,6 +184,7 @@ def reduce_lm(lm_tensor: torch.tensor) -> torch.tensor:
 
 
 if __name__ == "__main__":
+    np.random.seed(1)
     n_atoms = 10
     positions = np.random.rand(n_atoms, 3)
     cell = np.eye(3)
