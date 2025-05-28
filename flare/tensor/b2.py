@@ -159,7 +159,10 @@ def chebyshev_radial(
         torch.Tensor: Shape (N_edges, n_radial), radial basis values for each distance.
     """
     # Clamp input and scale to [-1, 1]
-    x = ((edge_dist - r_min) / (cutoff - r_min)) * 2 - 1
+    # TODO: Check the convention here - Chebyshev is defined over [-1 ,1], but
+    # the C++ implementation (I think) evaluates over [0, 1].
+    x = (edge_dist - r_min) / (cutoff - r_min)
+    # x = ((edge_dist - r_min) / (cutoff - r_min)) * 2 - 1
     x = x.clamp(-1 + 1e-7, 1 - 1e-7)  # for numerical stability inside arccos
 
     # Compute Chebyshev basis values using cosine formula
@@ -268,27 +271,38 @@ def reduce_lm(lm_tensor: torch.Tensor) -> torch.Tensor:
 
 
 if __name__ == "__main__":
+    from ase.build import bulk
+
     np.random.seed(1)
-    n_atoms = 10
-    positions = np.random.rand(n_atoms, 3)
-    cell = np.eye(3)
-    numbers_coded = np.array([0] * n_atoms)
-    cutoff = 0.5
+
+    crystal = bulk("NaCl", "rocksalt", a=5.64, cubic=True)
+    supercell = crystal.repeat((5, 5, 5))
+    cell = supercell.cell[:]
+    positions = supercell.positions
+    numbers = supercell.numbers
+    species_map = {11: 0, 17: 1}
+    n_species = len(species_map)
+    numbers_coded = np.array([species_map[num] for num in numbers])
+
     pbc = True
-    n_radial = 8
+    n_radial = 12
+    cutoff = 6.0
     lmax = 3
     basis_type = "chebyshev"
 
-    b2_flat, init_pos, strain_tensor = compute_b2(
-        positions,
-        cell,
-        numbers_coded,
-        cutoff,
-        pbc,
-        n_radial,
-        lmax,
-        basis_type,
-    )
+    for n in range(20):
+        time0 = time.time()
+        b2_flat, init_pos, strain_tensor = compute_b2(
+            positions,
+            cell,
+            numbers_coded,
+            cutoff,
+            pbc,
+            n_radial,
+            lmax,
+            basis_type,
+        )
+        time1 = time.time()
+        print(time1 - time0)
 
-    print(b2_flat.shape)
     print(b2_flat)
