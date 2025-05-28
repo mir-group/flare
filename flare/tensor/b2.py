@@ -43,12 +43,7 @@ def compute_b2(
     num_2 = numbers[second_index]
 
     # compute radial basis functions
-    bessel_weights = torch.linspace(start=1.0, end=n_radial, steps=n_radial) * math.pi
-    bessel_num = torch.sin(bessel_weights * edge_dist.unsqueeze(-1) / cutoff)
-    bessel_prefactor = 2 / cutoff
-    bessel_vals = bessel_prefactor * (bessel_num / edge_dist.unsqueeze(-1))
-    cutoff_vals = (cutoff - edge_dist.unsqueeze(-1)) ** 2
-    radial_vals = bessel_vals * cutoff_vals
+    radial_vals = bessel_radial(edge_dist, n_radial, cutoff)
 
     # add species index
     n_species = len(set(numbers_coded))
@@ -93,6 +88,31 @@ def compute_b2(
     b2_flat = b2_norm.reshape(n_atoms, -1)
 
     return b2_flat, init_pos, strain_tensor
+
+
+def bessel_radial(
+    edge_dist: torch.Tensor, n_radial: int, cutoff: float
+) -> torch.Tensor:
+    """
+    Compute radial basis functions using sine-weighted Bessel functions modulated
+    by a quadratic cutoff envelope.
+
+    Args:
+        edge_dist (torch.Tensor): Tensor of interatomic distances of shape (N,).
+        n_radial (int): Number of radial basis functions.
+        cutoff (float): Cutoff radius beyond which interactions are zero.
+
+    Returns:
+        torch.Tensor: Radial basis values of shape (N, n_radial), where each row
+                      contains the radial basis expansion of the corresponding distance.
+    """
+    bessel_weights = torch.linspace(start=1.0, end=n_radial, steps=n_radial) * math.pi
+    bessel_num = torch.sin(bessel_weights * edge_dist.unsqueeze(-1) / cutoff)
+    bessel_prefactor = 2 / cutoff
+    bessel_vals = bessel_prefactor * (bessel_num / edge_dist.unsqueeze(-1))
+    cutoff_vals = (cutoff - edge_dist.unsqueeze(-1)) ** 2
+    radial_vals = bessel_vals * cutoff_vals
+    return radial_vals
 
 
 def reduce_lm(lm_tensor: torch.tensor) -> torch.tensor:
@@ -140,3 +160,4 @@ if __name__ == "__main__":
     )
 
     print(b2_flat.shape)
+    print(b2_flat)
