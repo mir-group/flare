@@ -7,7 +7,7 @@ from typing import Tuple
 from itertools import product
 
 
-def get_neighbor_list(
+def get_neighbors_ase(
     positions: np.ndarray,
     cell: np.ndarray,
     cutoff: float,
@@ -395,7 +395,7 @@ if __name__ == "__main__":
     print("timing ase implementation:")
     for n in range(10):
         time0 = time.time()
-        first_index, second_index, shifts = get_neighbor_list(
+        first_index, second_index, shifts = get_neighbors_ase(
             np.array(positions), np.array(cell), cutoff
         )
         time1 = time.time()

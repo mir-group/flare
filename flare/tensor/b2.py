@@ -3,7 +3,7 @@ import numpy as np
 import time
 import math
 from e3nn.o3 import spherical_harmonics
-from neighbors import get_neighbor_list
+from neighbors import get_neighbors_ase, get_neighbors_auto
 
 
 def compute_b2(
@@ -30,11 +30,12 @@ def compute_b2(
     cell_tensor = init_cell @ strain_tensor.T
 
     # get edges
-    first_index, second_index, shifts = get_neighbor_list(positions, cell, cutoff, pbc)
-    shift_tensor = torch.tensor(shifts, dtype=torch.float32)
-    edge_vec = torch.index_select(
-        pos_tensor, 0, torch.tensor(second_index)
-    ) - torch.index_select(pos_tensor, 0, torch.tensor(first_index))
+    # first_index, second_index, shifts = get_neighbors_ase(positions, cell, cutoff, pbc)
+    first_index, second_index, shifts = get_neighbors_auto(init_cell, init_pos, cutoff)
+    shift_tensor = shifts.to(dtype=torch.float32)
+    edge_vec = torch.index_select(pos_tensor, 0, second_index) - torch.index_select(
+        pos_tensor, 0, first_index
+    )
     edge_shift = shift_tensor @ cell_tensor
     edge_vec = edge_vec + edge_shift
     sqrt_jitter = 1e-10
@@ -73,11 +74,7 @@ def compute_b2(
 
     # reduce edges
     sb_reduced = torch.zeros(n_atoms, n_radial, n_species, n_harm)
-    ind_exp = (
-        torch.tensor(first_index)
-        .view(-1, 1, 1, 1)
-        .expand(-1, n_radial, n_species, n_harm)
-    )
+    ind_exp = first_index.view(-1, 1, 1, 1).expand(-1, n_radial, n_species, n_harm)
     sb_reduced.scatter_add_(0, ind_exp, single_bond)
 
     # broadcast radial and species indices
