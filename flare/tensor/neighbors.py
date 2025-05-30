@@ -186,9 +186,9 @@ def get_neighbors_brute_force(
         Index (0 … M-1) of the central atom of each edge.
     second_index : (E,) torch.LongTensor
         Index (0 … M-1) of the neighbour atom (in any periodic image).
-    rel_vec      : (E, 3) torch.Tensor
-        Displacement vector **r_j – r_i** in Cartesian coordinates that
-        satisfies ‖rel_vec‖ ≤ cutoff.
+    shift_ijk    : (E, 3) torch.long
+        Integer lattice vector **n** = (nx, ny, nz) such that
+        r_j + n·cell is the neighbour chosen for the edge (i, j).
     """
     # 1) How many translations are needed so that every neighbour up to
     #    `cutoff` is present somewhere in the supercell?
@@ -201,6 +201,7 @@ def get_neighbors_brute_force(
 
     M = positions.shape[0]
     N = supercell_pos.shape[0]
+    cell_inv_T = torch.linalg.inv(cell).T
 
     # 3) Pairwise displacement: r_j – r_i  (broadcasting)
     disp = supercell_pos.unsqueeze(0) - positions.unsqueeze(1)  # (M, N, 3)
@@ -222,8 +223,10 @@ def get_neighbors_brute_force(
     img_index_j = pairs[:, 1]  # j in the big list
     second_index = atom_indices[img_index_j]  # map to 0 … M-1
     rel_vec = disp[first_index, img_index_j, :]  # (E, 3)
+    frac_vec = rel_vec @ cell_inv_T
+    shift_vec = torch.round(frac_vec).to(torch.long)
 
-    return first_index, second_index, rel_vec
+    return first_index, second_index, shift_vec
 
 
 def get_neighbors_minimum_image(
@@ -265,7 +268,8 @@ def get_neighbors_minimum_image(
 
     # -------- 2) Pairwise fractional displacements, minimum-image ----------
     d_frac = frac.unsqueeze(1) - frac.unsqueeze(0)  # (M, M, 3)
-    d_frac -= torch.round(d_frac)  # wrap into (-0.5, 0.5]
+    shift = torch.round(d_frac).to(torch.int64)
+    d_frac -= shift  # wrap into (-0.5, 0.5]
 
     # -------- 3) Convert back to Cartesian and compute |r|² ----------------
     #   d_cart = d_frac @ cell   (broadcast matmul)
@@ -281,9 +285,9 @@ def get_neighbors_minimum_image(
 
     # -------- 5) Gather indices & displacement vectors ---------------------
     first, second = torch.nonzero(mask, as_tuple=True)
-    rel_vec = d_cart[first, second]
+    shift_vec = shift[first, second]
 
-    return first, second, rel_vec
+    return first, second, shift_vec
 
 
 def mic_safe(cell: torch.Tensor, r_cut: float, margin: float = 1e-8) -> bool:
@@ -355,7 +359,7 @@ if __name__ == "__main__":
     print("timing torch brute force implementation:")
     for n in range(10):
         time0 = time.time()
-        first_index, second_index, rel_vec = get_neighbors_brute_force(
+        first_index, second_index, shift_vec = get_neighbors_brute_force(
             cell, positions, cutoff
         )
         time1 = time.time()
@@ -366,7 +370,7 @@ if __name__ == "__main__":
     print("timing torch minimum image implementation:")
     for n in range(10):
         time0 = time.time()
-        first_index, second_index, rel_vec = get_neighbors_minimum_image(
+        first_index, second_index, shift_vec = get_neighbors_minimum_image(
             cell, positions, cutoff
         )
         time1 = time.time()
@@ -376,13 +380,20 @@ if __name__ == "__main__":
     print("timing torch auto implementation:")
     for n in range(10):
         time0 = time.time()
-        first_index, second_index, rel_vec = get_neighbors_auto(cell, positions, cutoff)
+        first_index, second_index, shift_vec = get_neighbors_auto(
+            cell, positions, cutoff
+        )
         time1 = time.time()
         print(time1 - time0)
     print(len(first_index))
 
+    torch_first_index = sorted([int(ind) for ind in first_index])
+    torch_shifts = sorted(
+        [tuple(int(shift) for shift in tshifts) for tshifts in shift_vec]
+    )
+
     print("timing ase implementation:")
-    for n in range(1):
+    for n in range(10):
         time0 = time.time()
         first_index, second_index, shifts = get_neighbor_list(
             np.array(positions), np.array(cell), cutoff
@@ -391,3 +402,11 @@ if __name__ == "__main__":
         print(time1 - time0)
 
     print(len(first_index))
+
+    ase_first_index = sorted(list(first_index))
+    ase_shifts = sorted([tuple(int(shift) for shift in tshifts) for tshifts in shifts])
+
+    # TODO: Check that second indices and shift vectors match
+    # TODO: Switch torch implementations to numpy - don't need gradients
+    assert torch_first_index == ase_first_index
+    assert torch_shifts == ase_shifts
