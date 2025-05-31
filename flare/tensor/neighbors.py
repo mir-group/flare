@@ -181,8 +181,10 @@ def generate_supercell_positions(
         .reshape(-1)  # (M × R,)
     )
 
+    shifts_all = shifts.repeat_interleave(M, dim=0)
+
     # Flatten to (M * R, 3)
-    return supercell_positions.reshape(-1, 3), atom_indices
+    return supercell_positions.reshape(-1, 3), atom_indices, shifts_all
 
 
 def get_neighbors_brute_force(
@@ -218,13 +220,11 @@ def get_neighbors_brute_force(
     repetitions = get_supercell_containing_rcut(cell, cutoff)
 
     # 2) Generate all periodic images (+ map them back to their home-cell index)
-    supercell_pos, atom_indices = generate_supercell_positions(
+    supercell_pos, atom_indices, shifts = generate_supercell_positions(
         cell, positions, repetitions
     )  # supercell_pos : (R*M, 3)
 
     M = positions.shape[0]
-    N = supercell_pos.shape[0]
-    cell_inv_T = torch.linalg.inv(cell).T
 
     # 3) Pairwise displacement: r_j – r_i  (broadcasting)
     disp = supercell_pos.unsqueeze(0) - positions.unsqueeze(1)  # (M, N, 3)
@@ -245,9 +245,7 @@ def get_neighbors_brute_force(
     first_index = pairs[:, 0]  # i
     img_index_j = pairs[:, 1]  # j in the big list
     second_index = atom_indices[img_index_j]  # map to 0 … M-1
-    rel_vec = disp[first_index, img_index_j, :]  # (E, 3)
-    frac_vec = rel_vec @ cell_inv_T
-    shift_vec = torch.round(frac_vec).to(torch.long)
+    shift_vec = shifts[img_index_j]
 
     return first_index, second_index, shift_vec
 
