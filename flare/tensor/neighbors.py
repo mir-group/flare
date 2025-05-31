@@ -3,7 +3,7 @@ import torch
 from ase.neighborlist import primitive_neighbor_list
 from ase.geometry import complete_cell
 import time
-from typing import Tuple
+from typing import Tuple, Union
 from itertools import product
 
 
@@ -49,62 +49,85 @@ def get_neighbors_ase(
     return first_index, second_index, shifts
 
 
-def get_supercell_containing_rcut(cell: torch.Tensor, rcut: float) -> torch.Tensor:
+def get_supercell_containing_rcut(
+    cell: torch.Tensor,            # (..., 3, 3)
+    rcut: Union[float, torch.Tensor]
+) -> torch.Tensor:                 # (..., 3)  – ints
     """
-    Given a (possibly triclinic) unit cell, generate a supercell that contains
-    all atoms within rcut of the central cell.
+    For each unit cell in `cell`, return the minimum (n_a, n_b, n_c) such that
+    every point within `rcut` of the central cell is covered by the supercell
+    formed by repeating the basis vectors that many times.
 
-    Args:
-        cell (torch.Tensor): Unit cells of shape (3, 3).
-        rcut (float): Cutoff radius.
+    Parameters
+    ----------
+    cell  : (..., 3, 3) torch.Tensor
+        Lattice matrices with rows a, b, c.  Any number of leading batch dims.
+    rcut  : float or torch.Tensor
+        Cut-off radius.  If a tensor, it must broadcast with the leading
+        dimensions of `cell`.
 
-    Returns:
-        torch.Tensor: Tensor of shape (N, 3), number of repeats along each cell vector.
+    Returns
+    -------
+    torch.Tensor
+        Integer tensor with shape (..., 3) — repeats along (a, b, c).
     """
-    a = cell[0]
-    b = cell[1]
-    c = cell[2]
+    # Ensure rcut is a tensor on the same device / dtype for broadcasting
+    rcut = torch.as_tensor(rcut, dtype=cell.dtype, device=cell.device)
 
-    # Compute orthogonal thicknesses (height of unit cell along each direction)
+    # Split rows of the cell: a, b, c → shape (..., 3)
+    a, b, c = cell.unbind(dim=-2)
+
+    # Helper: orthogonal height of v above the plane spanned by w1 × w2
     def height(v, w1, w2):
-        cross = torch.cross(w1, w2, dim=0)
-        det = torch.sum(v * cross)
-        volume = torch.abs(det)  # scalar triple product
-        base_area = torch.norm(cross)
+        cross = torch.cross(w1, w2, dim=-1)                 # (..., 3)
+        volume = torch.abs((v * cross).sum(dim=-1))         # scalar triple product
+        base_area = torch.linalg.norm(cross, dim=-1)        # |w1 × w2|
+        return volume / base_area                           # (...,)
 
-        return volume / base_area
+    h_a = height(a, b, c)                                   # height along a
+    h_b = height(b, a, c)                                   # height along b
+    h_c = height(c, a, b)                                   # height along c
 
-    h_a = height(a, b, c)
-    h_b = height(b, a, c)
-    h_c = height(c, a, b)
+    # Minimum number of images along each direction
+    n_a = torch.ceil(rcut / h_a).to(torch.int64)
+    n_b = torch.ceil(rcut / h_b).to(torch.int64)
+    n_c = torch.ceil(rcut / h_c).to(torch.int64)
 
-    # Compute minimum number of cells needed in each direction
-    n_a = torch.ceil(rcut / h_a).int()
-    n_b = torch.ceil(rcut / h_b).int()
-    n_c = torch.ceil(rcut / h_c).int()
-    repetitions = torch.stack([n_a, n_b, n_c])
-
-    return repetitions
+    # (..., 3) — leading dims preserved
+    return torch.stack((n_a, n_b, n_c), dim=-1)
 
 
 def wrap_positions(cells: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
     """
-    Wrap positions into the unit cell using periodic boundary conditions.
+    Wrap `positions` into periodically-repeated unit cells.
 
-    Args:
-        cells (torch.Tensor): Unit cells of shape (N, 3, 3).
-        positions (torch.Tensor): Atomic positions of shape (N, M, 3).
+    Parameters
+    ----------
+    cells : (..., 3, 3) torch.Tensor
+        Lattice matrices (rows = a, b, c).  The leading batch dims (if any) must
+        be broadcast-compatible with those of `positions`.
+    positions : (..., *, 3) torch.Tensor
+        Atomic Cartesian coordinates.  `*` can be empty (single vector) or one
+        or more extra axes (e.g. n_atoms).
 
-    Returns:
-        torch.Tensor: Wrapped positions of shape (N, M, 3).
+    Returns
+    -------
+    torch.Tensor
+        Wrapped positions with the same shape as `positions`.
     """
+    # (…, 3, 3)  — batched inverse handled automatically
+    inv_cells = torch.linalg.inv(cells)                   
 
-    inv_cells = torch.inverse(cells)
-    frac = torch.einsum("nij,njk->nik", positions, inv_cells)
-    frac_wrapped = frac % 1.0
-    wrapped_positions = torch.einsum("nij,njk->nik", frac_wrapped, cells)
+    # Cartesian → fractional  (broadcast matmul)
+    frac = torch.matmul(positions, inv_cells)             # (…, *, 3)
 
-    return wrapped_positions
+    # Wrap into [0, 1)
+    frac_wrapped = frac - torch.floor(frac)
+
+    # Fractional → Cartesian
+    wrapped = torch.matmul(frac_wrapped, cells)           # (…, *, 3)
+
+    return wrapped
 
 
 def generate_supercell_positions(
@@ -339,22 +362,20 @@ if __name__ == "__main__":
     np.random.seed(1)
     torch.manual_seed(1)
 
-    # NaCl crystal (1000 atoms):
-    crystal = bulk("NaCl", "rocksalt", a=5.64, cubic=True)
-    supercell = crystal.repeat((5, 5, 5))
-    cell = torch.tensor(supercell.cell[:])
-    positions = torch.tensor(supercell.positions)
-    cutoff = 6.0
+    # # NaCl crystal (1000 atoms):
+    # crystal = bulk("NaCl", "rocksalt", a=5.64, cubic=True)
+    # supercell = crystal.repeat((5, 5, 5))
+    # cell = torch.tensor(supercell.cell[:])
+    # positions = torch.tensor(supercell.positions)
+    # cutoff = 6.0
 
-    # # Random cell:
-    # n_frames = 1
-    # n_atoms = 100
-    # cells = torch.randn(n_frames, 3, 3)
-    # random_positions = torch.randn(n_frames, n_atoms, 3)
-    # all_positions = wrap_positions(cells.expand(n_frames, -1, -1), random_positions)
-    # cell = cells[0]
-    # positions = all_positions[0]
-    # cutoff = 1.0
+    # Random cell:
+    n_frames = 1
+    n_atoms = 100
+    cell = torch.randn(3, 3)
+    random_positions = torch.randn(n_atoms, 3)
+    positions = wrap_positions(cell, random_positions)
+    cutoff = 1.0
 
     print("timing torch brute force implementation:")
     for n in range(10):
@@ -393,7 +414,7 @@ if __name__ == "__main__":
     )
 
     print("timing ase implementation:")
-    for n in range(10):
+    for n in range(1):
         time0 = time.time()
         first_index, second_index, shifts = get_neighbors_ase(
             np.array(positions), np.array(cell), cutoff
