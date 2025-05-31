@@ -254,7 +254,6 @@ def get_neighbors_minimum_image(
     cell: torch.Tensor,
     positions: torch.Tensor,
     cutoff: float,
-    directed: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Neighbour list via minimum-image convention (triclinic OK).
@@ -267,25 +266,20 @@ def get_neighbors_minimum_image(
     cell      : (3, 3) lattice matrix  (rows = a, b, c)
     positions : (M, 3) Cartesian coordinates
     cutoff    : scalar cutoff distance
-    directed  : keep both i→j and j→i edges (default True)
 
-    Notes
-    -----
-    * Works for any full-rank cell.
-    * Uses only 𝑂(M²) memory.
+    Returns
+    -------
+    first_index : (E,) torch.long
+    second_index: (E,) torch.long
+    shift_ijk   : (E,3)  torch.long
+        Integer lattice vector n = (nx, ny, nz) such that
+        r_j + n·cell is the neighbour chosen for the edge (i, j).
     """
-    device, dtype = positions.device, positions.dtype
-    M = positions.shape[0]
     rcut2 = cutoff * cutoff
 
     # -------- 1) Cartesian → fractional coordinates -----------------------
-    # Fast path for orthorhombic cells: just divide
-    if torch.allclose(cell, torch.diag(torch.diagonal(cell))):
-        frac = positions / torch.diagonal(cell)
-    else:
-        # (cell.T)⁻¹ is faster than full inverse because positions are row-vecs
-        cell_inv_T = torch.linalg.inv(cell).T  # (3, 3)
-        frac = positions @ cell_inv_T  # (M, 3)
+    cell_inv = torch.linalg.inv(cell)  # (3, 3)
+    frac = positions @ cell_inv  # (M, 3)
 
     # -------- 2) Pairwise fractional displacements, minimum-image ----------
     d_frac = frac.unsqueeze(1) - frac.unsqueeze(0)  # (M, M, 3)
@@ -300,9 +294,6 @@ def get_neighbors_minimum_image(
     # -------- 4) Mask: within cutoff & not the same atom -------------------
     mask = dist2 <= rcut2  # bool (M, M)
     mask.fill_diagonal_(False)  # drop i == j
-
-    if not directed:
-        mask = torch.triu(mask, diagonal=1)  # undirected list
 
     # -------- 5) Gather indices & displacement vectors ---------------------
     first, second = torch.nonzero(mask, as_tuple=True)
@@ -341,15 +332,13 @@ def get_neighbors_auto(
     cell: torch.Tensor,
     positions: torch.Tensor,
     cutoff: float,
-    *,
-    directed: bool = True,
 ):
     """
     Uses the fast minimum-image algorithm whenever it is provably exact;
     otherwise falls back to the brute-force super-cell generator.
     """
     if mic_safe(cell, cutoff):
-        return get_neighbors_minimum_image(cell, positions, cutoff, directed=directed)
+        return get_neighbors_minimum_image(cell, positions, cutoff)
     else:
         return get_neighbors_brute_force(cell, positions, cutoff)
 
@@ -370,7 +359,7 @@ if __name__ == "__main__":
     # Random cell:
     n_frames = 1
     n_atoms = 100
-    cell = torch.randn(3, 3)
+    cell = 5 * torch.randn(3, 3)
     random_positions = torch.randn(n_atoms, 3)
     positions = wrap_positions(cell, random_positions)
     cutoff = 1.0
