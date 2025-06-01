@@ -132,12 +132,13 @@ def wrap_positions(cells: torch.Tensor, positions: torch.Tensor) -> torch.Tensor
     frac = torch.matmul(positions, inv_cells)  # (…, *, 3)
 
     # Wrap into [0, 1)
-    frac_wrapped = frac - torch.floor(frac)
+    shifts = torch.floor(frac)
+    frac_wrapped = frac - shifts
 
     # Fractional → Cartesian
     wrapped = torch.matmul(frac_wrapped, cells)  # (…, *, 3)
 
-    return wrapped
+    return wrapped, shifts
 
 
 def generate_supercell_positions(
@@ -225,19 +226,21 @@ def get_neighbors_brute_force(
         Integer lattice vector **n** = (nx, ny, nz) such that
         r_j + n·cell is the neighbour chosen for the edge (i, j).
     """
+    wrapped_positions, init_shifts = wrap_positions(cell, positions)
+
     # 1) How many translations are needed so that every neighbour up to
     #    `cutoff` is present somewhere in the supercell?
     repetitions = get_supercell_containing_rcut(cell, cutoff)
 
     # 2) Generate all periodic images (+ map them back to their home-cell index)
     supercell_pos, atom_indices, shifts = generate_supercell_positions(
-        cell, positions, repetitions
+        cell, wrapped_positions, repetitions
     )  # supercell_pos : (R*M, 3)
 
-    M = positions.shape[0]
+    M = wrapped_positions.shape[0]
 
     # 3) Pairwise displacement: r_j – r_i  (broadcasting)
-    disp = supercell_pos.unsqueeze(0) - positions.unsqueeze(1)  # (M, N, 3)
+    disp = supercell_pos.unsqueeze(0) - wrapped_positions.unsqueeze(1)  # (M, N, 3)
     dist2 = (disp**2).sum(dim=-1)  # (M, N)
 
     # 4) Within-cutoff mask
@@ -245,7 +248,7 @@ def get_neighbors_brute_force(
 
     # 5) Eliminate self-interaction at zero shift
     same_atom = atom_indices.unsqueeze(0) == torch.arange(
-        M, device=positions.device
+        M, device=wrapped_positions.device
     ).unsqueeze(1)
     zero_distance = dist2 == 0.0
     within_cutoff &= ~(same_atom & zero_distance)
@@ -255,7 +258,9 @@ def get_neighbors_brute_force(
     first_index = pairs[:, 0]  # i
     img_index_j = pairs[:, 1]  # j in the big list
     second_index = atom_indices[img_index_j]  # map to 0 … M-1
-    shift_vec = shifts[img_index_j]
+    shift_vec = (
+        shifts[img_index_j] - init_shifts[second_index] + init_shifts[first_index]
+    )
 
     return first_index, second_index, shift_vec
 
@@ -366,7 +371,7 @@ if __name__ == "__main__":
     n_atoms = 100
     cell = 5 * torch.randn(3, 3)
     random_positions = torch.randn(n_atoms, 3)
-    positions = wrap_positions(cell, random_positions)
+    positions, _ = wrap_positions(cell, random_positions)
     cutoff = 1.0
 
     print("timing torch brute force implementation:")

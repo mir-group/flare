@@ -7,7 +7,7 @@ from flare.tensor.neighbors import get_neighbors_ase, get_neighbors_auto
 
 
 def get_edge_dist(pos_tensor, cell_tensor, first_index, second_index, shifts):
-    shift_tensor = shifts.to(dtype=torch.float32)
+    shift_tensor = shifts.to(dtype=pos_tensor.dtype)
     edge_vec = torch.index_select(pos_tensor, 0, second_index) - torch.index_select(
         pos_tensor, 0, first_index
     )

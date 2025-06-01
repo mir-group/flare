@@ -3,10 +3,10 @@ import pytest
 import torch
 from flare.tensor.neighbors import (
     get_neighbors_ase,
-    wrap_positions,
     get_neighbors_brute_force,
     get_neighbors_minimum_image,
     mic_safe,
+    get_supercell_containing_rcut,
 )
 from flare.tensor.b2 import get_edge_dist
 
@@ -19,12 +19,11 @@ def all_neighbors():
         "cells": [],
         "positions": [],
     }
-    n_random_structures = 10
+    n_random_structures = 100
     for n in range(n_random_structures):
         n_atoms = 100
-        cell = 5 * torch.randn(3, 3)
-        random_positions = torch.randn(n_atoms, 3)
-        positions = wrap_positions(cell, random_positions)
+        cell = 5 * torch.randn(3, 3, dtype=torch.float64)
+        positions = torch.randn(n_atoms, 3, dtype=torch.float64) * 1000
         structure_list["cells"].append(cell)
         structure_list["positions"].append(positions)
 
@@ -65,20 +64,27 @@ def test_neighbor_list(all_neighbors):
     positions = all_neighbors["positions"]
     cutoff = 1.0
     for cell, pos in zip(cells, positions):
+        repetitions = get_supercell_containing_rcut(cell, cutoff)
+        if torch.prod(repetitions) > 100:
+            continue
+
         first_index, second_index, shift_vec = get_neighbors_brute_force(
             cell, pos, cutoff
         )
 
-        edge_vec, edge_dist = get_edge_dist(
+        _, edge_dist = get_edge_dist(
             pos, cell, first_index, second_index, shift_vec
         )
+        for dist in edge_dist:
+            if dist > cutoff:
+                print(dist)
         assert torch.all(edge_dist < cutoff), "Found edge distances >= cutoff"
 
         first_index_mi, second_index_mi, shift_vec_mi = get_neighbors_minimum_image(
             cell, pos, cutoff
         )
 
-        edge_vec_mi, edge_dist_mi = get_edge_dist(
+        _, edge_dist_mi = get_edge_dist(
             pos, cell, first_index_mi, second_index_mi, shift_vec_mi
         )
         assert torch.all(edge_dist_mi < cutoff), "Found edge distances >= cutoff"
