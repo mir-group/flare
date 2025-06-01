@@ -3,7 +3,21 @@ import numpy as np
 import time
 import math
 from e3nn.o3 import spherical_harmonics
-from neighbors import get_neighbors_ase, get_neighbors_auto
+from flare.tensor.neighbors import get_neighbors_ase, get_neighbors_auto
+
+
+def get_edge_dist(pos_tensor, cell_tensor, first_index, second_index, shifts):
+    shift_tensor = shifts.to(dtype=torch.float32)
+    edge_vec = torch.index_select(pos_tensor, 0, second_index) - torch.index_select(
+        pos_tensor, 0, first_index
+    )
+    edge_shift = shift_tensor @ cell_tensor
+    edge_vec = edge_vec + edge_shift
+    sqrt_jitter = 1e-10
+    edge_dist_sq = torch.sum(edge_vec**2, -1)
+    edge_dist = torch.sqrt(edge_dist_sq + sqrt_jitter)
+
+    return edge_vec, edge_dist
 
 
 def compute_b2(
@@ -32,15 +46,9 @@ def compute_b2(
     # get edges
     # first_index, second_index, shifts = get_neighbors_ase(positions, cell, cutoff, pbc)
     first_index, second_index, shifts = get_neighbors_auto(init_cell, init_pos, cutoff)
-    shift_tensor = shifts.to(dtype=torch.float32)
-    edge_vec = torch.index_select(pos_tensor, 0, second_index) - torch.index_select(
-        pos_tensor, 0, first_index
+    edge_vec, edge_dist = get_edge_dist(
+        pos_tensor, cell_tensor, first_index, second_index, shifts
     )
-    edge_shift = shift_tensor @ cell_tensor
-    edge_vec = edge_vec + edge_shift
-    sqrt_jitter = 1e-10
-    edge_dist_sq = torch.sum(edge_vec**2, -1)
-    edge_dist = torch.sqrt(edge_dist_sq + sqrt_jitter)
     n_edges = len(edge_dist)
     num_1 = numbers[first_index]
     num_2 = numbers[second_index]

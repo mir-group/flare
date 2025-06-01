@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from ase.neighborlist import primitive_neighbor_list
-from ase.geometry import complete_cell
+from ase.geometry import complete_cell, minkowski_reduce
 import time
 from typing import Tuple, Union
 from itertools import product
@@ -49,10 +49,32 @@ def get_neighbors_ase(
     return first_index, second_index, shifts
 
 
+def get_box_heights(cell: torch.Tensor) -> Tuple[float, float, float]:
+    # Split rows of the cell: a, b, c → shape (..., 3)
+    a, b, c = cell.unbind(dim=-2)
+
+    # Helper: orthogonal height of v above the plane spanned by w1 × w2
+    def height(v, w1, w2):
+        cross = torch.cross(w1, w2, dim=-1)  # (..., 3)
+        volume = torch.abs((v * cross).sum(dim=-1))  # scalar triple product
+        base_area = torch.linalg.norm(cross, dim=-1)  # |w1 × w2|
+        return volume / base_area  # (...,)
+
+    h_a = height(a, b, c)  # height along a
+    h_b = height(b, a, c)  # height along b
+    h_c = height(c, a, b)  # height along c
+
+    return h_a, h_b, h_c
+
+
+def get_min_box_height(cell: torch.Tensor) -> float:
+    h_a, h_b, h_c = get_box_heights(cell)
+    return torch.minimum(torch.minimum(h_a, h_b), h_c)
+
+
 def get_supercell_containing_rcut(
-    cell: torch.Tensor,            # (..., 3, 3)
-    rcut: Union[float, torch.Tensor]
-) -> torch.Tensor:                 # (..., 3)  – ints
+    cell: torch.Tensor, rcut: Union[float, torch.Tensor]  # (..., 3, 3)
+) -> torch.Tensor:  # (..., 3)  – ints
     """
     For each unit cell in `cell`, return the minimum (n_a, n_b, n_c) such that
     every point within `rcut` of the central cell is covered by the supercell
@@ -74,19 +96,7 @@ def get_supercell_containing_rcut(
     # Ensure rcut is a tensor on the same device / dtype for broadcasting
     rcut = torch.as_tensor(rcut, dtype=cell.dtype, device=cell.device)
 
-    # Split rows of the cell: a, b, c → shape (..., 3)
-    a, b, c = cell.unbind(dim=-2)
-
-    # Helper: orthogonal height of v above the plane spanned by w1 × w2
-    def height(v, w1, w2):
-        cross = torch.cross(w1, w2, dim=-1)                 # (..., 3)
-        volume = torch.abs((v * cross).sum(dim=-1))         # scalar triple product
-        base_area = torch.linalg.norm(cross, dim=-1)        # |w1 × w2|
-        return volume / base_area                           # (...,)
-
-    h_a = height(a, b, c)                                   # height along a
-    h_b = height(b, a, c)                                   # height along b
-    h_c = height(c, a, b)                                   # height along c
+    h_a, h_b, h_c = get_box_heights(cell)
 
     # Minimum number of images along each direction
     n_a = torch.ceil(rcut / h_a).to(torch.int64)
@@ -116,16 +126,16 @@ def wrap_positions(cells: torch.Tensor, positions: torch.Tensor) -> torch.Tensor
         Wrapped positions with the same shape as `positions`.
     """
     # (…, 3, 3)  — batched inverse handled automatically
-    inv_cells = torch.linalg.inv(cells)                   
+    inv_cells = torch.linalg.inv(cells)
 
     # Cartesian → fractional  (broadcast matmul)
-    frac = torch.matmul(positions, inv_cells)             # (…, *, 3)
+    frac = torch.matmul(positions, inv_cells)  # (…, *, 3)
 
     # Wrap into [0, 1)
     frac_wrapped = frac - torch.floor(frac)
 
     # Fractional → Cartesian
-    wrapped = torch.matmul(frac_wrapped, cells)           # (…, *, 3)
+    wrapped = torch.matmul(frac_wrapped, cells)  # (…, *, 3)
 
     return wrapped
 
@@ -302,30 +312,25 @@ def get_neighbors_minimum_image(
     return first, second, shift_vec
 
 
+@torch.no_grad()
 def mic_safe(cell: torch.Tensor, r_cut: float, margin: float = 1e-8) -> bool:
     """
-    True if the minimum-image convention is guaranteed to be exact for
-    the given cutoff.
+    Return True iff the minimum-image convention (MIC) cannot lose neighbours
+    for the given cutoff *r_cut*.
 
     Parameters
     ----------
-    cell   : (3,3) tensor, lattice matrix (rows = a, b, c)
-    r_cut  : cutoff radius
-    margin : small buffer to stay away from the strict ½|h_min| limit
+    cell   : (3, 3) torch.Tensor
+        Lattice vectors as rows (Cartesian, any units).
+    r_cut  : float
+        Pairwise cutoff distance.
+    margin : float
+        Extra buffer away from the theoretical ½|h_min| limit (default 1 e-8).
     """
-    device, dtype = cell.device, cell.dtype
 
-    # Generate the 26 neighbour lattice vectors
-    neighbours = torch.tensor(
-        [v for v in product((-1, 0, 1), repeat=3) if v != (0, 0, 0)],
-        device=device,
-        dtype=dtype,
-    )  # (26, 3)
+    h_min = get_min_box_height(cell)
 
-    h_vecs = neighbours @ cell  # (26, 3)
-    h_norm = torch.linalg.norm(h_vecs, dim=1).min().item()
-
-    return r_cut < 0.5 * h_norm - margin
+    return r_cut < 0.5 * h_min - margin
 
 
 def get_neighbors_auto(
