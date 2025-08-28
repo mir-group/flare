@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "mir-flare"
-version = "1.4.2"
+version = "1.4.3"
 description = "Fast Learning of Atomistic Rare Events"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -19,7 +19,6 @@ classifiers = [
 ]
 dependencies = [
     "ase",
-    "nptyping",
     "numba",
     "numpy",
     "pyyaml",
