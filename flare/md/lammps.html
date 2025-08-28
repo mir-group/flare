@@ -54,6 +54,7 @@
 <li class="toctree-l3 current"><a class="current reference internal" href="#">LAMMPS Calculator and MD</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#flare.md.lammps.LAMMPS_MD"><code class="docutils literal notranslate"><span class="pre">LAMMPS_MD</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flare.md.lammps.LAMMPS_MOD"><code class="docutils literal notranslate"><span class="pre">LAMMPS_MOD</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#flare.md.lammps.add_single_atom_energies"><code class="docutils literal notranslate"><span class="pre">add_single_atom_energies()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flare.md.lammps.check_sgp_match"><code class="docutils literal notranslate"><span class="pre">check_sgp_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#flare.md.lammps.get_kinetic_stress"><code class="docutils literal notranslate"><span class="pre">get_kinetic_stress()</span></code></a></li>
 </ul>
@@ -237,6 +238,32 @@ run
 <dd><p>Modify parameters</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="flare.md.lammps.add_single_atom_energies">
+<span class="sig-prename descclassname"><span class="pre">flare.md.lammps.</span></span><span class="sig-name descname"><span class="pre">add_single_atom_energies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lmp_energy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_atom_energies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species_map</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.md.lammps.add_single_atom_energies" title="Link to this definition"></a></dt>
+<dd><p>Add single atom energy correction to LAMMPS_MOD calculated energies.</p>
+<p>IMPORTANT: If your single_atom_energies in flare_calc is non-zero,
+when using LAMMPS with ‘pair_style flare’, the potential energy
+reported by LAMMPS does NOT include single atom energy contributions.
+Use this function to correct LAMMPS energies to match SGP predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lmp_energy</strong> (<em>float</em>) – The LAMMPS calculated energy to correct</p></li>
+<li><p><strong>atoms</strong> (<em>ase.Atoms</em>) – Atoms object containing atomic numbers</p></li>
+<li><p><strong>single_atom_energies</strong> (<em>dict</em>) – Dictionary mapping atom numbers to their energies correction</p></li>
+<li><p><strong>species_map</strong> (<em>dict</em>) – Mapping from atomic numbers to SGP model coded species</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Energy with single atom contributions added</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
