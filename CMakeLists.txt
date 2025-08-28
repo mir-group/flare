@@ -43,15 +43,8 @@ endif()
 # Json
 ################################################################################
 
-FetchContent_Declare(json
-    GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/json
-    GIT_TAG v3.9.1)
-
-FetchContent_GetProperties(json)
-FetchContent_Populate(json)
-add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR})
-include_directories(${json_SOURCE_DIR})
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 
 # Eigen3
