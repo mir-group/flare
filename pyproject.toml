@@ -19,7 +19,6 @@ classifiers = [
 ]
 dependencies = [
     "ase",
-    "nptyping",
     "numba",
     "numpy",
     "pyyaml",
