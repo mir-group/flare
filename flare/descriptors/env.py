@@ -366,13 +366,9 @@ class AtomicEnvironment:
 
     def __str__(self):
         atom_type = self.ctype
-        neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
-        string = "Atomic Env. of Type {} surrounded by {} atoms of Types {}".format(
-            atom_type, n_neighbors, sorted(list(set(neighbor_types)))
-        )
-
-        return string
+        types = sorted({int(t) for t in self.etypes})
+        return f"Atomic Env. of Type {atom_type} surrounded by {n_neighbors} atoms of Types {types}"
 
     @property
     def force(self) -> "np.ndarray":
