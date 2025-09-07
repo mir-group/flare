@@ -425,6 +425,7 @@ class Output:
         self.write_wall_time(start_time)
 
     def add_atom_info(self, train_atoms, stds):
+        train_atoms = [int(atom) for atom in train_atoms]
         f = logging.getLogger(self.basename + "log")
         f.info(f"Adding atom {train_atoms} to the training set.")
         if len(train_atoms) > 0:
