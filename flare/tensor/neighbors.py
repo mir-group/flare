@@ -13,8 +13,7 @@ def get_neighbors_ase(
     cutoff: float,
     pbc: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Compute the neighbor list for a set of atoms using periodic boundary
-    conditions."""
+    """Build a neighbor list using ASE."""
 
     pbc = (pbc,) * 3
     first_index, second_index, shifts = primitive_neighbor_list(
@@ -125,7 +124,8 @@ def get_neighbors_brute_force(
     positions: torch.Tensor,
     cutoff: float,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Build a neighbor list under periodic boundary conditions."""
+    """Build a neighbor list by generating a supercell containing all atoms
+    within the cutoff radius."""
 
     wrapped_positions, init_shifts = wrap_positions(cell, positions)
     repetitions = get_supercell_containing_rcut(cell, cutoff)

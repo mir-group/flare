@@ -3,7 +3,7 @@ import numpy as np
 import time
 import math
 from e3nn.o3 import spherical_harmonics
-from flare.tensor.neighbors import get_neighbors_ase, get_neighbors_auto
+from flare.tensor.neighbors import get_neighbors_auto
 
 
 def get_edge_dist(pos_tensor, cell_tensor, first_index, second_index, shifts):
@@ -25,7 +25,6 @@ def compute_b2(
     cell: np.ndarray,
     numbers_coded: np.ndarray,
     cutoff: float,
-    pbc: bool = True,
     n_radial=8,
     lmax=3,
     basis_type="bessel",
@@ -44,13 +43,11 @@ def compute_b2(
     cell_tensor = init_cell @ strain_tensor.T
 
     # get edges
-    # first_index, second_index, shifts = get_neighbors_ase(positions, cell, cutoff, pbc)
     first_index, second_index, shifts = get_neighbors_auto(init_cell, init_pos, cutoff)
     edge_vec, edge_dist = get_edge_dist(
         pos_tensor, cell_tensor, first_index, second_index, shifts
     )
     n_edges = len(edge_dist)
-    num_1 = numbers[first_index]
     num_2 = numbers[second_index]
 
     # compute radial basis functions
@@ -110,30 +107,9 @@ def compute_radial_basis(
     basis_type: str = "bessel",
     cutoff_type: str = "quadratic",
 ) -> torch.Tensor:
-    """
-    Compute radial basis functions with a specified basis type and cutoff envelope.
+    """Compute radial basis functions with a specified basis type and cutoff
+    envelope."""
 
-    This function computes a set of radial basis values for each interatomic distance
-    using a specified basis function (e.g., Bessel or Gaussian) and modulates them
-    with a cutoff function (e.g., quadratic or cosine) to smoothly vanish at the cutoff.
-
-    Args:
-        edge_dist (torch.Tensor): Tensor of shape (N_edges,) containing pairwise distances.
-        n_radial (int): Number of radial basis functions to compute.
-        cutoff (float): Cutoff radius beyond which interactions are suppressed.
-        basis_type (str): Type of radial basis function to use. Options:
-            - "bessel": sin(nπr / Rc) / r scaled with envelope.
-        cutoff_type (str): Type of cutoff function to apply. Options:
-            - "quadratic": (cutoff - r)^2
-            - "cosine": 0.5 * (cos(πr / cutoff) + 1)
-
-    Returns:
-        torch.Tensor: Tensor of shape (N_edges, n_radial), where each row contains
-                      the radial basis expansion for a single pairwise distance.
-
-    Raises:
-        ValueError: If `basis_type` or `cutoff_type` is not recognized.
-    """
     if basis_type == "bessel":
         return bessel_radial(edge_dist, n_radial, cutoff, cutoff_type)
     elif basis_type == "chebyshev":
@@ -149,21 +125,9 @@ def chebyshev_radial(
     cutoff_type: str = "quadratic",
     r_min: float = 0.0,
 ) -> torch.Tensor:
-    """
-    Compute Chebyshev radial basis functions of the first kind, scaled to [r_min, cutoff],
-    and modulated by a cutoff envelope.
+    """Compute Chebyshev radial basis functions of the first kind, scaled to
+    [r_min, cutoff], and modulated by a cutoff envelope."""
 
-    Args:
-        edge_dist (torch.Tensor): Tensor of shape (N_edges,) with pairwise distances.
-        n_radial (int): Number of Chebyshev basis functions.
-        cutoff (float): Cutoff radius.
-        cutoff_type (str): Type of cutoff envelope ("quadratic" or "cosine").
-        r_min (float): Lower bound for basis support interval (default: 0.0).
-
-    Returns:
-        torch.Tensor: Shape (N_edges, n_radial), radial basis values for each distance.
-    """
-    # Clamp input and scale to [-1, 1]
     # TODO: Check the convention here - Chebyshev is defined over [-1 ,1], but
     # the C++ implementation (I think) evaluates over [0, 1].
     x = (edge_dist - r_min) / (cutoff - r_min)
@@ -172,13 +136,12 @@ def chebyshev_radial(
 
     # Compute Chebyshev basis values using cosine formula
     theta = torch.acos(x)  # (N_edges,)
-    n = torch.arange(
-        n_radial, device=edge_dist.device, dtype=edge_dist.dtype
-    )  # (n_radial,)
-    cheb_vals = torch.cos(theta.unsqueeze(-1) * n)  # (N_edges, n_radial)
+    n = torch.arange(n_radial, device=edge_dist.device, dtype=edge_dist.dtype)
+    cheb_vals = torch.cos(theta.unsqueeze(-1) * n)
 
     # Apply cutoff envelope
-    envelope = compute_cutoff(edge_dist, cutoff, cutoff_type)  # (N_edges, 1)
+    envelope = compute_cutoff(edge_dist, cutoff, cutoff_type)
+
     return cheb_vals * envelope
 
 
@@ -188,24 +151,15 @@ def bessel_radial(
     cutoff: float,
     cutoff_type: str = "quadratic",
 ) -> torch.Tensor:
-    """
-    Compute radial basis functions using sine-weighted Bessel functions modulated
-    by a quadratic cutoff envelope.
+    """Compute radial basis functions using sine-weighted Bessel functions
+    modulated by a quadratic cutoff envelope."""
 
-    Args:
-        edge_dist (torch.Tensor): Tensor of interatomic distances of shape (N,).
-        n_radial (int): Number of radial basis functions.
-        cutoff (float): Cutoff radius beyond which interactions are zero.
-
-    Returns:
-        torch.Tensor: Radial basis values of shape (N, n_radial), where each row
-                      contains the radial basis expansion of the corresponding distance.
-    """
     bessel_weights = torch.linspace(start=1.0, end=n_radial, steps=n_radial) * math.pi
     bessel_num = torch.sin(bessel_weights * edge_dist.unsqueeze(-1) / cutoff)
     bessel_prefactor = 2 / cutoff
     bessel_vals = bessel_prefactor * (bessel_num / edge_dist.unsqueeze(-1))
     envelope = compute_cutoff(edge_dist, cutoff, cutoff_type)
+
     return bessel_vals * envelope
 
 
@@ -214,17 +168,8 @@ def compute_cutoff(
     cutoff: float,
     cutoff_type: str = "quadratic",
 ) -> torch.Tensor:
-    """
-    Dispatch to appropriate cutoff function.
+    """Dispatch to appropriate cutoff function."""
 
-    Args:
-        edge_dist (torch.Tensor): Tensor of distances (N_edges,).
-        cutoff (float): Cutoff distance.
-        cutoff_type (str): Type of cutoff ("quadratic", "cosine").
-
-    Returns:
-        torch.Tensor: Envelope values of shape (N_edges, 1).
-    """
     if cutoff_type == "quadratic":
         return quadratic_cutoff(edge_dist, cutoff).unsqueeze(-1)
     elif cutoff_type == "cosine":
@@ -235,28 +180,22 @@ def compute_cutoff(
 
 def quadratic_cutoff(edge_dist: torch.Tensor, cutoff: float) -> torch.Tensor:
     """Quadratic envelope: (cutoff - r)^2"""
+
     return (cutoff - edge_dist).clamp(min=0.0) ** 2
 
 
 def cosine_cutoff(edge_dist: torch.Tensor, cutoff: float) -> torch.Tensor:
     """Cosine envelope: 0.5 * (cos(pi * r / cutoff) + 1)"""
+
     result = 0.5 * (torch.cos(math.pi * edge_dist / cutoff) + 1.0)
     result[edge_dist > cutoff] = 0.0
+
     return result
 
 
 def reduce_lm(lm_tensor: torch.Tensor) -> torch.Tensor:
-    """
-    Reduce tensor with l and m indices to a rotationally invariant tensor
-    with only l indices.
-
-    Args:
-        lm_tensor (torch.tensor): Input tensor. lm index must be the final
-        dimension of the tensor.
-
-    Returns:
-        torch.tensor: Output tensor
-    """
+    """Reduce tensor with l and m indices to a rotationally invariant tensor
+    with only l indices."""
 
     n_harm = lm_tensor.shape[-1]
     lmax = math.sqrt(n_harm) - 1
@@ -289,7 +228,6 @@ if __name__ == "__main__":
     n_species = len(species_map)
     numbers_coded = np.array([species_map[num] for num in numbers])
 
-    pbc = True
     n_radial = 12
     cutoff = 6.0
     lmax = 3
@@ -302,7 +240,6 @@ if __name__ == "__main__":
             cell,
             numbers_coded,
             cutoff,
-            pbc,
             n_radial,
             lmax,
             basis_type,
