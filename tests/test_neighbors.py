@@ -5,11 +5,14 @@ from flare.tensor.neighbors import (
     get_neighbors_ase,
     get_neighbors_brute_force,
     get_neighbors_minimum_image,
+    get_neighbors_auto,
     mic_safe,
     get_supercell_containing_rcut,
 )
 from flare.tensor.b2 import get_edge_dist
+from ase.build import bulk
 
+np.random.seed(1)
 torch.manual_seed(1)
 
 
@@ -94,3 +97,23 @@ def test_neighbor_list(all_neighbors):
             assert len(first_index) == len(
                 first_index_mi
             ), "MIC neighbors don't match brute force"
+
+
+def test_auto():
+    # NaCl crystal (1000 atoms):
+    crystal = bulk("NaCl", "rocksalt", a=5.64, cubic=True)
+    supercell = crystal.repeat((5, 5, 5))
+    cell = torch.tensor(supercell.cell[:])
+    positions = torch.tensor(supercell.positions)
+
+    cutoff = 6.0
+    _, _, shift_vec_brute = get_neighbors_brute_force(
+        cell, positions, cutoff
+    )
+    _, _, shift_vec_mi = get_neighbors_minimum_image(
+        cell, positions, cutoff
+    )
+    _, _, shift_vec_auto = get_neighbors_auto(
+        cell, positions, cutoff
+    )
+    assert shift_vec_brute.shape == shift_vec_mi.shape == shift_vec_auto.shape
