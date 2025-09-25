@@ -595,17 +595,20 @@ class OTF:
         # specified in self.store_dft_output
         if self.store_dft_output is not None:
             dest = self.store_dft_output[1]
+            # Ensure the destination directory exists; create it if it doesn't
+            os.makedirs(dest, exist_ok=True)
             target_files = self.store_dft_output[0]
-            now = datetime.now()
-            dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
             if isinstance(target_files, str):
                 to_copy = [target_files]
             else:
                 to_copy = target_files
+            # Create a new subfolder under the destination directory named after the current step
+            new_folder = os.path.join(dest, str(self.curr_step))
+            os.makedirs(new_folder, exist_ok=True) 
             for ofile in to_copy:
-                # if the file is in a subdirectory like dft/OUTCAR, then copy it out
                 filename = ofile.split("/")[-1]
-                copyfile(ofile, dest + "/" + dt_string + filename)
+                # Copy the file to the new folder, preserving its original file name
+                copyfile(ofile, os.path.join(new_folder, filename))
         self.dft_frames.append(self.curr_step)
         self.output.write_wall_time(tic, task="Run DFT")
 
