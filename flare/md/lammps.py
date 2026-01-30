@@ -140,10 +140,6 @@ class LAMMPS_MOD(LAMMPS):
                 compute_command += "compute " + cmd + "\n"
             self.parameters["model_post"] += compute_command
 
-        # Always unfix "nve" defined in ASE
-        if "fix" in self.parameters:
-            self.parameters["fix"][-1] += "\nunfix fix_nve"
-
         # Add "dump" command after "timestep"
         self.parameters["timestep"] = str(self.parameters["timestep"])
         if "dump" in self.parameters:
