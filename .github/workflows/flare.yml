@@ -23,8 +23,8 @@ jobs:
 
     env:
       BUILD_DIR: build_${{ matrix.omp }}_${{ matrix.lapack }}
-      CC: gcc-9
-      CXX: g++-9
+      CC: gcc-11
+      CXX: g++-11
 
     steps:
     - uses: actions/checkout@v4
