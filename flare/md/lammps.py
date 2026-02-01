@@ -131,14 +131,14 @@ class LAMMPS_MOD(LAMMPS):
             region_command = "\n"
             for cmd in self.parameters["region"]:
                 region_command += "region " + cmd + "\n"
-            self.parameters["model_post"] += region_command
+            self.parameters["model_post"].append(region_command)
 
         # Add "compute" command after "group", using `model_post`
         if "compute" in self.parameters:
             compute_command = "\n"
             for cmd in self.parameters["compute"]:
                 compute_command += "compute " + cmd + "\n"
-            self.parameters["model_post"] += compute_command
+            self.parameters["model_post"].append(compute_command)
 
         # Add "dump" command after "timestep"
         self.parameters["timestep"] = str(self.parameters["timestep"])
