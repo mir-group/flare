@@ -241,9 +241,9 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
         Kokkos::parallel_reduce("FLARE: Short neighlist", Kokkos::RangePolicy<DeviceType>(0,batch_size),
             KOKKOS_CLASS_LAMBDA(const int ii, int& max_shortneighs){
                 const int i = ilist_curr_type[ii+startatom];
-                const X_FLOAT xtmp = x(i,0);
-                const X_FLOAT ytmp = x(i,1);
-                const X_FLOAT ztmp = x(i,2);
+                const KK_FLOAT xtmp = x(i,0);
+                const KK_FLOAT ytmp = x(i,1);
+                const KK_FLOAT ztmp = x(i,2);
 
                 const int si = type[i] - 1;
 
@@ -253,10 +253,10 @@ void PairFLAREKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
                   int j = d_neighbors(i,jj);
                   j &= NEIGHMASK;
 
-                  const X_FLOAT delx = xtmp - x(j,0);
-                  const X_FLOAT dely = ytmp - x(j,1);
-                  const X_FLOAT delz = ztmp - x(j,2);
-                  const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
+                  const KK_FLOAT delx = xtmp - x(j,0);
+                  const KK_FLOAT dely = ytmp - x(j,1);
+                  const KK_FLOAT delz = ztmp - x(j,2);
+                  const KK_FLOAT rsq = delx*delx + dely*dely + delz*delz;
 
                   const double paircut = cutoff_matrix_k(si, type[j]-1);
 
@@ -401,10 +401,10 @@ void PairFLAREKokkos<DeviceType>::operator()(const int ii, const int jj) const {
   const int jnum = d_numneigh_short(ii);
   if(jj >= jnum) return;
 
-  const X_FLOAT delx = x(j,0) - x(i,0);
-  const X_FLOAT dely = x(j,1) - x(i,1);
-  const X_FLOAT delz = x(j,2) - x(i,2);
-  const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
+  const KK_FLOAT delx = x(j,0) - x(i,0);
+  const KK_FLOAT dely = x(j,1) - x(i,1);
+  const KK_FLOAT delz = x(j,2) - x(i,2);
+  const KK_FLOAT rsq = delx*delx + dely*dely + delz*delz;
 
   calculate_radial_kokkos(ii, jj, g, delx, dely, delz, sqrt(rsq), cutoff_matrix_k(type[i]-1, type[j]-1), n_max);
   get_Y_kokkos(ii, jj, Y, delx, dely, delz, l_max);
@@ -473,9 +473,9 @@ KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(TagNorm2, const MemberType team_member) const{
   int ii = team_member.league_rank();
 
-  F_FLOAT tmp1 = 0.0;
-  F_FLOAT tmp2 = 0.0;
-  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, F_FLOAT &tmp1, F_FLOAT &tmp2){
+  KK_FLOAT tmp1 = 0.0;
+  KK_FLOAT tmp2 = 0.0;
+  Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, n_descriptors), [&] (int x, KK_FLOAT &tmp1, KK_FLOAT &tmp2){
       tmp1 += B2(ii, x) * B2(ii, x);
       tmp2 += B2(ii, x) * beta_B2(ii, x);
   }, tmp1, tmp2);
@@ -508,7 +508,7 @@ KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(Tagu, const int ii, const int n1, const int lm) const{
   int l = sqrt(1.0*lm);
 
-  F_FLOAT un1lm = 0.0;
+  KK_FLOAT un1lm = 0.0;
   for(int n2 = 0; n2 < n_radial; n2++){
     int i = n2 > n1 ? n1 : n2;
     int j = n2 > n1 ? n2 : n1;
@@ -557,8 +557,8 @@ void PairFLAREKokkos<DeviceType>::operator()(TagF, const MemberType team_member)
           Yscratch(c, lm) = Y(ii, jj, lm, c);
       });
 
-      F_FLOAT fx = 0, fy = 0, fz = 0;
-        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, F_FLOAT &fx, F_FLOAT &fy, F_FLOAT &fz){
+      KK_FLOAT fx = 0, fy = 0, fz = 0;
+        Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team_member, n_max*n_harmonics), [&](int nlm, KK_FLOAT &fx, KK_FLOAT &fy, KK_FLOAT &fz){
             int n = nlm / n_harmonics;
             int lm = nlm - n*n_harmonics;
             int radial_index = s*n_max + n;
@@ -595,9 +595,9 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
   int ii = team_member.league_rank();
   const int i = ilist_curr_type[ii+startatom];
   const int jnum = d_numneigh_short(ii);
-  const X_FLOAT xtmp = x(i,0);
-  const X_FLOAT ytmp = x(i,1);
-  const X_FLOAT ztmp = x(i,2);
+  const KK_FLOAT xtmp = x(i,0);
+  const KK_FLOAT ytmp = x(i,1);
+  const KK_FLOAT ztmp = x(i,2);
 
   auto a_f = fscatter.access();
   s_FEV_FLOAT fvsum;
@@ -605,9 +605,9 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
   Kokkos::parallel_reduce(Kokkos::TeamVectorRange(team_member, jnum), [&] (const int jj, s_FEV_FLOAT &fvtmp){
       int j = d_neighbors_short(ii,jj);
 
-      const F_FLOAT fx = -partial_forces(ii,jj,0);
-      const F_FLOAT fy = -partial_forces(ii,jj,1);
-      const F_FLOAT fz = -partial_forces(ii,jj,2);
+      const KK_FLOAT fx = -partial_forces(ii,jj,0);
+      const KK_FLOAT fy = -partial_forces(ii,jj,1);
+      const KK_FLOAT fz = -partial_forces(ii,jj,2);
 
       fvtmp.f[0] += fx;
       fvtmp.f[1] += fy;
@@ -617,9 +617,9 @@ void PairFLAREKokkos<DeviceType>::operator()(TagStoreF, const MemberType team_me
       a_f(j,1) -= fy;
       a_f(j,2) -= fz;
 
-      const X_FLOAT delx = xtmp - x(j,0);
-      const X_FLOAT dely = ytmp - x(j,1);
-      const X_FLOAT delz = ztmp - x(j,2);
+      const KK_FLOAT delx = xtmp - x(j,0);
+      const KK_FLOAT dely = ytmp - x(j,1);
+      const KK_FLOAT delz = ztmp - x(j,2);
 
       if (vflag_either) v_tally(fvtmp.v,i,j,fx,fy,fz,delx,dely,delz);
   }, fvsum);
@@ -648,9 +648,9 @@ template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
     const int i = ilist_curr_type[ii+startatom];
-    const X_FLOAT xtmp = x(i,0);
-    const X_FLOAT ytmp = x(i,1);
-    const X_FLOAT ztmp = x(i,2);
+    const KK_FLOAT xtmp = x(i,0);
+    const KK_FLOAT ytmp = x(i,1);
+    const KK_FLOAT ztmp = x(i,2);
 
     const int si = type[i] - 1;
 
@@ -660,10 +660,10 @@ void PairFLAREKokkos<DeviceType>::operator()(const int& ii) const {
       int j = d_neighbors(i,jj);
       j &= NEIGHMASK;
 
-      const X_FLOAT delx = xtmp - x(j,0);
-      const X_FLOAT dely = ytmp - x(j,1);
-      const X_FLOAT delz = ztmp - x(j,2);
-      const F_FLOAT rsq = delx*delx + dely*dely + delz*delz;
+      const KK_FLOAT delx = xtmp - x(j,0);
+      const KK_FLOAT dely = ytmp - x(j,1);
+      const KK_FLOAT delz = ztmp - x(j,2);
+      const KK_FLOAT rsq = delx*delx + dely*dely + delz*delz;
 
       const double paircut = cutoff_matrix_k(si, type[j]-1);
 
@@ -696,7 +696,7 @@ void PairFLAREKokkos<DeviceType>::coeff(int narg, char **arg)
   n_bond = n_radial * n_harmonics;
   n_descriptors = (n_radial * (n_radial + 1) / 2) * (l_max + 1);
 
-  beta = Kokkos::View<F_FLOAT***, Kokkos::LayoutRight, typename DeviceType::memory_space>("beta", n_species, n_descriptors, n_descriptors);
+  beta = Kokkos::View<KK_FLOAT***, Kokkos::LayoutRight, typename DeviceType::memory_space>("beta", n_species, n_descriptors, n_descriptors);
   auto beta_h = Kokkos::create_mirror_view(beta);
   for(int s = 0; s < n_species; s++){
     for(int i = 0; i < n_descriptors; i++){
@@ -755,9 +755,9 @@ void PairFLAREKokkos<DeviceType>::init_style()
 
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void PairFLAREKokkos<DeviceType>::v_tally(E_FLOAT (&v)[6], const int &i, const int &j,
-      const F_FLOAT &fx, const F_FLOAT &fy, const F_FLOAT &fz, const F_FLOAT &delx,
-                const F_FLOAT &dely, const F_FLOAT &delz) const
+void PairFLAREKokkos<DeviceType>::v_tally(KK_FLOAT (&v)[6], const int &i, const int &j,
+      const KK_FLOAT &fx, const KK_FLOAT &fy, const KK_FLOAT &fz, const KK_FLOAT &delx,
+                const KK_FLOAT &dely, const KK_FLOAT &delz) const
 {
   const int VFLAG = vflag_either;
 
@@ -766,12 +766,12 @@ void PairFLAREKokkos<DeviceType>::v_tally(E_FLOAT (&v)[6], const int &i, const i
   auto a_vatom = vscatter.access();
 
   if (VFLAG) {
-    const E_FLOAT v0 = delx*fx;
-    const E_FLOAT v1 = dely*fy;
-    const E_FLOAT v2 = delz*fz;
-    const E_FLOAT v3 = delx*fy;
-    const E_FLOAT v4 = delx*fz;
-    const E_FLOAT v5 = dely*fz;
+    const KK_FLOAT v0 = delx*fx;
+    const KK_FLOAT v1 = dely*fy;
+    const KK_FLOAT v2 = delz*fz;
+    const KK_FLOAT v3 = delx*fy;
+    const KK_FLOAT v4 = delx*fz;
+    const KK_FLOAT v5 = dely*fz;
 
     if (vflag_global) {
         v[0] += v0;
