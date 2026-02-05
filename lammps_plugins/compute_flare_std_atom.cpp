@@ -373,16 +373,19 @@ void ComputeFlareStdAtom::read_file(char *filename) {
   }
 
   if (me == 0) {
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading header");
 
-    fgets(line, MAXLINE, fptr); // hyperparameters
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading number of hyperparameters");
     sscanf(line, "%i", &n_hyps);
   }
 
   MPI_Bcast(&n_hyps, 1, MPI_INT, 0, world);
   hyperparameters = Eigen::VectorXd::Zero(n_hyps);
   if (me == 0) {
-    fgets(line, MAXLINE, fptr); // hyperparameters
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading hyperparameters");
     double sig, en, fn, sn;
     sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
     hyperparameters(0) = sig;
@@ -390,16 +393,20 @@ void ComputeFlareStdAtom::read_file(char *filename) {
     hyperparameters(2) = fn;
     hyperparameters(3) = sn;
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading kernel name");
     sscanf(line, "%s", kernel_string); // kernel name
     kernel_string_length = strlen(kernel_string);
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading radial basis");
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading descriptor parameters");
     sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading cutoff function");
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
   }
@@ -499,13 +506,16 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
 
   int tmp, nwords;
   if (me == 0) {
-    fgets(line, MAXLINE, fptr); // skip the first line
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading header");
 
-    fgets(line, MAXLINE, fptr); // power
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading power and kernel");
     sscanf(line, "%i %s", &power, kernel_string);
     kernel_string_length = strlen(kernel_string);
 
-    fgets(line, MAXLINE, fptr); // hyperparameters
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading number of hyperparameters");
     sscanf(line, "%i", &n_hyps);
   }
   MPI_Bcast(&power, 1, MPI_INT, 0, world);
@@ -513,7 +523,8 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
 
   hyperparameters = Eigen::VectorXd::Zero(n_hyps);
   if (me == 0) {
-    fgets(line, MAXLINE, fptr); // hyperparameters
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading hyperparameters");
     double sig, en, fn, sn;
     sscanf(line, "%lg %lg %lg %lg", &sig, &en, &fn, &sn);
     hyperparameters(0) = sig;
@@ -521,14 +532,17 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
     hyperparameters(2) = fn;
     hyperparameters(3) = sn;
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading radial basis");
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading descriptor parameters");
     sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &n_kernels);
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading cutoff function");
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
   }
@@ -551,7 +565,8 @@ void ComputeFlareStdAtom::read_L_inverse(char *filename) {
 
   // Parse number of sparse envs
   if (me == 0) {
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading number of clusters");
     sscanf(line, "%i", &n_clusters);
   }
   MPI_Bcast(&n_clusters, 1, MPI_INT, 0, world);
@@ -628,9 +643,11 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
 
   int kernel_ind = 0;
   if (me == 0) {
-    fgets(line, MAXLINE, fptr); // skip the first line
+    if (fgets(line, MAXLINE, fptr) == NULL) // skip the first line
+      error->one(FLERR, "Unexpected end of file while reading sparse descriptors header");
 
-    fgets(line, MAXLINE, fptr); // hyperparameters
+    if (fgets(line, MAXLINE, fptr) == NULL) // hyperparameters
+      error->one(FLERR, "Unexpected end of file while reading number of kernels");
     int n_kern = 0;
     sscanf(line, "%i", &n_kern);
     if (n_kern != n_kernels) {
@@ -640,7 +657,8 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
 
   for (int i = 0; i < n_kernels; i++) {
     if (me == 0) {
-      fgets(line, MAXLINE, fptr);
+      if (fgets(line, MAXLINE, fptr) == NULL)
+        error->one(FLERR, "Unexpected end of file while reading kernel info");
       int n_clst = 0;
       sscanf(line, "%i %i %i", &kernel_ind, &n_clst, &n_types);
       if (n_clst != n_clusters) {
@@ -653,7 +671,8 @@ void ComputeFlareStdAtom::read_sparse_descriptors(char *filename) {
     for (int s = 0; s < n_types; s++) {
       int n_clst_by_type;
       if (me == 0) {
-        fgets(line, MAXLINE, fptr);
+        if (fgets(line, MAXLINE, fptr) == NULL)
+          error->one(FLERR, "Unexpected end of file while reading clusters by type");
         sscanf(line, "%i", &n_clst_by_type);
       }
       MPI_Bcast(&n_clst_by_type, 1, MPI_INT, 0, world);
@@ -698,7 +717,8 @@ void ComputeFlareStdAtom::grab(FILE *fptr, int n, double *list) {
 
   int i = 0;
   while (i < n) {
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading numeric data");
     ptr = strtok(line, " \t\n\r\f");
     list[i++] = atof(ptr);
     while ((ptr = strtok(NULL, " \t\n\r\f")))
