@@ -562,7 +562,8 @@ void PairMGP::grab(FILE *fptr, int n, double *list) {
 
   int i = 0;
   while (i < n) {
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading numeric data");
     ptr = strtok(line, " \t\n\r\f");
     list[i++] = atof(ptr);
     while ((ptr = strtok(NULL, " \t\n\r\f")))
@@ -599,10 +600,14 @@ void PairMGP::read_file(char *filename) {
     error->one(FLERR, str);
   }
 
-  fgets(line, MAXLINE, fptr); // first line is comment
-  fgets(line, MAXLINE, fptr); // second line is comment
-  fgets(line, MAXLINE, fptr); // third line is comment
-  fgets(line, MAXLINE, fptr);
+  if (fgets(line, MAXLINE, fptr) == NULL) // 1st line is comment
+    error->one(FLERR, "Unexpected end of file while reading header line 1");
+  if (fgets(line, MAXLINE, fptr) == NULL) // 2nd line is comment
+    error->one(FLERR, "Unexpected end of file while reading header line 2");
+  if (fgets(line, MAXLINE, fptr) == NULL) // 3rd line is comment
+    error->one(FLERR, "Unexpected end of file while reading header line 3");
+  if (fgets(line, MAXLINE, fptr) == NULL)
+    error->one(FLERR, "Unexpected end of file while reading body counts");
   sscanf(line, "%d %d", &n_2body, &n_3body);
   if (screen)
     fprintf(screen,
@@ -659,7 +664,8 @@ void PairMGP::read_file(char *filename) {
     char ele1[10], ele2[10];
     double a, b;
     int order;
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading 2-body potential");
     sscanf(line, "%s %s %lg %lg %d", &ele1, &ele2, &a, &b, &order);
 
     bool type1[atom->ntypes + 1];
@@ -713,7 +719,8 @@ void PairMGP::read_file(char *filename) {
     double a[3], b[3];
     int order[3];
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading 3-body potential");
     sscanf(line, "%s %s %s %lg %lg %lg %lg %lg %lg %d %d %d", &ele1, &ele2,
            &ele3, &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &order[0],
            &order[1], &order[2]);
