@@ -666,7 +666,7 @@ void PairMGP::read_file(char *filename) {
     int order;
     if (fgets(line, MAXLINE, fptr) == NULL)
       error->one(FLERR, "Unexpected end of file while reading 2-body potential");
-    sscanf(line, "%s %s %lg %lg %d", &ele1, &ele2, &a, &b, &order);
+    sscanf(line, "%s %s %lg %lg %d", ele1, ele2, &a, &b, &order);
 
     bool type1[atom->ntypes + 1];
     bool type2[atom->ntypes + 1];
@@ -721,8 +721,8 @@ void PairMGP::read_file(char *filename) {
 
     if (fgets(line, MAXLINE, fptr) == NULL)
       error->one(FLERR, "Unexpected end of file while reading 3-body potential");
-    sscanf(line, "%s %s %s %lg %lg %lg %lg %lg %lg %d %d %d", &ele1, &ele2,
-           &ele3, &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &order[0],
+    sscanf(line, "%s %s %s %lg %lg %lg %lg %lg %lg %d %d %d", ele1, ele2,
+           ele3, &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &order[0],
            &order[1], &order[2]);
 
     bool type1[atom->ntypes + 1];
