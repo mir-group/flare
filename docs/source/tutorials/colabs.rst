@@ -3,7 +3,7 @@ FLARE: Active Learning Bayesian Force Fields
 
 We have a few tutorial notebooks that you can check out and play with.
 
-[FLARE (ACE descriptors + sparse GP) with LAMMPS](https://colab.research.google.com/github/mir-group/FLARE-Tutorials/blob/master/FLARE_Tutorial_2026.ipynb) 
+`FLARE (ACE descriptors + sparse GP) with LAMMPS <https://colab.research.google.com/github/mir-group/FLARE-Tutorials/blob/master/FLARE_Tutorial_2026.ipynb>`_. 
 This tutorial demonstrates how to construct Bayesian force field based on sparse Gaussian Process (SGP) model for aluminum. We cover both "online" (on-the-fly) active learning and "offline" training methodologies using ASE MD engine. Additionally, the later section guides users through compiling LAMMPS with FLARE pair styles to enable scalable Bayesian active learning and uncertainty-aware molecular dynamics.
 
 `FLARE (LAMMPS active learning) <https://bit.ly/flarelmpotf>`_.
