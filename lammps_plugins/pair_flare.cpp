@@ -282,7 +282,7 @@ void PairFLARE::read_file(char *filename) {
 
     if (fgets(line, MAXLINE, fptr) == NULL)
       error->one(FLERR, "Unexpected end of file while reading power and kernel");
-    sscanf(line, "%i %s", &power, &kernel_string);
+    sscanf(line, "%i %s", &power, kernel_string);
     kernel_string_length = strlen(kernel_string);
 
     if (fgets(line, MAXLINE, fptr) == NULL)
