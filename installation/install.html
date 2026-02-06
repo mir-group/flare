@@ -8,14 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Installation of FLARE &mdash; flare 1.4.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=02f2166e"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -101,7 +101,7 @@
 <ol class="arabic simple">
 <li><p>Create a new conda environment to install flare</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>flare<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>flare<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
 conda<span class="w"> </span>activate<span class="w"> </span>flare
 </pre></div>
 </div>
@@ -129,7 +129,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>flare
 <ol class="arabic simple" start="3">
 <li><p>Download flare code from github repo and pip install</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>-b<span class="w"> </span>development<span class="w"> </span>https://github.com/mir-group/flare.git
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mir-group/flare.git
 <span class="nb">cd</span><span class="w"> </span>flare
 pip<span class="w"> </span>install<span class="w"> </span>.
 </pre></div>
@@ -162,12 +162,12 @@ make<span class="w"> </span>-j
 <p>After the installation is done, you can leave the current folder and in the python console, try</p>
 <div class="highlight-ipython notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">flare</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">flare</span><span class="o">.</span><span class="vm">__file__</span>
-<span class="s1">&#39;/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py&#39;</span>
+<span class="s1">&#39;/xxx/.conda/envs/flare/lib/python3.10/site-packages/flare/__init__.py&#39;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span><span class="w"> </span><span class="nn">flare.bffs.sgp</span>
 </pre></div>
 </div>
 <p>You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ldd<span class="w"> </span>/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/bffs/sgp/_C_flare.*.so
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ldd<span class="w"> </span>/xxx/.conda/envs/flare/lib/python3.10/site-packages/flare/bffs/sgp/_C_flare.*.so
 </pre></div>
 </div>
 <p>where it is expected to show libmkl (or libopenblas), libgomp etc.</p>
