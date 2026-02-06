@@ -27,17 +27,13 @@ force_block_only = False
 curr_path = os.getcwd()
 
 
-@pytest.mark.skipif(
-    not os.environ.get("lmp", False),
-    reason=(
-        "lmp not found "
-        "in environment: Please install LAMMPS "
-        "and set the $lmp env. "
-        "variable to point to the executatble."
-    ),
-)
 @pytest.fixture(scope="module")
 def all_gp():
+    if not os.environ.get("lmp", False):
+        pytest.skip(
+            "lmp not found in environment: Please install LAMMPS "
+            "and set the $lmp env. variable to point to the executable."
+        )
 
     allgp_dict = {}
     np.random.seed(123)
