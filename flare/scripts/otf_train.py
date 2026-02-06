@@ -356,7 +356,7 @@ def fresh_start_otf(config):
     flare_calc, kernels = get_flare_calc(config["flare_calc"])
     otf_config = config.get("otf")
 
-    # intialize velocity
+    # initialize velocity
     # The "file" option uses the velocities read from the supercell file.
     initial_velocity = otf_config.get("initial_velocity", "file")
     if initial_velocity != "file":
