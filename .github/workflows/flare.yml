@@ -90,11 +90,6 @@ jobs:
       run: |
           pip install -e .[docs,tests]
 
-    - name: Patch ASE
-      run: |
-        ase_file="$(dirname $(python3 -c 'import ase; print(ase.__file__)'))/calculators/lammpsrun.py"
-        sed -i 's/line.startswith(_custom_thermo_mark)/line.strip\(\).startswith\("Step"\)/g' $ase_file
-
     - name: Run tests
       run: |
         export lmp=$(pwd)/lammps/build/lmp
