@@ -1,6 +1,5 @@
 import time, os, shutil, glob, subprocess, sys, json
 from copy import deepcopy
-import pytest
 import pkgutil
 import importlib
 import inspect
@@ -34,7 +33,7 @@ def _visit_Import_abs(self, node):
     for alias in node.names:         # alias.name == "numpy"
         try:
             pyclbr._readmodule(alias.name, self.path)   # NO inpackage arg
-        except ImportError:
+        except Exception:
             pass
 
 # ---------- 2. absolute   "from numpy import array"  --------------------
@@ -46,7 +45,7 @@ def _visit_ImportFrom_abs(self, node):
     if node.module:                  # e.g. "numpy"
         try:
             pyclbr._readmodule(node.module, self.path)  # NO inpackage arg
-        except ImportError:
+        except Exception:
             pass
 
 # ---------- install the patches -----------------------------------------
