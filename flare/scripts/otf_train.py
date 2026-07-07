@@ -9,7 +9,6 @@ import numpy as np
 from flare.learners.otf import OTF
 from flare.md.fake import FakeDFT
 
-from ase import units
 import ase.calculators as ase_calculators
 from ase.md.velocitydistribution import (
     MaxwellBoltzmannDistribution,
@@ -363,7 +362,7 @@ def fresh_start_otf(config):
         # Otherwise, the initial_velocity is a number specifying the temperature
         # to initialize the velocity with Boltzmann distribution
         init_temp = float(initial_velocity)
-        MaxwellBoltzmannDistribution(super_cell, init_temp * units.kB)
+        MaxwellBoltzmannDistribution(super_cell, temperature_K=init_temp)
         Stationary(super_cell)
         ZeroRotation(super_cell)
 
