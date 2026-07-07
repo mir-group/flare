@@ -40,7 +40,7 @@ class LAMMPS_MOD(LAMMPS):
             "pair_style": "lj/cut 2.5",
             "pair_coeff": ["* * 1 1"],
             "compute": ["1 all pair/local dist", "2 all reduce max c_1"],
-            "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
+            "velocity": "all create 300 12345 dist gaussian rot yes mom yes",
             "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
             "dump_period": 1,
             "timestep": 0.001,
@@ -131,18 +131,14 @@ class LAMMPS_MOD(LAMMPS):
             region_command = "\n"
             for cmd in self.parameters["region"]:
                 region_command += "region " + cmd + "\n"
-            self.parameters["model_post"] += region_command
+            self.parameters["model_post"].append(region_command)
 
         # Add "compute" command after "group", using `model_post`
         if "compute" in self.parameters:
             compute_command = "\n"
             for cmd in self.parameters["compute"]:
                 compute_command += "compute " + cmd + "\n"
-            self.parameters["model_post"] += compute_command
-
-        # Always unfix "nve" defined in ASE
-        if "fix" in self.parameters:
-            self.parameters["fix"][-1] += "\nunfix fix_nve"
+            self.parameters["model_post"].append(compute_command)
 
         # Add "dump" command after "timestep"
         self.parameters["timestep"] = str(self.parameters["timestep"])

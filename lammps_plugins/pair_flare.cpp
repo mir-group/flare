@@ -277,20 +277,25 @@ void PairFLARE::read_file(char *filename) {
 
   int tmp, nwords;
   if (me == 0) {
-    fgets(line, MAXLINE, fptr); // Date and contributor
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading header");
 
-    fgets(line, MAXLINE, fptr); // Power, use integer instead of double for simplicity
-    sscanf(line, "%i %s", &power, &kernel_string);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading power and kernel");
+    sscanf(line, "%i %s", &power, kernel_string);
     kernel_string_length = strlen(kernel_string);
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading radial basis");
     sscanf(line, "%s", radial_string); // Radial basis set
     radial_string_length = strlen(radial_string);
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading descriptor parameters");
     sscanf(line, "%i %i %i %i", &n_species, &n_max, &l_max, &beta_size);
 
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading cutoff function");
     sscanf(line, "%s", cutoff_string); // Cutoff function
     cutoff_string_length = strlen(cutoff_string);
   }
@@ -430,7 +435,8 @@ void PairFLARE::grab(FILE *fptr, int n, double *list) {
 
   int i = 0;
   while (i < n) {
-    fgets(line, MAXLINE, fptr);
+    if (fgets(line, MAXLINE, fptr) == NULL)
+      error->one(FLERR, "Unexpected end of file while reading numeric data");
     ptr = strtok(line, " \t\n\r\f");
     list[i++] = atof(ptr);
     while ((ptr = strtok(NULL, " \t\n\r\f")))

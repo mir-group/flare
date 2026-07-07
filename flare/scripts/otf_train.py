@@ -1,6 +1,5 @@
 import time, os, shutil, glob, subprocess, sys, json
 from copy import deepcopy
-import pytest
 import pkgutil
 import importlib
 import inspect
@@ -9,7 +8,6 @@ import numpy as np
 from flare.learners.otf import OTF
 from flare.md.fake import FakeDFT
 
-from ase import units
 import ase.calculators as ase_calculators
 from ase.md.velocitydistribution import (
     MaxwellBoltzmannDistribution,
@@ -35,7 +33,7 @@ def _visit_Import_abs(self, node):
     for alias in node.names:         # alias.name == "numpy"
         try:
             pyclbr._readmodule(alias.name, self.path)   # NO inpackage arg
-        except ImportError:
+        except Exception:
             pass
 
 # ---------- 2. absolute   "from numpy import array"  --------------------
@@ -47,7 +45,7 @@ def _visit_ImportFrom_abs(self, node):
     if node.module:                  # e.g. "numpy"
         try:
             pyclbr._readmodule(node.module, self.path)  # NO inpackage arg
-        except ImportError:
+        except Exception:
             pass
 
 # ---------- install the patches -----------------------------------------
@@ -356,14 +354,14 @@ def fresh_start_otf(config):
     flare_calc, kernels = get_flare_calc(config["flare_calc"])
     otf_config = config.get("otf")
 
-    # intialize velocity
+    # initialize velocity
     # The "file" option uses the velocities read from the supercell file.
     initial_velocity = otf_config.get("initial_velocity", "file")
     if initial_velocity != "file":
         # Otherwise, the initial_velocity is a number specifying the temperature
         # to initialize the velocity with Boltzmann distribution
         init_temp = float(initial_velocity)
-        MaxwellBoltzmannDistribution(super_cell, init_temp * units.kB)
+        MaxwellBoltzmannDistribution(super_cell, temperature_K=init_temp)
         Stationary(super_cell)
         ZeroRotation(super_cell)
 

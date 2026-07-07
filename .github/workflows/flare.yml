@@ -23,8 +23,8 @@ jobs:
 
     env:
       BUILD_DIR: build_${{ matrix.omp }}_${{ matrix.lapack }}
-      CC: gcc-9
-      CXX: g++-9
+      CC: gcc-11
+      CXX: g++-11
 
     steps:
     - uses: actions/checkout@v4
@@ -89,11 +89,6 @@ jobs:
     - name: Pip install
       run: |
           pip install -e .[docs,tests]
-
-    - name: Patch ASE
-      run: |
-        ase_file="$(dirname $(python3 -c 'import ase; print(ase.__file__)'))/calculators/lammpsrun.py"
-        sed -i 's/line.startswith(_custom_thermo_mark)/line.strip\(\).startswith\("Step"\)/g' $ase_file
 
     - name: Run tests
       run: |
