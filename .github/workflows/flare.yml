@@ -118,16 +118,6 @@ jobs:
           pytest test_lammps.py
         fi
 
-    - name: Upload Python coverage to Codecov
-      if: matrix.omp == 'ON' && matrix.lapack == 'ON' && matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v5
-      with:
-        files: coverage/python.xml
-        flags: python
-        name: python-coverage
-        disable_search: true
-        fail_ci_if_error: false
-
     - name: Run tutorial
       run: |
         pip install -U jupyter nbconvert
@@ -182,11 +172,3 @@ jobs:
       run: |
         mkdir -p coverage
         gcovr --root . --filter src/flare_pp/ --xml-pretty --output coverage/cpp.xml build-coverage
-    - name: Upload C++ coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        files: coverage/cpp.xml
-        flags: cpp
-        name: cpp-coverage
-        disable_search: true
-        fail_ci_if_error: false
