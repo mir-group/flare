@@ -179,7 +179,7 @@ jobs:
     - name: Generate C++ coverage report
       run: |
         mkdir -p coverage
-        gcovr --root . --filter src/flare_pp/ --txt build-coverage
+        gcovr --root . --filter src/flare_pp/ --txt - build-coverage
         gcovr --root . --filter src/flare_pp/ --xml-pretty --output coverage/cpp.xml build-coverage
 
     - name: Retain C++ coverage report
