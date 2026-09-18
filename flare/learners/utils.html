@@ -170,14 +170,15 @@ error.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="flare.learners.utils.is_std_in_bound">
-<span class="sig-prename descclassname"><span class="pre">flare.learners.utils.</span></span><span class="sig-name descname"><span class="pre">is_std_in_bound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">std_tolerance:</span> <span class="pre">float,</span> <span class="pre">noise:</span> <span class="pre">float,</span> <span class="pre">structure:</span> <span class="pre">FLARE_Atoms,</span> <span class="pre">max_atoms_added:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">inf,</span> <span class="pre">update_style:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'add_n',</span> <span class="pre">update_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">None)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">typing.List[int]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.utils.is_std_in_bound" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">flare.learners.utils.</span></span><span class="sig-name descname"><span class="pre">is_std_in_bound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">std_tolerance:</span> <span class="pre">float,</span> <span class="pre">noise:</span> <span class="pre">float,</span> <span class="pre">structure:</span> <span class="pre">FLARE_Atoms,</span> <span class="pre">max_atoms_added:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">inf,</span> <span class="pre">update_style:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'add_n',</span> <span class="pre">update_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">relative_to_noise:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">typing.List[int]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.learners.utils.is_std_in_bound" title="Link to this definition"></a></dt>
 <dd><p>Given an uncertainty tolerance and a structure decorated with atoms,
 species, and associated uncertainties, return those which are above a
 given threshold, agnostic to species.</p>
 <p>If std_tolerance is negative, then the threshold used is the absolute
 value of std_tolerance.</p>
 <p>If std_tolerance is positive, then the threshold used is
-std_tolerance * noise.</p>
+<code class="docutils literal notranslate"><span class="pre">std_tolerance</span> <span class="pre">*</span> <span class="pre">noise</span></code> when <code class="docutils literal notranslate"><span class="pre">relative_to_noise</span></code> is true, or
+<code class="docutils literal notranslate"><span class="pre">std_tolerance</span></code> otherwise.</p>
 <p>If std_tolerance is 0, then do not check.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -194,6 +195,9 @@ adds the n = max_atoms_added highest-uncertainty atoms, and
 update_threshold.</p></li>
 <li><p><strong>update_threshold</strong> – A float specifying the update threshold. Ignored
 if update_style is not set to <a href="#id5"><span class="problematic" id="id6">``</span></a>threshold’’.</p></li>
+<li><p><strong>relative_to_noise</strong> – Whether positive tolerances are relative to the
+force-noise hyperparameter. Set false for normalized local
+uncertainties.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
