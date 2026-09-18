@@ -3,8 +3,11 @@ FLARE: Active Learning Bayesian Force Fields
 
 We have a few tutorial notebooks that you can check out and play with.
 
-`FLARE (ACE descriptors + sparse GP) with LAMMPS <https://colab.research.google.com/github/mir-group/FLARE-Tutorials/blob/master/FLARE_Tutorial_2026.ipynb>`_. 
-This tutorial demonstrates how to construct Bayesian force field based on sparse Gaussian Process (SGP) model for aluminum. We cover both "online" (on-the-fly) active learning and "offline" training methodologies using ASE MD engine. Additionally, the later section guides users through compiling LAMMPS with FLARE pair styles to enable scalable Bayesian active learning and uncertainty-aware molecular dynamics.
+`FLARE (ACE descriptors + sparse GP) <https://github.com/mir-group/flare/blob/master/tutorials/sparse_gp_tutorial.ipynb>`_.
+This in-repository notebook is the canonical tutorial for training sparse Gaussian Process force fields with FLARE.
+
+`Run the FLARE tutorial in Google Colab <https://colab.research.google.com/github/mir-group/FLARE-Tutorials/blob/28f6d3d1cce5621541a81af4ffe29cd56cafeede/FLARE_Tutorial_2026.ipynb>`_.
+The interactive tutorial demonstrates online and offline training of an aluminum sparse Gaussian Process force field with ASE, and compiling LAMMPS with FLARE pair styles for uncertainty-aware molecular dynamics.
 
 `FLARE (LAMMPS active learning) <https://bit.ly/flarelmpotf>`_.
 This tutorial demonstrates new functionality for running active learning all within LAMMPS, with LAMMPS running the dynamics to allow arbitrarily complex molecular dynamics workflows while maintaining a simple interface. This also demonstrates how to use the C++ API directly from Python through `pybind11`. Finally, there's a simple demonstration of phonon calculations with FLARE using `phonopy`.
