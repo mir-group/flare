@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/mir-group/flare/actions/workflows/flare.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+[![Build Status](https://github.com/mir-group/flare/actions/workflows/flare.yml/badge.svg)](https://github.com/mir-group/flare/actions) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![Python coverage](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg?flag=python)](https://codecov.io/gh/mir-group/flare) [![C++ coverage](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg?flag=cpp)](https://codecov.io/gh/mir-group/flare)
 
 # FLARE: Fast Learning of Atomistic Rare Events
 

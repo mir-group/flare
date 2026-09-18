@@ -13,3 +13,8 @@ add_executable(
 
 include_directories(../src/flare_pp)
 target_link_libraries(tests PUBLIC gtest gtest_main flare)
+
+if(FLARE_ENABLE_COVERAGE)
+  target_compile_options(tests PRIVATE ${FLARE_COVERAGE_COMPILE_OPTIONS})
+  target_link_options(tests PRIVATE ${FLARE_COVERAGE_LINK_OPTIONS})
+endif()

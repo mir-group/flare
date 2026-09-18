@@ -142,3 +142,58 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs/build/html
       if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
+
+  python-coverage:
+    name: Python coverage
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install test dependencies
+      run: pip install -e .[docs,tests]
+    - name: Run Python tests with coverage
+      run: |
+        mkdir -p coverage
+        cd tests
+        pytest --cov=../flare --cov-branch --cov-report=term-missing --cov-report=xml:../coverage/python.xml
+    - name: Upload Python coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: coverage/python.xml
+        flags: python
+        name: python-coverage
+        disable_search: true
+        fail_ci_if_error: false
+
+  cpp-coverage:
+    name: C++ coverage
+    runs-on: ubuntu-22.04
+    env:
+      NO_OMP: 1
+      NO_LAPACK: 1
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install coverage tooling
+      run: pip install gcovr
+    - name: Build and run native tests with coverage
+      run: |
+        cmake -S . -B build-coverage -DCMAKE_BUILD_TYPE=Release -DFLARE_ENABLE_COVERAGE=ON
+        cmake --build build-coverage --parallel 4
+        ./build-coverage/ctests/tests
+    - name: Generate C++ coverage report
+      run: |
+        mkdir -p coverage
+        gcovr --root . --filter src/flare_pp/ --xml-pretty --output coverage/cpp.xml build-coverage
+    - name: Upload C++ coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: coverage/cpp.xml
+        flags: cpp
+        name: cpp-coverage
+        disable_search: true
+        fail_ci_if_error: false

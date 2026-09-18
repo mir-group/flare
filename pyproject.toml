@@ -36,6 +36,7 @@ Homepage = "https://github.com/mir-group/flare"
 tests = [
     "pytest-mock",
     "pytest>=4.6",
+    "pytest-cov",
     "IPython",
 ]
 dev = [
@@ -58,3 +59,16 @@ docs = [
 
 [tool.scikit-build]
 wheel.packages = ["flare"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["flare"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]

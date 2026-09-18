@@ -7,6 +7,18 @@ project(flare LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/)
 
+option(FLARE_ENABLE_COVERAGE "Build native targets with coverage instrumentation" OFF)
+
+if(FLARE_ENABLE_COVERAGE)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    message(FATAL_ERROR
+      "FLARE_ENABLE_COVERAGE requires a GCC- or Clang-compatible compiler.")
+  endif()
+
+  set(FLARE_COVERAGE_COMPILE_OPTIONS --coverage -O0 -g)
+  set(FLARE_COVERAGE_LINK_OPTIONS --coverage)
+endif()
+
 include(ExternalProject)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -116,6 +128,11 @@ include_directories(
 add_library(flare STATIC ${FLARE_SOURCES})
 set_target_properties(flare PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_dependencies(flare eigen_project)
+
+if(FLARE_ENABLE_COVERAGE)
+  target_compile_options(flare PRIVATE ${FLARE_COVERAGE_COMPILE_OPTIONS})
+  target_link_options(flare INTERFACE ${FLARE_COVERAGE_LINK_OPTIONS})
+endif()
 
 # Link to json.
 target_link_libraries(flare PUBLIC nlohmann_json::nlohmann_json)
