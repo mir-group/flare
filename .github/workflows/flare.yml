@@ -101,13 +101,32 @@ jobs:
       run: |
         export lmp=$(pwd)/lammps/build/lmp
         cd tests
-        pytest
+        if [ "${{ matrix.omp }}" = "ON" ] && [ "${{ matrix.lapack }}" = "ON" ] && [ "${{ matrix.python-version }}" = "3.12" ]; then
+          pytest --cov=../flare --cov-branch --cov-report=term-missing
+        else
+          pytest
+        fi
 
     - name: Run LAMMPS tests with Kokkos
       run: |
         export lmp="$(pwd)/lammps/build/lmp -k on t 4 -sf kk -pk kokkos newton on neigh half"
         cd tests
-        pytest test_lammps.py
+        if [ "${{ matrix.omp }}" = "ON" ] && [ "${{ matrix.lapack }}" = "ON" ] && [ "${{ matrix.python-version }}" = "3.12" ]; then
+          mkdir -p ../coverage
+          pytest test_lammps.py --cov=../flare --cov-append --cov-branch --cov-report=term-missing --cov-report=xml:../coverage/python.xml
+        else
+          pytest test_lammps.py
+        fi
+
+    - name: Upload Python coverage to Codecov
+      if: matrix.omp == 'ON' && matrix.lapack == 'ON' && matrix.python-version == '3.12'
+      uses: codecov/codecov-action@v5
+      with:
+        files: coverage/python.xml
+        flags: python
+        name: python-coverage
+        disable_search: true
+        fail_ci_if_error: false
 
     - name: Run tutorial
       run: |
@@ -142,32 +161,6 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs/build/html
       if: github.event_name == 'pull_request' && matrix.lapack == 'on' && matrix.omp == 'on'
-
-  python-coverage:
-    name: Python coverage
-    runs-on: ubuntu-22.04
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-    - name: Install test dependencies
-      run: pip install -e .[docs,tests]
-    - name: Run Python tests with coverage
-      run: |
-        mkdir -p coverage
-        cd tests
-        pytest --cov=../flare --cov-branch --cov-report=term-missing --cov-report=xml:../coverage/python.xml
-    - name: Upload Python coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        files: coverage/python.xml
-        flags: python
-        name: python-coverage
-        disable_search: true
-        fail_ci_if_error: false
 
   cpp-coverage:
     name: C++ coverage
