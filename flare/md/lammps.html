@@ -161,28 +161,28 @@ region, dump, fix/nvt, fix/npt etc.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ase.build</span><span class="w"> </span><span class="kn">import</span> <span class="n">bulk</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flare.md.lammps</span><span class="w"> </span><span class="kn">import</span> <span class="n">LAMMPS_MOD</span>
 
-<span class="n">Ni</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">&quot;Ni&quot;</span><span class="p">,</span> <span class="n">cubic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">H</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">Ni</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">diagonal</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">(</span><span class="s2">"Ni"</span><span class="p">,</span> <span class="n">cubic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">(</span><span class="s2">"H"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">Ni</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">diagonal</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">NiH</span> <span class="o">=</span> <span class="n">Ni</span> <span class="o">+</span> <span class="n">H</span>
 
 <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;pair_style&quot;</span><span class="p">:</span> <span class="s2">&quot;lj/cut 2.5&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;pair_coeff&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;* * 1 1&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;compute&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 all pair/local dist&quot;</span><span class="p">,</span> <span class="s2">&quot;2 all reduce max c_1&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;velocity&quot;</span><span class="p">:</span> <span class="s2">&quot;all create 300 12345 dist gaussian rot yes mom yes&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;fix&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;1 all nvt temp 300 300 $(100.0*dt)&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;dump_period&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="s2">&quot;timestep&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
-    <span class="s2">&quot;keep_alive&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">"pair_style"</span><span class="p">:</span> <span class="s2">"lj/cut 2.5"</span><span class="p">,</span>
+    <span class="s2">"pair_coeff"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"* * 1 1"</span><span class="p">],</span>
+    <span class="s2">"compute"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"1 all pair/local dist"</span><span class="p">,</span> <span class="s2">"2 all reduce max c_1"</span><span class="p">],</span>
+    <span class="s2">"velocity"</span><span class="p">:</span> <span class="s2">"all create 300 12345 dist gaussian rot yes mom yes"</span><span class="p">,</span>
+    <span class="s2">"fix"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"1 all nvt temp 300 300 $(100.0*dt)"</span><span class="p">],</span>
+    <span class="s2">"dump_period"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">"timestep"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+    <span class="s2">"keep_alive"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="n">lmp_calc</span> <span class="o">=</span> <span class="n">LAMMPS_MOD</span><span class="p">(</span>
     <span class="n">command</span><span class="o">=&lt;</span><span class="n">lammps_executable</span><span class="o">&gt;</span><span class="p">,</span>
-    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;my_lammps&quot;</span><span class="p">,</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">"my_lammps"</span><span class="p">,</span>
     <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span>
     <span class="n">keep_tmp_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">tmp_dir</span><span class="o">=</span><span class="s2">&quot;tmp&quot;</span><span class="p">,</span>
+    <span class="n">tmp_dir</span><span class="o">=</span><span class="s2">"tmp"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">lmp_calc</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="n">param_dict</span><span class="p">)</span>
 <span class="n">NiH</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">lmp_calc</span>

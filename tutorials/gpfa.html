@@ -159,11 +159,11 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 </div>
 </li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="p">(</span><span class="n">kernels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;twobody&#39;</span><span class="p">,</span> <span class="s1">&#39;threebody&#39;</span><span class="p">],</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gp</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="p">(</span><span class="n">kernels</span><span class="o">=</span><span class="p">[</span><span class="s1">'twobody'</span><span class="p">,</span> <span class="s1">'threebody'</span><span class="p">],</span>
 <span class="n">hyps</span><span class="o">=</span><span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">],</span>
-<span class="n">cutoffs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;threebody&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">},</span>
-<span class="n">hyp_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Two-Body Signal Variance&#39;</span><span class="p">,</span><span class="s1">&#39;Two-Body Length Scale&#39;</span><span class="p">,</span><span class="s1">&#39;Three-Body Signal Variance&#39;</span><span class="p">,</span>
-<span class="s1">&#39;Three-Body Length Scale&#39;</span><span class="p">,</span> <span class="s1">&#39;Noise Variance&#39;</span><span class="p">]</span>
+<span class="n">cutoffs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'twobody'</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span> <span class="s1">'threebody'</span><span class="p">:</span><span class="mi">3</span><span class="p">},</span>
+<span class="n">hyp_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'Two-Body Signal Variance'</span><span class="p">,</span><span class="s1">'Two-Body Length Scale'</span><span class="p">,</span><span class="s1">'Three-Body Signal Variance'</span><span class="p">,</span>
+<span class="s1">'Three-Body Length Scale'</span><span class="p">,</span> <span class="s1">'Noise Variance'</span><span class="p">]</span>
                 <span class="p">)</span>
 </pre></div>
 </div>
@@ -176,7 +176,7 @@ We then need to convert the list of ASE Atoms into FLARE_Atoms.</p>
 <p>You can run it simply by calling the function on a file like so:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">flare.atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLARE_Atoms</span>
-<span class="n">trajectory</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;path-to-traj-file&#39;</span><span class="p">)</span>
+<span class="n">trajectory</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">'path-to-traj-file'</span><span class="p">)</span>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">FLARE_Atoms</span><span class="o">.</span><span class="n">from_ase_atoms</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span> <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">trajectory</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -188,7 +188,7 @@ available in the test_files directory, which is <code class="docutils literal no
 You can open it via the command</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="kn">import</span> <span class="n">loads</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flare.atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">FLARE_Atoms</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;path-to-methanol-frames&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'path-to-methanol-frames'</span><span class="p">,</span><span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">loaded_dicts</span> <span class="o">=</span> <span class="p">[</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="p">[</span><span class="n">FLARE_Atoms</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">loaded_dicts</span><span class="p">]</span>
 </pre></div>
@@ -277,7 +277,7 @@ to use a more selective subset of atoms for large unit cells.</p>
 </div>
 <p>After this, all you need to do is call the run method!</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">TT</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done!&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Done!"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The results, by default, will be stored in <code class="docutils literal notranslate"><span class="pre">gp_from_aimd.out</span></code>, as well as a

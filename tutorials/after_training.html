@@ -110,8 +110,8 @@
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flare</span><span class="w"> </span><span class="kn">import</span> <span class="n">otf_parser</span>
 
-<span class="n">logdir</span> <span class="o">=</span> <span class="s1">&#39;../../../tests/test_files&#39;</span>
-<span class="n">file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">logdir</span><span class="si">}</span><span class="s1">/AgI_snippet.out&#39;</span>
+<span class="n">logdir</span> <span class="o">=</span> <span class="s1">'../../../tests/test_files'</span>
+<span class="n">file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">logdir</span><span class="si">}</span><span class="s1">/AgI_snippet.out'</span>
 <span class="n">hyp_no</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># use the hyperparameters from the 2nd training step</span>
 <span class="n">otf_object</span> <span class="o">=</span> <span class="n">otf_parser</span><span class="o">.</span><span class="n">OtfAnalysis</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
 </pre></div>
@@ -127,10 +127,10 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gp_model</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">make_gp</span><span class="p">(</span><span class="n">hyp_no</span><span class="o">=</span><span class="n">hyp_no</span><span class="p">)</span>
 <span class="n">gp_model</span><span class="o">.</span><span class="n">parallel</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">gp_model</span><span class="o">.</span><span class="n">hyp_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sig2&#39;</span><span class="p">,</span> <span class="s1">&#39;ls2&#39;</span><span class="p">,</span> <span class="s1">&#39;sig3&#39;</span><span class="p">,</span> <span class="s1">&#39;ls3&#39;</span><span class="p">,</span> <span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+<span class="n">gp_model</span><span class="o">.</span><span class="n">hyp_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'sig2'</span><span class="p">,</span> <span class="s1">'ls2'</span><span class="p">,</span> <span class="s1">'sig3'</span><span class="p">,</span> <span class="s1">'ls3'</span><span class="p">,</span> <span class="s1">'noise'</span><span class="p">]</span>
 
 <span class="c1"># write model to a binary file</span>
-<span class="n">gp_model</span><span class="o">.</span><span class="n">write_model</span><span class="p">(</span><span class="s1">&#39;AgI.gp&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+<span class="n">gp_model</span><span class="o">.</span><span class="n">write_model</span><span class="p">(</span><span class="s1">'AgI.gp'</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'json'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -141,7 +141,7 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare.gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcess</span>
 
-<span class="n">gp_model</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;AgI.gp.json&#39;</span><span class="p">)</span>
+<span class="n">gp_model</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">'AgI.gp.json'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -155,14 +155,14 @@
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flare.mgp</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappedGaussianProcess</span>
 
-<span class="n">grid_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;twobody&#39;</span><span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">]},</span>
-               <span class="s1">&#39;threebody&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;grid_num&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">]}}</span>
+<span class="n">grid_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'twobody'</span><span class="p">:</span>   <span class="p">{</span><span class="s1">'grid_num'</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">]},</span>
+               <span class="s1">'threebody'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'grid_num'</span><span class="p">:</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">]}}</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">gp_model</span><span class="o">.</span><span class="n">training_statistics</span>
-<span class="n">lammps_location</span> <span class="o">=</span> <span class="s1">&#39;AgI_Molten&#39;</span>
+<span class="n">lammps_location</span> <span class="o">=</span> <span class="s1">'AgI_Molten'</span>
 
-<span class="n">mgp_model</span> <span class="o">=</span> <span class="n">MappedGaussianProcess</span><span class="p">(</span><span class="n">grid_params</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">],</span>
-    <span class="n">var_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lmp_file_name</span><span class="o">=</span><span class="s1">&#39;AgI_Molten&#39;</span><span class="p">,</span> <span class="n">n_cpus</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">mgp_model</span> <span class="o">=</span> <span class="n">MappedGaussianProcess</span><span class="p">(</span><span class="n">grid_params</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">'species'</span><span class="p">],</span>
+    <span class="n">var_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lmp_file_name</span><span class="o">=</span><span class="s1">'AgI_Molten'</span><span class="p">,</span> <span class="n">n_cpus</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">mgp_model</span><span class="o">.</span><span class="n">build_map</span><span class="p">(</span><span class="n">gp_model</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -215,24 +215,24 @@ pair_coeff * * &lt;lmp_file_name&gt; &lt;chemical_symbols&gt; yes/no yes/no
 <span class="n">species</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">gp_species_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">positions</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">position_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">forces</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">force_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">otf_cell</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;cell&#39;</span><span class="p">]</span>
+<span class="n">otf_cell</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">'cell'</span><span class="p">]</span>
 <span class="n">structure</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">symbols</span><span class="o">=</span><span class="n">species</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="n">otf_cell</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="n">positions</span><span class="p">)</span>
 
 <span class="c1"># get chemical symbols, masses etc.</span>
-<span class="n">species</span> <span class="o">=</span> <span class="n">gp_model</span><span class="o">.</span><span class="n">training_statistics</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span>
-<span class="n">specie_symbol_list</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
-<span class="n">masses</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_Z_to_mass</span><span class="p">[</span><span class="n">_element_to_Z</span><span class="p">[</span><span class="n">species</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">species</span><span class="p">))]</span>
+<span class="n">species</span> <span class="o">=</span> <span class="n">gp_model</span><span class="o">.</span><span class="n">training_statistics</span><span class="p">[</span><span class="s1">'species'</span><span class="p">]</span>
+<span class="n">specie_symbol_list</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
+<span class="n">masses</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_Z_to_mass</span><span class="p">[</span><span class="n">_element_to_Z</span><span class="p">[</span><span class="n">species</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">species</span><span class="p">))]</span>
 
 <span class="c1"># set up input params</span>
-<span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;command&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lmp&#39;</span><span class="p">),</span> <span class="c1"># set up executable for ASE</span>
-              <span class="s1">&#39;newton&#39;</span><span class="p">:</span> <span class="s1">&#39;off&#39;</span><span class="p">,</span>
-              <span class="s1">&#39;pair_style&#39;</span><span class="p">:</span> <span class="s1">&#39;mgp&#39;</span><span class="p">,</span>
-              <span class="s1">&#39;pair_coeff&#39;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;* * </span><span class="si">{</span><span class="n">lammps_location</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;.mgp&quot;</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">specie_symbol_list</span><span class="si">}</span><span class="s1"> yes yes&#39;</span><span class="p">],</span>
-              <span class="s1">&#39;mass&#39;</span><span class="p">:</span> <span class="n">masses</span><span class="p">}</span>
-<span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">lammps_location</span> <span class="o">+</span> <span class="s2">&quot;.mgp&quot;</span><span class="p">]</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'command'</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'lmp'</span><span class="p">),</span> <span class="c1"># set up executable for ASE</span>
+              <span class="s1">'newton'</span><span class="p">:</span> <span class="s1">'off'</span><span class="p">,</span>
+              <span class="s1">'pair_style'</span><span class="p">:</span> <span class="s1">'mgp'</span><span class="p">,</span>
+              <span class="s1">'pair_coeff'</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s1">'* * </span><span class="si">{</span><span class="n">lammps_location</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">".mgp"</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">specie_symbol_list</span><span class="si">}</span><span class="s1"> yes yes'</span><span class="p">],</span>
+              <span class="s1">'mass'</span><span class="p">:</span> <span class="n">masses</span><span class="p">}</span>
+<span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">lammps_location</span> <span class="o">+</span> <span class="s2">".mgp"</span><span class="p">]</span>
 
 <span class="c1"># create ASE calc</span>
-<span class="n">lmp_calc</span> <span class="o">=</span> <span class="n">LAMMPS</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;tmp_AgI&#39;</span><span class="p">,</span> <span class="n">keep_tmp_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="s1">&#39;./tmp/&#39;</span><span class="p">,</span>
+<span class="n">lmp_calc</span> <span class="o">=</span> <span class="n">LAMMPS</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'tmp_AgI'</span><span class="p">,</span> <span class="n">keep_tmp_files</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tmp_dir</span><span class="o">=</span><span class="s1">'./tmp/'</span><span class="p">,</span>
         <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span> <span class="n">specorder</span><span class="o">=</span><span class="n">species</span><span class="p">)</span>
 
 <span class="n">structure</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">lmp_calc</span>
@@ -270,7 +270,7 @@ Please use LAMMPSRUN.set().
 <span class="n">species</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">gp_species_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">positions</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">position_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 <span class="n">forces</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">force_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">otf_cell</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;cell&#39;</span><span class="p">]</span>
+<span class="n">otf_cell</span> <span class="o">=</span> <span class="n">otf_object</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">'cell'</span><span class="p">]</span>
 <span class="n">structure</span> <span class="o">=</span> <span class="n">struc</span><span class="o">.</span><span class="n">Structure</span><span class="p">(</span><span class="n">otf_cell</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
 
 <span class="n">atom_types</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
@@ -278,18 +278,18 @@ Please use LAMMPSRUN.set().
 <span class="n">atom_species</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="mi">27</span>
 
 <span class="c1"># create data file</span>
-<span class="n">data_file_name</span> <span class="o">=</span> <span class="s1">&#39;tmp.data&#39;</span>
+<span class="n">data_file_name</span> <span class="o">=</span> <span class="s1">'tmp.data'</span>
 <span class="n">data_text</span> <span class="o">=</span> <span class="n">lammps_calculator</span><span class="o">.</span><span class="n">lammps_dat</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">atom_types</span><span class="p">,</span>
                                          <span class="n">atom_masses</span><span class="p">,</span> <span class="n">atom_species</span><span class="p">)</span>
 <span class="n">lammps_calculator</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">data_file_name</span><span class="p">,</span> <span class="n">data_text</span><span class="p">)</span>
 
 <span class="c1"># create lammps input</span>
-<span class="n">style_string</span> <span class="o">=</span> <span class="s1">&#39;mgp&#39;</span>
-<span class="n">coeff_string</span> <span class="o">=</span> <span class="s1">&#39;* * </span><span class="si">{}</span><span class="s1"> Ag I yes yes&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lammps_location</span><span class="p">)</span>
-<span class="n">lammps_executable</span> <span class="o">=</span> <span class="s1">&#39;$lmp&#39;</span>
-<span class="n">dump_file_name</span> <span class="o">=</span> <span class="s1">&#39;tmp.dump&#39;</span>
-<span class="n">input_file_name</span> <span class="o">=</span> <span class="s1">&#39;tmp.in&#39;</span>
-<span class="n">output_file_name</span> <span class="o">=</span> <span class="s1">&#39;tmp.out&#39;</span>
+<span class="n">style_string</span> <span class="o">=</span> <span class="s1">'mgp'</span>
+<span class="n">coeff_string</span> <span class="o">=</span> <span class="s1">'* * </span><span class="si">{}</span><span class="s1"> Ag I yes yes'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lammps_location</span><span class="p">)</span>
+<span class="n">lammps_executable</span> <span class="o">=</span> <span class="s1">'$lmp'</span>
+<span class="n">dump_file_name</span> <span class="o">=</span> <span class="s1">'tmp.dump'</span>
+<span class="n">input_file_name</span> <span class="o">=</span> <span class="s1">'tmp.in'</span>
+<span class="n">output_file_name</span> <span class="o">=</span> <span class="s1">'tmp.out'</span>
 <span class="n">input_text</span> <span class="o">=</span> \
     <span class="n">lammps_calculator</span><span class="o">.</span><span class="n">generic_lammps_input</span><span class="p">(</span><span class="n">data_file_name</span><span class="p">,</span> <span class="n">style_string</span><span class="p">,</span>
                                            <span class="n">coeff_string</span><span class="p">,</span> <span class="n">dump_file_name</span><span class="p">)</span>
