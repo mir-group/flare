@@ -4,6 +4,30 @@
 #include <chrono>
 #include <numeric> // Iota
 
+namespace {
+Structure gradient_structure(const Eigen::MatrixXd &cell, double cutoff,
+                             const std::vector<Descriptor *> &descriptors,
+                             double scale = 1.0) {
+  Eigen::MatrixXd positions(10, 3);
+  positions << 0.2, 0.3, 0.4,
+               1.1, 0.6, 0.8,
+               0.7, 1.8, 0.5,
+               2.4, 1.5, 1.6,
+               1.6, 3.2, 2.3,
+               3.5, 0.8, 3.1,
+               4.1, 3.8, 1.2,
+               2.8, 4.3, 4.5,
+               0.9, 2.5, 4.2,
+               4.4, 2.1, 3.7;
+  std::vector<int> species{0, 1, 2, 0, 1, 2, 0, 1, 2, 0};
+  Structure structure(cell, species, scale * positions, cutoff, descriptors);
+  structure.energy = Eigen::VectorXd::Constant(1, 0.7 * scale);
+  structure.forces = Eigen::VectorXd::LinSpaced(30, -scale, scale);
+  structure.stresses = Eigen::VectorXd::LinSpaced(6, -0.2 * scale, 0.2 * scale);
+  return structure;
+}
+} // namespace
+
 // TEST(TestPar, TestPar){
 //   std::cout << omp_get_max_threads() << std::endl;
 //   #pragma omp parallel for
@@ -152,16 +176,16 @@ TEST_F(StructureTest, LikeGrad) {
   double sigma_f = 0.2;
   double sigma_s = 0.3;
 
-  std::vector<Kernel *> kernels;
-  kernels.push_back(&kernel_norm);
-  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+  // Fix the geometry and labels so the finite-difference check is independent
+  // of test order and none of the gradients is accidentally near zero.
+  test_struc = gradient_structure(cell, cutoff, dc);
 
-  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
-  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
-  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
-  test_struc.energy = energy;
-  test_struc.forces = forces;
-  test_struc.stresses = stresses;
+  // Keep the kernel scale moderate: subtracting likelihoods with a large
+  // kernel/noise ratio can swamp the small finite-difference signal.
+  NormalizedDotProduct gradient_kernel(2.0, power);
+  std::vector<Kernel *> kernels;
+  kernels.push_back(&gradient_kernel);
+  SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   sparse_gp.add_training_structure(test_struc, {-1}, 0.4, 0.2, 0.3);
   sparse_gp.add_all_environments(test_struc);
@@ -184,21 +208,22 @@ TEST_F(StructureTest, LikeGrad) {
 
   int n_hyps = hyps.size();
   Eigen::VectorXd hyps_up, hyps_down;
-  double pert = 1e-5, like_up, like_down, fin_diff;
+  // Check two step sizes in the converged range, above cancellation noise.
+  for (double pert : {1e-4, 5e-5}) {
+    for (int i = 0; i < n_hyps; i++) {
+      SCOPED_TRACE(::testing::Message() << "hyperparameter " << i
+                                      << ", step " << pert);
+      hyps_up = hyps;
+      hyps_down = hyps;
+      hyps_up(i) += pert;
+      hyps_down(i) -= pert;
 
-  for (int i = 0; i < n_hyps; i++) {
-    hyps_up = hyps;
-    hyps_down = hyps;
-    hyps_up(i) += pert;
-    hyps_down(i) -= pert;
+      double like_up = sparse_gp.compute_likelihood_gradient(hyps_up);
+      double like_down = sparse_gp.compute_likelihood_gradient(hyps_down);
+      double fin_diff = (like_up - like_down) / (2 * pert);
 
-    like_up = sparse_gp.compute_likelihood_gradient(hyps_up);
-    like_down = sparse_gp.compute_likelihood_gradient(hyps_down);
-
-    fin_diff = (like_up - like_down) / (2 * pert);
-    printf("like_grad=%lg, fin_diff=%lg\n", like_grad(i), fin_diff);
-
-    EXPECT_NEAR(like_grad(i), fin_diff, 5e-3 * abs(fin_diff));
+      EXPECT_NEAR(like_grad(i), fin_diff, 1e-5 * abs(fin_diff));
+    }
   }
 }
 
@@ -208,9 +233,12 @@ TEST_F(StructureTest, LikeGradStable) {
   double sigma_f = 0.1;
   double sigma_s = 0.1;
 
+  // Use the same well-scaled, deterministic inputs as the direct-gradient test.
+  NormalizedDotProduct gradient_kernel(2.0, power);
+  NormalizedDotProduct gradient_kernel_3(1.5, power);
   std::vector<Kernel *> kernels;
-  kernels.push_back(&kernel_norm);
-  kernels.push_back(&kernel_3_norm);
+  kernels.push_back(&gradient_kernel);
+  kernels.push_back(&gradient_kernel_3);
   SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
   std::vector<Descriptor *> dc;
@@ -224,23 +252,8 @@ TEST_F(StructureTest, LikeGradStable) {
           descriptor_settings);
   dc.push_back(&b2);
 
-  test_struc = Structure(cell, species, positions, cutoff, dc);
-
-  Eigen::VectorXd energy = Eigen::VectorXd::Random(1);
-  Eigen::VectorXd forces = Eigen::VectorXd::Random(n_atoms * 3);
-  Eigen::VectorXd stresses = Eigen::VectorXd::Random(6);
-  test_struc.energy = energy;
-  test_struc.forces = forces;
-  test_struc.stresses = stresses;
-
-  test_struc_2 = Structure(cell_2, species_2, positions_2, cutoff, dc);
-
-  Eigen::VectorXd energy_2 = Eigen::VectorXd::Random(1);
-  Eigen::VectorXd forces_2 = Eigen::VectorXd::Random(n_atoms * 3);
-  Eigen::VectorXd stresses_2 = Eigen::VectorXd::Random(6);
-  test_struc_2.energy = energy_2;
-  test_struc_2.forces = forces_2;
-  test_struc_2.stresses = stresses_2;
+  test_struc = gradient_structure(cell, cutoff, dc);
+  test_struc_2 = gradient_structure(cell_2, cutoff, dc, 0.9);
 
   sparse_gp.add_training_structure(test_struc, {-1}, 0.4, 0.2, 0.3);
   sparse_gp.add_specific_environments(test_struc, {0, 1, 3}); 
@@ -275,29 +288,28 @@ TEST_F(StructureTest, LikeGradStable) {
 
   int n_hyps = hyps.size();
   Eigen::VectorXd hyps_up, hyps_down;
-  double pert = 1e-6, like_up, like_down, fin_diff;
+  double like_up, like_down, fin_diff;
 
-  for (int i = 0; i < n_hyps; i++) {
-    hyps_up = hyps;
-    hyps_down = hyps;
-    hyps_up(i) += pert;
-    hyps_down(i) -= pert;
+  for (double pert : {1e-4, 5e-5}) {
+    for (int i = 0; i < n_hyps; i++) {
+      SCOPED_TRACE(::testing::Message() << "hyperparameter " << i
+                                      << ", step " << pert);
+      hyps_up = hyps;
+      hyps_down = hyps;
+      hyps_up(i) += pert;
+      hyps_down(i) -= pert;
 
-    sparse_gp.set_hyperparameters(hyps_up);
-    like_up = sparse_gp.compute_likelihood_gradient_stable();
-    double datafit_up = sparse_gp.data_fit; 
-    double complexity_up = sparse_gp.complexity_penalty;
+      sparse_gp.set_hyperparameters(hyps_up);
+      like_up = sparse_gp.compute_likelihood_gradient_stable();
 
-    sparse_gp.set_hyperparameters(hyps_down);
-    like_down = sparse_gp.compute_likelihood_gradient_stable();
-    double datafit_down = sparse_gp.data_fit; 
-    double complexity_down = sparse_gp.complexity_penalty;
+      sparse_gp.set_hyperparameters(hyps_down);
+      like_down = sparse_gp.compute_likelihood_gradient_stable();
 
-    fin_diff = (like_up - like_down) / (2 * pert);
+      fin_diff = (like_up - like_down) / (2 * pert);
 
-    std::cout << like_grad(i) << " " << fin_diff << std::endl;
-    EXPECT_NEAR(like_grad(i), fin_diff, 1e-5 * abs(fin_diff));
-    EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-6 * abs(fin_diff));
+      EXPECT_NEAR(like_grad(i), fin_diff, 1e-5 * abs(fin_diff));
+      EXPECT_NEAR(like_grad(i), like_grad_original(i), 1e-6 * abs(fin_diff));
+    }
   }
 }
 

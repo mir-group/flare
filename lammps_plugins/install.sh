@@ -16,19 +16,19 @@ do
     if [[ "$f" == *mgp* ]];then
         continue
     fi
-    ln -s $(pwd)/kokkos/$f $kk/$f
+    ln -s "$(pwd)/kokkos/$f" "$kk/$f"
 done
 
 for f in *.cpp *.h
 do
-    ln -s $(pwd)/$f $src/$f
+    ln -s "$(pwd)/$f" "$src/$f"
 done
 
 for f in cutoffs radial y_grad
 do
     for ex in cpp h
     do
-        ln -s $(pwd)/../src/flare_pp/$f.$ex $src/$f.$ex
+        ln -s "$(pwd)/../src/flare_pp/$f.$ex" "$src/$f.$ex"
     done
 done
 
@@ -51,9 +51,12 @@ if(PKG_KOKKOS)
         FetchContent_Declare(
             kokkoskernels
             GIT_REPOSITORY https://github.com/kokkos/kokkos-kernels.git
+            # Matches the Kokkos 5.2 series bundled with LAMMPS 2 Sep 2026.
+            GIT_TAG 5.2.2
+            GIT_SHALLOW TRUE
         )
         FetchContent_MakeAvailable(kokkoskernels)
     endif()
     target_link_libraries(lammps PUBLIC Kokkos::kokkoskernels)
 endif()
-' >> $lammps/cmake/CMakeLists.txt
+' >> "$lammps/cmake/CMakeLists.txt"

@@ -13,6 +13,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         omp: [OFF, ON]
         lapack: [OFF, ON]
@@ -23,8 +24,8 @@ jobs:
 
     env:
       BUILD_DIR: build_${{ matrix.omp }}_${{ matrix.lapack }}
-      CC: gcc-9
-      CXX: g++-9
+      CC: gcc-11
+      CXX: g++-11
 
     steps:
     - uses: actions/checkout@v4
@@ -33,9 +34,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-11 g++-11 liblapacke liblapacke-dev libopenmpi-dev
+        "$CC" --version
+        "$CXX" --version
+
     - name: Build
       run: |
-        sudo apt install liblapacke liblapacke-dev libopenmpi-dev
         mkdir ${BUILD_DIR}
         cd ${BUILD_DIR}
 
@@ -61,7 +68,7 @@ jobs:
 
     - name: Install LAMMPS
       run: |
-        git clone --depth 1 --branch release https://github.com/lammps/lammps.git lammps
+        git clone --depth 1 --branch patch_2Sep2026 https://github.com/lammps/lammps.git lammps
 
         cd lammps/src
         cp pair_hybrid.* pair_lj_cut.* ..
@@ -89,11 +96,6 @@ jobs:
     - name: Pip install
       run: |
           pip install -e .[docs,tests]
-
-    - name: Patch ASE
-      run: |
-        ase_file="$(dirname $(python3 -c 'import ase; print(ase.__file__)'))/calculators/lammpsrun.py"
-        sed -i 's/line.startswith(_custom_thermo_mark)/line.strip\(\).startswith\("Step"\)/g' $ase_file
 
     - name: Run tests
       run: |

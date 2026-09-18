@@ -138,14 +138,14 @@ class FLARE_Calculator(Calculator):
             # TODO: Check that stress is being calculated correctly.
             try:
                 f, v, vir, e = self.mgp_model.predict(chemenv)
-                self.results["forces"][n] = f
-                self.results["partial_stresses"][n] = vir
-                self.results["stds"][n][0] = np.sqrt(np.absolute(v))
-                self.results["local_energies"][n] = e
-
             except ValueError as err_msg:  # if lower_bound error is raised
                 get_rebuild_from_err(err_msg, rebuild_dict, newbound_dict)
                 repredict_atoms.append((n, chemenv))
+            else:
+                self.results["forces"][n] = f
+                self.results["partial_stresses"][n] = vir
+                self.results["stds"][n][0] = np.sqrt(np.absolute(v)).item()
+                self.results["local_energies"][n] = e
 
         if len(rebuild_dict) > 0:
             # rebuild map for those problematic species
@@ -165,7 +165,7 @@ class FLARE_Calculator(Calculator):
                 f, v, vir, e = self.mgp_model.predict(chemenv)
                 self.results["forces"][n] = f
                 self.results["partial_stresses"][n] = -vir[[0, 3, 5, 4, 2, 1]]
-                self.results["stds"][n][0] = np.sqrt(np.absolute(v))
+                self.results["stds"][n][0] = np.sqrt(np.absolute(v)).item()
                 self.results["local_energies"][n] = e
 
     def calculation_required(self, atoms, quantities):
