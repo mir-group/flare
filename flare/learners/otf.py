@@ -345,23 +345,28 @@ class OTF:
                 self.compute_properties()
 
                 # get max uncertainty atoms
-                if self.build_mode == "bayesian":
-                    env_selection = is_std_in_bound
-                elif self.build_mode == "direct":
-                    env_selection = get_env_indices
-
                 tic = time.time()
-                std_in_bound, target_atoms = env_selection(
-                    self.std_tolerance,
-                    self.gp.force_noise,
-                    self.atoms,
-                    max_atoms_added=self.max_atoms_added,
-                    update_style=self.update_style,
-                    update_threshold=self.update_threshold,
-                    relative_to_noise=(
-                        getattr(self.gp, "variance_type", None) != "local"
-                    ),
-                )
+                if self.build_mode == "bayesian":
+                    std_in_bound, target_atoms = is_std_in_bound(
+                        self.std_tolerance,
+                        self.gp.force_noise,
+                        self.atoms,
+                        max_atoms_added=self.max_atoms_added,
+                        update_style=self.update_style,
+                        update_threshold=self.update_threshold,
+                        relative_to_noise=(
+                            getattr(self.gp, "variance_type", None) != "local"
+                        ),
+                    )
+                elif self.build_mode == "direct":
+                    std_in_bound, target_atoms = get_env_indices(
+                        self.std_tolerance,
+                        self.gp.force_noise,
+                        self.atoms,
+                        max_atoms_added=self.max_atoms_added,
+                        update_style=self.update_style,
+                        update_threshold=self.update_threshold,
+                    )
 
                 self.output.write_wall_time(tic, task="Env Selection")
 
