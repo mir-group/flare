@@ -1,10 +1,27 @@
 import os
 import sys
 import numpy as np
-from flare.io.otf_parser import OtfAnalysis
+from flare.io.otf_parser import OtfAnalysis, parse_frame_line
+from flare.io.parsers import parse_frame_line as parse_frame_line_legacy
 from flare.descriptors.env import AtomicEnvironment
 from flare.bffs.gp.predict import predict_on_structure
 from ase.io import read
+
+
+def test_parse_frame_line_with_joined_fixed_width_values():
+    line = (
+        "I       -1.0149    6.2613    9.9483     -785.6177  "
+        "860.0756-1513.0615        0.9095    0.0000    0.0000        "
+        "0.0000    0.0000    0.0000"
+    )
+
+    for parser in (parse_frame_line, parse_frame_line_legacy):
+        species, positions, forces, uncertainties, velocities = parser(line)
+        assert species == "I"
+        assert np.allclose(positions, [-1.0149, 6.2613, 9.9483])
+        assert np.allclose(forces, [-785.6177, 860.0756, -1513.0615])
+        assert np.allclose(uncertainties, [0.9095, 0, 0])
+        assert np.allclose(velocities, [0, 0, 0])
 
 
 def test_parse_header():
