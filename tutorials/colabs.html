@@ -88,9 +88,9 @@
 <h1>FLARE: Active Learning Bayesian Force Fields<a class="headerlink" href="#flare-active-learning-bayesian-force-fields" title="Link to this heading"></a></h1>
 <p>We have a few tutorial notebooks that you can check out and play with.</p>
 <p><a class="reference external" href="https://github.com/mir-group/flare/blob/master/tutorials/sparse_gp_tutorial.ipynb">FLARE (ACE descriptors + sparse GP)</a>.
-This in-repository notebook is the canonical tutorial for training sparse Gaussian Process force fields with FLARE.</p>
-<p><a class="reference external" href="https://colab.research.google.com/github/mir-group/FLARE-Tutorials/blob/28f6d3d1cce5621541a81af4ffe29cd56cafeede/FLARE_Tutorial_2026.ipynb">Run the FLARE tutorial in Google Colab</a>.
-The interactive tutorial demonstrates online and offline training of an aluminum sparse Gaussian Process force field with ASE, and compiling LAMMPS with FLARE pair styles for uncertainty-aware molecular dynamics.</p>
+This tutorial shows how to run flare with a sparse Gaussian process model trained on energy and force data, demoing “offline” training on the MD17 dataset and “online” on-the-fly training of a simple aluminum force field.</p>
+<p><a class="reference external" href="https://colab.research.google.com/drive/1qgGlfu1BlXQgSrnolS4c4AYeZ-2TaX5Y">FLARE (ACE descriptors + sparse GP) with LAMMPS</a>.
+The tutorial shows how to compile LAMMPS with FLARE pair style and uncertainty compute code, and use LAMMPS for Bayesian active learning and uncertainty-aware molecular dynamics.</p>
 <p><a class="reference external" href="https://bit.ly/flarelmpotf">FLARE (LAMMPS active learning)</a>.
 This tutorial demonstrates new functionality for running active learning all within LAMMPS, with LAMMPS running the dynamics to allow arbitrarily complex molecular dynamics workflows while maintaining a simple interface. This also demonstrates how to use the C++ API directly from Python through <cite>pybind11</cite>. Finally, there’s a simple demonstration of phonon calculations with FLARE using <cite>phonopy</cite>.</p>
 <p><a class="reference external" href="https://phoebe.readthedocs.io/en/develop/tutorials/mlPhononTransport.html">Compute thermal conductivity from FLARE and Boltzmann transport equations</a>.
