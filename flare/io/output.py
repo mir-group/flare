@@ -347,6 +347,9 @@ class Output:
         logger.info(string)
         self.write_wall_time(start_time)
 
+        if self.print_as_xyz:
+            self.write_xyz_config(curr_step, structure)
+
         if self.always_flush:
             logger.handlers[0].flush()
 
@@ -371,7 +374,8 @@ class Output:
 
         :return:
         """
-        structure.info["target_atoms"] = np.array(target_atoms)
+        if target_atoms is not None:
+            structure.info["target_atoms"] = np.array(target_atoms)
         write(self.basename + ".xyz", structure, append=True)
 
     def write_hyps(
