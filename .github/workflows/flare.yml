@@ -23,8 +23,8 @@ jobs:
 
     env:
       BUILD_DIR: build_${{ matrix.omp }}_${{ matrix.lapack }}
-      CC: gcc-9
-      CXX: g++-9
+      CC: gcc-11
+      CXX: g++-11
 
     steps:
     - uses: actions/checkout@v4
@@ -33,9 +33,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-11 g++-11 liblapacke liblapacke-dev libopenmpi-dev
+        "$CC" --version
+        "$CXX" --version
+
     - name: Build
       run: |
-        sudo apt install liblapacke liblapacke-dev libopenmpi-dev
         mkdir ${BUILD_DIR}
         cd ${BUILD_DIR}
 

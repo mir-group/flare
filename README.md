@@ -52,13 +52,13 @@ If you have problem compiling and installing the code, please check the [FAQs](h
 
 ## System requirements
 ### Software dependencies
-* GCC 9
+* GCC 11
 * Python 3
 * pip>=20
 
 MKL is recommended but not required. All other software dependencies are taken care of by pip.
 
-The code is built and tested with Github Actions using the GCC 9 compiler. (You can find a summary of recent builds [here](https://github.com/mir-group/flare/actions).) Other C++ compilers may work, but we can't guarantee this.
+The code is built and tested with Github Actions using the GCC 11 compiler. (You can find a summary of recent builds [here](https://github.com/mir-group/flare/actions).) Other C++ compilers may work, but we can't guarantee this.
 
 ### Operating systems
 flare++ is tested on a Linux operating system (Ubuntu 20.04.3), but should also be compatible with Mac and Windows operating systems. If you run into issues running the code on Mac or Windows, please post to the [issue board](https://github.com/mir-group/flare/issues).
