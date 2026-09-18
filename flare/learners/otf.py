@@ -80,9 +80,11 @@ class OTF:
             Default to False, use forces, energy and stress for training.
 
         std_tolerance_factor (float, optional): Threshold that determines
-            when DFT is called. Specifies a multiple of the current noise
-            hyperparameter. If the epistemic uncertainty on a force
-            component exceeds this value, DFT is called. Defaults to 1.
+            when DFT is called. For SOR, DTC, and full GPs, a positive value
+            specifies a multiple of the current force-noise hyperparameter.
+            For local SGP uncertainty, which is normalized by the signal
+            standard deviation, a positive value is used directly. A negative
+            value is always used as an absolute threshold. Defaults to 1.
         skip (int, optional): Number of frames that are skipped when
             dumping to the output file. Defaults to 0.
         init_atoms (List[int], optional): List of atoms from the input
@@ -356,6 +358,9 @@ class OTF:
                     max_atoms_added=self.max_atoms_added,
                     update_style=self.update_style,
                     update_threshold=self.update_threshold,
+                    relative_to_noise=(
+                        getattr(self.gp, "variance_type", None) != "local"
+                    ),
                 )
 
                 self.output.write_wall_time(tic, task="Env Selection")
@@ -539,10 +544,9 @@ class OTF:
 
         # Take MD step.
         if self.md_engine == "PyLAMMPS":
-            if self.std_tolerance < 0:
-                tol = -self.std_tolerance
-            else:
-                tol = np.abs(self.gp.force_noise) * self.std_tolerance
+            # PyLAMMPS requires local SGP uncertainty, which is normalized by
+            # the signal standard deviation and is therefore dimensionless.
+            tol = np.abs(self.std_tolerance)
             f = logging.getLogger(self.output.basename + "log")
             self.md.step(tol, self.number_of_steps)
             self.curr_step = self.md.nsteps

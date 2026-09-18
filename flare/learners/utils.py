@@ -16,6 +16,7 @@ def is_std_in_bound(
     max_atoms_added: int = inf,
     update_style: str = "add_n",
     update_threshold: float = None,
+    relative_to_noise: bool = True,
 ) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
@@ -26,7 +27,8 @@ def is_std_in_bound(
     value of std_tolerance.
 
     If std_tolerance is positive, then the threshold used is
-    std_tolerance * noise.
+    ``std_tolerance * noise`` when ``relative_to_noise`` is true, or
+    ``std_tolerance`` otherwise.
 
     If std_tolerance is 0, then do not check.
 
@@ -43,6 +45,9 @@ def is_std_in_bound(
         update_threshold.
     :param update_threshold: A float specifying the update threshold. Ignored
         if update_style is not set to ``threshold''.
+    :param relative_to_noise: Whether positive tolerances are relative to the
+        force-noise hyperparameter. Set false for normalized local
+        uncertainties.
     :return: (True,[-1]) if no atoms are above cutoff, (False,[...]) if at
         least one atom is above std_tolerance, with the list indicating
         which atoms have been selected for the training set.
@@ -51,7 +56,9 @@ def is_std_in_bound(
     if std_tolerance == 0:
         return True, [-1]
     elif std_tolerance > 0:
-        threshold = std_tolerance * np.abs(noise)
+        threshold = (
+            std_tolerance * np.abs(noise) if relative_to_noise else std_tolerance
+        )
     else:
         threshold = np.abs(std_tolerance)
 
