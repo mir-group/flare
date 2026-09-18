@@ -118,6 +118,14 @@ jobs:
           pytest test_lammps.py
         fi
 
+    - name: Retain Python coverage report
+      if: matrix.omp == 'ON' && matrix.lapack == 'ON' && matrix.python-version == '3.12'
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-coverage
+        path: coverage/python.xml
+        if-no-files-found: error
+
     - name: Run tutorial
       run: |
         pip install -U jupyter nbconvert
@@ -171,4 +179,12 @@ jobs:
     - name: Generate C++ coverage report
       run: |
         mkdir -p coverage
+        gcovr --root . --filter src/flare_pp/ --txt build-coverage
         gcovr --root . --filter src/flare_pp/ --xml-pretty --output coverage/cpp.xml build-coverage
+
+    - name: Retain C++ coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: cpp-coverage
+        path: coverage/cpp.xml
+        if-no-files-found: error
