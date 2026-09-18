@@ -13,6 +13,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         omp: [OFF, ON]
         lapack: [OFF, ON]
@@ -67,7 +68,7 @@ jobs:
 
     - name: Install LAMMPS
       run: |
-        git clone --depth 1 --branch release https://github.com/lammps/lammps.git lammps
+        git clone --depth 1 --branch patch_2Sep2026 https://github.com/lammps/lammps.git lammps
 
         cd lammps/src
         cp pair_hybrid.* pair_lj_cut.* ..
@@ -95,11 +96,6 @@ jobs:
     - name: Pip install
       run: |
           pip install -e .[docs,tests]
-
-    - name: Patch ASE
-      run: |
-        ase_file="$(dirname $(python3 -c 'import ase; print(ase.__file__)'))/calculators/lammpsrun.py"
-        sed -i 's/line.startswith(_custom_thermo_mark)/line.strip\(\).startswith\("Step"\)/g' $ase_file
 
     - name: Run tests
       run: |

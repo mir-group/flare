@@ -40,7 +40,7 @@ class LAMMPS_MOD(LAMMPS):
             "pair_style": "lj/cut 2.5",
             "pair_coeff": ["* * 1 1"],
             "compute": ["1 all pair/local dist", "2 all reduce max c_1"],
-            "velocity": ["all create 300 12345 dist gaussian rot yes mom yes"],
+            "velocity": "all create 300 12345 dist gaussian rot yes mom yes",
             "fix": ["1 all nvt temp 300 300 $(100.0*dt)"],
             "dump_period": 1,
             "timestep": 0.001,
@@ -131,18 +131,14 @@ class LAMMPS_MOD(LAMMPS):
             region_command = "\n"
             for cmd in self.parameters["region"]:
                 region_command += "region " + cmd + "\n"
-            self.parameters["model_post"] += region_command
+            self.parameters["model_post"].append(region_command)
 
         # Add "compute" command after "group", using `model_post`
         if "compute" in self.parameters:
             compute_command = "\n"
             for cmd in self.parameters["compute"]:
                 compute_command += "compute " + cmd + "\n"
-            self.parameters["model_post"] += compute_command
-
-        # Always unfix "nve" defined in ASE
-        if "fix" in self.parameters:
-            self.parameters["fix"][-1] += "\nunfix fix_nve"
+            self.parameters["model_post"].append(compute_command)
 
         # Add "dump" command after "timestep"
         self.parameters["timestep"] = str(self.parameters["timestep"])
@@ -518,7 +514,8 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     lmp_energy = atoms.potential_energy
     lmp_forces = atoms.forces
     lmp_stress = atoms.stress
-    lmp_stds = atoms.get_array("c_unc")
+    # ASE versions return scalar dump columns as either (nat,) or (nat, 1).
+    lmp_stds = atoms.get_array("c_unc").reshape(len(atoms))
 
     # Add back single atom energies to lammps energy
     lmp_energy = add_single_atom_energies(
@@ -545,8 +542,8 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
         assert np.allclose(lmp_energy, gp_energy, atol=1e-3)
         assert np.allclose(lmp_forces, gp_forces, atol=1e-3)
         assert np.allclose(lmp_stress, gp_stress, atol=1e-4)
-        assert np.allclose(lmp_stds[:, 0], gp_stds[:, 0], atol=1e-4), (
-            lmp_stds[:, 0],
+        assert np.allclose(lmp_stds, gp_stds[:, 0], atol=1e-4), (
+            lmp_stds,
             gp_stds[:, 0],
         )
     except:
@@ -590,7 +587,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
             colnames="id type x y z vx vy vz fx fy fz c_unc".split(),
             order=False,
         )
-        lmp_stds = lmp_atoms.get_array("c_unc")
+        lmp_stds = lmp_atoms.get_array("c_unc").reshape(len(atoms))
 
         assert np.allclose(lmp_energy, gp_energy), (lmp_energy, gp_energy)
         assert np.allclose(lmp_forces, gp_forces), (lmp_forces, gp_forces)
@@ -601,7 +598,7 @@ def check_sgp_match(atoms, sgp_calc, logger, specorder, command):
     de = np.abs(lmp_energy - gp_energy)
     df = np.max(np.abs(lmp_forces - gp_forces))
     ds = np.max(np.abs(lmp_stress - gp_stress))
-    du = np.max(np.abs(lmp_stds[:, 0] - gp_stds[:, 0]))
+    du = np.max(np.abs(lmp_stds - gp_stds[:, 0]))
 
     logger.info("LAMMPS and SGP maximal absolute difference in prediction:")
     logger.info(f"Maximal absolute energy difference: {de}")
