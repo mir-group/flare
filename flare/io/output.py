@@ -263,16 +263,16 @@ class Output:
             string += f"{structure.symbols[i]:5}"
             # string += '\t'
             for j in range(3):
-                string += f"{structure.positions[i][j]:10.4f}"
+                string += f"{structure.positions[i][j]:10.4f} "
             string += " " * 4
             for j in range(3):
-                string += f"{structure.forces[i][j]:10.4f}"
+                string += f"{structure.forces[i][j]:10.4f} "
             string += " " * 4
             for j in range(3):
-                string += f"{structure.stds[i][j]:10.4f}"
+                string += f"{structure.stds[i][j]:10.4f} "
             string += " " * 4
             for j in range(3):
-                string += f"{velocities[i][j]:10.4f}"
+                string += f"{velocities[i][j]:10.4f} "
             string += "\n"
 
         string += "\n"

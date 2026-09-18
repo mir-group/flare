@@ -486,13 +486,29 @@ def parse_frame_line(frame_line):
     :rtype: list, np.arrays
     """
 
-    frame_line = frame_line.split()
+    fields = frame_line.split()
 
-    spec = str(frame_line[0])
-    position = np.array([float(n) for n in frame_line[1:4]])
-    force = np.array([float(n) for n in frame_line[4:7]])
-    uncertainty = np.array([float(n) for n in frame_line[7:10]])
-    velocity = np.array([float(n) for n in frame_line[10:13]])
+    if len(fields) == 13:
+        spec = str(fields[0])
+        values = [float(n) for n in fields[1:]]
+    else:
+        # Older OTF output used adjacent fixed-width fields. A value filling
+        # all ten characters can therefore be joined to the next value when
+        # splitting on whitespace (for example, ``860.0756-1513.0615``).
+        spec = frame_line[:5].strip()
+        values = []
+        for group_start in (5, 39, 73, 107):
+            values.extend(
+                float(
+                    frame_line[group_start + 10 * j : group_start + 10 * (j + 1)]
+                )
+                for j in range(3)
+            )
+
+    position = np.array(values[:3])
+    force = np.array(values[3:6])
+    uncertainty = np.array(values[6:9])
+    velocity = np.array(values[9:12])
 
     return spec, position, force, uncertainty, velocity
 
