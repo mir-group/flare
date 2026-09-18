@@ -49,9 +49,11 @@ OTF (On-the-fly) Active-Learning
         * ``train_hyps`` : range of DFT calls whererin the hyperparameters will be optimized. We recommend setting the initial value to 10 (i.e., 10th DFT call),
         since we have observed more stable training, as opposed to training from the initial DFT call.
 
-        * ``std_tolerance_factor`` : DFT will be called when the predicted uncertainty is above this threshold, 
-        which is defined relative to the mean uncertainty in the system. The default value is 1. In general, we recommend that this value be set relative to the number
-        of species in the system (e.g., -0.01 for 1 species, -0.05 for 2, -0.1 for 3, etc.). If more DFT calls are desired, you can set it to a lower value.
+        * ``std_tolerance_factor`` : DFT will be called when the predicted uncertainty is above this threshold.
+        For SOR, DTC, and full Gaussian processes, a positive value is relative to the force-noise hyperparameter.
+        Local SGP uncertainty is normalized by the signal standard deviation, so a positive value is used directly.
+        A negative value always specifies an absolute threshold. For local SGP, ``-0.01`` and ``0.01`` therefore
+        give the same threshold.
 
         * ``update_threshold`` : atoms will only be added to the sparse set of the Gaussian Process when their uncertainty surpasses this threshold. We have found that this 
         value provides a decent number of sparse environment `additions` when set to be 0.1*std_tolerance_factor. This ensures that several atoms are added to the sparse-set of the

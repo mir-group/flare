@@ -148,9 +148,11 @@ after each write.</p></li>
 <li><p><strong>force_only</strong> (<em>bool, optional</em>) – If True, only use forces for training.
 Default to False, use forces, energy and stress for training.</p></li>
 <li><p><strong>std_tolerance_factor</strong> (<em>float, optional</em>) – Threshold that determines
-when DFT is called. Specifies a multiple of the current noise
-hyperparameter. If the epistemic uncertainty on a force
-component exceeds this value, DFT is called. Defaults to 1.</p></li>
+when DFT is called. For SOR, DTC, and full GPs, a positive value
+specifies a multiple of the current force-noise hyperparameter.
+For local SGP uncertainty, which is normalized by the signal
+standard deviation, a positive value is used directly. A negative
+value is always used as an absolute threshold. Defaults to 1.</p></li>
 <li><p><strong>skip</strong> (<em>int, optional</em>) – Number of frames that are skipped when
 dumping to the output file. Defaults to 0.</p></li>
 <li><p><strong>init_atoms</strong> (<em>List[int], optional</em>) – List of atoms from the input
