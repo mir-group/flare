@@ -7,7 +7,7 @@ name = "mir-flare"
 version = "1.4.3"
 description = "Fast Learning of Atomistic Rare Events"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 authors = [
     { name = "Materials Intelligence Research", email = "mir@g.harvard.edu" },
 ]
@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "ase",
+    "ase>=3.23",
     "numba",
     "numpy",
     "pyyaml",
