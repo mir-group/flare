@@ -106,7 +106,7 @@ otf:
     init_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # The atomic environments added to GP from the initial frame
     std_tolerance_factor: -0.02                         # The uncertainty threshold above which the DFT will be called. 
                                                         # The negative sign means the absolute value is used, i.e. the threshold is 0.02. 
-                                                        # The positive sign means the relative value is used, i.e. the threshold is std_tolerance_factor * force_noise
+                                                        # For SOR/DTC uncertainty, a positive value is relative to force noise. For normalized local SGP uncertainty, it is used directly.
     max_atoms_added: -1                                 # Maximal number of atoms added to the GP model after each DFT call. If "-1", then there is no upper limit.
     train_hyps: [0, inf]                                # The hyperparameters are optimized between the train_hyps[0] and the train_hyps[1] DFT call. At other times, the hyperparameters are fixed.
     write_model: 4                                      # Verbose level. "0": not write GP model to file or back up. 

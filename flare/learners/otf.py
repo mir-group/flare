@@ -80,9 +80,11 @@ class OTF:
             Default to False, use forces, energy and stress for training.
 
         std_tolerance_factor (float, optional): Threshold that determines
-            when DFT is called. Specifies a multiple of the current noise
-            hyperparameter. If the epistemic uncertainty on a force
-            component exceeds this value, DFT is called. Defaults to 1.
+            when DFT is called. For SOR, DTC, and full GPs, a positive value
+            specifies a multiple of the current force-noise hyperparameter.
+            For local SGP uncertainty, which is normalized by the signal
+            standard deviation, a positive value is used directly. A negative
+            value is always used as an absolute threshold. Defaults to 1.
         skip (int, optional): Number of frames that are skipped when
             dumping to the output file. Defaults to 0.
         init_atoms (List[int], optional): List of atoms from the input
@@ -343,20 +345,28 @@ class OTF:
                 self.compute_properties()
 
                 # get max uncertainty atoms
-                if self.build_mode == "bayesian":
-                    env_selection = is_std_in_bound
-                elif self.build_mode == "direct":
-                    env_selection = get_env_indices
-
                 tic = time.time()
-                std_in_bound, target_atoms = env_selection(
-                    self.std_tolerance,
-                    self.gp.force_noise,
-                    self.atoms,
-                    max_atoms_added=self.max_atoms_added,
-                    update_style=self.update_style,
-                    update_threshold=self.update_threshold,
-                )
+                if self.build_mode == "bayesian":
+                    std_in_bound, target_atoms = is_std_in_bound(
+                        self.std_tolerance,
+                        self.gp.force_noise,
+                        self.atoms,
+                        max_atoms_added=self.max_atoms_added,
+                        update_style=self.update_style,
+                        update_threshold=self.update_threshold,
+                        relative_to_noise=(
+                            getattr(self.gp, "variance_type", None) != "local"
+                        ),
+                    )
+                elif self.build_mode == "direct":
+                    std_in_bound, target_atoms = get_env_indices(
+                        self.std_tolerance,
+                        self.gp.force_noise,
+                        self.atoms,
+                        max_atoms_added=self.max_atoms_added,
+                        update_style=self.update_style,
+                        update_threshold=self.update_threshold,
+                    )
 
                 self.output.write_wall_time(tic, task="Env Selection")
 
@@ -539,10 +549,9 @@ class OTF:
 
         # Take MD step.
         if self.md_engine == "PyLAMMPS":
-            if self.std_tolerance < 0:
-                tol = -self.std_tolerance
-            else:
-                tol = np.abs(self.gp.force_noise) * self.std_tolerance
+            # PyLAMMPS requires local SGP uncertainty, which is normalized by
+            # the signal standard deviation and is therefore dimensionless.
+            tol = np.abs(self.std_tolerance)
             f = logging.getLogger(self.output.basename + "log")
             self.md.step(tol, self.number_of_steps)
             self.curr_step = self.md.nsteps
