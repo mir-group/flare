@@ -52,6 +52,7 @@ test_files/qe_output_*.out
 /tests/POSCAR*
 .idea/
 .coverage
+/coverage/
 perf.data.old
 perf.data
 *.nvprof
