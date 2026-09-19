@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from ase.calculators.calculator import Calculator, all_changes
 from ase.calculators.singlepoint import SinglePointCalculator
+from ase.io import read
 
 from flare.atoms import FLARE_Atoms
 from flare.bffs.gp.calculator import FLARE_Calculator
@@ -108,3 +109,33 @@ def test_sgp_match_accepts_scalar_dump_columns(monkeypatch, column_shape, fallba
 
     assert get_calc.call_count == int(fallback)
     logger.info.assert_any_call("Maximal absolute uncertainty difference: 0.0")
+
+
+def test_lammps_backup_appends_only_new_history(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "tmp").mkdir()
+
+    md = lammps.LAMMPS_MD.__new__(lammps.LAMMPS_MD)
+    md.thermo_file = "otf_thermo.txt"
+    md.traj_xyz_file = "otf_md.xyz"
+    md.params = {"units": "metal"}
+
+    frame = FLARE_Atoms(symbols="H", positions=[[0, 0, 0]], cell=[10, 10, 10])
+    frame.calc = SinglePointCalculator(
+        frame, energy=0.0, forces=np.zeros((1, 3)), stress=np.zeros(6)
+    )
+    thermo_row = "0 300 0 1 1 0 0 0 0 0 0 0\n"
+    thermo_path = tmp_path / "tmp" / md.thermo_file
+    thermo_path.write_text(thermo_row * 2)
+
+    md.backup([frame])
+
+    with thermo_path.open("a") as thermo_file:
+        thermo_file.write(thermo_row * 2)
+
+    # The second backup must not parse the previously written XYZ trajectory.
+    monkeypatch.setattr(lammps, "read", Mock(side_effect=AssertionError))
+    md.backup([frame])
+
+    assert (tmp_path / md.thermo_file).read_text() == thermo_path.read_text()
+    assert len(read(md.traj_xyz_file, index=":")) == 2

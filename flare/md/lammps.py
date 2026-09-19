@@ -1,5 +1,5 @@
 from math import ceil
-import shutil
+import io
 import numpy as np
 import glob, os
 import warnings
@@ -303,20 +303,26 @@ class LAMMPS_MD(MolecularDynamics):
                 by ASE.
         """
 
-        shutil.copyfile("tmp/" + self.thermo_file, self.thermo_file)
+        thermo_path = "tmp/" + self.thermo_file
+        thermo_offset = getattr(self, "_thermo_offset", None)
+        with open(thermo_path, "rb") as thermo_source:
+            if thermo_offset is not None:
+                thermo_source.seek(thermo_offset)
+            thermo_data = thermo_source.read()
+            self._thermo_offset = thermo_source.tell()
 
-        thermostat = np.loadtxt(self.thermo_file)
-        with open(self.thermo_file) as f:
-            n_iters = f.read().count("#")
+        # A restart has no in-memory offset, so copy its complete history once.
+        # Later calls append only the thermo rows produced by the current LAMMPS
+        # block. This avoids repeatedly copying and parsing an ever-growing file.
+        thermo_mode = "ab" if thermo_offset is not None else "wb"
+        with open(self.thermo_file, thermo_mode) as thermo_output:
+            thermo_output.write(thermo_data)
 
-        if self.traj_xyz_file in os.listdir():
-            previous_trj = read(self.traj_xyz_file, index=":")
-            assert (
-                thermostat.shape[0]
-                == 2 * (len(previous_trj) + len(curr_trj)) - 2 * n_iters
+        thermostat = np.atleast_2d(np.loadtxt(io.BytesIO(thermo_data)))
+        if len(thermostat) < len(curr_trj):
+            raise RuntimeError(
+                "LAMMPS thermo output contains fewer rows than the trajectory block."
             )
-        else:
-            assert thermostat.shape[0] == 2 * len(curr_trj) - 2 * n_iters
 
         # Extract energy, stress and step from dumped log file and write to
         # the frames in .xyz
