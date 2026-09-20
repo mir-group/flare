@@ -9,7 +9,7 @@ Requirements
 
 .. code-block:: bash
 
-    conda create --name flare python=3.8
+    conda create --name flare python=3.10
     conda activate flare
 
 2. Use conda to install compilers and dependencies for flare
@@ -36,7 +36,7 @@ Requirements
 
 .. code-block:: bash
 
-    git clone -b development https://github.com/mir-group/flare.git
+    git clone https://github.com/mir-group/flare.git
     cd flare
     pip install .
 
@@ -82,14 +82,14 @@ After the installation is done, you can leave the current folder and in the pyth
 
     >>> import flare
     >>> flare.__file__
-    '/xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/__init__.py'
+    '/xxx/.conda/envs/flare/lib/python3.10/site-packages/flare/__init__.py'
     >>> import flare.bffs.sgp
 
 You can also check that the flare C++ library is linked to mkl (or openblas and lapacke) and openmp by
 
 .. code-block:: bash
 
-    ldd /xxx/.conda/envs/flare/lib/python3.8/site-packages/flare/bffs/sgp/_C_flare.*.so
+    ldd /xxx/.conda/envs/flare/lib/python3.10/site-packages/flare/bffs/sgp/_C_flare.*.so
 
 where it is expected to show libmkl (or libopenblas), libgomp etc.
 
