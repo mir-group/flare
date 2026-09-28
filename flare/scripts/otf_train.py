@@ -127,6 +127,8 @@ def get_flare_calc(flare_config):
         return get_gp_calc(flare_config)
     elif gp_name == "SGP_Wrapper":
         return get_sgp_calc(flare_config)
+    elif gp_name == "TorchSGP":
+        return get_torch_sgp_calc(flare_config)
     else:
         raise NotImplementedError(f"{gp_name} is not implemented")
 
@@ -214,6 +216,49 @@ def get_gp_calc(flare_config):
         use_mapping=use_mapping,
     )
     return flare_calc, kernels
+
+
+def get_torch_sgp_calc(flare_config):
+    """Build the supported Torch sparse GP for ASE OTF training."""
+    from flare.tensor.b2 import B2 as TorchB2
+    from flare.tensor.otf import TorchSGPModel, TorchSGPCalculator
+
+    if flare_config.get("use_mapping", False):
+        raise NotImplementedError("TorchSGP does not support mapped potentials")
+    if flare_config.get("file") is not None:
+        return TorchSGPCalculator.from_file(flare_config["file"]), None
+    kernels = flare_config.get("kernels", [])
+    descriptors = flare_config.get("descriptors", [])
+    if len(kernels) != 1 or kernels[0].get("name") != "NormalizedDotProduct":
+        raise NotImplementedError("TorchSGP requires one NormalizedDotProduct kernel")
+    if (len(descriptors) != 1 or descriptors[0].get("name") != "B2"
+            or descriptors[0].get("radial_basis") != "chebyshev"
+            or descriptors[0].get("cutoff_function") != "quadratic"
+            or "cutoff_matrix" in descriptors[0]):
+        raise NotImplementedError("TorchSGP requires one Chebyshev/quadratic B2 descriptor")
+    species = [int(number) for number in flare_config["species"]]
+    if len(species) != len(set(species)):
+        raise ValueError("TorchSGP species must be unique atomic numbers")
+    descriptor = TorchB2(
+        len(species), descriptors[0]["nmax"], descriptors[0]["lmax"],
+        flare_config["cutoff"],
+    )
+    model = TorchSGPModel(
+        descriptor, {number: code for code, number in enumerate(species)},
+        amplitude=kernels[0]["sigma"], power=kernels[0]["power"],
+        sigma_e=flare_config["energy_noise"],
+        sigma_f=flare_config["forces_noise"],
+        sigma_s=flare_config["stress_noise"],
+        variance_type=flare_config.get("variance_type", "local"),
+        single_atom_energies=flare_config.get("single_atom_energies"),
+        energy_training=flare_config.get("energy_training", True),
+        force_training=flare_config.get("force_training", True),
+        stress_training=flare_config.get("stress_training", True),
+        max_iterations=flare_config.get("max_iterations", 10),
+        opt_method=flare_config.get("opt_algorithm", "BFGS"),
+        bounds=flare_config.get("bounds"),
+    )
+    return TorchSGPCalculator(model), None
 
 
 def get_sgp_calc(flare_config):

@@ -1,0 +1,262 @@
+{
+  "array_count": 84,
+  "baseline_revision": "199273867d48f3a91415fa44da6c0dfc5ead759f",
+  "build": {
+    "baseline_revision": "199273867d48f3a91415fa44da6c0dfc5ead759f",
+    "compiler_version": "Apple clang version 17.0.0 (clang-1700.4.4.1)",
+    "extension_sha256": "c38610260c4067160016dd3c6d22fc2d8ef4f74f38daaa2bf6f82c2b868ea5c3",
+    "lapack": false,
+    "machine": "x86_64",
+    "openmp": false,
+    "python_version": "3.12.9",
+    "source_hashes": {
+      "CMakeLists.txt": "b6e728c84b6ffdaf1c666e1540dccb03c4a2d2fd764d0d1dc34bc72862a42d49",
+      "src/ace_binding.cpp": "0283e713d18ae7be3c4a8fac6334f22e5cf22be1f5bc11f86994997760524dea",
+      "src/flare_pp/bffs/gp.cpp": "3ed134d4374aa65e9ab5fae7b72763a793546d06e6e73955e8501842ca2a5cdd",
+      "src/flare_pp/bffs/gp.h": "a957ad5f0ecf54f2373a75833a26ef68bbbe8435bf082ab6af449cc375f20e57",
+      "src/flare_pp/bffs/sparse_gp.cpp": "433f3f4d68c61e442afb154691bb1a5e7f2b54ae71643595a01c6c17594178b4",
+      "src/flare_pp/bffs/sparse_gp.h": "8cfd4f1cc871fd507be5794aa0ceeef8f029c9ba9585169f1656a51d945f24ce",
+      "src/flare_pp/cutoffs.cpp": "d7f357ab19436edabeac340aa326740619f37556c88c9b01d90884d4e8eb99c1",
+      "src/flare_pp/cutoffs.h": "94d54e2fa9cc266151dfff5a3937354fd0e7b5e9cab938abfaf6165f22b99b2c",
+      "src/flare_pp/descriptors/b1.cpp": "35c7948f38bd39770e858c10a2318eb3ef1af4aa3bf91b73b279724bdf9624a9",
+      "src/flare_pp/descriptors/b1.h": "c7e34d3aa16cc69a34796dcc89181280a7265bddf9e80afc5c3b6c48f188a44d",
+      "src/flare_pp/descriptors/b2.cpp": "9887acdf04a6d51dd608cdeb7551ac374e0488f2097c0b56247114a3c16f9234",
+      "src/flare_pp/descriptors/b2.h": "331e94235792c44bf5005cdfc04fe4ce1b672e25386d6764213bef1aad62ca96",
+      "src/flare_pp/descriptors/b2_norm.cpp": "a69ec5c67a44e809b31e0cbf87d6659682e2268ede997fe27ac122ac69d53650",
+      "src/flare_pp/descriptors/b2_norm.h": "7864a957f2e4ca0f609d7bc20e6b5fe0320e028490894de5c4ebb9b3ac25821a",
+      "src/flare_pp/descriptors/b2_simple.cpp": "688344cc1b321b58fd4bbe2de5a68887fd2b53c863595f3ce41b81d7b1f76fc1",
+      "src/flare_pp/descriptors/b2_simple.h": "132eb4b194abad3db34b7ba97722a197fea8f6737a33d11bb34dca759679dd3c",
+      "src/flare_pp/descriptors/b3.cpp": "f67056a8c4376b28c594efbd61393eadeaa8047ff11764503714c00c0bc621db",
+      "src/flare_pp/descriptors/b3.h": "db93be6729600d5d7670198eed51226a3ef310be2e7166ffa14b94b196fefe0e",
+      "src/flare_pp/descriptors/descriptor.cpp": "e48b46d4adb4cc56498cae4394368b86698f7c5d073c78bea35c6e24bbee6f87",
+      "src/flare_pp/descriptors/descriptor.h": "95816d1fa7fddf76b869afe817cdd8661d5ee737563423243a86ef17db025e2d",
+      "src/flare_pp/descriptors/four_body.cpp": "78f0991b4ba34fb5d3587280be720af9377926e9ce241ef2fa11b9cb3ba84b8c",
+      "src/flare_pp/descriptors/four_body.h": "8c865b663ee07b6d2886d65f6eb4bce931518d2580cea06a55ceb5988fdaeb38",
+      "src/flare_pp/descriptors/three_body.cpp": "3d2c7f7f19e112f95a57ade2087603aa9f02b66ac980a019417f6cf26fd99db2",
+      "src/flare_pp/descriptors/three_body.h": "2d439c090ec76945e0d832b2d07e7050db0dda63c01a6f3975b94f28b68d2529",
+      "src/flare_pp/descriptors/three_body_wide.cpp": "f6f279ef9ca7bcf75f2e6efd0cc6c41bde09d5fdba42d39bcdc43fea56cc81ce",
+      "src/flare_pp/descriptors/three_body_wide.h": "588fe0a1dc213a4921a5ab4df93e5f4dcda1e90ce2d46cd8bc2135ab6a94b5f1",
+      "src/flare_pp/descriptors/two_body.cpp": "614afa1c85938648d121d8191d0fc7b144af364b5c3481aad87b93d415042bcd",
+      "src/flare_pp/descriptors/two_body.h": "60bcb380f247272e47f1a8405bc5b21e238c75c3f0f3a46d83021ce44243bbe5",
+      "src/flare_pp/descriptors/wigner3j.cpp": "29634d326fbc6ce8b512c676d485d18652d6a06828398aaa3c1e729fd1e3383e",
+      "src/flare_pp/descriptors/wigner3j.h": "4f1e95929052463ec997682aec5be6026beca3b66ba85a1491ee79f7bc132ba8",
+      "src/flare_pp/json.h": "e8677487194835607b18733aeb0b226fd787223f7a64d3c63a3a27f4d4dbacfb",
+      "src/flare_pp/kernels/dot_product.cpp": "8f45bddbf356923eb73fd4347dabfd35606f19026e1e68a8c83aaa4ea3974cb9",
+      "src/flare_pp/kernels/dot_product.h": "14ddd7e3d9bd18069f85826556fc94a19821eeaad9fe43088571e1bfa437ac77",
+      "src/flare_pp/kernels/kernel.cpp": "95baca2178adc425bf437b57e277369ee4afe1feb48ee3a980752e540e2fffd1",
+      "src/flare_pp/kernels/kernel.h": "a61d11a23ab1c33acfec477d920845d83274e87b6429102416b2a74a259709f6",
+      "src/flare_pp/kernels/norm_dot_icm.cpp": "255c96f524055af75a3e1a0d126e344700597ea202c827f7e997af81d4c27991",
+      "src/flare_pp/kernels/norm_dot_icm.h": "226ecde4deb5a61e50c8504f44833e07028dbd29f007e3f40ee309fdffa352b2",
+      "src/flare_pp/kernels/normalized_dot_product.cpp": "8743257fca5d1191536d5e59c1eb73e77a774bd142e858264f522ca6f3697430",
+      "src/flare_pp/kernels/normalized_dot_product.h": "46b10db3db504f96723a6963ac8aed5d4cd7ef15a0ee3c1f8e5c56f8cc823542",
+      "src/flare_pp/kernels/squared_exponential.cpp": "290f6a3b90daf1cbb89f11416230624be77afc65bfb6aab20997802496e55854",
+      "src/flare_pp/kernels/squared_exponential.h": "cb3fae59c91094d6556bf59b2cc381116f9a6b334439fe15b6a6de8665928922",
+      "src/flare_pp/radial.cpp": "21adb96659e22a048afb9372992a7f3b0215796a30cdafa908452a7e3c1464c5",
+      "src/flare_pp/radial.h": "226b30a4fdafe15722480c3e2d82ece9789a309d01dcce713747d81b58db6d95",
+      "src/flare_pp/structure.cpp": "ba5fde8cb28323c3273eab13594d1320c27bd617c9c4bcaffd3ee3cdbd8e2b35",
+      "src/flare_pp/structure.h": "d7215444efb69a0dd14fd0bbc7a2680a5ff63d3294d09a1ddc5c08e4e6408dd6",
+      "src/flare_pp/y_grad.cpp": "8500d032d7d1b8457427b1257a73d7df3be2adacaaa9be95d8e75d24f2765747",
+      "src/flare_pp/y_grad.h": "8a1cb5cf4b43c8635c283619a71d33d418b64373ba0c165f1d4d01878aed9857"
+    }
+  },
+  "cases": [
+    "molecule",
+    "crystal",
+    "binary",
+    "missing_species",
+    "isolated"
+  ],
+  "comparison_tolerances": {
+    "dense_likelihood_gradient_scaled_error": 2e-07,
+    "fixture_regeneration": {
+      "atol": 2e-10,
+      "rtol": 2e-10
+    },
+    "geometry_scaled_error": 2e-08,
+    "torch_descriptor_derivative": {
+      "atol": 2e-09,
+      "rtol": 2e-09
+    },
+    "torch_inducing_kernel": {
+      "atol": 2e-12,
+      "rtol": 2e-12
+    },
+    "torch_observation_kernel": {
+      "atol": 2e-09,
+      "rtol": 2e-09
+    },
+    "torch_raw_descriptor": {
+      "atol": 1e-10,
+      "rtol": 2e-10
+    }
+  },
+  "descriptor_layout": "Flatten (species*n_radial+radial) pairs a<=b, then l; no sqrt(2) factors",
+  "finite_difference_validation": {
+    "geometry": {
+      "binary": [
+        {
+          "descriptor_position": 1.9096114081299604e-09,
+          "descriptor_strain": 5.842089969506201e-09,
+          "force_kernel": 7.463580906595115e-10,
+          "step": 2e-05,
+          "stress_kernel": 1.7229126298541124e-12
+        },
+        {
+          "descriptor_position": 6.254662646341644e-10,
+          "descriptor_strain": 1.4975696746318324e-09,
+          "force_kernel": 1.834415468393102e-10,
+          "step": 1e-05,
+          "stress_kernel": 4.220748619980849e-13
+        }
+      ],
+      "crystal": [
+        {
+          "descriptor_position": 9.683382966695974e-10,
+          "descriptor_strain": 5.309217732186583e-09,
+          "force_kernel": 3.917438261933704e-10,
+          "step": 2e-05,
+          "stress_kernel": 2.1241337215790242e-10
+        },
+        {
+          "descriptor_position": 2.4675390050704026e-10,
+          "descriptor_strain": 1.3919171927471197e-09,
+          "force_kernel": 1.0551150718832803e-10,
+          "step": 1e-05,
+          "stress_kernel": 5.213876512870531e-11
+        }
+      ],
+      "isolated": [
+        {
+          "descriptor_position": 0.0,
+          "descriptor_strain": 0.0,
+          "force_kernel": 0.0,
+          "step": 2e-05,
+          "stress_kernel": 0.0
+        },
+        {
+          "descriptor_position": 0.0,
+          "descriptor_strain": 0.0,
+          "force_kernel": 0.0,
+          "step": 1e-05,
+          "stress_kernel": 0.0
+        }
+      ],
+      "missing_species": [
+        {
+          "descriptor_position": 3.1177100384568827e-09,
+          "descriptor_strain": 3.3416584400684313e-09,
+          "force_kernel": 3.4282780914122805e-12,
+          "step": 2e-05,
+          "stress_kernel": 5.3514564022259685e-15
+        },
+        {
+          "descriptor_position": 9.266605559323452e-10,
+          "descriptor_strain": 8.292282085671302e-10,
+          "force_kernel": 1.743077647806606e-12,
+          "step": 1e-05,
+          "stress_kernel": 2.339802588723441e-15
+        }
+      ],
+      "molecule": [
+        {
+          "descriptor_position": 3.370404404454862e-09,
+          "descriptor_strain": 1.987684479651126e-09,
+          "force_kernel": 1.3690350444801285e-10,
+          "step": 2e-05,
+          "stress_kernel": 1.9221354170046528e-13
+        },
+        {
+          "descriptor_position": 8.745687492175793e-10,
+          "descriptor_strain": 6.355320646623353e-10,
+          "force_kernel": 1.3979492628111956e-10,
+          "step": 1e-05,
+          "stress_kernel": 1.0010254362740845e-13
+        }
+      ]
+    },
+    "likelihood": [
+      {
+        "dense_scaled_error": 6.576590728894561e-08,
+        "gradient": [
+          -3.039033215657127,
+          2.5530782323812673,
+          -95.01519999979278,
+          -288.01463907157654
+        ],
+        "scaled_error": 1.7362178005708413e-07,
+        "step": 2e-05
+      },
+      {
+        "dense_scaled_error": 1.64459184976738e-08,
+        "gradient": [
+          -3.03903321636767,
+          2.5530782373550664,
+          -95.01519993477812,
+          -288.0146248173787
+        ],
+        "scaled_error": 1.7379769910037682e-07,
+        "step": 1e-05
+      }
+    ]
+  },
+  "hyperparameter_order": [
+    "signal_std",
+    "energy_noise_std",
+    "force_noise_std",
+    "stress_noise_std"
+  ],
+  "jacobian_layout": {
+    "raw_b2_position_jacobian": "atom, feature, displaced_atom, xyz",
+    "raw_b2_strain_jacobian": "atom, feature, epsilon_row, epsilon_column"
+  },
+  "known_native_limitation": "The native stable likelihood signal gradient uses unjittered Kuu inverse in one complexity term; likelihood_gradient_dense is the correct fixed-jitter target, while likelihood_gradient preserves the native result. Tests account for the discrepancy analytically.",
+  "labels_note": "Deterministic synthetic labels test algebra; they are not DFT data or a physical potential.",
+  "noise_convention": "noise_variance = (noise_std * relative_noise)^2; native noise_vector is precision",
+  "npz_sha256": "27cb338a5463f9bc51a41d7939f3275e9b9258d557b90ec377d5459e50242242",
+  "observation_order": "Per structure: total energy, atom-major xyz forces, native stress xx xy xz yy yz zz",
+  "periodicity_note": "C++ is fully periodic. False-PBC cases use boxes with no periodic-image neighbors.",
+  "precision": "float64",
+  "relative_noise": {
+    "binary": [
+      1.2,
+      0.8,
+      1.1
+    ],
+    "molecule": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "schema_version": 1,
+  "selected_atoms": {
+    "binary": [
+      1,
+      2
+    ],
+    "molecule": [
+      0,
+      1
+    ]
+  },
+  "settings": {
+    "cutoff": 3.2,
+    "cutoff_function": "quadratic",
+    "empty_threshold": 1e-08,
+    "l_max": 2,
+    "n_radial": 3,
+    "n_species": 2,
+    "power": 2,
+    "radial_basis": "chebyshev",
+    "radial_interval": [
+      0.0,
+      1.0
+    ]
+  },
+  "stress_convention": "Native stress = -dE/depsilon / volume; R'=R@(I+epsilon).T, cell'=cell@(I+epsilon).T",
+  "training_cases": [
+    "molecule",
+    "binary"
+  ],
+  "uncertainty_note": "Local values are variances, reordered to atom order; no noise or normalization by signal_std. Isolated descriptors are zero and have zero kernel variance."
+}

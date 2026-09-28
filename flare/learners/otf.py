@@ -161,6 +161,13 @@ class OTF:
 
         if flare_calc is not None:
             self.atoms.calc = flare_calc
+        if getattr(flare_calc, "backend", None) == "torch_sgp":
+            cell = np.asarray(self.atoms.cell)
+            if not np.isfinite(cell).all() or np.linalg.matrix_rank(cell) < 3:
+                raise ValueError(
+                    "TorchSGP ASE OTF requires a finite, full-rank cell; "
+                    "the OTF loop treats all directions as periodic and predicts stress"
+                )
         self.md_engine = md_engine
         self.md_kwargs = md_kwargs
 
@@ -185,6 +192,8 @@ class OTF:
 
         timestep = dt * units.fs * 1e3  # convert pico-second to ASE timestep units
         if self.md_engine == "PyLAMMPS":
+            if getattr(self.atoms.calc, "backend", None) == "torch_sgp":
+                raise NotImplementedError("TorchSGP OTF currently supports ASE MD engines only")
             md_kwargs["output_name"] = output_name
             if isinstance(self.atoms.calc, SGP_Calculator):
                 assert (
@@ -902,6 +911,11 @@ class OTF:
             from flare.bffs.sgp.calculator import SGP_Calculator
 
             flare_calc, _kernels = SGP_Calculator.from_file(dct["flare_calc"])
+        elif flare_calc_dict["class"] == "TorchSGP_Calculator":
+            from flare.tensor.otf import TorchSGPCalculator
+
+            flare_calc = TorchSGPCalculator.from_file(dct["flare_calc"])
+            _kernels = None
         else:
             raise TypeError(
                 f"The calculator from {dct['flare_calc']} is not recognized."

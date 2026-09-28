@@ -1,0 +1,36 @@
+name: torch backend
+
+on:
+  push:
+    paths:
+      - 'flare/tensor/**'
+      - 'flare/learners/otf.py'
+      - 'flare/scripts/otf_train.py'
+      - 'tests/tensor/**'
+      - 'dev/tensor/**'
+      - 'pyproject.toml'
+      - '.github/workflows/torch.yml'
+  pull_request:
+    paths:
+      - 'flare/tensor/**'
+      - 'flare/learners/otf.py'
+      - 'flare/scripts/otf_train.py'
+      - 'tests/tensor/**'
+      - 'dev/tensor/**'
+      - 'pyproject.toml'
+      - '.github/workflows/torch.yml'
+
+jobs:
+  cpu-reference:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tensor test dependencies
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'e3nn>=0.5.6,<0.7' numpy scipy ase numba pyyaml wandb pytest
+      - name: Check tensors against committed native references
+        run: python -m pytest -q tests/tensor
