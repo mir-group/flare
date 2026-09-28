@@ -33,6 +33,10 @@ flare-otf = "flare.scripts.otf_train:main"
 Homepage = "https://github.com/mir-group/flare"
 
 [project.optional-dependencies]
+torch = [
+    "torch>=2.2",
+    "e3nn>=0.5.6,<0.7",
+]
 tests = [
     "pytest-mock",
     "pytest>=4.6",
