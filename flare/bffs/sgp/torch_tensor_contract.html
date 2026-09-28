@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ASE Calculator of Sparse GP &mdash; flare 1.4.2 documentation</title>
+  <title>Torch sparse GP numerical conventions &mdash; flare 1.4.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
 
@@ -20,8 +20,8 @@
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Torch sparse Gaussian process" href="torch_sgp.html" />
-    <link rel="prev" title="Sparse Gaussian Process Force Fields" href="sgp.html" /> 
+    <link rel="next" title="Bayesian Active Learning" href="../../learners/learners.html" />
+    <link rel="prev" title="Torch sparse Gaussian process" href="torch_sgp.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,9 +51,9 @@
 <li class="toctree-l3"><a class="reference internal" href="../gp/gp.html">Gaussian Process Force Fields</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../mgp/mgp.html">Mapped Gaussian Process</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="sgp.html">Sparse Gaussian Process Force Fields</a><ul class="current">
-<li class="toctree-l4 current"><a class="current reference internal" href="#">ASE Calculator of Sparse GP</a></li>
+<li class="toctree-l4"><a class="reference internal" href="calculator.html">ASE Calculator of Sparse GP</a></li>
 <li class="toctree-l4"><a class="reference internal" href="torch_sgp.html">Torch sparse Gaussian process</a></li>
-<li class="toctree-l4"><a class="reference internal" href="torch_tensor_contract.html">Torch sparse GP numerical conventions</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Torch sparse GP numerical conventions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="sgp.html#flare.bffs.sgp.sparse_gp.SGP_Wrapper"><code class="docutils literal notranslate"><span class="pre">SGP_Wrapper</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sgp.html#flare.bffs.sgp.sparse_gp.compute_negative_likelihood"><code class="docutils literal notranslate"><span class="pre">compute_negative_likelihood()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="sgp.html#flare.bffs.sgp.sparse_gp.compute_negative_likelihood_grad"><code class="docutils literal notranslate"><span class="pre">compute_negative_likelihood_grad()</span></code></a></li>
@@ -95,9 +95,9 @@
           <li class="breadcrumb-item"><a href="../../flare.html">Python Code Documentation</a></li>
           <li class="breadcrumb-item"><a href="../bffs.html">Bayesian Force Fields</a></li>
           <li class="breadcrumb-item"><a href="sgp.html">Sparse Gaussian Process Force Fields</a></li>
-      <li class="breadcrumb-item active">ASE Calculator of Sparse GP</li>
+      <li class="breadcrumb-item active">Torch sparse GP numerical conventions</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../../_sources/flare/bffs/sgp/calculator.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/flare/bffs/sgp/torch_tensor_contract.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -105,36 +105,52 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-flare.bffs.sgp.calculator">
-<span id="ase-calculator-of-sparse-gp"></span><h1>ASE Calculator of Sparse GP<a class="headerlink" href="#module-flare.bffs.sgp.calculator" title="Link to this heading"></a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="flare.bffs.sgp.calculator.SGP_Calculator">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">flare.bffs.sgp.calculator.</span></span><span class="sig-name descname"><span class="pre">SGP_Calculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sgp_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.calculator.SGP_Calculator" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
-<dt class="sig sig-object py" id="flare.bffs.sgp.calculator.SGP_Calculator.calculate">
-<span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_changes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['positions',</span> <span class="pre">'numbers',</span> <span class="pre">'cell',</span> <span class="pre">'pbc',</span> <span class="pre">'initial_charges',</span> <span class="pre">'initial_magmoms']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#flare.bffs.sgp.calculator.SGP_Calculator.calculate" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Calculate properties including: energy, local energies, forces,</dt><dd><p>stress, uncertainties.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="flare.bffs.sgp.calculator.SGP_Calculator.implemented_properties">
-<span class="sig-name descname"><span class="pre">implemented_properties</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['energy',</span> <span class="pre">'forces',</span> <span class="pre">'stress',</span> <span class="pre">'stds']</span></span><a class="headerlink" href="#flare.bffs.sgp.calculator.SGP_Calculator.implemented_properties" title="Link to this definition"></a></dt>
-<dd><p>Properties calculator can handle (energy, forces, …)</p>
-</dd></dl>
-
-</dd></dl>
-
+  <section id="torch-sparse-gp-numerical-conventions">
+<h1>Torch sparse GP numerical conventions<a class="headerlink" href="#torch-sparse-gp-numerical-conventions" title="Link to this heading"></a></h1>
+<p>The Torch backend has a fixed global species vocabulary. Positions are
+<code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">3)</span></code> and cell vectors are rows of <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">3)</span></code>. Neighbor lists include
+periodic images strictly inside the cutoff, exclude the zero-shift self-edge,
+and retain nonzero self-images. The generic tensor geometry supports partial
+periodicity; the ASE OTF workflow uses a full-rank periodic cell. Tensor
+functions preserve input dtype, device, and differentiation history. The
+native-reference fixtures and ASE adapter use float64 CPU values.</p>
+<p>The B2 descriptor returns raw power-spectrum features. With
+<code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">=</span> <span class="pre">n_species</span> <span class="pre">*</span> <span class="pre">n_radial</span></code>, its feature order is the upper triangle of channel
+pairs <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">&lt;=</span> <span class="pre">b</span></code>, with angular order <code class="docutils literal notranslate"><span class="pre">l</span></code> varying fastest. Off-diagonal pairs
+have no extra <code class="docutils literal notranslate"><span class="pre">sqrt(2)</span></code> factor. The normalized dot product kernel normalizes
+these raw vectors and is zero for different central species. A raw descriptor
+norm below <code class="docutils literal notranslate"><span class="pre">1e-8</span></code> counts as empty and yields zero covariance. This threshold
+is part of native FLARE compatibility, including its nonsmooth boundary.</p>
+<p>Training observations are ordered per structure as total energy, atom-major
+<code class="docutils literal notranslate"><span class="pre">xyz</span></code> forces, and stress <code class="docutils literal notranslate"><span class="pre">xx,</span> <span class="pre">xy,</span> <span class="pre">xz,</span> <span class="pre">yy,</span> <span class="pre">yz,</span> <span class="pre">zz</span></code>. Energy sums local
+energies; configured single-atom offsets are subtracted from energy labels.
+Force columns are negative position derivatives. Native stress is
+<code class="docutils literal notranslate"><span class="pre">-dE/dstrain</span> <span class="pre">/</span> <span class="pre">volume</span></code> under the deformation
+<code class="docutils literal notranslate"><span class="pre">R'</span> <span class="pre">=</span> <span class="pre">R</span> <span class="pre">&#64;</span> <span class="pre">(I</span> <span class="pre">+</span> <span class="pre">strain).T</span></code> and <code class="docutils literal notranslate"><span class="pre">cell'</span> <span class="pre">=</span> <span class="pre">cell</span> <span class="pre">&#64;</span> <span class="pre">(I</span> <span class="pre">+</span> <span class="pre">strain).T</span></code>. The ASE
+stress order and sign are converted at the calculator boundary. Energy, force,
+and stress noise settings are standard deviations; each observation’s noise
+variance is the square of its configured standard deviation times its relative
+noise multiplier.</p>
+<p>The sparse fit uses the low-rank Gaussian likelihood without a variational
+trace correction. <code class="docutils literal notranslate"><span class="pre">SOR</span></code> predictive variance belongs to that low-rank model;
+<code class="docutils literal notranslate"><span class="pre">DTC</span></code> adds the prior residual. <code class="docutils literal notranslate"><span class="pre">local</span></code> uncertainty uses the prior residual
+alone for environment selection. The numerical tests compare descriptors,
+derivatives, kernels, likelihoods, predictions, and uncertainties against
+committed native reference fixtures and independent finite differences.</p>
+<p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span> <span class="pre">-q</span> <span class="pre">tests/tensor</span></code> from a source checkout to validate the
+backend without building the native extension. The fixtures in
+<code class="docutils literal notranslate"><span class="pre">tests/tensor/data</span></code> can be regenerated with <code class="docutils literal notranslate"><span class="pre">dev/tensor/build_reference.py</span></code>
+and <code class="docutils literal notranslate"><span class="pre">dev/tensor/generate_reference.py</span></code>. Both scripts pin and verify the native
+source revision; the generator’s <code class="docutils literal notranslate"><span class="pre">--check</span></code> mode compares regenerated arrays
+with the committed fixtures without rewriting them.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="sgp.html" class="btn btn-neutral float-left" title="Sparse Gaussian Process Force Fields" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="torch_sgp.html" class="btn btn-neutral float-right" title="Torch sparse Gaussian process" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="torch_sgp.html" class="btn btn-neutral float-left" title="Torch sparse Gaussian process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../learners/learners.html" class="btn btn-neutral float-right" title="Bayesian Active Learning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
